@@ -194,7 +194,15 @@ self-hosted relay bridge. The full rationale is recorded in
     details in [docs/phase0-desktop-notes.md](docs/phase0-desktop-notes.md)
 - 🎉 **Phase 0 complete — all de-risking gates passed.** One Rust engine, proven
   on Android, desktop, and against the reference CLI.
-- ⬜ Phases 1–5: apps, pairing, polish, releases — see [Roadmap](#roadmap)
+- 🟡 **Phase 1 in progress: the real Android app** (`packages/app-mobile`,
+  `com.gemstech.portalgems`). Working end-to-end on the emulator (2026-07-05):
+  system file picker → send with code screen + copy; receive with code
+  validation → file published to the public **Downloads** folder; progress with
+  direct/relay indicator; cancel; foreground service during transfers; Diamond
+  theme (light/dark) from shared design tokens; every string externalized via
+  i18next. Remaining: receive confirmation, friendlier errors, branding/icon,
+  share-sheet intake — see [docs/phase1-mobile-notes.md](docs/phase1-mobile-notes.md)
+- ⬜ Phases 2–5: desktop app, pairing, polish, releases — see [Roadmap](#roadmap)
 
 ## Building from source
 
@@ -273,7 +281,7 @@ cargo run --example recv -- 784413-some-derived-code .               # device B
 | Phase | Scope | Status |
 |---|---|---|
 | 0 | De-risking spikes: Rust engine ↔ CLI, Android chain, Electron chain | ✅ complete |
-| 1 | Android MVP: send/receive UI, progress, foreground service | ⬜ |
+| 1 | Android MVP: send/receive UI, progress, foreground service | 🟡 core flows working |
 | 2 | Desktop app: Electron shell, shared UI, feature parity | ⬜ |
 | 3 | QR pairing on both platforms | ⬜ |
 | 4 | Polish: explainer page, 10 theme palettes, 6 languages, settings | ⬜ |

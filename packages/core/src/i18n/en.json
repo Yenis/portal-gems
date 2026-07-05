@@ -1,0 +1,49 @@
+{
+  "app": {
+    "name": "PortalGems"
+  },
+  "home": {
+    "tagline": "Send files from device to device — private, direct, no accounts.",
+    "sendTitle": "Send a file",
+    "sendHint": "Pick a file and share the one-time code with the receiver.",
+    "sendButton": "Choose file to send",
+    "receiveTitle": "Receive a file",
+    "receiveHint": "Enter the code the sender gave you.",
+    "receivePlaceholder": "e.g. 7-crossover-clockwork",
+    "receiveButton": "Receive"
+  },
+  "send": {
+    "title": "Sending",
+    "waitingForReceiver": "Share this code with the receiver:",
+    "copyCode": "Copy code",
+    "codeCopied": "Copied!",
+    "sending": "Sending {{name}}…",
+    "success": "File sent successfully.",
+    "successDetail": "{{name}} · {{size}}"
+  },
+  "receive": {
+    "title": "Receiving",
+    "connecting": "Connecting…",
+    "receiving": "Receiving file…",
+    "success": "File saved.",
+    "savedAs": "Saved to Downloads as {{name}}."
+  },
+  "transfer": {
+    "direct": "Direct connection to the other device",
+    "relay": "Connected via relay",
+    "progress": "{{pct}}%"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "done": "Done",
+    "back": "Back",
+    "retry": "Try again"
+  },
+  "errors": {
+    "title": "Something went wrong",
+    "pickFailed": "Could not read the selected file.",
+    "invalidCode": "That does not look like a valid code. Codes look like: 7-word-word",
+    "transferFailed": "The transfer failed: {{message}}",
+    "cancelled": "Transfer cancelled."
+  }
+}

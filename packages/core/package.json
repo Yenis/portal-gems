@@ -1,0 +1,13 @@
+{
+  "name": "@portalgems/core",
+  "version": "0.0.1",
+  "private": true,
+  "description": "PortalGems shared logic: theme tokens, i18n resources",
+  "license": "GPL-3.0-or-later",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "peerDependencies": {
+    "i18next": "*",
+    "react-i18next": "*"
+  }
+}
