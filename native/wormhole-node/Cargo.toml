@@ -1,0 +1,17 @@
+[package]
+name = "wormhole-node"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-or-later"
+description = "PortalGems desktop engine: napi-rs addon over wormhole-core (Electron-safe: no external buffers)"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wormhole-core = { path = "../wormhole-core" }
+napi = { version = "2", default-features = false, features = ["napi8", "async"] }
+napi-derive = "2"
+
+[build-dependencies]
+napi-build = "2"

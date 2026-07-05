@@ -184,8 +184,17 @@ self-hosted relay bridge. The full rationale is recorded in
   - CLI `wormhole send` (fixed/paired-style code) → app **receive**: ✔ checksum-identical
   - Direct (non-relay) transit in both directions; build workarounds documented
     in [docs/phase0-android-notes.md](docs/phase0-android-notes.md)
-- ⬜ Phase 0, gate 3: the same engine in Electron via napi-rs
-- ⬜ Phases 1–6: apps, pairing, polish, releases — see [Roadmap](#roadmap)
+- ✅ **Phase 0, gate 3: the engine runs in Electron** (2026-07-05, napi-rs addon,
+  Linux x64):
+  - Electron ↔ CLI: ✔ both directions, checksum-identical
+  - **Electron ↔ Android app: ✔ both directions** — the "laptop app to phone app"
+    scenario, checksum-identical, direct transit
+  - Finding: Electron's V8 memory cage rules out ubrn's `@ubjs/node` runtime, so
+    desktop uses a small cage-safe napi-rs addon (`native/wormhole-node`);
+    details in [docs/phase0-desktop-notes.md](docs/phase0-desktop-notes.md)
+- 🎉 **Phase 0 complete — all de-risking gates passed.** One Rust engine, proven
+  on Android, desktop, and against the reference CLI.
+- ⬜ Phases 1–5: apps, pairing, polish, releases — see [Roadmap](#roadmap)
 
 ## Building from source
 
@@ -201,6 +210,28 @@ self-hosted relay bridge. The full rationale is recorded in
 ```bash
 cd native/wormhole-core
 cargo build --examples
+```
+
+### Build & run the desktop spike (Electron)
+
+```bash
+cd packages/app-desktop
+npm install
+npm run build          # bundles the app and builds the napi-rs addon
+npx electron . --no-sandbox
+```
+
+### Build the Android spike
+
+See [docs/phase0-android-notes.md](docs/phase0-android-notes.md) for the full
+toolchain (Android SDK/NDK, cargo-ndk, uniffi-bindgen-react-native) and its
+version-drift workarounds. Short version:
+
+```bash
+cd packages/wormhole-rn
+yarn install
+yarn ubrn:android      # cross-compiles Rust + regenerates bindings (see notes!)
+cd example/android && ./gradlew installDebug
 ```
 
 ## Trying the Phase 0 engine
@@ -241,7 +272,7 @@ cargo run --example recv -- 784413-some-derived-code .               # device B
 
 | Phase | Scope | Status |
 |---|---|---|
-| 0 | De-risking spikes: Rust engine ↔ CLI, Android chain, Electron chain | 🟡 gate 1 done |
+| 0 | De-risking spikes: Rust engine ↔ CLI, Android chain, Electron chain | ✅ complete |
 | 1 | Android MVP: send/receive UI, progress, foreground service | ⬜ |
 | 2 | Desktop app: Electron shell, shared UI, feature parity | ⬜ |
 | 3 | QR pairing on both platforms | ⬜ |

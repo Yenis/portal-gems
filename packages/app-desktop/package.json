@@ -1,0 +1,17 @@
+{
+  "name": "portalgems-desktop",
+  "version": "0.0.1",
+  "private": true,
+  "description": "PortalGems desktop app (Phase 0 spike: Electron shell over wormhole-core)",
+  "license": "GPL-3.0-or-later",
+  "main": "dist/main.js",
+  "scripts": {
+    "build:native": "cargo build --release --manifest-path ../../native/wormhole-node/Cargo.toml && cp ../../native/wormhole-node/target/release/libwormhole_node.so dist/wormhole_node.node",
+    "build": "esbuild src/main.ts src/preload.ts src/node-test.ts --bundle --platform=node --format=cjs --outdir=dist --external:electron && npm run build:native",
+    "start": "npm run build && electron ."
+  },
+  "devDependencies": {
+    "electron": "^38.0.0",
+    "esbuild": "^0.25.0"
+  }
+}
