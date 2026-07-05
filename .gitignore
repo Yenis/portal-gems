@@ -1,0 +1,5 @@
+# Rust
+target/
+
+# Node (later phases)
+node_modules/
