@@ -178,7 +178,12 @@ self-hosted relay bridge. The full rationale is recorded in
   - CLI `wormhole send` → `wormhole-core` **receive**: ✔ checksum-identical
   - **Sender-specified code** (the pairing mechanism) engine→engine: ✔
   - Direct (non-relay) transit confirmed in all three runs
-- ⬜ Phase 0, gate 2: the same engine running on Android via UniFFI
+- ✅ **Phase 0, gate 2: the engine runs on Android** (2026-07-05, React Native
+  0.85 + UniFFI/uniffi-bindgen-react-native, tested on the Android 14 emulator):
+  - App **send** → CLI `wormhole receive`: ✔ checksum-identical
+  - CLI `wormhole send` (fixed/paired-style code) → app **receive**: ✔ checksum-identical
+  - Direct (non-relay) transit in both directions; build workarounds documented
+    in [docs/phase0-android-notes.md](docs/phase0-android-notes.md)
 - ⬜ Phase 0, gate 3: the same engine in Electron via napi-rs
 - ⬜ Phases 1–6: apps, pairing, polish, releases — see [Roadmap](#roadmap)
 

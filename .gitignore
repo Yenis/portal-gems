@@ -3,3 +3,14 @@ target/
 
 # Node (later phases)
 node_modules/
+
+# Android build outputs
+*.apk
+.gradle/
+packages/wormhole-rn/android/src/main/jniLibs/
+packages/wormhole-rn/example/android/app/build/
+packages/wormhole-rn/example/android/build/
+
+# React Native / library build outputs
+lib/
+.yarn/cache/

@@ -1,0 +1,10 @@
+---
+rust:
+  directory: ../../native/wormhole-core
+  manifestPath: Cargo.toml
+
+android:
+  # arm64 for real phones, x86_64 for the emulator; armv7/x86 added before release
+  targets:
+    - arm64-v8a
+    - x86_64

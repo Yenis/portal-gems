@@ -5,8 +5,9 @@ A cross-platform magic-wormhole file transfer app: Android and Electron
 `wormhole` CLI. (A web app was considered and dropped — see §5.)
 
 **Working title:** Portal Gems
-**Status:** Planning complete, pre-implementation
-**Last updated:** 2026-07-04
+**Status:** Phase 0 in progress — gate 1 (engine ↔ CLI) and gate 2 (Android chain)
+passed; gate 3 (Electron) next. See README status and docs/phase0-android-notes.md.
+**Last updated:** 2026-07-05
 
 ---
 
