@@ -164,6 +164,14 @@ interface NativeModuleInterface {
     uniffi_out_err: UniffiRustCallStatus
   ): void;
   ubrn_ffi_wormhole_core_rust_future_free_void(handle: bigint): void;
+  ubrn_uniffi_wormhole_core_fn_clone_incomingfile(
+    ptr: bigint,
+    uniffi_out_err: UniffiRustCallStatus
+  ): bigint;
+  ubrn_uniffi_wormhole_core_fn_free_incomingfile(
+    ptr: bigint,
+    uniffi_out_err: UniffiRustCallStatus
+  ): void;
   ubrn_uniffi_wormhole_core_fn_clone_transferlistener(
     ptr: bigint,
     uniffi_out_err: UniffiRustCallStatus
@@ -185,10 +193,27 @@ interface NativeModuleInterface {
     destDir: Uint8Array,
     listener: bigint
   ): bigint;
+  ubrn_uniffi_wormhole_core_fn_func_request_receive(code: Uint8Array): bigint;
   ubrn_uniffi_wormhole_core_fn_func_send_file(
     path: Uint8Array,
     code: Uint8Array,
     listener: bigint
+  ): bigint;
+  ubrn_uniffi_wormhole_core_fn_method_incomingfile_accept(
+    uniffiSelf: bigint,
+    destDir: Uint8Array,
+    listener: bigint
+  ): bigint;
+  ubrn_uniffi_wormhole_core_fn_method_incomingfile_file_name(
+    uniffiSelf: bigint,
+    uniffi_out_err: UniffiRustCallStatus
+  ): Uint8Array;
+  ubrn_uniffi_wormhole_core_fn_method_incomingfile_file_size(
+    uniffiSelf: bigint,
+    uniffi_out_err: UniffiRustCallStatus
+  ): bigint;
+  ubrn_uniffi_wormhole_core_fn_method_incomingfile_reject(
+    uniffiSelf: bigint
   ): bigint;
   ubrn_uniffi_wormhole_core_fn_method_transferlistener_on_code(
     uniffiSelf: bigint,
@@ -209,11 +234,20 @@ interface NativeModuleInterface {
   ubrn_ffi_wormhole_core_uniffi_contract_version(): number;
   ubrn_uniffi_wormhole_core_checksum_func_create_test_file(): number;
   ubrn_uniffi_wormhole_core_checksum_func_receive_file(): number;
+  ubrn_uniffi_wormhole_core_checksum_func_request_receive(): number;
   ubrn_uniffi_wormhole_core_checksum_func_send_file(): number;
+  ubrn_uniffi_wormhole_core_checksum_method_incomingfile_accept(): number;
+  ubrn_uniffi_wormhole_core_checksum_method_incomingfile_file_name(): number;
+  ubrn_uniffi_wormhole_core_checksum_method_incomingfile_file_size(): number;
+  ubrn_uniffi_wormhole_core_checksum_method_incomingfile_reject(): number;
   ubrn_uniffi_wormhole_core_checksum_method_transferlistener_on_code(): number;
   ubrn_uniffi_wormhole_core_checksum_method_transferlistener_on_transit(): number;
   ubrn_uniffi_wormhole_core_checksum_method_transferlistener_on_progress(): number;
   ubrn_uniffi_internal_fn_method_transferlistener_ffi__bless_pointer(
+    pointer: bigint,
+    uniffi_out_err: UniffiRustCallStatus
+  ): UniffiGcObject;
+  ubrn_uniffi_internal_fn_method_incomingfile_ffi__bless_pointer(
     pointer: bigint,
     uniffi_out_err: UniffiRustCallStatus
   ): UniffiGcObject;

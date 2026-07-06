@@ -24,9 +24,12 @@
   "receive": {
     "title": "Receiving",
     "connecting": "Connecting…",
+    "incoming": "Incoming file",
+    "acceptQuestion": "Do you want to receive this file?",
     "receiving": "Receiving file…",
     "success": "File saved.",
-    "savedAs": "Saved to Downloads as {{name}}."
+    "savedAs": "Saved to Downloads as {{name}}.",
+    "declined": "You declined the transfer."
   },
   "transfer": {
     "direct": "Direct connection to the other device",
@@ -37,12 +40,18 @@
     "cancel": "Cancel",
     "done": "Done",
     "back": "Back",
-    "retry": "Try again"
+    "retry": "Try again",
+    "accept": "Accept",
+    "decline": "Decline"
   },
   "errors": {
     "title": "Something went wrong",
     "pickFailed": "Could not read the selected file.",
     "invalidCode": "That does not look like a valid code. Codes look like: 7-word-word",
+    "wrongCode": "No file is being offered under this code. Double-check the code and make sure the sender's app is still open and waiting.",
+    "network": "Network problem — check your internet connection and try again.",
+    "peerGone": "The other side went away before the transfer finished.",
+    "declinedBySender": "The transfer was declined or cancelled by the other side.",
     "transferFailed": "The transfer failed: {{message}}",
     "cancelled": "Transfer cancelled."
   }

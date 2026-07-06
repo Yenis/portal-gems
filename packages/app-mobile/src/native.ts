@@ -10,6 +10,7 @@ interface PortalGemsNativeSpec {
   incomingDir: string;
   copyToCache(uri: string): Promise<PickedFile>;
   saveToDownloads(srcPath: string, fileName: string): Promise<string>;
+  consumePendingShare(): Promise<string | null>;
   startTransferService(title: string): Promise<void>;
   stopTransferService(): Promise<void>;
 }
@@ -18,6 +19,7 @@ const native = NativeModules.PortalGemsNative as PortalGemsNativeSpec;
 
 export const incomingDir: string = native.incomingDir;
 export const copyToCache = (uri: string) => native.copyToCache(uri);
+export const consumePendingShare = () => native.consumePendingShare();
 export const saveToDownloads = (srcPath: string, fileName: string) =>
   native.saveToDownloads(srcPath, fileName);
 

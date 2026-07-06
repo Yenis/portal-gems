@@ -194,14 +194,16 @@ self-hosted relay bridge. The full rationale is recorded in
     details in [docs/phase0-desktop-notes.md](docs/phase0-desktop-notes.md)
 - 🎉 **Phase 0 complete — all de-risking gates passed.** One Rust engine, proven
   on Android, desktop, and against the reference CLI.
-- 🟡 **Phase 1 in progress: the real Android app** (`packages/app-mobile`,
-  `com.gemstech.portalgems`). Working end-to-end on the emulator (2026-07-05):
-  system file picker → send with code screen + copy; receive with code
-  validation → file published to the public **Downloads** folder; progress with
-  direct/relay indicator; cancel; foreground service during transfers; Diamond
-  theme (light/dark) from shared design tokens; every string externalized via
-  i18next. Remaining: receive confirmation, friendlier errors, branding/icon,
-  share-sheet intake — see [docs/phase1-mobile-notes.md](docs/phase1-mobile-notes.md)
+- 🟡 **Phase 1 nearly complete: the real Android app** (`packages/app-mobile`,
+  `com.gemstech.portalgems`). Working end-to-end on the emulator (2026-07-06):
+  system file picker **and share-sheet intake** ("Share → PortalGems") → send
+  with code screen + copy; receive with **accept/decline confirmation showing
+  file name and size** → file published to the public **Downloads** folder;
+  friendly error messages; progress with direct/relay indicator; cancel;
+  foreground service during transfers; Diamond theme (light/dark) from shared
+  design tokens; every string externalized via i18next. Remaining: app icon/
+  branding, release signing, mid-transfer cancel verification — see
+  [docs/phase1-mobile-notes.md](docs/phase1-mobile-notes.md)
 - ⬜ Phases 2–5: desktop app, pairing, polish, releases — see [Roadmap](#roadmap)
 
 ## Building from source

@@ -14,6 +14,7 @@ import {
   Subtitle,
   Title,
 } from '../components';
+import { friendlyError } from '../errors';
 import { formatSize, withTransferService, type PickedFile } from '../native';
 import { useTheme } from '../theme';
 
@@ -66,7 +67,7 @@ export default function SendScreen({
         if (cancelled || controller.signal.aborted) {
           setPhase('cancelled');
         } else {
-          setError(String(e?.message ?? e));
+          setError(friendlyError(t, e));
           setPhase('error');
         }
       }
@@ -131,7 +132,7 @@ export default function SendScreen({
           <>
             <Subtitle>{t('errors.title')}</Subtitle>
             <Text style={{ color: c.danger, fontSize: fontSize.body }}>
-              {t('errors.transferFailed', { message: error })}
+              {error}
             </Text>
           </>
         ) : null}

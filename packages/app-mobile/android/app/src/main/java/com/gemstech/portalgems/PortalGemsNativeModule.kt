@@ -117,6 +117,13 @@ class PortalGemsNativeModule(reactContext: ReactApplicationContext) :
   }
 
   @ReactMethod
+  fun consumePendingShare(promise: Promise) {
+    val uri = MainActivity.pendingShareUri
+    MainActivity.pendingShareUri = null
+    promise.resolve(uri)
+  }
+
+  @ReactMethod
   fun startTransferService(title: String, promise: Promise) {
     try {
       val ctx = reactApplicationContext

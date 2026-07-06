@@ -1,16 +1,27 @@
 # Phase 1 — Android app (PortalGems) notes
 
-Status 2026-07-05: core flows working end-to-end on the emulator against the
-reference CLI, checksum-verified:
+Status 2026-07-06: core flows + confirmation + share intake working end-to-end
+on the emulator against the reference CLI, checksum-verified:
 
 - **Send**: SAF file picker → copy to app cache (Kotlin) → engine send → code
   screen with copy button → progress with direct/relay indicator → success.
-- **Receive**: code entry (validated) → engine receive into cache → published
-  to the public **Downloads** collection via MediaStore → success screen with
-  final file name. POST_NOTIFICATIONS runtime prompt on first transfer.
+- **Receive with confirmation**: code entry (validated) → engine
+  `requestReceive` (new `IncomingFile` object API) → **Accept/Decline screen
+  showing file name + size** → accept streams into cache → published to public
+  **Downloads** via MediaStore (deduped name queried back) → success screen.
+  Decline calls `reject()`; the sender sees "transfer rejected".
+- **Share-sheet intake**: PortalGems appears as an ACTION_SEND target; sharing
+  from the Files app lands directly on the Send screen with the shared file.
+  (JS polls `consumePendingShare` on mount + AppState active — no event
+  emitters. Note: a share delivered while PortalGems is already the foreground
+  activity is only picked up on the next AppState transition; unreachable via
+  the real share sheet.)
+- **Friendly errors** (`src/errors.ts`): unclaimed nameplate → "wrong code /
+  sender gone" text, rejection, peer-gone and network patterns; raw message as
+  fallback.
 - Foreground service (`dataSync`) held only while a transfer runs.
-- Cancel wired via ubrn's `AbortSignal` on both flows (engine-side abort
-  behavior not yet exercised in a real mid-transfer test — TODO).
+- Cancel wired via ubrn's `AbortSignal` on both flows (mid-transfer abort still
+  not explicitly exercised — TODO).
 
 ## Structure
 
@@ -39,13 +50,18 @@ packages typecheck.
 ABIs restricted to `arm64-v8a,x86_64` in `gradle.properties` (match
 wormhole-rn's jniLibs; extend before release).
 
+## Regenerating bindings
+
+`yarn ubrn:android` / `yarn ubrn:android:release` now chain
+`scripts/ubrn-postgen.sh`, which deletes the Kotlin-flavor files ubrn re-emits
+and restores our `android/CMakeLists.txt` from git. After a bindings change,
+also run `yarn prepare` (bob) in wormhole-rn — the app resolves the built
+`lib/` output, not `src/` — and restart Metro with `--reset-cache` if it was
+running while `lib/` was rebuilt.
+
 ## Known gaps (Phase 1 backlog)
 
-- Receive offer confirmation (accept/reject with name+size) needs an engine API
-  split (`request` vs `accept`) — currently receive starts immediately.
-- Engine error strings are terse ("transfer failed"); map common cases
-  (unclaimed nameplate = wrong code, timeout, network down) to friendly text.
 - Cancel: verify mid-transfer abort semantics on both sides; sender "waiting"
   cancel works via AbortSignal but leaves the code claimed briefly.
 - App icon/branding, splash, release signing, Play target-SDK checklist.
-- Send-to-app via Android share sheet (ACTION_SEND intent) — natural addition.
+- Multi-file share (ACTION_SEND_MULTIPLE) is not handled; single file only.

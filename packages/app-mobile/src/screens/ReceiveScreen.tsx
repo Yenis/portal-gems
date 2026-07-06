@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { receiveFile } from 'wormhole-rn';
+import { requestReceive, type IncomingFileInterface } from 'wormhole-rn';
 import { fontSize, spacing } from '@portalgems/core';
 import {
   Card,
@@ -12,10 +12,24 @@ import {
   Subtitle,
   Title,
 } from '../components';
-import { incomingDir, saveToDownloads, withTransferService } from '../native';
+import { friendlyError } from '../errors';
+import {
+  formatSize,
+  incomingDir,
+  saveToDownloads,
+  withTransferService,
+} from '../native';
 import { useTheme } from '../theme';
 
-type Phase = 'connecting' | 'transferring' | 'saving' | 'done' | 'error' | 'cancelled';
+type Phase =
+  | 'connecting'
+  | 'confirm'
+  | 'transferring'
+  | 'saving'
+  | 'done'
+  | 'declined'
+  | 'error'
+  | 'cancelled';
 
 export default function ReceiveScreen({
   code,
@@ -27,27 +41,52 @@ export default function ReceiveScreen({
   const { t } = useTranslation();
   const c = useTheme();
   const [phase, setPhase] = useState<Phase>('connecting');
+  const [offerName, setOfferName] = useState('');
+  const [offerSize, setOfferSize] = useState(0);
   const [direct, setDirect] = useState<boolean | null>(null);
   const [pct, setPct] = useState(0);
   const [savedName, setSavedName] = useState('');
   const [error, setError] = useState('');
   const abortRef = useRef<AbortController | null>(null);
+  const incomingRef = useRef<IncomingFileInterface | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
     abortRef.current = controller;
-    let cancelled = false;
+
+    requestReceive(code, { signal: controller.signal }).then(
+      (incoming) => {
+        incomingRef.current = incoming;
+        setOfferName(incoming.fileName());
+        setOfferSize(Number(incoming.fileSize()));
+        setPhase('confirm');
+      },
+      (e) => {
+        if (controller.signal.aborted) setPhase('cancelled');
+        else {
+          setError(friendlyError(t, e));
+          setPhase('error');
+        }
+      }
+    );
+
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const accept = () => {
+    const incoming = incomingRef.current;
+    if (!incoming) return;
+    const controller = new AbortController();
+    abortRef.current = controller;
+    setPhase('transferring');
 
     withTransferService(t('receive.title'), async () => {
-      const savedPath = await receiveFile(
-        code,
+      const savedPath = await incoming.accept(
         incomingDir,
         {
           onCode: () => {},
-          onTransit: (info) => {
-            setDirect(info.startsWith('Direct'));
-            setPhase('transferring');
-          },
+          onTransit: (info) => setDirect(info.startsWith('Direct')),
           onProgress: (done, total) => {
             setPct(total === 0n ? 100 : Number((done * 100n) / total));
           },
@@ -63,21 +102,22 @@ export default function ReceiveScreen({
         setPhase('done');
       },
       (e) => {
-        if (cancelled || controller.signal.aborted) {
-          setPhase('cancelled');
-        } else {
-          setError(String(e?.message ?? e));
+        if (controller.signal.aborted) setPhase('cancelled');
+        else {
+          setError(friendlyError(t, e));
           setPhase('error');
         }
       }
     );
+  };
 
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const decline = () => {
+    incomingRef.current?.reject().catch(() => undefined);
+    setPhase('declined');
+  };
+
+  const busy =
+    phase === 'connecting' || phase === 'transferring' || phase === 'saving';
 
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
@@ -87,10 +127,24 @@ export default function ReceiveScreen({
       <Card>
         {phase === 'connecting' ? <Muted>{t('receive.connecting')}</Muted> : null}
 
+        {phase === 'confirm' ? (
+          <>
+            <Subtitle>{t('receive.incoming')}</Subtitle>
+            <Text style={{ color: c.text, fontSize: fontSize.subtitle }}>
+              {offerName} · {formatSize(offerSize)}
+            </Text>
+            <Muted>{t('receive.acceptQuestion')}</Muted>
+            <PrimaryButton label={t('common.accept')} onPress={accept} />
+            <GhostButton label={t('common.decline')} danger onPress={decline} />
+          </>
+        ) : null}
+
         {phase === 'transferring' || phase === 'saving' ? (
           <>
             <Subtitle>{t('receive.receiving')}</Subtitle>
-            <Muted>{direct ? t('transfer.direct') : t('transfer.relay')}</Muted>
+            {direct !== null ? (
+              <Muted>{direct ? t('transfer.direct') : t('transfer.relay')}</Muted>
+            ) : null}
             <ProgressBar pct={pct} />
             <Muted>{t('transfer.progress', { pct })}</Muted>
           </>
@@ -105,11 +159,13 @@ export default function ReceiveScreen({
           </>
         ) : null}
 
+        {phase === 'declined' ? <Muted>{t('receive.declined')}</Muted> : null}
+
         {phase === 'error' ? (
           <>
             <Subtitle>{t('errors.title')}</Subtitle>
             <Text style={{ color: c.danger, fontSize: fontSize.body }}>
-              {t('errors.transferFailed', { message: error })}
+              {error}
             </Text>
           </>
         ) : null}
@@ -117,13 +173,13 @@ export default function ReceiveScreen({
         {phase === 'cancelled' ? <Muted>{t('errors.cancelled')}</Muted> : null}
       </Card>
 
-      {phase === 'connecting' || phase === 'transferring' || phase === 'saving' ? (
+      {busy ? (
         <GhostButton
           label={t('common.cancel')}
           danger
           onPress={() => abortRef.current?.abort()}
         />
-      ) : (
+      ) : phase === 'confirm' ? null : (
         <PrimaryButton label={t('common.done')} onPress={onHome} />
       )}
     </View>

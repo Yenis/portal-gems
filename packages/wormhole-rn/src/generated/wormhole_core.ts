@@ -127,6 +127,49 @@ export async function receiveFile(
 }
 
 /**
+ * Connect to the wormhole under `code` and wait for the sender's file offer,
+ * without accepting it yet. This is what allows a confirmation UI.
+ */
+export async function requestReceive(
+  code: string,
+  asyncOpts_?: { signal: AbortSignal }
+): Promise<IncomingFileLike> /*throws*/ {
+  const __stack = uniffiIsDebug ? new Error().stack : undefined;
+  try {
+    return await uniffiRustCallAsync(
+      /*rustCaller:*/ uniffiCaller,
+      /*rustFutureFunc:*/ () => {
+        return nativeModule().ubrn_uniffi_wormhole_core_fn_func_request_receive(
+          FfiConverterString.lower(code, nativeModule().rustbuffer_alloc)
+        );
+      },
+      /*pollFunc:*/ nativeModule().ubrn_ffi_wormhole_core_rust_future_poll_u64,
+      /*cancelFunc:*/ nativeModule()
+        .ubrn_ffi_wormhole_core_rust_future_cancel_u64,
+      /*completeFunc:*/ nativeModule()
+        .ubrn_ffi_wormhole_core_rust_future_complete_u64,
+      /*freeFunc:*/ nativeModule().ubrn_ffi_wormhole_core_rust_future_free_u64,
+      // Async returns always go through the JS-side converter: the
+      // FFI symbol returns the future handle (u64), and the user-level
+      // RustBuffer comes back via the shared `rust_future_complete_*`
+      // export. The bytes the runtime hands back must be deserialized
+      // here using the per-callable return-type converter.
+      /*liftFunc:*/ FfiConverterTypeIncomingFile.lift.bind(
+        FfiConverterTypeIncomingFile
+      ),
+      /*liftString:*/ FfiConverterString.lift.bind(FfiConverterString),
+      /*asyncOpts:*/ asyncOpts_,
+      /*errorHandler:*/ FfiConverterTypeError.lift.bind(FfiConverterTypeError)
+    );
+  } catch (__error: any) {
+    if (uniffiIsDebug && __error instanceof Error) {
+      __error.stack = __stack;
+    }
+    throw __error;
+  }
+}
+
+/**
  * Send a file or folder. `code: None` generates a fresh code (reported via
  * `listener.on_code`); `code: Some(..)` opens the wormhole on that exact code
  * (paired-device flow).
@@ -177,6 +220,7 @@ export async function sendFile(
 export enum Exception_Tags {
   InvalidCode = 'InvalidCode',
   Cancelled = 'Cancelled',
+  AlreadyConsumed = 'AlreadyConsumed',
   Wormhole = 'Wormhole',
   Transfer = 'Transfer',
   Io = 'Io',
@@ -226,7 +270,7 @@ export const Exception = (() => {
       return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 2;
     }
   }
-  class Wormhole extends UniffiError {
+  class AlreadyConsumed extends UniffiError {
     /**
      * @private
      * This field is private and should not be used.
@@ -238,6 +282,28 @@ export const Exception = (() => {
      */
     readonly [variantOrdinalSymbol] = 3;
 
+    readonly tag = Exception_Tags.AlreadyConsumed;
+
+    constructor(message: string) {
+      super('Exception', 'AlreadyConsumed', message);
+    }
+
+    static instanceOf(e: any): e is AlreadyConsumed {
+      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 3;
+    }
+  }
+  class Wormhole extends UniffiError {
+    /**
+     * @private
+     * This field is private and should not be used.
+     */
+    readonly [uniffiTypeNameSymbol]: string = 'Exception';
+    /**
+     * @private
+     * This field is private and should not be used.
+     */
+    readonly [variantOrdinalSymbol] = 4;
+
     readonly tag = Exception_Tags.Wormhole;
 
     constructor(message: string) {
@@ -245,7 +311,7 @@ export const Exception = (() => {
     }
 
     static instanceOf(e: any): e is Wormhole {
-      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 3;
+      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 4;
     }
   }
   class Transfer extends UniffiError {
@@ -258,7 +324,7 @@ export const Exception = (() => {
      * @private
      * This field is private and should not be used.
      */
-    readonly [variantOrdinalSymbol] = 4;
+    readonly [variantOrdinalSymbol] = 5;
 
     readonly tag = Exception_Tags.Transfer;
 
@@ -267,7 +333,7 @@ export const Exception = (() => {
     }
 
     static instanceOf(e: any): e is Transfer {
-      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 4;
+      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 5;
     }
   }
   class Io extends UniffiError {
@@ -280,7 +346,7 @@ export const Exception = (() => {
      * @private
      * This field is private and should not be used.
      */
-    readonly [variantOrdinalSymbol] = 5;
+    readonly [variantOrdinalSymbol] = 6;
 
     readonly tag = Exception_Tags.Io;
 
@@ -289,7 +355,7 @@ export const Exception = (() => {
     }
 
     static instanceOf(e: any): e is Io {
-      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 5;
+      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 6;
     }
   }
 
@@ -300,6 +366,7 @@ export const Exception = (() => {
   return {
     InvalidCode,
     Cancelled,
+    AlreadyConsumed,
     Wormhole,
     Transfer,
     Io,
@@ -310,7 +377,12 @@ export const Exception = (() => {
 // Union type for Exception error type.
 export type Exception = InstanceType<
   (typeof Exception)[
-    'InvalidCode' | 'Cancelled' | 'Wormhole' | 'Transfer' | 'Io']
+    | 'InvalidCode'
+    | 'Cancelled'
+    | 'AlreadyConsumed'
+    | 'Wormhole'
+    | 'Transfer'
+    | 'Io']
 >;
 
 const FfiConverterTypeError = (() => {
@@ -326,12 +398,15 @@ const FfiConverterTypeError = (() => {
           return new Exception.Cancelled(FfiConverterString.read(from));
 
         case 3:
-          return new Exception.Wormhole(FfiConverterString.read(from));
+          return new Exception.AlreadyConsumed(FfiConverterString.read(from));
 
         case 4:
-          return new Exception.Transfer(FfiConverterString.read(from));
+          return new Exception.Wormhole(FfiConverterString.read(from));
 
         case 5:
+          return new Exception.Transfer(FfiConverterString.read(from));
+
+        case 6:
           return new Exception.Io(FfiConverterString.read(from));
 
         default:
@@ -665,6 +740,249 @@ const uniffiCallbackInterfaceTransferListener: {
   },
 };
 
+/**
+ * A pending file offer. Inspect `file_name`/`file_size`, then `accept` into a
+ * destination directory or `reject` to tell the sender you declined.
+ */
+export interface IncomingFileLike {
+  /**
+   * Accept the offer, writing into `dest_dir`; returns the saved path.
+   */
+  accept(
+    destDir: string,
+    listener: TransferListener,
+    asyncOpts_?: { signal: AbortSignal }
+  ) /*throws*/ : Promise<string>;
+  fileName(): string;
+  fileSize(): bigint;
+  /**
+   * Decline the offer; the sender sees the transfer fail cleanly.
+   */
+  reject(asyncOpts_?: { signal: AbortSignal }) /*throws*/ : Promise<void>;
+}
+/**
+ * @deprecated Use `IncomingFileLike` instead.
+ */
+export type IncomingFileInterface = IncomingFileLike;
+
+/**
+ * A pending file offer. Inspect `file_name`/`file_size`, then `accept` into a
+ * destination directory or `reject` to tell the sender you declined.
+ */
+export class IncomingFile
+  extends UniffiAbstractObject
+  implements IncomingFileLike
+{
+  readonly [uniffiTypeNameSymbol] = 'IncomingFile';
+  readonly [destructorGuardSymbol]: UniffiGcObject;
+  readonly [pointerLiteralSymbol]: UniffiHandle;
+  // No primary constructor declared for this class.
+  private constructor(pointer: UniffiHandle) {
+    super();
+    this[pointerLiteralSymbol] = pointer;
+    this[destructorGuardSymbol] =
+      uniffiTypeIncomingFileObjectFactory.bless(pointer);
+  }
+
+  /**
+   * Accept the offer, writing into `dest_dir`; returns the saved path.
+   */
+  async accept(
+    destDir: string,
+    listener: TransferListener,
+    asyncOpts_?: { signal: AbortSignal }
+  ): Promise<string> /*throws*/ {
+    const __stack = uniffiIsDebug ? new Error().stack : undefined;
+    try {
+      return await uniffiRustCallAsync(
+        /*rustCaller:*/ uniffiCaller,
+        /*rustFutureFunc:*/ () => {
+          return nativeModule().ubrn_uniffi_wormhole_core_fn_method_incomingfile_accept(
+            uniffiTypeIncomingFileObjectFactory.clonePointer(this),
+            FfiConverterString.lower(destDir, nativeModule().rustbuffer_alloc),
+            FfiConverterTypeTransferListener.lower(
+              listener,
+              nativeModule().rustbuffer_alloc
+            )
+          );
+        },
+        /*pollFunc:*/ nativeModule()
+          .ubrn_ffi_wormhole_core_rust_future_poll_rust_buffer,
+        /*cancelFunc:*/ nativeModule()
+          .ubrn_ffi_wormhole_core_rust_future_cancel_rust_buffer,
+        /*completeFunc:*/ nativeModule()
+          .ubrn_ffi_wormhole_core_rust_future_complete_rust_buffer,
+        /*freeFunc:*/ nativeModule()
+          .ubrn_ffi_wormhole_core_rust_future_free_rust_buffer,
+        // Async returns always go through the JS-side converter: the
+        // FFI symbol returns the future handle (u64), and the user-level
+        // RustBuffer comes back via the shared `rust_future_complete_*`
+        // export. The bytes the runtime hands back must be deserialized
+        // here using the per-callable return-type converter.
+        /*liftFunc:*/ FfiConverterString.lift.bind(FfiConverterString),
+        /*liftString:*/ FfiConverterString.lift.bind(FfiConverterString),
+        /*asyncOpts:*/ asyncOpts_,
+        /*errorHandler:*/ FfiConverterTypeError.lift.bind(FfiConverterTypeError)
+      );
+    } catch (__error: any) {
+      if (uniffiIsDebug && __error instanceof Error) {
+        __error.stack = __stack;
+      }
+      throw __error;
+    }
+  }
+
+  fileName(): string {
+    return ((__rb: Uint8Array) => {
+      try {
+        return FfiConverterString.lift(__rb);
+      } finally {
+        nativeModule().rustbuffer_free(__rb);
+      }
+    })(
+      uniffiCaller.rustCall(
+        /*caller:*/ (callStatus) => {
+          return nativeModule().ubrn_uniffi_wormhole_core_fn_method_incomingfile_file_name(
+            uniffiTypeIncomingFileObjectFactory.clonePointer(this),
+            callStatus
+          );
+        },
+        /*liftString:*/ FfiConverterString.lift.bind(FfiConverterString)
+      )
+    );
+  }
+
+  fileSize(): bigint {
+    return FfiConverterUInt64.lift(
+      uniffiCaller.rustCall(
+        /*caller:*/ (callStatus) => {
+          return nativeModule().ubrn_uniffi_wormhole_core_fn_method_incomingfile_file_size(
+            uniffiTypeIncomingFileObjectFactory.clonePointer(this),
+            callStatus
+          );
+        },
+        /*liftString:*/ FfiConverterString.lift.bind(FfiConverterString)
+      )
+    );
+  }
+
+  /**
+   * Decline the offer; the sender sees the transfer fail cleanly.
+   */
+  async reject(asyncOpts_?: { signal: AbortSignal }): Promise<void> /*throws*/ {
+    const __stack = uniffiIsDebug ? new Error().stack : undefined;
+    try {
+      return await uniffiRustCallAsync(
+        /*rustCaller:*/ uniffiCaller,
+        /*rustFutureFunc:*/ () => {
+          return nativeModule().ubrn_uniffi_wormhole_core_fn_method_incomingfile_reject(
+            uniffiTypeIncomingFileObjectFactory.clonePointer(this)
+          );
+        },
+        /*pollFunc:*/ nativeModule()
+          .ubrn_ffi_wormhole_core_rust_future_poll_void,
+        /*cancelFunc:*/ nativeModule()
+          .ubrn_ffi_wormhole_core_rust_future_cancel_void,
+        /*completeFunc:*/ nativeModule()
+          .ubrn_ffi_wormhole_core_rust_future_complete_void,
+        /*freeFunc:*/ nativeModule()
+          .ubrn_ffi_wormhole_core_rust_future_free_void,
+        /*liftFunc:*/ (_v) => {},
+        /*liftString:*/ FfiConverterString.lift.bind(FfiConverterString),
+        /*asyncOpts:*/ asyncOpts_,
+        /*errorHandler:*/ FfiConverterTypeError.lift.bind(FfiConverterTypeError)
+      );
+    } catch (__error: any) {
+      if (uniffiIsDebug && __error instanceof Error) {
+        __error.stack = __stack;
+      }
+      throw __error;
+    }
+  }
+
+  uniffiDestroy(): void {
+    const ptr = (this as any)[destructorGuardSymbol];
+    if (ptr !== undefined) {
+      const pointer = uniffiTypeIncomingFileObjectFactory.pointer(this);
+      uniffiTypeIncomingFileObjectFactory.freePointer(pointer);
+      uniffiTypeIncomingFileObjectFactory.unbless(ptr);
+      delete (this as any)[destructorGuardSymbol];
+    }
+  }
+
+  static instanceOf(obj_: any): obj_ is IncomingFile {
+    return uniffiTypeIncomingFileObjectFactory.isConcreteType(obj_);
+  }
+}
+
+const uniffiTypeIncomingFileObjectFactory: UniffiObjectFactory<IncomingFileLike> =
+  (() => {
+    return {
+      create(pointer: UniffiHandle): IncomingFileLike {
+        const instance = Object.create(IncomingFile.prototype);
+        instance[pointerLiteralSymbol] = pointer;
+        instance[destructorGuardSymbol] = this.bless(pointer);
+        instance[uniffiTypeNameSymbol] = 'IncomingFile';
+        return instance;
+      },
+
+      bless(p: UniffiHandle): UniffiGcObject {
+        return uniffiCaller.rustCall(
+          /*caller:*/ (status) =>
+            nativeModule().ubrn_uniffi_internal_fn_method_incomingfile_ffi__bless_pointer(
+              p,
+              status
+            ),
+          /*liftString:*/ FfiConverterString.lift
+        );
+      },
+
+      unbless(ptr_: UniffiGcObject) {
+        ptr_.markDestroyed();
+      },
+
+      pointer(obj_: IncomingFileLike): UniffiHandle {
+        if ((obj_ as any)[destructorGuardSymbol] === undefined) {
+          throw new UniffiInternalError.UnexpectedNullPointer();
+        }
+        return (obj_ as any)[pointerLiteralSymbol];
+      },
+
+      clonePointer(obj_: IncomingFileLike): UniffiHandle {
+        const pointer = this.pointer(obj_);
+        return uniffiCaller.rustCall(
+          /*caller:*/ (callStatus) =>
+            nativeModule().ubrn_uniffi_wormhole_core_fn_clone_incomingfile(
+              pointer,
+              callStatus
+            ),
+          /*liftString:*/ FfiConverterString.lift
+        );
+      },
+
+      freePointer(pointer: UniffiHandle): void {
+        uniffiCaller.rustCall(
+          /*caller:*/ (callStatus) =>
+            nativeModule().ubrn_uniffi_wormhole_core_fn_free_incomingfile(
+              pointer,
+              callStatus
+            ),
+          /*liftString:*/ FfiConverterString.lift
+        );
+      },
+
+      isConcreteType(obj_: any): obj_ is IncomingFileLike {
+        return (
+          obj_[destructorGuardSymbol] &&
+          obj_[uniffiTypeNameSymbol] === 'IncomingFile'
+        );
+      },
+    };
+  })();
+const FfiConverterTypeIncomingFile = new FfiConverterObject(
+  uniffiTypeIncomingFileObjectFactory
+);
+
 // FfiConverter for string | undefined
 const FfiConverterOptionalString = new FfiConverterOptional(FfiConverterString);
 
@@ -707,10 +1025,50 @@ function uniffiEnsureInitialized() {
     );
   }
   if (
+    nativeModule().ubrn_uniffi_wormhole_core_checksum_func_request_receive() !==
+    23936
+  ) {
+    throw new UniffiInternalError.ApiChecksumMismatch(
+      'uniffi_wormhole_core_checksum_func_request_receive'
+    );
+  }
+  if (
     nativeModule().ubrn_uniffi_wormhole_core_checksum_func_send_file() !== 18737
   ) {
     throw new UniffiInternalError.ApiChecksumMismatch(
       'uniffi_wormhole_core_checksum_func_send_file'
+    );
+  }
+  if (
+    nativeModule().ubrn_uniffi_wormhole_core_checksum_method_incomingfile_accept() !==
+    39165
+  ) {
+    throw new UniffiInternalError.ApiChecksumMismatch(
+      'uniffi_wormhole_core_checksum_method_incomingfile_accept'
+    );
+  }
+  if (
+    nativeModule().ubrn_uniffi_wormhole_core_checksum_method_incomingfile_file_name() !==
+    327
+  ) {
+    throw new UniffiInternalError.ApiChecksumMismatch(
+      'uniffi_wormhole_core_checksum_method_incomingfile_file_name'
+    );
+  }
+  if (
+    nativeModule().ubrn_uniffi_wormhole_core_checksum_method_incomingfile_file_size() !==
+    306
+  ) {
+    throw new UniffiInternalError.ApiChecksumMismatch(
+      'uniffi_wormhole_core_checksum_method_incomingfile_file_size'
+    );
+  }
+  if (
+    nativeModule().ubrn_uniffi_wormhole_core_checksum_method_incomingfile_reject() !==
+    33835
+  ) {
+    throw new UniffiInternalError.ApiChecksumMismatch(
+      'uniffi_wormhole_core_checksum_method_incomingfile_reject'
     );
   }
   if (
@@ -745,6 +1103,7 @@ export default Object.freeze({
   initialize: uniffiEnsureInitialized,
   converters: {
     FfiConverterTypeError,
+    FfiConverterTypeIncomingFile,
     FfiConverterTypeTransferListener,
   },
 });
