@@ -3,7 +3,7 @@ const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
 
 // wormhole-rn and @portalgems/core are npm file: symlinks into ../. Metro must
 // watch their real folders, and must NOT pick up wormhole-rn's own dev copies
-// of react/react-native — that would bundle React twice. Force resolution to
+// of react/react-native - that would bundle React twice. Force resolution to
 // this app's copies and block the duplicates.
 const workspaceRoot = path.resolve(__dirname, '..');
 

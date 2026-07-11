@@ -4,9 +4,9 @@
     "explainLink": "Cómo funciona y seguridad",
     "settingsLink": "Ajustes",
     "devicesTitle": "Tus dispositivos",
-    "devicesEmpty": "Empareja tu teléfono y tu portátil una sola vez — después, enviar solo requiere un toque en cada lado.",
+    "devicesEmpty": "Empareja tu teléfono y tu portátil una sola vez - después, enviar solo requiere un toque en cada lado.",
     "pairNew": "Emparejar un dispositivo nuevo",
-    "tagline": "Envía archivos de dispositivo a dispositivo — privado, directo, sin cuentas.",
+    "tagline": "Envía archivos de dispositivo a dispositivo - privado, directo, sin cuentas.",
     "sendTitle": "Enviar un archivo",
     "sendHint": "Elige un archivo y comparte el código de un solo uso con el receptor.",
     "sendButton": "Elegir archivo",
@@ -37,7 +37,7 @@
   "pair": {
     "title": "Emparejar un dispositivo",
     "showButton": "Mostrar código de emparejamiento",
-    "showHint": "Escanea este código QR con el otro dispositivo, o copia el código de emparejamiento y pégalo allí. Cualquiera que vea este código puede emparejarse contigo — compártelo solo en privado.",
+    "showHint": "Escanea este código QR con el otro dispositivo, o copia el código de emparejamiento y pégalo allí. Cualquiera que vea este código puede emparejarse contigo - compártelo solo en privado.",
     "scanButton": "Escanear código QR",
     "manualPlaceholder": "…o pega aquí un código de emparejamiento",
     "manualButton": "Emparejar con el código pegado",
@@ -56,7 +56,7 @@
     "empty": "Aún no hay dispositivos emparejados."
   },
   "paired": {
-    "sendWaiting": "Esperando a {{name}} — asegúrate de que PortalGems esté abierto allí…",
+    "sendWaiting": "Esperando a {{name}} - asegúrate de que PortalGems esté abierto allí…",
     "notOpen": "Parece que {{name}} no tiene PortalGems abierto. Pide que abran la aplicación e inténtalo de nuevo.",
     "receiveWaiting": "Buscando una transferencia de {{name}}…",
     "nothingFound": "No llegó nada de {{name}}. Asegúrate de que hayan pulsado Enviar e inténtalo de nuevo."
@@ -75,19 +75,19 @@
   },
   "explain": {
     "title": "Cómo funciona",
-    "intro": "PortalGems usa el protocolo magic-wormhole — un estándar abierto para enviar archivos de forma segura de un dispositivo a otro. Esto es lo que ocurre por dentro y por qué puedes confiar en ello.",
+    "intro": "PortalGems usa el protocolo magic-wormhole - un estándar abierto para enviar archivos de forma segura de un dispositivo a otro. Esto es lo que ocurre por dentro y por qué puedes confiar en ello.",
     "codesTitle": "Un código, una transferencia",
-    "codesBody": "Cada transferencia comienza con un código corto de un solo uso como 7-crossover-clockwork. Ambos dispositivos introducen ese código en un intercambio criptográfico (SPAKE2) y derivan de él la misma clave de cifrado robusta. El código funciona exactamente una vez: tras una transferencia — o tras un único intento fallido — queda inservible. Un atacante tendría que adivinar el código completo al primer intento, y tú notarías el intento fallido de inmediato.",
+    "codesBody": "Cada transferencia comienza con un código corto de un solo uso como 7-crossover-clockwork. Ambos dispositivos introducen ese código en un intercambio criptográfico (SPAKE2) y derivan de él la misma clave de cifrado robusta. El código funciona exactamente una vez: tras una transferencia - o tras un único intento fallido - queda inservible. Un atacante tendría que adivinar el código completo al primer intento, y tú notarías el intento fallido de inmediato.",
     "e2eTitle": "Cifrado de extremo a extremo",
-    "e2eBody": "Tu archivo se cifra en tu dispositivo y solo se descifra en el dispositivo receptor. Todo lo que hay en medio — incluidos los servidores que ayudan a los dispositivos a encontrarse — solo ve texto cifrado ilegible.",
+    "e2eBody": "Tu archivo se cifra en tu dispositivo y solo se descifra en el dispositivo receptor. Todo lo que hay en medio - incluidos los servidores que ayudan a los dispositivos a encontrarse - solo ve texto cifrado ilegible.",
     "directTitle": "Directo entre tus dispositivos",
-    "directBody": "Cuando ambos dispositivos están en la misma red Wi-Fi, el archivo viaja directamente de uno a otro a plena velocidad local — nunca sale de tu red. Solo cuando una conexión directa es imposible (por ejemplo, un dispositivo con datos móviles) la transferencia recurre a un relé público, que reenvía a ciegas bytes cifrados que no puede leer.",
+    "directBody": "Cuando ambos dispositivos están en la misma red Wi-Fi, el archivo viaja directamente de uno a otro a plena velocidad local - nunca sale de tu red. Solo cuando una conexión directa es imposible (por ejemplo, un dispositivo con datos móviles) la transferencia recurre a un relé público, que reenvía a ciegas bytes cifrados que no puede leer.",
     "serversTitle": "Qué ven los servidores",
     "serversBody": "PortalGems no tiene servidores propios ni cuentas de usuario. Usa dos pequeños servicios públicos gestionados por la comunidad de magic-wormhole: un servidor buzón donde dos dispositivos se encuentran (como un guardarropa) y el relé descrito arriba. Ninguno almacena tus archivos, ninguno sabe qué enviaste, y ambos solo ven datos cifrados.",
     "pairingTitle": "Cómo funciona el emparejamiento",
-    "pairingBody": "Al emparejar dos dispositivos, estos intercambian una sola vez un gran secreto aleatorio — mediante código QR o copiar/pegar — y lo guardan en el almacenamiento protegido de tu dispositivo. Desde entonces, ambos dispositivos pueden calcular por sí mismos el mismo código de un solo uso para cada transferencia, así que solo confirmas en lugar de teclear. Estos códigos derivados son mucho más robustos que los tecleados y nunca salen de tus dispositivos. Al quitar un dispositivo emparejado, el secreto se borra.",
+    "pairingBody": "Al emparejar dos dispositivos, estos intercambian una sola vez un gran secreto aleatorio - mediante código QR o copiar/pegar - y lo guardan en el almacenamiento protegido de tu dispositivo. Desde entonces, ambos dispositivos pueden calcular por sí mismos el mismo código de un solo uso para cada transferencia, así que solo confirmas en lugar de teclear. Estos códigos derivados son mucho más robustos que los tecleados y nunca salen de tus dispositivos. Al quitar un dispositivo emparejado, el secreto se borra.",
     "limitsTitle": "Contra qué no protege",
-    "limitsBody": "Cualquiera que pueda ver tu pantalla mientras se muestra un código o un QR de emparejamiento puede usarlo. Cualquiera con acceso total a tu dispositivo desbloqueado puede leer lo que contiene. Y un observador de tu red puede saber que transferiste algo y su tamaño aproximado — pero nunca qué era."
+    "limitsBody": "Cualquiera que pueda ver tu pantalla mientras se muestra un código o un QR de emparejamiento puede usarlo. Cualquiera con acceso total a tu dispositivo desbloqueado puede leer lo que contiene. Y un observador de tu red puede saber que transferiste algo y su tamaño aproximado - pero nunca qué era."
   },
   "transfer": {
     "direct": "Conexión directa con el otro dispositivo",
@@ -107,7 +107,7 @@
     "pickFailed": "No se pudo leer el archivo seleccionado.",
     "invalidCode": "Eso no parece un código válido. Los códigos son así: 7-palabra-palabra",
     "wrongCode": "Nadie ofrece un archivo con este código. Comprueba el código y asegúrate de que la aplicación del remitente siga abierta y esperando.",
-    "network": "Problema de red — comprueba tu conexión a Internet e inténtalo de nuevo.",
+    "network": "Problema de red - comprueba tu conexión a Internet e inténtalo de nuevo.",
     "peerGone": "La otra parte desapareció antes de terminar la transferencia.",
     "declinedBySender": "La otra parte rechazó o canceló la transferencia.",
     "transferFailed": "La transferencia falló: {{message}}",

@@ -52,7 +52,7 @@ pub(crate) fn describe_transit(info: &TransitInfo) -> String {
 
 /// Send a file (or folder). With `code: None` a fresh code is generated and
 /// reported through `on_code`. With `code: Some(..)` the wormhole is opened on
-/// that exact code (`allocate = true` claims the nameplate) — this is what
+/// that exact code (`allocate = true` claims the nameplate) - this is what
 /// paired devices use to meet on a derived code without typing anything.
 pub async fn send_file<F, G, H>(
     path: impl AsRef<Path>,

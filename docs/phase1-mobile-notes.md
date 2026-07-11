@@ -1,4 +1,4 @@
-# Phase 1 — Android app (PortalGems) notes
+# Phase 1 - Android app (PortalGems) notes
 
 Status 2026-07-06: core flows + confirmation + share intake working end-to-end
 on the emulator against the reference CLI, checksum-verified:
@@ -12,7 +12,7 @@ on the emulator against the reference CLI, checksum-verified:
   Decline calls `reject()`; the sender sees "transfer rejected".
 - **Share-sheet intake**: PortalGems appears as an ACTION_SEND target; sharing
   from the Files app lands directly on the Send screen with the shared file.
-  (JS polls `consumePendingShare` on mount + AppState active — no event
+  (JS polls `consumePendingShare` on mount + AppState active - no event
   emitters. Note: a share delivered while PortalGems is already the foreground
   activity is only picked up on the next AppState transition; unreachable via
   the real share sheet.)
@@ -21,20 +21,20 @@ on the emulator against the reference CLI, checksum-verified:
   fallback.
 - Foreground service (`dataSync`) held only while a transfer runs.
 - Cancel wired via ubrn's `AbortSignal` on both flows (mid-transfer abort still
-  not explicitly exercised — TODO).
+  not explicitly exercised - TODO).
 
 ## Structure
 
-- `packages/app-mobile` — RN 0.85 app, applicationId `com.gemstech.portalgems`,
+- `packages/app-mobile` - RN 0.85 app, applicationId `com.gemstech.portalgems`,
   standalone npm project. Engine and shared logic come in as **npm `file:`
   symlinks**: `wormhole-rn` and `@portalgems/core`.
-- `packages/core` — shared TS: Diamond light/dark palette tokens (Sapphire/
+- `packages/core` - shared TS: Diamond light/dark palette tokens (Sapphire/
   Emerald/Ruby/Amethyst later) + i18next setup with `en.json`. **All UI strings
-  live here** — no literals in components.
+  live here** - no literals in components.
 - Kotlin support (`android/.../PortalGemsNativeModule.kt`, `TransferService.kt`,
   registered manually in `MainApplication.kt`):
-  - `copyToCache(contentUri)` — SAF → real path for Rust; returns name/size.
-  - `saveToDownloads(path, name)` — MediaStore on API 29+, legacy dir + rename
+  - `copyToCache(contentUri)` - SAF → real path for Rust; returns name/size.
+  - `saveToDownloads(path, name)` - MediaStore on API 29+, legacy dir + rename
     loop below; deletes the cache copy.
   - `startTransferService`/`stopTransferService` + `incomingDir` constant.
 
@@ -55,8 +55,8 @@ wormhole-rn's jniLibs; extend before release).
 `yarn ubrn:android` / `yarn ubrn:android:release` now chain
 `scripts/ubrn-postgen.sh`, which deletes the Kotlin-flavor files ubrn re-emits
 and restores our `android/CMakeLists.txt` from git. After a bindings change,
-also run `yarn prepare` (bob) in wormhole-rn — the app resolves the built
-`lib/` output, not `src/` — and restart Metro with `--reset-cache` if it was
+also run `yarn prepare` (bob) in wormhole-rn - the app resolves the built
+`lib/` output, not `src/` - and restart Metro with `--reset-cache` if it was
 running while `lib/` was rebuilt.
 
 ## Known gaps (Phase 1 backlog)

@@ -1,7 +1,7 @@
 # Based on the create-react-native-library C++ turbo-module template, with
 # uniffi-bindgen-react-native additions: the generated JSI bindings and the
 # Rust static library. Built directly by the app via react-native.config.js
-# (cxxModuleCMakeListsPath) — this library has no Gradle project of its own.
+# (cxxModuleCMakeListsPath) - this library has no Gradle project of its own.
 cmake_minimum_required(VERSION 3.9.0)
 project(WormholeRn)
 

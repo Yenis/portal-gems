@@ -449,7 +449,7 @@ const stringConverter = (() => {
             ) as string,
         };
   return {
-    // Single-string lower() uses the C++ helper — TextEncoder.encode
+    // Single-string lower() uses the C++ helper - TextEncoder.encode
     // measured ~43% slower on takeString benchmarks.
     stringToBytes: (s: string) =>
       nativeModule().ubrn_uniffi_internal_fn_func_ffi__string_to_buffer(
@@ -457,7 +457,7 @@ const stringConverter = (() => {
         undefined as any
       ),
     bytesToString: (ab: UniffiByteArray) => decoder.decode(ab),
-    // Direct C++ call — bypasses uniffiCaller.rustCall() overhead.
+    // Direct C++ call - bypasses uniffiCaller.rustCall() overhead.
     // Matters for N-element arrays.
     stringByteLength: (s: string) =>
       nativeModule().ubrn_uniffi_internal_fn_func_ffi__string_to_byte_length(
@@ -465,7 +465,7 @@ const stringConverter = (() => {
         undefined as any
       ) as number,
     // Encode directly into the RustBuffer backing store via
-    // TextEncoder.encodeInto — zero intermediate allocation. Replaces
+    // TextEncoder.encodeInto - zero intermediate allocation. Replaces
     // the old C++ write_string_into_buffer helper.
     writeStringIntoBuffer: (s: string, buf: any, offset: number): number => {
       const view = new Uint8Array(
@@ -475,7 +475,7 @@ const stringConverter = (() => {
       );
       return encoder.encodeInto(s, view).written;
     },
-    // Dedicated C++ helper — avoids per-read Uint8Array allocation and
+    // Dedicated C++ helper - avoids per-read Uint8Array allocation and
     // the double property-lookup in string_from_buffer.
     readStringFromBuffer: (buf: any, offset: number, length: number): string =>
       nativeModule().ubrn_uniffi_internal_fn_func_ffi__read_string_from_buffer(

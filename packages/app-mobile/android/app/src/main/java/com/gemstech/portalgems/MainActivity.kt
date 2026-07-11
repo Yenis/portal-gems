@@ -28,7 +28,7 @@ class MainActivity : ReactActivity() {
 
   // "Share -> PortalGems" from other apps. The URI is parked here and JS pulls
   // it via PortalGemsNative.consumePendingShare (polled on mount and on
-  // AppState becoming active) — no event-emitter plumbing needed.
+  // AppState becoming active) - no event-emitter plumbing needed.
   private fun captureShare(intent: Intent?) {
     if (intent?.action != Intent.ACTION_SEND) return
     @Suppress("DEPRECATION")

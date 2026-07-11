@@ -3,7 +3,7 @@
 // Pairing exchanges a long-term 256-bit secret once (QR code or copy/paste).
 // For every later transfer both devices independently derive the same one-time
 // wormhole code from HMAC-SHA256(secret, time-bucket), so nobody types
-// anything — the code carries the full entropy of the secret, which is far
+// anything - the code carries the full entropy of the secret, which is far
 // stronger than a typed two-word code.
 //
 // Both sides must derive identical codes, so this module is the single source

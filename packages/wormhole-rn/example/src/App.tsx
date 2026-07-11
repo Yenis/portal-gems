@@ -68,7 +68,7 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>PortalGems — Phase 0</Text>
+      <Text style={styles.title}>PortalGems - Phase 0</Text>
       <Button title="Send 256 KB test file" onPress={onSend} disabled={busy} />
       <TextInput
         style={styles.input}

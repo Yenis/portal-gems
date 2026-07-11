@@ -6,9 +6,9 @@
     "explainLink": "How it works & security",
     "settingsLink": "Settings",
     "devicesTitle": "Your devices",
-    "devicesEmpty": "Pair your phone and laptop once — after that, sending needs just a tap on each side.",
+    "devicesEmpty": "Pair your phone and laptop once - after that, sending needs just a tap on each side.",
     "pairNew": "Pair a new device",
-    "tagline": "Send files from device to device — private, direct, no accounts.",
+    "tagline": "Send files from device to device - private, direct, no accounts.",
     "sendTitle": "Send a file",
     "sendHint": "Pick a file and share the one-time code with the receiver.",
     "sendButton": "Choose file to send",
@@ -39,7 +39,7 @@
   "pair": {
     "title": "Pair a device",
     "showButton": "Show pairing code",
-    "showHint": "Scan this QR code with the other device, or copy the pairing code and paste it there. Anyone who sees this code can pair with you — share it privately.",
+    "showHint": "Scan this QR code with the other device, or copy the pairing code and paste it there. Anyone who sees this code can pair with you - share it privately.",
     "scanButton": "Scan QR code",
     "manualPlaceholder": "…or paste a pairing code here",
     "manualButton": "Pair with pasted code",
@@ -58,7 +58,7 @@
     "empty": "No paired devices yet."
   },
   "paired": {
-    "sendWaiting": "Waiting for {{name}} — make sure PortalGems is open there…",
+    "sendWaiting": "Waiting for {{name}} - make sure PortalGems is open there…",
     "notOpen": "{{name}} doesn't seem to have PortalGems open. Ask them to open it, then try again.",
     "receiveWaiting": "Looking for a transfer from {{name}}…",
     "nothingFound": "Nothing arrived from {{name}}. Make sure they tapped Send, then try again."
@@ -90,26 +90,26 @@
   },
   "explain": {
     "title": "How it works",
-    "intro": "PortalGems uses the magic-wormhole protocol — an open standard for sending files safely from one device to another. Here is what happens under the hood, and why you can trust it.",
+    "intro": "PortalGems uses the magic-wormhole protocol - an open standard for sending files safely from one device to another. Here is what happens under the hood, and why you can trust it.",
     "codesTitle": "One code, one transfer",
-    "codesBody": "Every transfer starts with a short one-time code like 7-crossover-clockwork. Both devices feed that code into a cryptographic handshake (SPAKE2) and derive the same strong encryption key from it. The code works exactly once: after a transfer — or after a single wrong guess — it becomes useless. An attacker would have to guess the entire code correctly on the very first try, and you would notice the failed attempt immediately.",
+    "codesBody": "Every transfer starts with a short one-time code like 7-crossover-clockwork. Both devices feed that code into a cryptographic handshake (SPAKE2) and derive the same strong encryption key from it. The code works exactly once: after a transfer - or after a single wrong guess - it becomes useless. An attacker would have to guess the entire code correctly on the very first try, and you would notice the failed attempt immediately.",
     "e2eTitle": "Encrypted from end to end",
-    "e2eBody": "Your file is encrypted on your device and decrypted only on the receiving device. Everything in between — including the servers that help the two devices find each other — sees only unreadable ciphertext.",
+    "e2eBody": "Your file is encrypted on your device and decrypted only on the receiving device. Everything in between - including the servers that help the two devices find each other - sees only unreadable ciphertext.",
     "directTitle": "Direct between your devices",
-    "directBody": "When both devices are on the same Wi-Fi network, the file travels directly from one device to the other at full local speed — it never leaves your network. Only when a direct connection is impossible (for example, one device is on mobile data) does the transfer fall back to a public relay, which blindly forwards encrypted bytes it cannot read.",
+    "directBody": "When both devices are on the same Wi-Fi network, the file travels directly from one device to the other at full local speed - it never leaves your network. Only when a direct connection is impossible (for example, one device is on mobile data) does the transfer fall back to a public relay, which blindly forwards encrypted bytes it cannot read.",
     "serversTitle": "What the servers can see",
     "serversBody": "PortalGems has no servers of its own and no user accounts. It uses two small public services run by the magic-wormhole community: a mailbox server where two devices meet (think of a coat-check counter), and the relay described above. Neither stores your files, neither knows what you sent, and both see only encrypted data.",
     "pairingTitle": "How pairing works",
-    "pairingBody": "When you pair two devices, they exchange one large random secret — via QR code or copy/paste — and store it in your device's protected storage. From then on, both devices can compute the same one-time code by themselves for every transfer, so you only confirm instead of typing. These derived codes are far stronger than typed codes, and they never leave your devices. Removing a paired device deletes the secret.",
+    "pairingBody": "When you pair two devices, they exchange one large random secret - via QR code or copy/paste - and store it in your device's protected storage. From then on, both devices can compute the same one-time code by themselves for every transfer, so you only confirm instead of typing. These derived codes are far stronger than typed codes, and they never leave your devices. Removing a paired device deletes the secret.",
     "limitsTitle": "What this does not protect against",
-    "limitsBody": "Anyone who can see your screen while a code or pairing QR is visible can use it. Anyone with full access to your unlocked device can read what is stored on it. And an observer of your network can tell that you transferred something and roughly how large it was — but never what it was."
+    "limitsBody": "Anyone who can see your screen while a code or pairing QR is visible can use it. Anyone with full access to your unlocked device can read what is stored on it. And an observer of your network can tell that you transferred something and roughly how large it was - but never what it was."
   },
   "errors": {
     "title": "Something went wrong",
     "pickFailed": "Could not read the selected file.",
     "invalidCode": "That does not look like a valid code. Codes look like: 7-word-word",
     "wrongCode": "No file is being offered under this code. Double-check the code and make sure the sender's app is still open and waiting.",
-    "network": "Network problem — check your internet connection and try again.",
+    "network": "Network problem - check your internet connection and try again.",
     "peerGone": "The other side went away before the transfer finished.",
     "declinedBySender": "The transfer was declined or cancelled by the other side.",
     "transferFailed": "The transfer failed: {{message}}",

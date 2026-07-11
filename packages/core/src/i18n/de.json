@@ -4,9 +4,9 @@
     "explainLink": "So funktioniert's & Sicherheit",
     "settingsLink": "Einstellungen",
     "devicesTitle": "Deine Geräte",
-    "devicesEmpty": "Kopple Handy und Laptop einmal — danach genügt zum Senden ein Fingertipp auf beiden Seiten.",
+    "devicesEmpty": "Kopple Handy und Laptop einmal - danach genügt zum Senden ein Fingertipp auf beiden Seiten.",
     "pairNew": "Neues Gerät koppeln",
-    "tagline": "Dateien von Gerät zu Gerät — privat, direkt, ohne Konten.",
+    "tagline": "Dateien von Gerät zu Gerät - privat, direkt, ohne Konten.",
     "sendTitle": "Datei senden",
     "sendHint": "Wähle eine Datei und teile den Einmal-Code mit dem Empfänger.",
     "sendButton": "Datei auswählen",
@@ -37,7 +37,7 @@
   "pair": {
     "title": "Gerät koppeln",
     "showButton": "Kopplungscode anzeigen",
-    "showHint": "Scanne diesen QR-Code mit dem anderen Gerät oder kopiere den Kopplungscode und füge ihn dort ein. Wer diesen Code sieht, kann sich mit dir koppeln — teile ihn nur privat.",
+    "showHint": "Scanne diesen QR-Code mit dem anderen Gerät oder kopiere den Kopplungscode und füge ihn dort ein. Wer diesen Code sieht, kann sich mit dir koppeln - teile ihn nur privat.",
     "scanButton": "QR-Code scannen",
     "manualPlaceholder": "…oder Kopplungscode hier einfügen",
     "manualButton": "Mit eingefügtem Code koppeln",
@@ -56,7 +56,7 @@
     "empty": "Noch keine gekoppelten Geräte."
   },
   "paired": {
-    "sendWaiting": "Warte auf {{name}} — stelle sicher, dass PortalGems dort geöffnet ist…",
+    "sendWaiting": "Warte auf {{name}} - stelle sicher, dass PortalGems dort geöffnet ist…",
     "notOpen": "{{name}} scheint PortalGems nicht geöffnet zu haben. Bitte dort die App öffnen und erneut versuchen.",
     "receiveWaiting": "Suche nach einer Übertragung von {{name}}…",
     "nothingFound": "Von {{name}} ist nichts angekommen. Stelle sicher, dass dort auf Senden getippt wurde, und versuche es erneut."
@@ -75,19 +75,19 @@
   },
   "explain": {
     "title": "So funktioniert's",
-    "intro": "PortalGems nutzt das Magic-Wormhole-Protokoll — einen offenen Standard, um Dateien sicher von einem Gerät zum anderen zu übertragen. Hier erfährst du, was dabei passiert und warum du dem vertrauen kannst.",
+    "intro": "PortalGems nutzt das Magic-Wormhole-Protokoll - einen offenen Standard, um Dateien sicher von einem Gerät zum anderen zu übertragen. Hier erfährst du, was dabei passiert und warum du dem vertrauen kannst.",
     "codesTitle": "Ein Code, eine Übertragung",
-    "codesBody": "Jede Übertragung beginnt mit einem kurzen Einmal-Code wie 7-crossover-clockwork. Beide Geräte speisen diesen Code in einen kryptografischen Handshake (SPAKE2) und leiten daraus denselben starken Schlüssel ab. Der Code funktioniert genau einmal: Nach einer Übertragung — oder nach einem einzigen falschen Versuch — ist er wertlos. Ein Angreifer müsste den gesamten Code beim allerersten Versuch richtig raten, und du würdest den Fehlversuch sofort bemerken.",
+    "codesBody": "Jede Übertragung beginnt mit einem kurzen Einmal-Code wie 7-crossover-clockwork. Beide Geräte speisen diesen Code in einen kryptografischen Handshake (SPAKE2) und leiten daraus denselben starken Schlüssel ab. Der Code funktioniert genau einmal: Nach einer Übertragung - oder nach einem einzigen falschen Versuch - ist er wertlos. Ein Angreifer müsste den gesamten Code beim allerersten Versuch richtig raten, und du würdest den Fehlversuch sofort bemerken.",
     "e2eTitle": "Ende-zu-Ende verschlüsselt",
-    "e2eBody": "Deine Datei wird auf deinem Gerät verschlüsselt und erst auf dem Empfangsgerät wieder entschlüsselt. Alles dazwischen — auch die Server, über die sich die Geräte finden — sieht nur unlesbaren Geheimtext.",
+    "e2eBody": "Deine Datei wird auf deinem Gerät verschlüsselt und erst auf dem Empfangsgerät wieder entschlüsselt. Alles dazwischen - auch die Server, über die sich die Geräte finden - sieht nur unlesbaren Geheimtext.",
     "directTitle": "Direkt zwischen deinen Geräten",
-    "directBody": "Sind beide Geräte im selben WLAN, wandert die Datei direkt von Gerät zu Gerät mit voller lokaler Geschwindigkeit — sie verlässt dein Netzwerk nie. Nur wenn keine direkte Verbindung möglich ist (z. B. ein Gerät im Mobilfunknetz), läuft die Übertragung über ein öffentliches Relay, das verschlüsselte Bytes blind weiterleitet, ohne sie lesen zu können.",
+    "directBody": "Sind beide Geräte im selben WLAN, wandert die Datei direkt von Gerät zu Gerät mit voller lokaler Geschwindigkeit - sie verlässt dein Netzwerk nie. Nur wenn keine direkte Verbindung möglich ist (z. B. ein Gerät im Mobilfunknetz), läuft die Übertragung über ein öffentliches Relay, das verschlüsselte Bytes blind weiterleitet, ohne sie lesen zu können.",
     "serversTitle": "Was die Server sehen",
     "serversBody": "PortalGems hat keine eigenen Server und keine Benutzerkonten. Es nutzt zwei kleine öffentliche Dienste der Magic-Wormhole-Community: einen Mailbox-Server, an dem sich zwei Geräte treffen (wie eine Garderobe), und das oben beschriebene Relay. Keiner speichert deine Dateien, keiner weiß, was du gesendet hast, und beide sehen nur verschlüsselte Daten.",
     "pairingTitle": "So funktioniert die Kopplung",
-    "pairingBody": "Beim Koppeln tauschen zwei Geräte einmalig ein großes zufälliges Geheimnis aus — per QR-Code oder Kopieren/Einfügen — und legen es im geschützten Speicher deines Geräts ab. Danach können beide Geräte für jede Übertragung selbst denselben Einmal-Code berechnen; du bestätigst nur noch, statt zu tippen. Diese abgeleiteten Codes sind weit stärker als getippte Codes und verlassen deine Geräte nie. Beim Entfernen eines gekoppelten Geräts wird das Geheimnis gelöscht.",
+    "pairingBody": "Beim Koppeln tauschen zwei Geräte einmalig ein großes zufälliges Geheimnis aus - per QR-Code oder Kopieren/Einfügen - und legen es im geschützten Speicher deines Geräts ab. Danach können beide Geräte für jede Übertragung selbst denselben Einmal-Code berechnen; du bestätigst nur noch, statt zu tippen. Diese abgeleiteten Codes sind weit stärker als getippte Codes und verlassen deine Geräte nie. Beim Entfernen eines gekoppelten Geräts wird das Geheimnis gelöscht.",
     "limitsTitle": "Wovor das nicht schützt",
-    "limitsBody": "Wer deinen Bildschirm sehen kann, während ein Code oder Kopplungs-QR angezeigt wird, kann ihn verwenden. Wer vollen Zugriff auf dein entsperrtes Gerät hat, kann lesen, was darauf gespeichert ist. Und ein Beobachter deines Netzwerks erkennt, dass du etwas übertragen hast und ungefähr wie groß es war — aber nie, was es war."
+    "limitsBody": "Wer deinen Bildschirm sehen kann, während ein Code oder Kopplungs-QR angezeigt wird, kann ihn verwenden. Wer vollen Zugriff auf dein entsperrtes Gerät hat, kann lesen, was darauf gespeichert ist. Und ein Beobachter deines Netzwerks erkennt, dass du etwas übertragen hast und ungefähr wie groß es war - aber nie, was es war."
   },
   "transfer": {
     "direct": "Direkte Verbindung zum anderen Gerät",
@@ -107,7 +107,7 @@
     "pickFailed": "Die ausgewählte Datei konnte nicht gelesen werden.",
     "invalidCode": "Das sieht nicht nach einem gültigen Code aus. Codes sehen so aus: 7-wort-wort",
     "wrongCode": "Unter diesem Code wird keine Datei angeboten. Prüfe den Code und stelle sicher, dass die App des Absenders noch geöffnet ist und wartet.",
-    "network": "Netzwerkproblem — prüfe deine Internetverbindung und versuche es erneut.",
+    "network": "Netzwerkproblem - prüfe deine Internetverbindung und versuche es erneut.",
     "peerGone": "Die Gegenseite ist verschwunden, bevor die Übertragung abgeschlossen war.",
     "declinedBySender": "Die Übertragung wurde von der Gegenseite abgelehnt oder abgebrochen.",
     "transferFailed": "Die Übertragung ist fehlgeschlagen: {{message}}",

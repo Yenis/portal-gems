@@ -3,8 +3,8 @@
 **Secure device-to-device file transfer, powered by the [magic-wormhole](https://magic-wormhole.readthedocs.io/) protocol.**
 
 PortalGems lets you send files from one device to another with nothing but a short,
-one-time code — no accounts, no cloud storage, no size limits imposed by a middleman.
-It is being built for **Android** (React Native) and **desktop — Windows/macOS/Linux**
+one-time code - no accounts, no cloud storage, no size limits imposed by a middleman.
+It is being built for **Android** (React Native) and **desktop - Windows/macOS/Linux**
 (Electron), and it interoperates with **any** magic-wormhole client, including the
 original `wormhole` CLI on a server or laptop.
 
@@ -47,7 +47,7 @@ PortalGems takes a different approach, inherited from magic-wormhole:
 - **End-to-end encrypted, always.** The code bootstraps a strong shared key via a
   PAKE (password-authenticated key exchange). Nobody in the middle can read your file.
 - **Direct when possible.** Two devices on the same Wi-Fi transfer directly,
-  peer-to-peer, at LAN speed. A public relay is used only as a fallback — and it
+  peer-to-peer, at LAN speed. A public relay is used only as a fallback - and it
   only ever sees ciphertext.
 - **No accounts, no backend of ours, no stored data.** Everything lives on your
   devices.
@@ -65,13 +65,13 @@ A transfer involves three parties: the two devices, plus a lightweight public
    │  1. allocate mailbox,          │                                 │
    │     get code ────────────────► │                                 │
    │                                │ ◄──────────── 2. join with code │
-   │  3. PAKE handshake (SPAKE2) — both sides derive the same         │
+   │  3. PAKE handshake (SPAKE2) - both sides derive the same         │
    │     strong session key from the short code ───────────────────► │
    │                                                                  │
    │  4. exchange connection hints (encrypted) ─────────────────────► │
    │                                                                  │
    │  5. TRANSFER: direct TCP if reachable (same Wi-Fi/LAN),          │
-   │     otherwise via a transit relay — encrypted either way         │
+   │     otherwise via a transit relay - encrypted either way         │
    ▼                                                                  ▼
 ```
 
@@ -80,8 +80,8 @@ A transfer involves three parties: the two devices, plus a lightweight public
    are a one-time password.
 2. The **receiver** enters the same code and joins the same mailbox.
 3. Both sides run **SPAKE2**, a password-authenticated key exchange: from the short
-   code, they derive an identical, strong 256-bit session key. A wrong code — or an
-   attacker guessing — causes the handshake to fail *safely*, and the code is burned.
+   code, they derive an identical, strong 256-bit session key. A wrong code - or an
+   attacker guessing - causes the handshake to fail *safely*, and the code is burned.
 4. Using that key, the devices exchange **encrypted connection hints** (their IP
    addresses on local networks, etc.).
 5. The file flows over the best available path: a **direct TCP connection**
@@ -116,7 +116,7 @@ supported languages.
 | 🔗 CLI interop | Works with `wormhole` on servers, laptops, anything |
 | 💠 Device pairing | Scan a QR once; from then on, transfers need only a confirmation tap |
 | 🌍 6 languages | English, Deutsch, Bosanski, Русский, Français, Español |
-| 🎨 5 gem themes | Diamond, Sapphire, Emerald, Ruby, Amethyst — each in light & dark |
+| 🎨 5 gem themes | Diamond, Sapphire, Emerald, Ruby, Amethyst - each in light & dark |
 | 🔓 No accounts | No backend of ours, no cloud, everything stored locally |
 | 📖 Built-in explainer | The full "how it works & why it's safe" story, in-app |
 
@@ -124,13 +124,13 @@ supported languages.
 
 The wormhole protocol lets a sender *choose* the code instead of getting a random
 one. PortalGems uses this to make repeat transfers between your own devices
-effortless — with no server involved:
+effortless - with no server involved:
 
 1. **Pair once:** device A shows a QR code containing a device name and a random
    256-bit secret; device B scans it. Both store the entry locally (Keystore/keychain).
 2. **Transfer forever after:** when you tap *"Send to Phone"* / *"Receive from
    Laptop"*, both devices independently derive the same one-time wormhole code from
-   the shared secret and the current time window — and connect automatically. You
+   the shared secret and the current time window - and connect automatically. You
    just confirm the incoming file.
 3. **Both apps must be open.** There is no background service and no push server.
    If the other device isn't listening, the transfer times out (~45 s) with a clear
@@ -171,7 +171,7 @@ self-hosted relay bridge. The full rationale is recorded in
 
 ## Project status
 
-- ✅ **Plan & feasibility analysis** — [PLAN.md](PLAN.md)
+- ✅ **Plan & feasibility analysis** - [PLAN.md](PLAN.md)
 - ✅ **Phase 0, gate 1: protocol engine proven** (2026-07-04, all against the *real*
   public wormhole servers and the reference Python CLI):
   - `wormhole-core` **send** → CLI `wormhole receive`: ✔ checksum-identical
@@ -187,18 +187,18 @@ self-hosted relay bridge. The full rationale is recorded in
 - ✅ **Phase 0, gate 3: the engine runs in Electron** (2026-07-05, napi-rs addon,
   Linux x64):
   - Electron ↔ CLI: ✔ both directions, checksum-identical
-  - **Electron ↔ Android app: ✔ both directions** — the "laptop app to phone app"
+  - **Electron ↔ Android app: ✔ both directions** - the "laptop app to phone app"
     scenario, checksum-identical, direct transit
   - Finding: Electron's V8 memory cage rules out ubrn's `@ubjs/node` runtime, so
     desktop uses a small cage-safe napi-rs addon (`native/wormhole-node`);
     details in [docs/phase0-desktop-notes.md](docs/phase0-desktop-notes.md)
-- 🎉 **Phase 0 complete — all de-risking gates passed.** One Rust engine, proven
+- 🎉 **Phase 0 complete - all de-risking gates passed.** One Rust engine, proven
   on Android, desktop, and against the reference CLI.
 - ✅ **Phase 4 + tests complete** (2026-07-11): in-app **"How it works"
   explainer** (7 localized sections incl. direct-Wi-Fi transit and the security
   model), all **5 gem themes** with live picker (Diamond/Sapphire/Emerald/Ruby/
   Amethyst × light/dark), **settings screen** (persisted per platform), and all
-  **6 languages** shipping complete (en/de/bs/ru/fr/es — verified by tests that
+  **6 languages** shipping complete (en/de/bs/ru/fr/es - verified by tests that
   fail on any missing key or placeholder). Test suites: 25 vitest cases in
   `packages/core` (incl. a frozen pairing-derivation vector) + Rust unit tests
   and an opt-in network round-trip (`cargo test -- --ignored`). The full
@@ -206,7 +206,7 @@ self-hosted relay bridge. The full rationale is recorded in
 - ✅ **Phases 1–3 complete** (2026-07-06): Android app (send/receive/confirm/
   share-sheet/errors/gem icon/release signing), desktop app at full feature
   parity (React DOM UI over the napi engine, incl. working cancel), and
-  **device pairing** — QR/paste exchange of a 256-bit secret, HMAC-derived
+  **device pairing** - QR/paste exchange of a 256-bit secret, HMAC-derived
   one-time codes per 5-minute bucket, encrypted storage (Keystore /
   safeStorage), verified end-to-end desktop↔emulator over the real servers.
   Details: [docs/phase2-3-notes.md](docs/phase2-3-notes.md)
@@ -218,9 +218,9 @@ self-hosted relay bridge. The full rationale is recorded in
   friendly error messages; progress with direct/relay indicator; cancel;
   foreground service during transfers; Diamond theme (light/dark) from shared
   design tokens; every string externalized via i18next. Remaining: app icon/
-  branding, release signing, mid-transfer cancel verification — see
+  branding, release signing, mid-transfer cancel verification - see
   [docs/phase1-mobile-notes.md](docs/phase1-mobile-notes.md)
-- ⬜ Phases 2–5: desktop app, pairing, polish, releases — see [Roadmap](#roadmap)
+- ⬜ Phases 2–5: desktop app, pairing, polish, releases - see [Roadmap](#roadmap)
 
 ## Building from source
 
@@ -274,7 +274,7 @@ cargo run --example send -- /path/to/file
 # SEND-OK
 ```
 
-Receive it anywhere — on another machine, with the reference CLI:
+Receive it anywhere - on another machine, with the reference CLI:
 
 ```bash
 wormhole receive 7-crossover-clockwork
@@ -316,8 +316,8 @@ Planned channels, once tested enough:
 ## Languages & themes
 
 - **Languages:** English (default), Deutsch, Bosanski, Русский, Français, Español
-- **Themes:** five gem palettes — 💎 Diamond (default), 🔷 Sapphire, 🟢 Emerald,
-  ❤️ Ruby, 🟣 Amethyst — each in light and dark mode
+- **Themes:** five gem palettes - 💎 Diamond (default), 🔷 Sapphire, 🟢 Emerald,
+  ❤️ Ruby, 🟣 Amethyst - each in light and dark mode
 
 ## License
 
@@ -329,9 +329,9 @@ It builds on [magic-wormhole.rs](https://github.com/magic-wormhole/magic-wormhol
 ## Acknowledgments
 
 - [Brian Warner](https://github.com/warner) and the
-  [magic-wormhole](https://github.com/magic-wormhole/magic-wormhole) project — the
+  [magic-wormhole](https://github.com/magic-wormhole/magic-wormhole) project - the
   protocol, the reference implementation, and the public mailbox/relay infrastructure.
 - The [magic-wormhole.rs](https://github.com/magic-wormhole/magic-wormhole.rs)
-  maintainers — the Rust implementation at the heart of PortalGems.
-- Please be kind to the public community servers: for heavy use, self-host — the app
+  maintainers - the Rust implementation at the heart of PortalGems.
+- Please be kind to the public community servers: for heavy use, self-host - the app
   will let you configure your own server URLs.

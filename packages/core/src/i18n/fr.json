@@ -4,9 +4,9 @@
     "explainLink": "Fonctionnement et sécurité",
     "settingsLink": "Paramètres",
     "devicesTitle": "Vos appareils",
-    "devicesEmpty": "Associez votre téléphone et votre ordinateur une seule fois — ensuite, envoyer ne demande qu'un geste de chaque côté.",
+    "devicesEmpty": "Associez votre téléphone et votre ordinateur une seule fois - ensuite, envoyer ne demande qu'un geste de chaque côté.",
     "pairNew": "Associer un nouvel appareil",
-    "tagline": "Envoyez des fichiers d'un appareil à l'autre — privé, direct, sans compte.",
+    "tagline": "Envoyez des fichiers d'un appareil à l'autre - privé, direct, sans compte.",
     "sendTitle": "Envoyer un fichier",
     "sendHint": "Choisissez un fichier et partagez le code à usage unique avec le destinataire.",
     "sendButton": "Choisir un fichier",
@@ -37,7 +37,7 @@
   "pair": {
     "title": "Associer un appareil",
     "showButton": "Afficher le code d'association",
-    "showHint": "Scannez ce code QR avec l'autre appareil, ou copiez le code d'association et collez-le là-bas. Quiconque voit ce code peut s'associer à vous — partagez-le uniquement en privé.",
+    "showHint": "Scannez ce code QR avec l'autre appareil, ou copiez le code d'association et collez-le là-bas. Quiconque voit ce code peut s'associer à vous - partagez-le uniquement en privé.",
     "scanButton": "Scanner un code QR",
     "manualPlaceholder": "…ou collez un code d'association ici",
     "manualButton": "Associer avec le code collé",
@@ -56,7 +56,7 @@
     "empty": "Aucun appareil associé pour l'instant."
   },
   "paired": {
-    "sendWaiting": "En attente de {{name}} — vérifiez que PortalGems y est ouvert…",
+    "sendWaiting": "En attente de {{name}} - vérifiez que PortalGems y est ouvert…",
     "notOpen": "{{name}} ne semble pas avoir PortalGems ouvert. Demandez de l'ouvrir, puis réessayez.",
     "receiveWaiting": "Recherche d'un transfert depuis {{name}}…",
     "nothingFound": "Rien n'est arrivé de {{name}}. Vérifiez qu'Envoyer y a bien été touché, puis réessayez."
@@ -75,19 +75,19 @@
   },
   "explain": {
     "title": "Comment ça marche",
-    "intro": "PortalGems utilise le protocole magic-wormhole — un standard ouvert pour envoyer des fichiers en toute sécurité d'un appareil à un autre. Voici ce qui se passe sous le capot, et pourquoi vous pouvez lui faire confiance.",
+    "intro": "PortalGems utilise le protocole magic-wormhole - un standard ouvert pour envoyer des fichiers en toute sécurité d'un appareil à un autre. Voici ce qui se passe sous le capot, et pourquoi vous pouvez lui faire confiance.",
     "codesTitle": "Un code, un transfert",
-    "codesBody": "Chaque transfert commence par un court code à usage unique comme 7-crossover-clockwork. Les deux appareils injectent ce code dans une poignée de main cryptographique (SPAKE2) et en dérivent la même clé de chiffrement robuste. Le code ne fonctionne qu'une seule fois : après un transfert — ou après une seule tentative erronée — il devient inutilisable. Un attaquant devrait deviner le code entier du premier coup, et vous remarqueriez immédiatement la tentative échouée.",
+    "codesBody": "Chaque transfert commence par un court code à usage unique comme 7-crossover-clockwork. Les deux appareils injectent ce code dans une poignée de main cryptographique (SPAKE2) et en dérivent la même clé de chiffrement robuste. Le code ne fonctionne qu'une seule fois : après un transfert - ou après une seule tentative erronée - il devient inutilisable. Un attaquant devrait deviner le code entier du premier coup, et vous remarqueriez immédiatement la tentative échouée.",
     "e2eTitle": "Chiffré de bout en bout",
-    "e2eBody": "Votre fichier est chiffré sur votre appareil et déchiffré uniquement sur l'appareil du destinataire. Tout ce qui se trouve entre les deux — y compris les serveurs qui aident les appareils à se trouver — ne voit qu'un texte chiffré illisible.",
+    "e2eBody": "Votre fichier est chiffré sur votre appareil et déchiffré uniquement sur l'appareil du destinataire. Tout ce qui se trouve entre les deux - y compris les serveurs qui aident les appareils à se trouver - ne voit qu'un texte chiffré illisible.",
     "directTitle": "En direct entre vos appareils",
-    "directBody": "Quand les deux appareils sont sur le même réseau Wi-Fi, le fichier voyage directement de l'un à l'autre à pleine vitesse locale — il ne quitte jamais votre réseau. Ce n'est que lorsqu'une connexion directe est impossible (par exemple, un appareil en données mobiles) que le transfert passe par un relais public, qui fait suivre aveuglément des octets chiffrés qu'il ne peut pas lire.",
+    "directBody": "Quand les deux appareils sont sur le même réseau Wi-Fi, le fichier voyage directement de l'un à l'autre à pleine vitesse locale - il ne quitte jamais votre réseau. Ce n'est que lorsqu'une connexion directe est impossible (par exemple, un appareil en données mobiles) que le transfert passe par un relais public, qui fait suivre aveuglément des octets chiffrés qu'il ne peut pas lire.",
     "serversTitle": "Ce que voient les serveurs",
     "serversBody": "PortalGems n'a ni serveurs propres ni comptes utilisateurs. Il utilise deux petits services publics gérés par la communauté magic-wormhole : un serveur « boîte aux lettres » où deux appareils se rencontrent (comme un vestiaire), et le relais décrit ci-dessus. Aucun ne stocke vos fichiers, aucun ne sait ce que vous avez envoyé, et tous deux ne voient que des données chiffrées.",
     "pairingTitle": "Comment fonctionne l'association",
-    "pairingBody": "Lorsque vous associez deux appareils, ils échangent une seule fois un grand secret aléatoire — par code QR ou copier/coller — et le conservent dans le stockage protégé de votre appareil. Dès lors, les deux appareils peuvent calculer eux-mêmes le même code à usage unique pour chaque transfert : vous ne faites que confirmer au lieu de taper. Ces codes dérivés sont bien plus robustes que les codes tapés et ne quittent jamais vos appareils. Retirer un appareil associé supprime le secret.",
+    "pairingBody": "Lorsque vous associez deux appareils, ils échangent une seule fois un grand secret aléatoire - par code QR ou copier/coller - et le conservent dans le stockage protégé de votre appareil. Dès lors, les deux appareils peuvent calculer eux-mêmes le même code à usage unique pour chaque transfert : vous ne faites que confirmer au lieu de taper. Ces codes dérivés sont bien plus robustes que les codes tapés et ne quittent jamais vos appareils. Retirer un appareil associé supprime le secret.",
     "limitsTitle": "Ce contre quoi cela ne protège pas",
-    "limitsBody": "Quiconque peut voir votre écran pendant qu'un code ou un QR d'association est affiché peut l'utiliser. Quiconque a un accès complet à votre appareil déverrouillé peut lire ce qui s'y trouve. Et un observateur de votre réseau peut savoir que vous avez transféré quelque chose et sa taille approximative — mais jamais ce que c'était."
+    "limitsBody": "Quiconque peut voir votre écran pendant qu'un code ou un QR d'association est affiché peut l'utiliser. Quiconque a un accès complet à votre appareil déverrouillé peut lire ce qui s'y trouve. Et un observateur de votre réseau peut savoir que vous avez transféré quelque chose et sa taille approximative - mais jamais ce que c'était."
   },
   "transfer": {
     "direct": "Connexion directe à l'autre appareil",
@@ -107,7 +107,7 @@
     "pickFailed": "Impossible de lire le fichier sélectionné.",
     "invalidCode": "Cela ne ressemble pas à un code valide. Les codes ressemblent à : 7-mot-mot",
     "wrongCode": "Aucun fichier n'est proposé sous ce code. Vérifiez le code et assurez-vous que l'application de l'expéditeur est toujours ouverte et en attente.",
-    "network": "Problème réseau — vérifiez votre connexion Internet et réessayez.",
+    "network": "Problème réseau - vérifiez votre connexion Internet et réessayez.",
     "peerGone": "L'autre partie a disparu avant la fin du transfert.",
     "declinedBySender": "Le transfert a été refusé ou annulé par l'autre partie.",
     "transferFailed": "Le transfert a échoué : {{message}}",

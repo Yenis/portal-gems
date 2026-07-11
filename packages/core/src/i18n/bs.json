@@ -4,9 +4,9 @@
     "explainLink": "Kako radi i sigurnost",
     "settingsLink": "Postavke",
     "devicesTitle": "Tvoji uređaji",
-    "devicesEmpty": "Upari telefon i laptop jednom — nakon toga je za slanje dovoljan po jedan dodir na svakoj strani.",
+    "devicesEmpty": "Upari telefon i laptop jednom - nakon toga je za slanje dovoljan po jedan dodir na svakoj strani.",
     "pairNew": "Upari novi uređaj",
-    "tagline": "Šalji datoteke s uređaja na uređaj — privatno, direktno, bez naloga.",
+    "tagline": "Šalji datoteke s uređaja na uređaj - privatno, direktno, bez naloga.",
     "sendTitle": "Pošalji datoteku",
     "sendHint": "Odaberi datoteku i podijeli jednokratni kod s primaocem.",
     "sendButton": "Odaberi datoteku",
@@ -37,7 +37,7 @@
   "pair": {
     "title": "Uparivanje uređaja",
     "showButton": "Prikaži kod za uparivanje",
-    "showHint": "Skeniraj ovaj QR kod drugim uređajem ili kopiraj kod za uparivanje i zalijepi ga tamo. Ko god vidi ovaj kod može se upariti s tobom — dijeli ga samo privatno.",
+    "showHint": "Skeniraj ovaj QR kod drugim uređajem ili kopiraj kod za uparivanje i zalijepi ga tamo. Ko god vidi ovaj kod može se upariti s tobom - dijeli ga samo privatno.",
     "scanButton": "Skeniraj QR kod",
     "manualPlaceholder": "…ili zalijepi kod za uparivanje ovdje",
     "manualButton": "Upari zalijepljenim kodom",
@@ -56,7 +56,7 @@
     "empty": "Još nema uparenih uređaja."
   },
   "paired": {
-    "sendWaiting": "Čekam {{name}} — provjeri da li je PortalGems tamo otvoren…",
+    "sendWaiting": "Čekam {{name}} - provjeri da li je PortalGems tamo otvoren…",
     "notOpen": "Izgleda da {{name}} nema otvoren PortalGems. Zamoli da se aplikacija otvori pa pokušaj ponovo.",
     "receiveWaiting": "Tražim prijenos od {{name}}…",
     "nothingFound": "Ništa nije stiglo od {{name}}. Provjeri da li je tamo pritisnuto Pošalji, pa pokušaj ponovo."
@@ -75,19 +75,19 @@
   },
   "explain": {
     "title": "Kako radi",
-    "intro": "PortalGems koristi magic-wormhole protokol — otvoreni standard za sigurno slanje datoteka s jednog uređaja na drugi. Evo šta se dešava ispod haube i zašto tome možeš vjerovati.",
+    "intro": "PortalGems koristi magic-wormhole protokol - otvoreni standard za sigurno slanje datoteka s jednog uređaja na drugi. Evo šta se dešava ispod haube i zašto tome možeš vjerovati.",
     "codesTitle": "Jedan kod, jedan prijenos",
-    "codesBody": "Svaki prijenos počinje kratkim jednokratnim kodom poput 7-crossover-clockwork. Oba uređaja ubacuju taj kod u kriptografsko rukovanje (SPAKE2) i iz njega izvode isti snažni ključ za šifrovanje. Kod vrijedi tačno jednom: nakon prijenosa — ili nakon jednog pogrešnog pokušaja — postaje beskoristan. Napadač bi morao pogoditi cijeli kod iz prve, a ti bi neuspjeli pokušaj odmah primijetio/la.",
+    "codesBody": "Svaki prijenos počinje kratkim jednokratnim kodom poput 7-crossover-clockwork. Oba uređaja ubacuju taj kod u kriptografsko rukovanje (SPAKE2) i iz njega izvode isti snažni ključ za šifrovanje. Kod vrijedi tačno jednom: nakon prijenosa - ili nakon jednog pogrešnog pokušaja - postaje beskoristan. Napadač bi morao pogoditi cijeli kod iz prve, a ti bi neuspjeli pokušaj odmah primijetio/la.",
     "e2eTitle": "Šifrovano s kraja na kraj",
-    "e2eBody": "Tvoja datoteka se šifruje na tvom uređaju, a dešifruje tek na uređaju primaoca. Sve između — uključujući servere preko kojih se uređaji pronalaze — vidi samo nečitljiv šifrat.",
+    "e2eBody": "Tvoja datoteka se šifruje na tvom uređaju, a dešifruje tek na uređaju primaoca. Sve između - uključujući servere preko kojih se uređaji pronalaze - vidi samo nečitljiv šifrat.",
     "directTitle": "Direktno između tvojih uređaja",
-    "directBody": "Kada su oba uređaja na istoj Wi-Fi mreži, datoteka putuje direktno s jednog na drugi punom lokalnom brzinom — nikada ne napušta tvoju mrežu. Tek kada direktna veza nije moguća (npr. jedan uređaj je na mobilnim podacima), prijenos ide preko javnog releja koji slijepo prosljeđuje šifrovane bajtove koje ne može pročitati.",
+    "directBody": "Kada su oba uređaja na istoj Wi-Fi mreži, datoteka putuje direktno s jednog na drugi punom lokalnom brzinom - nikada ne napušta tvoju mrežu. Tek kada direktna veza nije moguća (npr. jedan uređaj je na mobilnim podacima), prijenos ide preko javnog releja koji slijepo prosljeđuje šifrovane bajtove koje ne može pročitati.",
     "serversTitle": "Šta serveri vide",
     "serversBody": "PortalGems nema vlastite servere ni korisničke naloge. Koristi dva mala javna servisa magic-wormhole zajednice: mailbox server na kojem se dva uređaja sretnu (kao garderoba) i gore opisani relej. Nijedan ne čuva tvoje datoteke, nijedan ne zna šta si poslao/la, i oba vide samo šifrovane podatke.",
     "pairingTitle": "Kako radi uparivanje",
-    "pairingBody": "Pri uparivanju dva uređaja jednom razmijene veliku nasumičnu tajnu — QR kodom ili kopiranjem — i spreme je u zaštićenu pohranu uređaja. Od tada oba uređaja mogu sama izračunati isti jednokratni kod za svaki prijenos, pa samo potvrđuješ umjesto da kucaš. Ovi izvedeni kodovi su daleko jači od kucanih i nikada ne napuštaju tvoje uređaje. Uklanjanjem uparenog uređaja tajna se briše.",
+    "pairingBody": "Pri uparivanju dva uređaja jednom razmijene veliku nasumičnu tajnu - QR kodom ili kopiranjem - i spreme je u zaštićenu pohranu uređaja. Od tada oba uređaja mogu sama izračunati isti jednokratni kod za svaki prijenos, pa samo potvrđuješ umjesto da kucaš. Ovi izvedeni kodovi su daleko jači od kucanih i nikada ne napuštaju tvoje uređaje. Uklanjanjem uparenog uređaja tajna se briše.",
     "limitsTitle": "Od čega ovo ne štiti",
-    "limitsBody": "Ko god vidi tvoj ekran dok je kod ili QR za uparivanje prikazan, može ga iskoristiti. Ko ima pun pristup tvom otključanom uređaju, može čitati šta je na njemu. A posmatrač tvoje mreže može znati da si nešto prenio/la i otprilike koliko je bilo veliko — ali nikada šta je bilo."
+    "limitsBody": "Ko god vidi tvoj ekran dok je kod ili QR za uparivanje prikazan, može ga iskoristiti. Ko ima pun pristup tvom otključanom uređaju, može čitati šta je na njemu. A posmatrač tvoje mreže može znati da si nešto prenio/la i otprilike koliko je bilo veliko - ali nikada šta je bilo."
   },
   "transfer": {
     "direct": "Direktna veza s drugim uređajem",
@@ -107,7 +107,7 @@
     "pickFailed": "Odabranu datoteku nije moguće pročitati.",
     "invalidCode": "Ovo ne liči na važeći kod. Kodovi izgledaju ovako: 7-riječ-riječ",
     "wrongCode": "Pod ovim kodom se ne nudi nijedna datoteka. Provjeri kod i da li je aplikacija pošiljaoca još otvorena i čeka.",
-    "network": "Problem s mrežom — provjeri internet vezu i pokušaj ponovo.",
+    "network": "Problem s mrežom - provjeri internet vezu i pokušaj ponovo.",
     "peerGone": "Druga strana je nestala prije završetka prijenosa.",
     "declinedBySender": "Druga strana je odbila ili otkazala prijenos.",
     "transferFailed": "Prijenos nije uspio: {{message}}",

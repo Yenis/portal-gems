@@ -1,4 +1,4 @@
-# PortalGems — Architecture Reference
+# PortalGems - Architecture Reference
 
 The single document to read before building new features. Everything here was
 verified working as of 2026-07-11 (phases 0–4 complete). Per-phase discovery
@@ -26,23 +26,23 @@ notes live in the other `docs/*.md` files; this is the consolidated map.
                      (community-run; direct TCP when possible)
 ```
 
-## 1. The engine — `native/wormhole-core`
+## 1. The engine - `native/wormhole-core`
 
 Rust crate over `magic-wormhole` 0.8 (EUPL-1.2; app is GPL-3.0-or-later via
 the compatibility clause). Public API (all take a `cancel` future that races
-the ENTIRE pipeline — a waiting sender blocks inside `Wormhole::connect`, so
+the ENTIRE pipeline - a waiting sender blocks inside `Wormhole::connect`, so
 cancel must cover more than the transfer phase):
 
 - `send_file(path, code: Option<&str>, on_code, on_transit, progress, cancel)`
-  — `code: None` allocates a fresh 2-word code; `Some(code)` claims that exact
-  code (`MailboxConnection::connect(..., allocate=true)`) — the pairing
+  - `code: None` allocates a fresh 2-word code; `Some(code)` claims that exact
+  code (`MailboxConnection::connect(..., allocate=true)`) - the pairing
   primitive.
 - `request_receive(code, cancel) -> PendingReceive { file_name, file_size }`
-  — connects and waits for the offer WITHOUT accepting: powers confirmation
+  - connects and waits for the offer WITHOUT accepting: powers confirmation
   UIs. `PendingReceive::accept(dest_dir, ...) -> PathBuf` (never clobbers:
   `name (1).ext` suffixes) / `::reject()`.
 - `receive_file(...)` = request + auto-accept (used by pairing handshake).
-- `create_test_file(dir, size_kb)` — dev/test helper.
+- `create_test_file(dir, size_kb)` - dev/test helper.
 - File names from the network are sanitized (`sanitize_file_name` strips path
   components; empty/dot names → `received.bin`).
 - Errors: one flat `Error` enum (`InvalidCode`, `Cancelled`, `AlreadyConsumed`,
@@ -57,7 +57,7 @@ Tests: `cargo test` (unit) · `cargo test -- --ignored` (network round-trip).
 
 ## 2. Binding layers
 
-### Android — `packages/wormhole-rn` (uniffi-bindgen-react-native 0.31)
+### Android - `packages/wormhole-rn` (uniffi-bindgen-react-native 0.31)
 
 - `native/wormhole-core/src/ffi.rs` holds the UniFFI surface: async
   `send_file`/`receive_file`/`request_receive`, object `IncomingFile`
@@ -68,14 +68,14 @@ Tests: `cargo test` (unit) · `cargo test -- --ignored` (network round-trip).
   cancellation; this is how mobile cancel works).
 - **Pure C++ turbo-module** (RN ≥ 0.77 style): no Kotlin/Gradle in the library;
   the app builds `android/CMakeLists.txt` directly. ubrn re-emits its old
-  Kotlin flavor on every `--and-generate` — `scripts/ubrn-postgen.sh` (chained
+  Kotlin flavor on every `--and-generate` - `scripts/ubrn-postgen.sh` (chained
   in `yarn ubrn:android[:release]`) deletes it and restores our CMakeLists.
 - After regenerating: `yarn prepare` (bob rebuilds `lib/`, which is what apps
   resolve) and restart Metro with `--reset-cache`.
 - jniLibs (`.a` per ABI) are build outputs (gitignored); `android/generated`
   (RN codegen) IS committed (`codegenConfig.includesGeneratedCode: true`).
 
-### Desktop — `native/wormhole-node` (napi-rs 2)
+### Desktop - `native/wormhole-node` (napi-rs 2)
 
 - Electron's V8 memory cage forbids external ArrayBuffers → ubrn's `@ubjs/node`
   is unusable here; this addon crosses the FFI with strings/f64 only.
@@ -87,25 +87,25 @@ Tests: `cargo test` (unit) · `cargo test -- --ignored` (network round-trip).
   via IPC (`pg:*` handlers in `src/main.ts`, exposed by `src/preload.ts`,
   events streamed on `pg:event {id, event, ...}`).
 
-## 3. Shared logic — `packages/core`
+## 3. Shared logic - `packages/core`
 
 Consumed by both apps as **npm `file:` symlinks** (see §5 build gotchas).
 
-- `tokens.ts` — 5 gem themes (`THEME_NAMES`) × light/dark `Palette`, spacing/
+- `tokens.ts` - 5 gem themes (`THEME_NAMES`) × light/dark `Palette`, spacing/
   radius/fontSize scales. UI components take colors from the active palette
-  only — never hardcode.
-- `i18n/` — en/de/bs/ru/fr/es JSON + `initI18n(locale)`, `setLanguage`,
+  only - never hardcode.
+- `i18n/` - en/de/bs/ru/fr/es JSON + `initI18n(locale)`, `setLanguage`,
   `SUPPORTED_LANGUAGES`. **Every user-visible string goes in en.json first,
-  then ALL five translations** — `vitest` fails if key sets or `{{placeholders}}`
+  then ALL five translations** - `vitest` fails if key sets or `{{placeholders}}`
   diverge (i18n.test.ts).
-- `pairing.ts` — THE protocol-critical file. Payload
+- `pairing.ts` - THE protocol-critical file. Payload
   `PGPAIR1:<b64url(json{v,name,secret})>` (32-byte secret); code derivation
   `HMAC-SHA256(secret, "portalgems-code-v1:"+bucket)` → 8-digit nameplate +
   2×10 hex; bucket = unixSeconds/300, receiver tries `[b, b−1, b+1]`.
   Timeouts: sender 45 s, receiver poll 60 s. A frozen test vector pins the
-  derivation — **changing it breaks pairing between app versions**. Own UTF-8
+  derivation - **changing it breaks pairing between app versions**. Own UTF-8
   codec (Hermes has no TextDecoder). Crypto via @noble/hashes (pure JS).
-- `errors.ts` — engine-string → i18n-key mapping.
+- `errors.ts` - engine-string → i18n-key mapping.
 
 Tests: `cd packages/core && npm test` (vitest, 25 tests).
 
@@ -115,7 +115,7 @@ Both implement the same flows/routes: home (devices + send + receive), send
 (paired or code), receive (request → confirm → accept), pair (show QR /
 scan / paste), settings (language + theme, persisted), explainer.
 
-### Mobile — `packages/app-mobile` (`com.gemstech.portalgems`)
+### Mobile - `packages/app-mobile` (`com.gemstech.portalgems`)
 
 - Kotlin support module `PortalGemsNative` (registered manually in
   MainApplication): SAF `copyToCache(uri)` (Rust can't read `content://`),
@@ -130,19 +130,19 @@ scan / paste), settings (language + theme, persisted), explainer.
   falls back to debug key when absent). ABIs: arm64-v8a + x86_64 (add armv7
   before store release).
 
-### Desktop — `packages/app-desktop`
+### Desktop - `packages/app-desktop`
 
-- React DOM renderer (deliberate pivot from the react-native-web plan — shared
+- React DOM renderer (deliberate pivot from the react-native-web plan - shared
   *brains* in core, thin per-platform UIs), esbuild-bundled
   (`NODE_PATH=./node_modules` for the symlinked core's deps).
 - Pairing storage: `safeStorage`-encrypted file in userData. Settings:
   localStorage. Device name: hostname. Receives into `~/Downloads`.
 - Smoke harness (dev-only, env-guarded in main.ts): `PG_SMOKE_RECEIVE=<code>`,
   `PG_SMOKE_RECEIVE_CANCEL=<code>`, `PG_SMOKE_PAIR_SHOW=1`,
-  `PG_SMOKE_PAIRED_RECEIVE=1`, `PG_SMOKE_PAIRED_SEND=<file>` — drives the real
+  `PG_SMOKE_PAIRED_RECEIVE=1`, `PG_SMOKE_PAIRED_SEND=<file>` - drives the real
   renderer via executeJavaScript; used for all E2E verification.
 - Run: `npm run build && npx electron . --no-sandbox`
-  (**unset ELECTRON_RUN_AS_NODE** — VS Code shells export it).
+  (**unset ELECTRON_RUN_AS_NODE** - VS Code shells export it).
 
 ## 5. Build gotchas (cost hours; read before touching builds)
 
@@ -155,7 +155,7 @@ scan / paste), settings (language + theme, persisted), explainer.
 4. Emulator/adb: `adb shell input text` mangles >~20 chars (chunk it);
    MediaStore ownership resets on reinstall; debug↔release signature clash
    needs uninstall.
-5. `cargo new` creates nested git repos — check `git status` shows FILES, not
+5. `cargo new` creates nested git repos - check `git status` shows FILES, not
    a bare directory name, after adding a crate.
 6. F-Droid discipline: no Google/proprietary deps anywhere (zxing-embedded and
    androidx are fine); toolchains pinned; everything builds from source.

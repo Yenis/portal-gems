@@ -1,4 +1,4 @@
-# Phase 0 gate 3 — Desktop (Electron) build notes
+# Phase 0 gate 3 - Desktop (Electron) build notes
 
 Verified 2026-07-05 on Linux x64 (Electron 38):
 
@@ -15,10 +15,10 @@ libffi runtime, available as of exactly our version 0.31.0-3). It would have giv
 desktop the *same generated TypeScript API* as Android. Result:
 
 - **Plain Node 22: works perfectly** (verified with a real transfer).
-- **Electron: fails** with `Error: Failed to create external ArrayBuffer` — the
+- **Electron: fails** with `Error: Failed to create external ArrayBuffer` - the
   V8 memory cage forbids externally-backed ArrayBuffers, which `@ubjs/node` uses
   for zero-copy RustBuffers.
-- **`ELECTRON_RUN_AS_NODE=1` also fails** — the cage is compiled into Electron's
+- **`ELECTRON_RUN_AS_NODE=1` also fails** - the cage is compiled into Electron's
   binary, so a "sidecar via Electron-as-Node" architecture doesn't dodge it either.
 
 Decision: desktop uses a **napi-rs addon** (`native/wormhole-node`), as the plan
@@ -28,16 +28,16 @@ objects). If ubrn later ships a cage-safe buffer strategy, revisit for API parit
 
 ## Layout
 
-- `native/wormhole-node` — napi-rs `cdylib` over `wormhole-core` (~100 lines):
+- `native/wormhole-node` - napi-rs `cdylib` over `wormhole-core` (~100 lines):
   `sendFile`, `receiveFile`, `createTestFile`, threadsafe-function event callback.
-- `packages/app-desktop` — Electron spike:
-  - `src/engine.ts` — loads `dist/wormhole_node.node`, exposes the same
+- `packages/app-desktop` - Electron spike:
+  - `src/engine.ts` - loads `dist/wormhole_node.node`, exposes the same
     listener-shaped API the Android app gets from its generated bindings.
-  - `src/main.ts` — main process; IPC handlers + `--auto-send`,
+  - `src/main.ts` - main process; IPC handlers + `--auto-send`,
     `--auto-send-code=<code>`, `--auto-recv=<code>` automation flags (logs mirror
     to stdout; used by the gate-3 harness).
-  - `src/preload.ts`, `src/renderer/` — minimal UI mirroring the Android spike.
-  - `src/node-test.ts` — same engine under plain Node, no Electron needed.
+  - `src/preload.ts`, `src/renderer/` - minimal UI mirroring the Android spike.
+  - `src/node-test.ts` - same engine under plain Node, no Electron needed.
 
 ## Build & run
 

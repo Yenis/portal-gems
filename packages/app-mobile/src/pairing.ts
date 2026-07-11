@@ -111,7 +111,7 @@ export async function waitForPairingAsDisplayer(
         lastError = new Error('malformed handshake');
       } catch (e) {
         lastError = e;
-        // Unclaimed nameplate is the expected "not yet" case — keep polling.
+        // Unclaimed nameplate is the expected "not yet" case - keep polling.
       }
     }
   }

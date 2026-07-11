@@ -1,4 +1,4 @@
-# Phase 0 gate 2 — Android chain build notes
+# Phase 0 gate 2 - Android chain build notes
 
 Verified 2026-07-05 on the Pixel 6 emulator (Android 14, x86_64): the example app
 sent a file to the reference CLI and received one from it (fixed/paired-style code),
@@ -7,7 +7,7 @@ SHA-256 identical both ways, direct (non-relay) transit in both directions.
 Stack: React Native **0.85** + create-react-native-library **turbo-module/cpp/vanilla**
 template + uniffi-bindgen-react-native **0.31.0-3** (uniffi 0.31.2) + cargo-ndk,
 NDK 27.1. ubrn is documented against RN 0.75/0.76, and RN 0.77+ moved C++
-turbo-modules to an app-driven CMake build — every workaround below stems from that
+turbo-modules to an app-driven CMake build - every workaround below stems from that
 version drift. Re-check each when bumping ubrn or RN.
 
 ## The architecture that works (pure C++ turbo-module)
@@ -39,7 +39,7 @@ scope), plus:
 1. `CMAKE_CURRENT_SOURCE_DIR` instead of `CMAKE_SOURCE_DIR` for the jniLibs path —
    under the app-driven build, `CMAKE_SOURCE_DIR` points into react-native's
    `default-app-setup`.
-2. `CXX_STANDARD 20` — RN ≥ 0.79 headers use C++20 requires-clauses; ubrn's
+2. `CXX_STANDARD 20` - RN ≥ 0.79 headers use C++20 requires-clauses; ubrn's
    template says 17.
 3. ubrn package root resolution: `require.resolve('uniffi-bindgen-react-native/package.json')`
    throws `ERR_PACKAGE_PATH_NOT_EXPORTED` (their exports map only exposes `"."`);
@@ -62,7 +62,7 @@ node node_modules/react-native/scripts/generate-codegen-artifacts.js \
 ```
 
 Note: codegen emits `NativeWormholeRnSpec` into `com.facebook.fbreact.specs`,
-ignoring `codegenConfig.android.javaPackageName` — irrelevant on the pure-C++ path
+ignoring `codegenConfig.android.javaPackageName` - irrelevant on the pure-C++ path
 (the Java spec is unused), but it bit us while the Kotlin flavor was still in place.
 
 ## Other gotchas
