@@ -14,10 +14,13 @@ themselves. No exceptions.
 
 ## Project pointers
 
-- Plan: `PLAN.md` · Status: `README.md` (keep its status section updated after
-  every meaningful change - standing user instruction)
-- Phase notes: `docs/phase0-android-notes.md`, `docs/phase0-desktop-notes.md`,
-  `docs/phase1-mobile-notes.md`, `docs/phase2-3-notes.md`
+- **Start here for any new feature: `docs/ARCHITECTURE.md`** (system map,
+  engine API, pairing spec, feature recipes, build gotchas)
+- `README.md` is the public product page - keep it updated after every
+  meaningful change (standing user instruction), and keep it free of
+  development-status noise (it markets a finished app)
+- Historical: `PLAN.md` (original plan) and `docs/phase*.md` (discovery notes)
+- User's typography preference: plain hyphens, no em-dashes, in repo docs
 - Engine: `native/wormhole-core` (Rust, uniffi) · desktop addon:
   `native/wormhole-node` (napi-rs) · RN bindings: `packages/wormhole-rn` (ubrn;
   after regenerating run `scripts/ubrn-postgen.sh` - chained in `yarn

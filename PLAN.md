@@ -1,14 +1,14 @@
-# Portal Gems - Project Plan
+# PortalGems - Project Plan (historical)
+
+> **📁 Historical document.** This was the pre-implementation plan and
+> feasibility analysis. Development is complete; the app shipped everything
+> described here (with the recorded deviations, e.g. React DOM instead of
+> react-native-web on desktop). For current architecture and how to build new
+> features, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 A cross-platform magic-wormhole file transfer app: Android and Electron
 (Windows/macOS/Linux) - interoperable with each other and with any standard
 `wormhole` CLI. (A web app was considered and dropped - see §5.)
-
-**Working title:** Portal Gems
-**Status:** Phase 0 complete - all gates passed (engine ↔ CLI; Android chain;
-Electron via napi-rs, incl. laptop-app ↔ phone-app transfers). See README status,
-docs/phase0-android-notes.md and docs/phase0-desktop-notes.md. Next: Phase 1.
-**Last updated:** 2026-07-05
 
 ---
 

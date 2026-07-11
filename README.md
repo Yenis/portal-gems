@@ -2,33 +2,24 @@
 
 **Secure device-to-device file transfer, powered by the [magic-wormhole](https://magic-wormhole.readthedocs.io/) protocol.**
 
-PortalGems lets you send files from one device to another with nothing but a short,
-one-time code - no accounts, no cloud storage, no size limits imposed by a middleman.
-It is being built for **Android** (React Native) and **desktop - Windows/macOS/Linux**
-(Electron), and it interoperates with **any** magic-wormhole client, including the
-original `wormhole` CLI on a server or laptop.
-
-> **Status: early development.**
-> The protocol engine works and is verified against the reference CLI
-> (see [Project status](#project-status)). The mobile and desktop apps are not built yet.
-> The full engineering plan lives in [PLAN.md](PLAN.md).
+PortalGems sends files from one device to another with nothing but a short,
+one-time code - no accounts, no cloud storage, no middleman that ever sees your
+data. It runs on **Android** and on the **desktop** (Linux and Windows, built
+with Electron), and it interoperates with **any** magic-wormhole client,
+including the original `wormhole` CLI on a server or laptop.
 
 ---
 
 ## Table of contents
 
 - [Why PortalGems?](#why-portalgems)
+- [Features](#features)
 - [How it works](#how-it-works)
 - [Security model](#security-model)
-- [Features](#features)
 - [Device pairing (no backend)](#device-pairing-no-backend)
 - [Architecture](#architecture)
-- [Project status](#project-status)
 - [Building from source](#building-from-source)
-- [Trying the Phase 0 engine](#trying-the-phase-0-engine)
-- [Roadmap](#roadmap)
-- [Distribution](#distribution)
-- [Languages & themes](#languages--themes)
+- [Development](#development)
 - [License](#license)
 - [Acknowledgments](#acknowledgments)
 
@@ -37,23 +28,39 @@ original `wormhole` CLI on a server or laptop.
 ## Why PortalGems?
 
 Sending a file between two of your own devices is still absurdly hard. Email
-attachments have size limits, chat apps recompress your photos, cloud drives want
-accounts and sync everything, and USB cables are never where you need them.
+attachments have size limits, chat apps recompress your photos, cloud drives
+want accounts and sync everything, and USB cables are never where you need them.
 
 PortalGems takes a different approach, inherited from magic-wormhole:
 
-- **One short code** (like `7-crossover-clockwork`) spoken, typed, or scanned once —
-  that's the entire setup.
-- **End-to-end encrypted, always.** The code bootstraps a strong shared key via a
-  PAKE (password-authenticated key exchange). Nobody in the middle can read your file.
+- **One short code** (like `7-crossover-clockwork`) spoken, typed, or scanned
+  once - that's the entire setup.
+- **End-to-end encrypted, always.** The code bootstraps a strong shared key via
+  a PAKE (password-authenticated key exchange). Nobody in the middle can read
+  your file.
 - **Direct when possible.** Two devices on the same Wi-Fi transfer directly,
-  peer-to-peer, at LAN speed. A public relay is used only as a fallback - and it
-  only ever sees ciphertext.
+  peer-to-peer, at LAN speed. A public relay is used only as a fallback - and
+  it only ever sees ciphertext.
 - **No accounts, no backend of ours, no stored data.** Everything lives on your
   devices.
-- **Interoperable.** PortalGems speaks the standard magic-wormhole protocol, so you
-  can send from your VPS with `wormhole send` and receive on your phone, or from
-  your phone to a friend's laptop running any compatible client.
+- **Interoperable.** PortalGems speaks the standard magic-wormhole protocol, so
+  you can send from your VPS with `wormhole send` and receive on your phone, or
+  from your phone to a friend's laptop running any compatible client.
+
+## Features
+
+| | |
+|---|---|
+| 📤 Send & receive files | Between any two magic-wormhole clients, any direction |
+| ✅ Receive confirmation | See the file name and size, accept or decline, before a byte flows |
+| 📡 Direct LAN transfers | Same Wi-Fi → peer-to-peer at full speed, no relay |
+| 🔗 CLI interop | Works with `wormhole` on servers, laptops, anything |
+| 💠 Device pairing | Scan a QR once; from then on, transfers need only a confirmation tap |
+| 📲 Share-sheet integration | "Share → PortalGems" from any Android app |
+| 🌍 6 languages | English, Deutsch, Bosanski, Русский, Français, Español |
+| 🎨 5 gem themes | Diamond, Sapphire, Emerald, Ruby, Amethyst - each in light & dark |
+| 🔓 No accounts | No backend of ours, no cloud, everything stored locally |
+| 📖 Built-in explainer | The full "how it works & why it's safe" story, in-app |
 
 ## How it works
 
@@ -75,263 +82,150 @@ A transfer involves three parties: the two devices, plus a lightweight public
    ▼                                                                  ▼
 ```
 
-1. The **sender** connects to the mailbox server and gets (or supplies) a code like
-   `7-crossover-clockwork`. The number is a "nameplate" (a rendezvous slot); the words
-   are a one-time password.
+1. The **sender** connects to the mailbox server and gets (or supplies) a code
+   like `7-crossover-clockwork`. The number is a "nameplate" (a rendezvous
+   slot); the words are a one-time password.
 2. The **receiver** enters the same code and joins the same mailbox.
-3. Both sides run **SPAKE2**, a password-authenticated key exchange: from the short
-   code, they derive an identical, strong 256-bit session key. A wrong code - or an
-   attacker guessing - causes the handshake to fail *safely*, and the code is burned.
-4. Using that key, the devices exchange **encrypted connection hints** (their IP
-   addresses on local networks, etc.).
+3. Both sides run **SPAKE2**, a password-authenticated key exchange: from the
+   short code, they derive an identical, strong 256-bit session key. A wrong
+   code - or an attacker guessing - causes the handshake to fail *safely*, and
+   the code is burned.
+4. Using that key, the devices exchange **encrypted connection hints** (their
+   IP addresses on local networks, etc.).
 5. The file flows over the best available path: a **direct TCP connection**
-   (same Wi-Fi → phone-to-phone at LAN speed) or, if the devices can't reach each
-   other, through a public **transit relay** that blindly forwards encrypted bytes.
+   (same Wi-Fi → phone-to-phone at LAN speed) or, if the devices can't reach
+   each other, through a public **transit relay** that blindly forwards
+   encrypted bytes.
 
-The in-app **"How it works"** page explains all of this interactively, in all six
-supported languages.
+The in-app **"How it works"** page explains all of this, in all six supported
+languages.
 
 ## Security model
 
-- **Confidentiality:** every byte of the file (and of the metadata) is encrypted
-  end-to-end with keys derived from the SPAKE2 handshake. The mailbox server and the
-  transit relay see only ciphertext and cannot decrypt anything.
-- **Active attackers:** the code is single-use and low-friction to verify out-of-band.
-  An attacker who tries to intercept must guess the code *on the first try*; a failed
-  guess is immediately visible to both users and invalidates the transfer.
-- **Paired devices** (see below) use 256 bits of stored entropy instead of a
-  two-word code, making online guessing effectively impossible.
-- **No metadata trail:** no accounts, no server-side history, no telemetry. Pairing
-  secrets are stored in the Android Keystore / OS keychain.
-- **What we don't defend against:** an attacker with full control of *your unlocked
-  device*, and traffic analysis (an observer can see *that* you transferred
-  something and roughly how large it was, but not *what*).
-
-## Features
-
-| | |
-|---|---|
-| 📤 Send & receive files | Between any two magic-wormhole clients, any direction |
-| 📡 Direct LAN transfers | Same Wi-Fi → peer-to-peer at full speed, no relay |
-| 🔗 CLI interop | Works with `wormhole` on servers, laptops, anything |
-| 💠 Device pairing | Scan a QR once; from then on, transfers need only a confirmation tap |
-| 🌍 6 languages | English, Deutsch, Bosanski, Русский, Français, Español |
-| 🎨 5 gem themes | Diamond, Sapphire, Emerald, Ruby, Amethyst - each in light & dark |
-| 🔓 No accounts | No backend of ours, no cloud, everything stored locally |
-| 📖 Built-in explainer | The full "how it works & why it's safe" story, in-app |
+- **Confidentiality:** every byte of the file (and of the metadata) is
+  encrypted end-to-end with keys derived from the SPAKE2 handshake. The mailbox
+  server and the transit relay see only ciphertext and cannot decrypt anything.
+- **Active attackers:** the code is single-use. An attacker who tries to
+  intercept must guess the code *on the first try*; a failed guess is
+  immediately visible to both users and invalidates the transfer.
+- **Paired devices** use 256 bits of stored entropy instead of a two-word code,
+  making online guessing effectively impossible.
+- **No metadata trail:** no accounts, no server-side history, no telemetry.
+  Pairing secrets are stored in the Android Keystore / OS keychain.
+- **What we don't defend against:** an attacker with full control of *your
+  unlocked device*, and traffic analysis (an observer can see *that* you
+  transferred something and roughly how large it was, but not *what*).
 
 ## Device pairing (no backend)
 
-The wormhole protocol lets a sender *choose* the code instead of getting a random
-one. PortalGems uses this to make repeat transfers between your own devices
-effortless - with no server involved:
+The wormhole protocol lets a sender *choose* the code instead of getting a
+random one. PortalGems uses this to make repeat transfers between your own
+devices effortless - with no server involved:
 
-1. **Pair once:** device A shows a QR code containing a device name and a random
-   256-bit secret; device B scans it. Both store the entry locally (Keystore/keychain).
-2. **Transfer forever after:** when you tap *"Send to Phone"* / *"Receive from
-   Laptop"*, both devices independently derive the same one-time wormhole code from
-   the shared secret and the current time window - and connect automatically. You
-   just confirm the incoming file.
-3. **Both apps must be open.** There is no background service and no push server.
-   If the other device isn't listening, the transfer times out (~45 s) with a clear
-   message.
+1. **Pair once:** device A shows a QR code containing a device name and a
+   random 256-bit secret; device B scans it (or you paste the pairing code by
+   hand). Both store the entry locally (Keystore/keychain).
+2. **Transfer forever after:** when you tap *Send* / *Receive* on a paired
+   device, both sides independently derive the same one-time wormhole code from
+   the shared secret and the current time window - and connect automatically.
+   You just confirm the incoming file.
+3. **Both apps must be open.** There is no background service and no push
+   server. If the other device isn't listening, the transfer times out with a
+   clear message.
 
-Paired devices can be renamed or revoked at any time. Losing a phone? Revoke it on
-the other device and the stored secret becomes useless.
+Paired devices can be removed at any time. Losing a phone? Remove it on the
+other device and the stored secret becomes useless.
 
 ## Architecture
 
 One protocol engine, written in Rust on top of
-[magic-wormhole.rs](https://github.com/magic-wormhole/magic-wormhole.rs), shared by
-every platform through thin bindings:
+[magic-wormhole.rs](https://github.com/magic-wormhole/magic-wormhole.rs),
+shared by every platform through thin bindings:
 
 ```
-             ┌────────────────────────────────────────────┐
-             │        packages/ui  (React Native)         │
-             │   shared screens, themes, i18n, pairing    │
-             └───────────────┬──────────────┬─────────────┘
-                             │              │
-                   app-mobile (Android)   app-desktop (Electron,
-                             │            UI via react-native-web)
-                             │              │
-             uniffi-bindgen-react-native   napi-rs Node addon
-                   (Kotlin/JSI)             │
-                             │              │
-             ┌───────────────┴──────────────┴─────────────┐
-             │        native/wormhole-core (Rust)         │
-             │  app-shaped API over magic-wormhole.rs:    │
-             │  send / receive / custom codes / progress  │
-             └────────────────────────────────────────────┘
+                ┌─────────────────────────────────────────────┐
+                │             packages/core (TS)              │
+                │ themes · 6 languages · pairing · error text │
+                └──────────┬───────────────────────┬──────────┘
+                           │                       │
+             packages/app-mobile          packages/app-desktop
+             (React Native, Android)      (Electron: Linux/Windows)
+                           │                       │
+             packages/wormhole-rn         native/wormhole-node
+             (uniffi → JSI bindings)      (napi-rs addon)
+                           └───────────┬───────────┘
+                                       │
+                        native/wormhole-core (Rust)
+                    app-shaped API over magic-wormhole.rs
 ```
 
-A web app was considered and deliberately dropped: browsers can't open TCP
-connections, which would have meant no direct LAN transfers and a mandatory
-self-hosted relay bridge. The full rationale is recorded in
-[PLAN.md §5](PLAN.md).
-
-## Project status
-
-- ✅ **Plan & feasibility analysis** - [PLAN.md](PLAN.md)
-- ✅ **Phase 0, gate 1: protocol engine proven** (2026-07-04, all against the *real*
-  public wormhole servers and the reference Python CLI):
-  - `wormhole-core` **send** → CLI `wormhole receive`: ✔ checksum-identical
-  - CLI `wormhole send` → `wormhole-core` **receive**: ✔ checksum-identical
-  - **Sender-specified code** (the pairing mechanism) engine→engine: ✔
-  - Direct (non-relay) transit confirmed in all three runs
-- ✅ **Phase 0, gate 2: the engine runs on Android** (2026-07-05, React Native
-  0.85 + UniFFI/uniffi-bindgen-react-native, tested on the Android 14 emulator):
-  - App **send** → CLI `wormhole receive`: ✔ checksum-identical
-  - CLI `wormhole send` (fixed/paired-style code) → app **receive**: ✔ checksum-identical
-  - Direct (non-relay) transit in both directions; build workarounds documented
-    in [docs/phase0-android-notes.md](docs/phase0-android-notes.md)
-- ✅ **Phase 0, gate 3: the engine runs in Electron** (2026-07-05, napi-rs addon,
-  Linux x64):
-  - Electron ↔ CLI: ✔ both directions, checksum-identical
-  - **Electron ↔ Android app: ✔ both directions** - the "laptop app to phone app"
-    scenario, checksum-identical, direct transit
-  - Finding: Electron's V8 memory cage rules out ubrn's `@ubjs/node` runtime, so
-    desktop uses a small cage-safe napi-rs addon (`native/wormhole-node`);
-    details in [docs/phase0-desktop-notes.md](docs/phase0-desktop-notes.md)
-- 🎉 **Phase 0 complete - all de-risking gates passed.** One Rust engine, proven
-  on Android, desktop, and against the reference CLI.
-- ✅ **Phase 4 + tests complete** (2026-07-11): in-app **"How it works"
-  explainer** (7 localized sections incl. direct-Wi-Fi transit and the security
-  model), all **5 gem themes** with live picker (Diamond/Sapphire/Emerald/Ruby/
-  Amethyst × light/dark), **settings screen** (persisted per platform), and all
-  **6 languages** shipping complete (en/de/bs/ru/fr/es - verified by tests that
-  fail on any missing key or placeholder). Test suites: 25 vitest cases in
-  `packages/core` (incl. a frozen pairing-derivation vector) + Rust unit tests
-  and an opt-in network round-trip (`cargo test -- --ignored`). The full
-  architecture reference for future work: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- ✅ **Phases 1–3 complete** (2026-07-06): Android app (send/receive/confirm/
-  share-sheet/errors/gem icon/release signing), desktop app at full feature
-  parity (React DOM UI over the napi engine, incl. working cancel), and
-  **device pairing** - QR/paste exchange of a 256-bit secret, HMAC-derived
-  one-time codes per 5-minute bucket, encrypted storage (Keystore /
-  safeStorage), verified end-to-end desktop↔emulator over the real servers.
-  Details: [docs/phase2-3-notes.md](docs/phase2-3-notes.md)
-- 🗄️ *(history)* **Phase 1 progress notes:** the real Android app (`packages/app-mobile`,
-  `com.gemstech.portalgems`). Working end-to-end on the emulator (2026-07-06):
-  system file picker **and share-sheet intake** ("Share → PortalGems") → send
-  with code screen + copy; receive with **accept/decline confirmation showing
-  file name and size** → file published to the public **Downloads** folder;
-  friendly error messages; progress with direct/relay indicator; cancel;
-  foreground service during transfers; Diamond theme (light/dark) from shared
-  design tokens; every string externalized via i18next. Remaining: app icon/
-  branding, release signing, mid-transfer cancel verification - see
-  [docs/phase1-mobile-notes.md](docs/phase1-mobile-notes.md)
-- ⬜ Phases 2–5: desktop app, pairing, polish, releases - see [Roadmap](#roadmap)
+The full technical reference - engine API, binding layers, pairing protocol
+spec, build system, testing, and a hard-won list of gotchas - lives in
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Building from source
 
 ### Prerequisites
 
-- [Rust](https://rustup.rs/) (stable; the project pins its version for reproducible
-  F-Droid builds)
-- Optionally, the reference CLI for interop testing:
-  `pipx install magic-wormhole` (or your distro's `magic-wormhole` package)
+- [Rust](https://rustup.rs/) (stable)
+- Node.js ≥ 20
+- For Android: Android SDK + NDK, JDK 17
+- Optionally the reference CLI for interop testing: `pipx install magic-wormhole`
 
-### Build the engine
-
-```bash
-cd native/wormhole-core
-cargo build --examples
-```
-
-### Build & run the desktop spike (Electron)
+### Android APK
 
 ```bash
-cd packages/app-desktop
-npm install
-npm run build          # bundles the app and builds the napi-rs addon
-npx electron . --no-sandbox
+cd packages/wormhole-rn && yarn install && yarn ubrn:android:release
+cd ../app-mobile && npm install
+cd android && ./gradlew assembleRelease
+# → app/build/outputs/apk/release/app-release.apk
 ```
 
-### Build the Android spike
+Release builds are signed with your own keystore via
+`android/keystore.properties` (see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md));
+without one they fall back to the debug key.
 
-See [docs/phase0-android-notes.md](docs/phase0-android-notes.md) for the full
-toolchain (Android SDK/NDK, cargo-ndk, uniffi-bindgen-react-native) and its
-version-drift workarounds. Short version:
+### Desktop (Linux AppImage / Windows portable .exe)
 
 ```bash
-cd packages/wormhole-rn
-yarn install
-yarn ubrn:android      # cross-compiles Rust + regenerates bindings (see notes!)
-cd example/android && ./gradlew installDebug
+cd packages/app-desktop && npm install
+npm run dist:linux      # → release/PortalGems-<version>.AppImage
+npm run dist:win        # → release/PortalGems-<version>.exe
 ```
 
-## Trying the Phase 0 engine
+The Windows build cross-compiles the Rust engine and needs `mingw-w64` and
+`rustup target add x86_64-pc-windows-gnu`.
 
-The crate ships two tiny example binaries used as the Phase 0 test harness.
-
-**Send a file** (code is generated and printed):
+### Tests
 
 ```bash
-cargo run --example send -- /path/to/file
-# CODE:7-crossover-clockwork
-# TRANSIT:Direct peer=192.168.1.23:41234
-# PROGRESS:100
-# SEND-OK
+cd packages/core && npm test                      # protocol + i18n suites
+cd native/wormhole-core && cargo test             # engine unit tests
+cargo test -- --ignored                           # + network round-trip
 ```
 
-Receive it anywhere - on another machine, with the reference CLI:
+## Development
 
-```bash
-wormhole receive 7-crossover-clockwork
-```
-
-**Receive a file** sent by any wormhole client:
-
-```bash
-cargo run --example recv -- 7-crossover-clockwork /tmp/downloads
-```
-
-**Simulate a paired transfer** (both sides pre-agree on the code, as paired devices
-derive it automatically):
-
-```bash
-cargo run --example send -- /path/to/file 784413-some-derived-code   # device A
-cargo run --example recv -- 784413-some-derived-code .               # device B
-```
-
-## Roadmap
-
-| Phase | Scope | Status |
-|---|---|---|
-| 0 | De-risking spikes: Rust engine ↔ CLI, Android chain, Electron chain | ✅ complete |
-| 1 | Android MVP: send/receive UI, confirmation, share-sheet, errors, icon, signing | ✅ complete |
-| 2 | Desktop app: real UI, all flows incl. confirmation + cancel | ✅ complete |
-| 3 | Pairing on both platforms (QR/paste, derived codes, encrypted storage) | ✅ complete (E2E verified; QR camera scan needs a real phone) |
-| 4 | Polish: explainer page, 10 theme palettes, 6 languages, settings | ✅ complete |
-| 5 | Tests + architecture reference doc | ✅ complete ([docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)) |
-| 6 | Ship prep: hardening on real devices, F-Droid recipe, Play, installers | ⬜ next |
-
-## Distribution
-
-Planned channels, once tested enough:
-
-- **Android:** direct APK (GitHub Releases), [F-Droid](https://f-droid.org/), Google Play
-- **Desktop:** AppImage / deb / rpm, macOS dmg, Windows installer
-
-## Languages & themes
-
-- **Languages:** English (default), Deutsch, Bosanski, Русский, Français, Español
-- **Themes:** five gem palettes - 💎 Diamond (default), 🔷 Sapphire, 🟢 Emerald,
-  ❤️ Ruby, 🟣 Amethyst - each in light and dark mode
+Start with [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - it contains the
+system map, feature recipes (how to add a string, a setting, a screen, or an
+engine capability), and the build gotchas. Historical design notes live in
+[PLAN.md](PLAN.md) and `docs/phase*.md`.
 
 ## License
 
 PortalGems is free software, licensed under the
 **[GNU General Public License v3.0 or later](LICENSE)**.
 It builds on [magic-wormhole.rs](https://github.com/magic-wormhole/magic-wormhole.rs)
-(EUPL-1.2, combined and distributed under GPLv3 via the EUPL's compatibility clause).
+(EUPL-1.2, combined and distributed under GPLv3 via the EUPL's compatibility
+clause).
 
 ## Acknowledgments
 
 - [Brian Warner](https://github.com/warner) and the
-  [magic-wormhole](https://github.com/magic-wormhole/magic-wormhole) project - the
-  protocol, the reference implementation, and the public mailbox/relay infrastructure.
+  [magic-wormhole](https://github.com/magic-wormhole/magic-wormhole) project -
+  the protocol, the reference implementation, and the public mailbox/relay
+  infrastructure.
 - The [magic-wormhole.rs](https://github.com/magic-wormhole/magic-wormhole.rs)
   maintainers - the Rust implementation at the heart of PortalGems.
-- Please be kind to the public community servers: for heavy use, self-host - the app
-  will let you configure your own server URLs.
+- Please be kind to the public community servers: for heavy use, consider
+  self-hosting them.
