@@ -27,9 +27,11 @@ including the original `wormhole` CLI on a server or laptop.
 
 ## Why PortalGems?
 
-Sending a file between two of your own devices is still absurdly hard. Email
-attachments have size limits, chat apps recompress your photos, cloud drives
-want accounts and sync everything, and USB cables are never where you need them.
+Sending files directly from device to device can be needlessly complex - unless
+you hand them over to yet another cloud service. Email attachments have size
+limits, chat apps recompress your photos, cloud drives want accounts and sync
+everything - and some ecosystems deliberately make moving files between your
+laptop and your phone awkward unless both carry the right logo.
 
 PortalGems takes a different approach, inherited from magic-wormhole:
 
