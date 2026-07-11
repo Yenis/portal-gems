@@ -85,6 +85,12 @@ android {
         versionCode 1
         versionName "1.0"
     }
+    def keystorePropertiesFile = rootProject.file("keystore.properties")
+    def keystoreProperties = new Properties()
+    if (keystorePropertiesFile.exists()) {
+        keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+    }
+
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
@@ -92,15 +98,23 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        if (keystorePropertiesFile.exists()) {
+            release {
+                storeFile file(keystoreProperties['PORTALGEMS_UPLOAD_STORE_FILE'])
+                storePassword keystoreProperties['PORTALGEMS_UPLOAD_STORE_PASSWORD']
+                keyAlias keystoreProperties['PORTALGEMS_UPLOAD_KEY_ALIAS']
+                keyPassword keystoreProperties['PORTALGEMS_UPLOAD_KEY_PASSWORD']
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            // Signs with the real key when android/keystore.properties exists
+            // (never committed); falls back to the debug key otherwise.
+            signingConfig keystorePropertiesFile.exists() ? signingConfigs.release : signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
@@ -110,6 +124,11 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
+
+    // Pairing: encrypted storage for shared secrets + QR scanning (FOSS, no
+    // Play Services - F-Droid compatible)
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")

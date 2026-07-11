@@ -14,3 +14,7 @@ packages/wormhole-rn/example/android/build/
 # React Native / library build outputs
 lib/
 .yarn/cache/
+
+# Release signing (never commit)
+packages/app-mobile/android/keystore.properties
+packages/app-mobile/android/app/portalgems-release.keystore

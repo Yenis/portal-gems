@@ -3,6 +3,9 @@
     "name": "PortalGems"
   },
   "home": {
+    "devicesTitle": "Your devices",
+    "devicesEmpty": "Pair your phone and laptop once — after that, sending needs just a tap on each side.",
+    "pairNew": "Pair a new device",
     "tagline": "Send files from device to device — private, direct, no accounts.",
     "sendTitle": "Send a file",
     "sendHint": "Pick a file and share the one-time code with the receiver.",
@@ -30,6 +33,33 @@
     "success": "File saved.",
     "savedAs": "Saved to Downloads as {{name}}.",
     "declined": "You declined the transfer."
+  },
+  "pair": {
+    "title": "Pair a device",
+    "showButton": "Show pairing code",
+    "showHint": "Scan this QR code with the other device, or copy the pairing code and paste it there. Anyone who sees this code can pair with you — share it privately.",
+    "scanButton": "Scan QR code",
+    "manualPlaceholder": "…or paste a pairing code here",
+    "manualButton": "Pair with pasted code",
+    "copyPayload": "Copy pairing code",
+    "copied": "Copied!",
+    "waiting": "Waiting for the other device to finish pairing…",
+    "invalidPayload": "That is not a valid PortalGems pairing code.",
+    "success": "Paired with {{name}}!",
+    "failed": "Pairing failed: {{message}}"
+  },
+  "devices": {
+    "title": "Devices",
+    "send": "Send",
+    "receive": "Receive",
+    "remove": "Remove",
+    "empty": "No paired devices yet."
+  },
+  "paired": {
+    "sendWaiting": "Waiting for {{name}} — make sure PortalGems is open there…",
+    "notOpen": "{{name}} doesn't seem to have PortalGems open. Ask them to open it, then try again.",
+    "receiveWaiting": "Looking for a transfer from {{name}}…",
+    "nothingFound": "Nothing arrived from {{name}}. Make sure they tapped Send, then try again."
   },
   "transfer": {
     "direct": "Direct connection to the other device",

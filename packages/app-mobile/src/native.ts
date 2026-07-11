@@ -8,18 +8,35 @@ export interface PickedFile {
 
 interface PortalGemsNativeSpec {
   incomingDir: string;
+  cacheDir: string;
+  deviceName: string;
   copyToCache(uri: string): Promise<PickedFile>;
   saveToDownloads(srcPath: string, fileName: string): Promise<string>;
   consumePendingShare(): Promise<string | null>;
   startTransferService(title: string): Promise<void>;
   stopTransferService(): Promise<void>;
+  getPairedDevices(): Promise<string>;
+  setPairedDevices(json: string): Promise<void>;
+  scanQr(): Promise<string | null>;
+  writeTextFile(dir: string, name: string, content: string): Promise<string>;
+  readTextFile(path: string): Promise<string>;
+  deleteFile(path: string): Promise<void>;
 }
 
 const native = NativeModules.PortalGemsNative as PortalGemsNativeSpec;
 
 export const incomingDir: string = native.incomingDir;
+export const cacheDir: string = native.cacheDir;
+export const deviceName: string = native.deviceName;
 export const copyToCache = (uri: string) => native.copyToCache(uri);
 export const consumePendingShare = () => native.consumePendingShare();
+export const getPairedDevicesJson = () => native.getPairedDevices();
+export const setPairedDevicesJson = (json: string) => native.setPairedDevices(json);
+export const scanQr = () => native.scanQr();
+export const writeTextFile = (dir: string, name: string, content: string) =>
+  native.writeTextFile(dir, name, content);
+export const readTextFile = (path: string) => native.readTextFile(path);
+export const deleteFile = (path: string) => native.deleteFile(path);
 export const saveToDownloads = (srcPath: string, fileName: string) =>
   native.saveToDownloads(srcPath, fileName);
 

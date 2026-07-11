@@ -1,12 +1,12 @@
 // Desktop engine wrapper: loads the napi-rs addon (native/wormhole-node) and
-// presents the same listener-shaped API the Android app gets from its
-// generated bindings. The addon crosses the FFI with strings/numbers only,
-// which keeps it compatible with Electron's V8 memory cage.
+// presents a typed API over its id-registry model. The addon crosses the FFI
+// with strings/numbers only, keeping it compatible with Electron's V8 memory
+// cage (see docs/phase0-desktop-notes.md).
 
 import { createRequire } from 'node:module';
 import * as path from 'node:path';
 
-interface NativeTransferEvent {
+export interface NativeTransferEvent {
   event: 'code' | 'transit' | 'progress';
   code?: string;
   info?: string;
@@ -14,17 +14,26 @@ interface NativeTransferEvent {
   total?: number;
 }
 
+export interface FileOffer {
+  fileName: string;
+  fileSize: number;
+}
+
 interface NativeAddon {
   sendFile(
+    id: number,
     path: string,
     code: string | null,
     cb: (ev: NativeTransferEvent) => void
   ): Promise<void>;
-  receiveFile(
-    code: string,
+  requestReceive(id: number, code: string): Promise<FileOffer>;
+  acceptReceive(
+    id: number,
     destDir: string,
     cb: (ev: NativeTransferEvent) => void
   ): Promise<string>;
+  rejectReceive(id: number): Promise<void>;
+  cancelTransfer(id: number): void;
   createTestFile(dir: string, sizeKb: number): string;
 }
 
@@ -33,36 +42,4 @@ const native: NativeAddon = requireNative(
   process.env.PG_ADDON_PATH ?? path.join(__dirname, 'wormhole_node.node')
 );
 
-export interface TransferListener {
-  onCode(code: string): void;
-  onTransit(info: string): void;
-  onProgress(done: number, total: number): void;
-}
-
-function dispatch(listener: TransferListener) {
-  return (ev: NativeTransferEvent) => {
-    if (ev.event === 'code') listener.onCode(ev.code ?? '');
-    else if (ev.event === 'transit') listener.onTransit(ev.info ?? '');
-    else if (ev.event === 'progress') listener.onProgress(ev.done ?? 0, ev.total ?? 0);
-  };
-}
-
-export function sendFile(
-  filePath: string,
-  code: string | undefined,
-  listener: TransferListener
-): Promise<void> {
-  return native.sendFile(filePath, code ?? null, dispatch(listener));
-}
-
-export function receiveFile(
-  code: string,
-  destDir: string,
-  listener: TransferListener
-): Promise<string> {
-  return native.receiveFile(code, destDir, dispatch(listener));
-}
-
-export function createTestFile(dir: string, sizeKb: number): string {
-  return native.createTestFile(dir, sizeKb);
-}
+export const engine = native;

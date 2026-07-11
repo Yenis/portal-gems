@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PortalGems: brilliant-cut gem, drawn in the Diamond theme's light tones.
+     108dp viewport; artwork kept within the 66dp adaptive-icon safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+  <!-- gem body -->
+  <path
+      android:fillColor="#EDF2FA"
+      android:pathData="M38,40 L70,40 L82,52 L54,82 L26,52 Z" />
+
+  <!-- crown facets -->
+  <path
+      android:fillColor="#C9D8EE"
+      android:pathData="M38,40 L46,52 L26,52 Z" />
+  <path
+      android:fillColor="#B4C8E6"
+      android:pathData="M38,40 L70,40 L62,52 L46,52 Z" />
+  <path
+      android:fillColor="#C9D8EE"
+      android:pathData="M70,40 L82,52 L62,52 Z" />
+
+  <!-- pavilion facets -->
+  <path
+      android:fillColor="#DEE8F6"
+      android:pathData="M26,52 L46,52 L54,82 Z" />
+  <path
+      android:fillColor="#B4C8E6"
+      android:pathData="M62,52 L82,52 L54,82 Z" />
+
+  <!-- sparkle -->
+  <path
+      android:fillColor="#FFFFFF"
+      android:pathData="M76,26 L78.4,31.6 L84,34 L78.4,36.4 L76,42 L73.6,36.4 L68,34 L73.6,31.6 Z" />
+</vector>

@@ -4,29 +4,15 @@
     <meta charset="utf-8" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; style-src 'unsafe-inline'"
+      content="default-src 'self'; style-src 'unsafe-inline'; img-src 'self' data:"
     />
-    <title>PortalGems — Phase 0</title>
+    <title>PortalGems</title>
     <style>
-      body { font-family: system-ui, sans-serif; margin: 24px; }
-      h1 { font-size: 20px; text-align: center; }
-      button, input {
-        display: block; width: 100%; box-sizing: border-box;
-        margin: 8px 0; padding: 10px; font-size: 15px;
-      }
-      button { cursor: pointer; }
-      pre {
-        background: #f2f2f2; border-radius: 6px; padding: 10px;
-        min-height: 260px; white-space: pre-wrap; font-size: 12px;
-      }
+      html, body { margin: 0; padding: 0; font-family: system-ui, sans-serif; }
     </style>
   </head>
   <body>
-    <h1>PortalGems — Phase 0</h1>
-    <button id="send">Send 256 KB test file</button>
-    <input id="code" placeholder="wormhole code" autocapitalize="off" />
-    <button id="recv">Receive with code</button>
-    <pre id="log">PortalGems Phase 0 desktop spike ready</pre>
-    <script src="./renderer.js"></script>
+    <div id="root"></div>
+    <script src="../../dist/renderer.js"></script>
   </body>
 </html>

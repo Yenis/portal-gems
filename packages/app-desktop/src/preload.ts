@@ -1,8 +1,38 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
+export interface PgEvent {
+  id: number;
+  event: 'code' | 'transit' | 'progress';
+  code?: string;
+  info?: string;
+  done?: number;
+  total?: number;
+}
+
 contextBridge.exposeInMainWorld('portalgems', {
-  send: () => ipcRenderer.invoke('pg-send'),
-  recv: (code: string) => ipcRenderer.invoke('pg-recv', code),
-  onLog: (cb: (line: string) => void) =>
-    ipcRenderer.on('pg-log', (_e, line: string) => cb(line)),
+  locale: (): Promise<string> => ipcRenderer.invoke('pg:locale'),
+  pickFile: (): Promise<{ path: string; name: string; size: number } | null> =>
+    ipcRenderer.invoke('pg:pickFile'),
+  send: (id: number, path: string, code?: string): Promise<void> =>
+    ipcRenderer.invoke('pg:send', id, path, code),
+  requestReceive: (
+    id: number,
+    code: string
+  ): Promise<{ fileName: string; fileSize: number }> =>
+    ipcRenderer.invoke('pg:requestReceive', id, code),
+  accept: (id: number, destDir?: string): Promise<string> =>
+    ipcRenderer.invoke('pg:accept', id, destDir),
+  reject: (id: number): Promise<void> => ipcRenderer.invoke('pg:reject', id),
+  cancel: (id: number): Promise<void> => ipcRenderer.invoke('pg:cancel', id),
+  deviceName: (): Promise<string> => ipcRenderer.invoke('pg:deviceName'),
+  tempDir: (): Promise<string> => ipcRenderer.invoke('pg:tempDir'),
+  pairsGet: (): Promise<string> => ipcRenderer.invoke('pg:pairs:get'),
+  pairsSet: (json: string): Promise<void> => ipcRenderer.invoke('pg:pairs:set', json),
+  writeTemp: (name: string, content: string): Promise<string> =>
+    ipcRenderer.invoke('pg:writeTemp', name, content),
+  readText: (path: string): Promise<string> => ipcRenderer.invoke('pg:readText', path),
+  deleteFile: (path: string): Promise<void> => ipcRenderer.invoke('pg:deleteFile', path),
+  onEvent: (cb: (ev: PgEvent) => void) => {
+    ipcRenderer.on('pg:event', (_e, ev: PgEvent) => cb(ev));
+  },
 });

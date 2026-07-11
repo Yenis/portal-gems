@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { AppState, StatusBar, useColorScheme, View } from 'react-native';
-import { initI18n } from '@portalgems/core';
+import { initI18n, type PairedDevice } from '@portalgems/core';
 import HomeScreen from './src/screens/HomeScreen';
+import PairScreen from './src/screens/PairScreen';
 import ReceiveScreen from './src/screens/ReceiveScreen';
 import SendScreen from './src/screens/SendScreen';
 import { ThemeProvider } from './src/theme';
@@ -11,8 +12,9 @@ initI18n();
 
 type Route =
   | { name: 'home' }
-  | { name: 'send'; file: PickedFile }
-  | { name: 'receive'; code: string };
+  | { name: 'send'; file: PickedFile; device?: PairedDevice }
+  | { name: 'receive'; code?: string; device?: PairedDevice }
+  | { name: 'pair' };
 
 export default function App() {
   const isDark = useColorScheme() === 'dark';
@@ -42,13 +44,17 @@ export default function App() {
       <View style={{ flex: 1 }}>
         {route.name === 'home' ? (
           <HomeScreen
-            onSend={(file) => setRoute({ name: 'send', file })}
+            onSend={(file, device) => setRoute({ name: 'send', file, device })}
             onReceive={(code) => setRoute({ name: 'receive', code })}
+            onReceiveFrom={(device) => setRoute({ name: 'receive', device })}
+            onPair={() => setRoute({ name: 'pair' })}
           />
         ) : route.name === 'send' ? (
-          <SendScreen file={route.file} onHome={goHome} />
+          <SendScreen file={route.file} device={route.device} onHome={goHome} />
+        ) : route.name === 'receive' ? (
+          <ReceiveScreen code={route.code} device={route.device} onHome={goHome} />
         ) : (
-          <ReceiveScreen code={route.code} onHome={goHome} />
+          <PairScreen onHome={goHome} />
         )}
       </View>
     </ThemeProvider>

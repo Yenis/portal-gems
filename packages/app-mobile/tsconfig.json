@@ -1,15 +1,32 @@
 {
   "extends": "@react-native/typescript-config",
   "compilerOptions": {
-    "types": ["jest"],
+    "types": [
+      "jest"
+    ],
     "baseUrl": ".",
     "paths": {
-      "i18next": ["./node_modules/i18next"],
-      "react-i18next": ["./node_modules/react-i18next"],
-      "react": ["./node_modules/@types/react"]
+      "i18next": [
+        "./node_modules/i18next"
+      ],
+      "react-i18next": [
+        "./node_modules/react-i18next"
+      ],
+      "react": [
+        "./node_modules/@types/react"
+      ],
+      "@noble/hashes/*": [
+        "./node_modules/@noble/hashes/*"
+      ]
     },
     "resolveJsonModule": true
   },
-  "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["**/node_modules", "**/Pods"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/Pods"
+  ]
 }

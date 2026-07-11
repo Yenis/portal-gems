@@ -3,7 +3,14 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { sendFile } from 'wormhole-rn';
-import { fontSize, spacing } from '@portalgems/core';
+import {
+  currentBucket,
+  deriveCode,
+  fontSize,
+  spacing,
+  PAIRED_SEND_TIMEOUT_MS,
+  type PairedDevice,
+} from '@portalgems/core';
 import {
   Card,
   CodeBox,
@@ -18,13 +25,22 @@ import { friendlyError } from '../errors';
 import { formatSize, withTransferService, type PickedFile } from '../native';
 import { useTheme } from '../theme';
 
-type Phase = 'starting' | 'waiting' | 'transferring' | 'done' | 'error' | 'cancelled';
+type Phase =
+  | 'starting'
+  | 'waiting'
+  | 'transferring'
+  | 'done'
+  | 'error'
+  | 'cancelled'
+  | 'peerNotOpen';
 
 export default function SendScreen({
   file,
+  device,
   onHome,
 }: {
   file: PickedFile;
+  device?: PairedDevice;
   onHome: () => void;
 }) {
   const { t } = useTranslation();
@@ -41,17 +57,34 @@ export default function SendScreen({
     const controller = new AbortController();
     abortRef.current = controller;
     let cancelled = false;
+    let timedOut = false;
+    let connected = false;
+
+    // Paired sends: the code is derived, never typed. If the peer doesn't
+    // pick up within the timeout, give up with a "device not open" message.
+    const pairedCode = device
+      ? deriveCode(device.secret, currentBucket())
+      : undefined;
+    const timer = device
+      ? setTimeout(() => {
+          if (!connected) {
+            timedOut = true;
+            controller.abort();
+          }
+        }, PAIRED_SEND_TIMEOUT_MS)
+      : null;
 
     withTransferService(t('send.title'), () =>
       sendFile(
         file.path,
-        undefined,
+        pairedCode,
         {
           onCode: (value) => {
             setCode(value);
             setPhase('waiting');
           },
           onTransit: (info) => {
+            connected = true;
             setDirect(info.startsWith('Direct'));
             setPhase('transferring');
           },
@@ -64,14 +97,18 @@ export default function SendScreen({
     ).then(
       () => setPhase('done'),
       (e) => {
-        if (cancelled || controller.signal.aborted) {
+        if (timedOut) {
+          setPhase('peerNotOpen');
+        } else if (cancelled || controller.signal.aborted) {
           setPhase('cancelled');
         } else {
           setError(friendlyError(t, e));
           setPhase('error');
         }
       }
-    );
+    ).finally(() => {
+      if (timer) clearTimeout(timer);
+    });
 
     return () => {
       cancelled = true;
@@ -97,14 +134,18 @@ export default function SendScreen({
         {phase === 'starting' ? <Muted>{t('receive.connecting')}</Muted> : null}
 
         {phase === 'waiting' ? (
-          <>
-            <Subtitle>{t('send.waitingForReceiver')}</Subtitle>
-            <CodeBox code={code} />
-            <PrimaryButton
-              label={copied ? t('send.codeCopied') : t('send.copyCode')}
-              onPress={copy}
-            />
-          </>
+          device ? (
+            <Muted>{t('paired.sendWaiting', { name: device.name })}</Muted>
+          ) : (
+            <>
+              <Subtitle>{t('send.waitingForReceiver')}</Subtitle>
+              <CodeBox code={code} />
+              <PrimaryButton
+                label={copied ? t('send.codeCopied') : t('send.copyCode')}
+                onPress={copy}
+              />
+            </>
+          )
         ) : null}
 
         {phase === 'transferring' ? (
@@ -138,6 +179,12 @@ export default function SendScreen({
         ) : null}
 
         {phase === 'cancelled' ? <Muted>{t('errors.cancelled')}</Muted> : null}
+
+        {phase === 'peerNotOpen' && device ? (
+          <Text style={{ color: c.danger, fontSize: fontSize.body }}>
+            {t('paired.notOpen', { name: device.name })}
+          </Text>
+        ) : null}
       </Card>
 
       {phase === 'waiting' || phase === 'transferring' || phase === 'starting' ? (

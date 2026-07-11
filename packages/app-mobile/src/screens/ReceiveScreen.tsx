@@ -2,7 +2,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { requestReceive, type IncomingFileInterface } from 'wormhole-rn';
-import { fontSize, spacing } from '@portalgems/core';
+import {
+  candidateBuckets,
+  deriveCode,
+  fontSize,
+  spacing,
+  PAIRED_RECEIVE_TIMEOUT_MS,
+  type PairedDevice,
+} from '@portalgems/core';
 import {
   Card,
   GhostButton,
@@ -33,9 +40,11 @@ type Phase =
 
 export default function ReceiveScreen({
   code,
+  device,
   onHome,
 }: {
-  code: string;
+  code?: string;
+  device?: PairedDevice;
   onHome: () => void;
 }) {
   const { t } = useTranslation();
@@ -54,21 +63,50 @@ export default function ReceiveScreen({
     const controller = new AbortController();
     abortRef.current = controller;
 
-    requestReceive(code, { signal: controller.signal }).then(
-      (incoming) => {
-        incomingRef.current = incoming;
-        setOfferName(incoming.fileName());
-        setOfferSize(Number(incoming.fileSize()));
-        setPhase('confirm');
-      },
-      (e) => {
-        if (controller.signal.aborted) setPhase('cancelled');
-        else {
-          setError(friendlyError(t, e));
-          setPhase('error');
-        }
+    const gotOffer = (incoming: IncomingFileInterface) => {
+      incomingRef.current = incoming;
+      setOfferName(incoming.fileName());
+      setOfferSize(Number(incoming.fileSize()));
+      setPhase('confirm');
+    };
+    const failed = (e: unknown) => {
+      if (controller.signal.aborted) setPhase('cancelled');
+      else {
+        setError(friendlyError(t, e));
+        setPhase('error');
       }
-    );
+    };
+
+    if (device) {
+      // Paired receive: poll the derived candidate codes until the sender
+      // shows up or we give up. An unclaimed nameplate just means "not yet".
+      (async () => {
+        const deadline = Date.now() + PAIRED_RECEIVE_TIMEOUT_MS;
+        let lastError: unknown = new Error(t('paired.nothingFound', { name: device.name }));
+        while (Date.now() < deadline && !controller.signal.aborted) {
+          for (const bucket of candidateBuckets()) {
+            if (controller.signal.aborted) break;
+            try {
+              const derived = deriveCode(device.secret, bucket);
+              const incoming = await requestReceive(derived, {
+                signal: controller.signal,
+              });
+              gotOffer(incoming);
+              return;
+            } catch (e) {
+              lastError = e;
+            }
+          }
+        }
+        if (!controller.signal.aborted) {
+          failed(new Error(t('paired.nothingFound', { name: device.name })));
+        } else {
+          failed(lastError);
+        }
+      })();
+    } else if (code) {
+      requestReceive(code, { signal: controller.signal }).then(gotOffer, failed);
+    }
 
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -122,10 +160,16 @@ export default function ReceiveScreen({
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
       <Title>{t('receive.title')}</Title>
-      <Muted>{code}</Muted>
+      <Muted>{device ? device.name : code}</Muted>
 
       <Card>
-        {phase === 'connecting' ? <Muted>{t('receive.connecting')}</Muted> : null}
+        {phase === 'connecting' ? (
+          <Muted>
+            {device
+              ? t('paired.receiveWaiting', { name: device.name })
+              : t('receive.connecting')}
+          </Muted>
+        ) : null}
 
         {phase === 'confirm' ? (
           <>

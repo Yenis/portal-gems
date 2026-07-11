@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "jsx": "react",
+    "strict": true,
+    "moduleResolution": "bundler",
+    "module": "esnext",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "paths": {
+      "i18next": [
+        "./node_modules/i18next"
+      ],
+      "react-i18next": [
+        "./node_modules/react-i18next"
+      ],
+      "react": [
+        "./node_modules/@types/react"
+      ],
+      "@noble/hashes/*": [
+        "./node_modules/@noble/hashes/*"
+      ]
+    }
+  },
+  "include": [
+    "src/**/*"
+  ]
+}

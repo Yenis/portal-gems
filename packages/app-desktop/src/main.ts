@@ -1,64 +1,97 @@
-// PortalGems Phase 0 desktop spike: Electron main process driving the same
-// generated wormhole-core bindings the Android app uses (via @ubjs/node).
-//
-// Automation flags (used by the gate-3 test harness; logs mirror to stdout):
-//   --auto-send              send a generated test file, print CODE:, exit
-//   --auto-send-code=<code>  same, but on a fixed (paired-style) code
-//   --auto-recv=<code>       receive into the downloads dir and exit
+// PortalGems desktop: Electron main process. Owns the Rust engine (via the
+// napi addon) and exposes a narrow IPC surface to the sandboxed renderer.
+// Transfer ids are allocated by the renderer; events stream back on 'pg:event'.
 
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, clipboard, dialog, ipcMain, safeStorage } from 'electron';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
 import * as path from 'node:path';
-import {
-  createTestFile,
-  receiveFile,
-  sendFile,
-  type TransferListener,
-} from './engine';
+import { currentBucket, deriveCode } from '@portalgems/core';
+import { engine, type NativeTransferEvent } from './engine';
 
 let win: BrowserWindow | null = null;
 
-function log(line: string) {
-  console.log(line);
-  win?.webContents.send('pg-log', line);
+// ---- Paired-device storage: encrypted with the OS keychain when available ----
+
+const pairsPath = () => path.join(app.getPath('userData'), 'paired-devices.bin');
+
+function readPairs(): string {
+  try {
+    const raw = fs.readFileSync(pairsPath());
+    if (safeStorage.isEncryptionAvailable()) {
+      return safeStorage.decryptString(raw);
+    }
+    return raw.toString('utf8');
+  } catch {
+    return '[]';
+  }
 }
 
-function makeListener(): TransferListener {
-  let lastPct = -1;
-  return {
-    onCode: (code) => log(`CODE:${code}`),
-    onTransit: (info) => log(`TRANSIT:${info}`),
-    onProgress: (done, total) => {
-      const pct = total === 0 ? 100 : Math.floor((done / total) * 100);
-      if (pct >= lastPct + 25 || pct === 100) {
-        lastPct = pct;
-        log(`PROGRESS:${pct}`);
-      }
-    },
-  };
+function writePairs(json: string): void {
+  const data = safeStorage.isEncryptionAvailable()
+    ? safeStorage.encryptString(json)
+    : Buffer.from(json, 'utf8');
+  fs.writeFileSync(pairsPath(), data);
 }
 
-async function doSend(code?: string) {
-  const file = createTestFile(app.getPath('temp'), 256);
-  log(`created ${file}`);
-  await sendFile(file, code, makeListener());
-  log('SEND-OK');
-}
+const forward = (id: number) => (ev: NativeTransferEvent) => {
+  win?.webContents.send('pg:event', { id, ...ev });
+};
 
-async function doRecv(code: string) {
-  const saved = await receiveFile(code, app.getPath('downloads'), makeListener());
-  log(`RECV-OK:${saved}`);
-}
+ipcMain.handle('pg:locale', () => app.getLocale());
 
-ipcMain.handle('pg-send', () => doSend().catch((e) => log(`ERROR:${e}`)));
-ipcMain.handle('pg-recv', (_e, code: string) =>
-  doRecv(code).catch((e) => log(`ERROR:${e}`))
+ipcMain.handle('pg:pickFile', async () => {
+  if (!win) return null;
+  const result = await dialog.showOpenDialog(win, { properties: ['openFile'] });
+  if (result.canceled || result.filePaths.length === 0) return null;
+  const filePath = result.filePaths[0];
+  const stat = await fs.promises.stat(filePath);
+  return { path: filePath, name: path.basename(filePath), size: stat.size };
+});
+
+ipcMain.handle('pg:send', (_e, id: number, filePath: string, code?: string) =>
+  engine.sendFile(id, filePath, code ?? null, forward(id))
 );
+
+ipcMain.handle('pg:requestReceive', (_e, id: number, code: string) =>
+  engine.requestReceive(id, code)
+);
+
+ipcMain.handle('pg:accept', async (_e, id: number, destDir?: string) => {
+  const saved = await engine.acceptReceive(
+    id,
+    destDir ?? app.getPath('downloads'),
+    forward(id)
+  );
+  return destDir ? saved : path.basename(saved);
+});
+
+ipcMain.handle('pg:deviceName', () => os.hostname());
+ipcMain.handle('pg:tempDir', () => app.getPath('temp'));
+ipcMain.handle('pg:pairs:get', () => readPairs());
+ipcMain.handle('pg:pairs:set', (_e, json: string) => writePairs(json));
+ipcMain.handle('pg:writeTemp', async (_e, name: string, content: string) => {
+  const file = path.join(app.getPath('temp'), name);
+  await fs.promises.writeFile(file, content, 'utf8');
+  return file;
+});
+ipcMain.handle('pg:readText', (_e, p: string) => fs.promises.readFile(p, 'utf8'));
+ipcMain.handle('pg:deleteFile', (_e, p: string) =>
+  fs.promises.unlink(p).catch(() => undefined)
+);
+
+ipcMain.handle('pg:reject', (_e, id: number) => engine.rejectReceive(id));
+
+ipcMain.handle('pg:cancel', (_e, id: number) => engine.cancelTransfer(id));
 
 app.whenReady().then(async () => {
   win = new BrowserWindow({
-    width: 560,
-    height: 680,
-    title: 'PortalGems — Phase 0',
+    width: 620,
+    height: 760,
+    minWidth: 480,
+    minHeight: 560,
+    title: 'PortalGems',
+    autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -66,26 +99,134 @@ app.whenReady().then(async () => {
   });
   await win.loadFile(path.join(__dirname, '..', 'src', 'renderer', 'index.html'));
 
-  const arg = (prefix: string) =>
-    process.argv.find((a) => a.startsWith(prefix))?.slice(prefix.length);
-
-  try {
-    const sendCode = arg('--auto-send-code=');
-    const recvCode = arg('--auto-recv=');
-    if (sendCode) {
-      await doSend(sendCode);
-      app.exit(0);
-    } else if (recvCode) {
-      await doRecv(recvCode);
-      app.exit(0);
-    } else if (process.argv.includes('--auto-send')) {
-      await doSend();
-      app.exit(0);
-    }
-  } catch (e) {
-    log(`ERROR:${e}`);
-    app.exit(1);
+  // Dev-only smoke harness: drives the real renderer UI end-to-end.
+  //   PG_SMOKE_RECEIVE=<code>        receive flow incl. Accept
+  //   PG_SMOKE_RECEIVE_CANCEL=<code> receive flow, Cancel while connecting
+  const smokeReceive = process.env.PG_SMOKE_RECEIVE;
+  const smokeCancel = process.env.PG_SMOKE_RECEIVE_CANCEL;
+  if (smokeReceive || smokeCancel) {
+    runSmoke(smokeReceive ?? smokeCancel!, Boolean(smokeCancel)).catch((e) => {
+      console.log(`SMOKE:ERROR:${e}`);
+      app.exit(1);
+    });
+  }
+  if (process.env.PG_SMOKE_PAIR_SHOW) {
+    runSmokePairShow().catch((e) => {
+      console.log(`SMOKE:ERROR:${e}`);
+      app.exit(1);
+    });
+  }
+  if (process.env.PG_SMOKE_PAIRED_RECEIVE) {
+    runSmokePairedReceive().catch((e) => {
+      console.log(`SMOKE:ERROR:${e}`);
+      app.exit(1);
+    });
+  }
+  if (process.env.PG_SMOKE_PAIRED_SEND) {
+    runSmokePairedSend(process.env.PG_SMOKE_PAIRED_SEND).catch((e) => {
+      console.log(`SMOKE:ERROR:${e}`);
+      app.exit(1);
+    });
   }
 });
+
+// ---- smoke helpers (dev only) ----
+
+const smokeExec = <T>(js: string): Promise<T> => win!.webContents.executeJavaScript(js);
+const smokeClick = (label: string) =>
+  smokeExec(
+    `[...document.querySelectorAll('button')].find(b => b.textContent === ${JSON.stringify(label)})?.click() ?? 'missing'`
+  );
+const smokeWaitFor = async (needle: string, timeoutMs: number) => {
+  const start = Date.now();
+  for (;;) {
+    const text = await smokeExec<string>('document.body.innerText');
+    if (text.includes(needle)) return;
+    if (Date.now() - start > timeoutMs) {
+      throw new Error(`timed out waiting for "${needle}"; body: ${text.slice(0, 300)}`);
+    }
+    await new Promise((r) => setTimeout(r, 300));
+  }
+};
+
+async function runSmokePairShow() {
+  await smokeWaitFor('PortalGems', 10000);
+  await smokeClick('Pair a new device');
+  await smokeWaitFor('Show pairing code', 5000);
+  await smokeClick('Show pairing code');
+  await smokeWaitFor('Copy pairing code', 10000);
+  await smokeClick('Copy pairing code');
+  await new Promise((r) => setTimeout(r, 300));
+  console.log(`PAIR-PAYLOAD:${clipboard.readText()}`);
+  await smokeWaitFor('Paired with', 120000);
+  console.log('SMOKE:PAIRED-OK');
+  app.exit(0);
+}
+
+async function runSmokePairedReceive() {
+  await smokeWaitFor('PortalGems', 10000);
+  await smokeClick('Receive'); // first device row's Receive button
+  await smokeWaitFor('Do you want to receive this file?', 90000);
+  console.log('SMOKE:PAIRED-CONFIRM');
+  await smokeClick('Accept');
+  await smokeWaitFor('Saved to Downloads', 90000);
+  console.log('SMOKE:PAIRED-RECEIVE-OK');
+  app.exit(0);
+}
+
+async function runSmokePairedSend(filePath: string) {
+  const devices = JSON.parse(readPairs());
+  if (!Array.isArray(devices) || devices.length === 0) {
+    throw new Error('no paired devices');
+  }
+  const code = deriveCode(devices[0].secret, currentBucket());
+  await engine.sendFile(990, filePath, code, (ev) =>
+    console.log(`SMOKE-EV:${ev.event}:${ev.info ?? ''}`)
+  );
+  console.log('SMOKE:PAIRED-SEND-OK');
+  app.exit(0);
+}
+
+async function runSmoke(code: string, cancelInstead: boolean) {
+  const exec = <T>(js: string): Promise<T> => win!.webContents.executeJavaScript(js);
+  const bodyText = () => exec<string>('document.body.innerText');
+  const clickButton = (label: string) =>
+    exec(
+      `[...document.querySelectorAll('button')].find(b => b.textContent === ${JSON.stringify(label)})?.click() ?? 'missing'`
+    );
+  const waitFor = async (needle: string, timeoutMs: number) => {
+    const start = Date.now();
+    for (;;) {
+      const text = await bodyText();
+      if (text.includes(needle)) return;
+      if (Date.now() - start > timeoutMs) {
+        throw new Error(`timed out waiting for "${needle}"; body: ${text.slice(0, 300)}`);
+      }
+      await new Promise((r) => setTimeout(r, 300));
+    }
+  };
+
+  await waitFor('PortalGems', 10000);
+  await exec(`(() => {
+    const input = document.querySelector('input');
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    setter.call(input, ${JSON.stringify(code)});
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  })()`);
+  await clickButton('Receive');
+  if (cancelInstead) {
+    await new Promise((r) => setTimeout(r, 500));
+    await clickButton('Cancel');
+    await waitFor('Transfer cancelled', 15000);
+    console.log('SMOKE:CANCELLED-OK');
+  } else {
+    await waitFor('Do you want to receive this file?', 45000);
+    console.log('SMOKE:CONFIRM-VISIBLE');
+    await clickButton('Accept');
+    await waitFor('Saved to Downloads', 90000);
+    console.log('SMOKE:RECEIVE-OK');
+  }
+  app.exit(0);
+}
 
 app.on('window-all-closed', () => app.quit());

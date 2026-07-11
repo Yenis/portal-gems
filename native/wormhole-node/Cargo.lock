@@ -2763,9 +2763,12 @@ dependencies = [
 name = "wormhole-node"
 version = "0.1.0"
 dependencies = [
+ "futures-lite",
  "napi",
  "napi-build",
  "napi-derive",
+ "once_cell",
+ "tokio",
  "wormhole-core",
 ]
 

@@ -194,7 +194,14 @@ self-hosted relay bridge. The full rationale is recorded in
     details in [docs/phase0-desktop-notes.md](docs/phase0-desktop-notes.md)
 - 🎉 **Phase 0 complete — all de-risking gates passed.** One Rust engine, proven
   on Android, desktop, and against the reference CLI.
-- 🟡 **Phase 1 nearly complete: the real Android app** (`packages/app-mobile`,
+- ✅ **Phases 1–3 complete** (2026-07-06): Android app (send/receive/confirm/
+  share-sheet/errors/gem icon/release signing), desktop app at full feature
+  parity (React DOM UI over the napi engine, incl. working cancel), and
+  **device pairing** — QR/paste exchange of a 256-bit secret, HMAC-derived
+  one-time codes per 5-minute bucket, encrypted storage (Keystore /
+  safeStorage), verified end-to-end desktop↔emulator over the real servers.
+  Details: [docs/phase2-3-notes.md](docs/phase2-3-notes.md)
+- 🗄️ *(history)* **Phase 1 progress notes:** the real Android app (`packages/app-mobile`,
   `com.gemstech.portalgems`). Working end-to-end on the emulator (2026-07-06):
   system file picker **and share-sheet intake** ("Share → PortalGems") → send
   with code screen + copy; receive with **accept/decline confirmation showing
@@ -283,11 +290,11 @@ cargo run --example recv -- 784413-some-derived-code .               # device B
 | Phase | Scope | Status |
 |---|---|---|
 | 0 | De-risking spikes: Rust engine ↔ CLI, Android chain, Electron chain | ✅ complete |
-| 1 | Android MVP: send/receive UI, progress, foreground service | 🟡 core flows working |
-| 2 | Desktop app: Electron shell, shared UI, feature parity | ⬜ |
-| 3 | QR pairing on both platforms | ⬜ |
-| 4 | Polish: explainer page, 10 theme palettes, 6 languages, settings | ⬜ |
-| 5 | Ship: hardening, F-Droid, Google Play, APK & installer releases | ⬜ |
+| 1 | Android MVP: send/receive UI, confirmation, share-sheet, errors, icon, signing | ✅ complete |
+| 2 | Desktop app: real UI, all flows incl. confirmation + cancel | ✅ complete |
+| 3 | Pairing on both platforms (QR/paste, derived codes, encrypted storage) | ✅ complete (E2E verified; QR camera scan needs a real phone) |
+| 4 | Polish: explainer page, 10 theme palettes, 6 languages, settings | ⬜ next |
+| 5 | Tests + architecture reference doc; then ship prep (F-Droid, Play, installers) | ⬜ |
 
 ## Distribution
 
