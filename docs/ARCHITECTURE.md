@@ -159,6 +159,16 @@ scan / paste), settings (language + theme, persisted), explainer.
    a bare directory name, after adding a crate.
 6. F-Droid discipline: no Google/proprietary deps anywhere (zxing-embedded and
    androidx are fine); toolchains pinned; everything builds from source.
+7. **Duplicate-instance bug**: packages/core has its own node_modules (for
+   vitest). If a bundler resolves i18next/react-i18next from there, the app
+   gets a second instance and every string renders as its raw key. Guards:
+   esbuild `--alias:i18next/react-i18next` (desktop build script), metro
+   blockList on `core/node_modules` (mobile). Keep both when touching builds.
+8. Packaging (electron-builder): `npm run dist:linux` → AppImage;
+   `npm run dist:win` → portable .exe (needs `mingw-w64` +
+   `rustup target add x86_64-pc-windows-gnu` for the addon cross-build;
+   wine present for rcedit). `asarUnpack: **/*.node`; engine.ts prefers
+   `wormhole_node-<platform>-<arch>.node`, falls back to `wormhole_node.node`.
 
 ## 6. Feature recipes
 

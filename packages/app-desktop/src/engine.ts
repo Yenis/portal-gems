@@ -37,9 +37,23 @@ interface NativeAddon {
   createTestFile(dir: string, sizeKb: number): string;
 }
 
+// Prefer a platform-suffixed addon (multi-platform packaging), fall back to
+// the plain name produced by dev builds.
 const requireNative = createRequire(__filename);
-const native: NativeAddon = requireNative(
-  process.env.PG_ADDON_PATH ?? path.join(__dirname, 'wormhole_node.node')
-);
+
+function loadAddon(): NativeAddon {
+  if (process.env.PG_ADDON_PATH) return requireNative(process.env.PG_ADDON_PATH);
+  const platformSpecific = path.join(
+    __dirname,
+    `wormhole_node-${process.platform}-${process.arch}.node`
+  );
+  try {
+    return requireNative(platformSpecific);
+  } catch {
+    return requireNative(path.join(__dirname, 'wormhole_node.node'));
+  }
+}
+
+const native: NativeAddon = loadAddon();
 
 export const engine = native;

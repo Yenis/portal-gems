@@ -25,9 +25,9 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
-// node_modules/react/cjs/react.production.js
+// ../core/node_modules/react/cjs/react.production.js
 var require_react_production = __commonJS({
-  "node_modules/react/cjs/react.production.js"(exports2) {
+  "../core/node_modules/react/cjs/react.production.js"(exports2) {
     "use strict";
     var REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element");
     var REACT_PORTAL_TYPE = Symbol.for("react.portal");
@@ -466,9 +466,9 @@ var require_react_production = __commonJS({
   }
 });
 
-// node_modules/react/cjs/react.development.js
+// ../core/node_modules/react/cjs/react.development.js
 var require_react_development = __commonJS({
-  "node_modules/react/cjs/react.development.js"(exports2, module2) {
+  "../core/node_modules/react/cjs/react.development.js"(exports2, module2) {
     "use strict";
     "production" !== process.env.NODE_ENV && (function() {
       function defineDeprecationWarning(methodName, info) {
@@ -1438,9 +1438,9 @@ var require_react_development = __commonJS({
   }
 });
 
-// node_modules/react/index.js
+// ../core/node_modules/react/index.js
 var require_react = __commonJS({
-  "node_modules/react/index.js"(exports2, module2) {
+  "../core/node_modules/react/index.js"(exports2, module2) {
     "use strict";
     if (process.env.NODE_ENV === "production") {
       module2.exports = require_react_production();
@@ -1450,9 +1450,9 @@ var require_react = __commonJS({
   }
 });
 
-// node_modules/void-elements/index.js
+// ../core/node_modules/void-elements/index.js
 var require_void_elements = __commonJS({
-  "node_modules/void-elements/index.js"(exports2, module2) {
+  "../core/node_modules/void-elements/index.js"(exports2, module2) {
     module2.exports = {
       "area": true,
       "base": true,
@@ -1472,9 +1472,9 @@ var require_void_elements = __commonJS({
   }
 });
 
-// node_modules/html-parse-stringify/dist/html-parse-stringify.js
+// ../core/node_modules/html-parse-stringify/dist/html-parse-stringify.js
 var require_html_parse_stringify = __commonJS({
-  "node_modules/html-parse-stringify/dist/html-parse-stringify.js"(exports2, module2) {
+  "../core/node_modules/html-parse-stringify/dist/html-parse-stringify.js"(exports2, module2) {
     var e;
     var t2 = (e = require_void_elements()) && "object" == typeof e && "default" in e ? e.default : e;
     var n = /\s([^'"/\s><]+?)[\s/>]|([^\s=]+)=\s?(".*?"|'.*?')/g;
@@ -1538,9 +1538,9 @@ var require_html_parse_stringify = __commonJS({
   }
 });
 
-// node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.production.js
+// ../core/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.production.js
 var require_use_sync_external_store_shim_production = __commonJS({
-  "node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.production.js"(exports2) {
+  "../core/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.production.js"(exports2) {
     "use strict";
     var React3 = require_react();
     function is(x, y) {
@@ -1591,9 +1591,9 @@ var require_use_sync_external_store_shim_production = __commonJS({
   }
 });
 
-// node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.development.js
+// ../core/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.development.js
 var require_use_sync_external_store_shim_development = __commonJS({
-  "node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.development.js"(exports2) {
+  "../core/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.development.js"(exports2) {
     "use strict";
     "production" !== process.env.NODE_ENV && (function() {
       function is(x, y) {
@@ -1655,9 +1655,9 @@ var require_use_sync_external_store_shim_development = __commonJS({
   }
 });
 
-// node_modules/use-sync-external-store/shim/index.js
+// ../core/node_modules/use-sync-external-store/shim/index.js
 var require_shim = __commonJS({
-  "node_modules/use-sync-external-store/shim/index.js"(exports2, module2) {
+  "../core/node_modules/use-sync-external-store/shim/index.js"(exports2, module2) {
     "use strict";
     if (process.env.NODE_ENV === "production") {
       module2.exports = require_use_sync_external_store_shim_production();
@@ -1799,7 +1799,7 @@ var themes = {
   }
 };
 
-// node_modules/@noble/hashes/utils.js
+// ../core/node_modules/@noble/hashes/utils.js
 function isBytes(a) {
   return a instanceof Uint8Array || ArrayBuffer.isView(a) && a.constructor.name === "Uint8Array" && "BYTES_PER_ELEMENT" in a && a.BYTES_PER_ELEMENT === 1;
 }
@@ -1878,7 +1878,7 @@ var oidNist = (suffix) => ({
   oid: Uint8Array.from([6, 9, 96, 134, 72, 1, 101, 3, 4, 2, suffix])
 });
 
-// node_modules/@noble/hashes/hmac.js
+// ../core/node_modules/@noble/hashes/hmac.js
 var _HMAC = class {
   oHash;
   iHash;
@@ -1954,7 +1954,7 @@ var hmac = /* @__PURE__ */ (() => {
   return hmac_;
 })();
 
-// node_modules/@noble/hashes/_md.js
+// ../core/node_modules/@noble/hashes/_md.js
 function Chi(a, b, c) {
   return a & b ^ ~a & c;
 }
@@ -2068,7 +2068,7 @@ var SHA256_IV = /* @__PURE__ */ Uint32Array.from([
   1541459225
 ]);
 
-// node_modules/@noble/hashes/sha2.js
+// ../core/node_modules/@noble/hashes/sha2.js
 var SHA256_K = /* @__PURE__ */ Uint32Array.from([
   1116352408,
   1899447441,
@@ -2273,7 +2273,7 @@ function deriveCode(secretB64, bucket) {
   return `${nameplate}-${hex.slice(0, 10)}-${hex.slice(10, 20)}`;
 }
 
-// node_modules/i18next/dist/esm/i18next.js
+// ../core/node_modules/i18next/dist/esm/i18next.js
 var isString = (obj) => typeof obj === "string";
 var defer = () => {
   let res;
@@ -3151,7 +3151,10 @@ var Translator = class _Translator extends EventEmitter {
     const useOptionsReplaceForData = options.replace && !isString(options.replace);
     let data = useOptionsReplaceForData ? options.replace : options;
     if (useOptionsReplaceForData && typeof options.count !== "undefined") {
-      data.count = options.count;
+      data = {
+        ...data,
+        count: options.count
+      };
     }
     if (this.options.interpolation.defaultVariables) {
       data = {
@@ -3462,10 +3465,10 @@ var Interpolator = class {
     const skipOnVariables = options?.interpolation?.skipOnVariables !== void 0 ? options.interpolation.skipOnVariables : this.options.interpolation.skipOnVariables;
     const todos = [{
       regex: this.regexpUnescape,
-      safeValue: (val) => regexSafe(val)
+      safeValue: (val) => val
     }, {
       regex: this.regexp,
-      safeValue: (val) => this.escapeValue ? regexSafe(this.escape(val)) : regexSafe(val)
+      safeValue: (val) => this.escapeValue ? this.escape(val) : val
     }];
     todos.forEach((todo) => {
       replaces = 0;
@@ -3489,9 +3492,9 @@ var Interpolator = class {
           value = makeString(value);
         }
         const safeValue = todo.safeValue(value);
-        str = str.replace(match[0], safeValue);
+        str = str.replace(match[0], regexSafe(safeValue));
         if (skipOnVariables) {
-          todo.regex.lastIndex += value.length;
+          todo.regex.lastIndex += safeValue.length;
           todo.regex.lastIndex -= match[0].length;
         } else {
           todo.regex.lastIndex = 0;
@@ -3541,7 +3544,7 @@ var Interpolator = class {
       clonedOptions = clonedOptions.replace && !isString(clonedOptions.replace) ? clonedOptions.replace : clonedOptions;
       clonedOptions.applyPostProcessor = false;
       delete clonedOptions.defaultValue;
-      const keyEndIndex = /{.*}/.test(match[1]) ? match[1].lastIndexOf("}") + 1 : match[1].indexOf(this.formatSeparator);
+      const keyEndIndex = /{.*}/s.test(match[1]) ? match[1].lastIndexOf("}") + 1 : match[1].indexOf(this.formatSeparator);
       if (keyEndIndex !== -1) {
         formatters = match[1].slice(keyEndIndex).split(this.formatSeparator).map((elem) => elem.trim()).filter(Boolean);
         match[1] = match[1].slice(0, keyEndIndex);
@@ -4517,14 +4520,14 @@ var hasLoadedNamespace = instance.hasLoadedNamespace;
 var loadNamespaces = instance.loadNamespaces;
 var loadLanguages = instance.loadLanguages;
 
-// node_modules/react-i18next/dist/es/Trans.js
+// ../core/node_modules/react-i18next/dist/es/Trans.js
 var import_react3 = __toESM(require_react(), 1);
 
-// node_modules/react-i18next/dist/es/TransWithoutContext.js
+// ../core/node_modules/react-i18next/dist/es/TransWithoutContext.js
 var import_react = __toESM(require_react(), 1);
 var import_html_parse_stringify = __toESM(require_html_parse_stringify(), 1);
 
-// node_modules/react-i18next/dist/es/utils.js
+// ../core/node_modules/react-i18next/dist/es/utils.js
 var warn = (i18n, code, msg, rest) => {
   const args = [msg, {
     code,
@@ -4548,21 +4551,21 @@ var warnOnce = (i18n, code, msg, rest) => {
 };
 var isString2 = (obj) => typeof obj === "string";
 
-// node_modules/react-i18next/dist/es/i18nInstance.js
+// ../core/node_modules/react-i18next/dist/es/i18nInstance.js
 var i18nInstance;
 var getI18n = () => i18nInstance;
 
-// node_modules/react-i18next/dist/es/context.js
+// ../core/node_modules/react-i18next/dist/es/context.js
 var import_react2 = __toESM(require_react(), 1);
 var I18nContext = (0, import_react2.createContext)();
 
-// node_modules/react-i18next/dist/es/IcuTrans.js
+// ../core/node_modules/react-i18next/dist/es/IcuTrans.js
 var import_react6 = __toESM(require_react(), 1);
 
-// node_modules/react-i18next/dist/es/IcuTransWithoutContext.js
+// ../core/node_modules/react-i18next/dist/es/IcuTransWithoutContext.js
 var import_react5 = __toESM(require_react(), 1);
 
-// node_modules/react-i18next/dist/es/IcuTransUtils/TranslationParserError.js
+// ../core/node_modules/react-i18next/dist/es/IcuTransUtils/TranslationParserError.js
 var TranslationParserError = class _TranslationParserError extends Error {
   constructor(message, position, translationString) {
     super(message);
@@ -4575,7 +4578,7 @@ var TranslationParserError = class _TranslationParserError extends Error {
   }
 };
 
-// node_modules/react-i18next/dist/es/IcuTransUtils/htmlEntityDecoder.js
+// ../core/node_modules/react-i18next/dist/es/IcuTransUtils/htmlEntityDecoder.js
 var commonEntities = {
   "&nbsp;": "\xA0",
   "&amp;": "&",
@@ -4788,7 +4791,7 @@ var commonEntities = {
 var entityPattern = new RegExp(Object.keys(commonEntities).map((entity) => entity.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"), "g");
 var decodeHtmlEntities = (text) => text.replace(entityPattern, (match) => commonEntities[match]).replace(/&#(\d+);/g, (_, num) => String.fromCharCode(parseInt(num, 10))).replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
 
-// node_modules/react-i18next/dist/es/IcuTransUtils/tokenizer.js
+// ../core/node_modules/react-i18next/dist/es/IcuTransUtils/tokenizer.js
 var tokenize = (translation) => {
   const tokens = [];
   let position = 0;
@@ -4841,7 +4844,7 @@ var tokenize = (translation) => {
   return tokens;
 };
 
-// node_modules/react-i18next/dist/es/IcuTransUtils/renderTranslation.js
+// ../core/node_modules/react-i18next/dist/es/IcuTransUtils/renderTranslation.js
 var import_react4 = __toESM(require_react(), 1);
 var renderDeclarationNode = (declaration, children, childDeclarations) => {
   const {
@@ -4946,7 +4949,7 @@ var renderTranslation = (translation, declarations = []) => {
   return result;
 };
 
-// node_modules/react-i18next/dist/es/IcuTransWithoutContext.js
+// ../core/node_modules/react-i18next/dist/es/IcuTransWithoutContext.js
 function IcuTransWithoutContext({
   i18nKey,
   defaultTranslation,
@@ -4993,7 +4996,7 @@ function IcuTransWithoutContext({
 }
 IcuTransWithoutContext.displayName = "IcuTransWithoutContext";
 
-// node_modules/react-i18next/dist/es/IcuTrans.js
+// ../core/node_modules/react-i18next/dist/es/IcuTrans.js
 function IcuTrans({
   i18nKey,
   defaultTranslation,
@@ -5021,29 +5024,39 @@ function IcuTrans({
 }
 IcuTrans.displayName = "IcuTrans";
 
-// node_modules/react-i18next/dist/es/useTranslation.js
+// ../core/node_modules/react-i18next/dist/es/useTranslation.js
 var import_react7 = __toESM(require_react(), 1);
 var import_shim = __toESM(require_shim(), 1);
 
-// node_modules/react-i18next/dist/es/withTranslation.js
+// ../core/node_modules/react-i18next/dist/es/withTranslation.js
 var import_react8 = __toESM(require_react(), 1);
 
-// node_modules/react-i18next/dist/es/I18nextProvider.js
+// ../core/node_modules/react-i18next/dist/es/I18nextProvider.js
 var import_react9 = __toESM(require_react(), 1);
 
-// node_modules/react-i18next/dist/es/withSSR.js
+// ../core/node_modules/react-i18next/dist/es/withSSR.js
 var import_react11 = __toESM(require_react(), 1);
 
-// node_modules/react-i18next/dist/es/useSSR.js
+// ../core/node_modules/react-i18next/dist/es/useSSR.js
 var import_react10 = __toESM(require_react(), 1);
 
 // src/engine.ts
 var import_node_module = require("node:module");
 var path = __toESM(require("node:path"));
 var requireNative = (0, import_node_module.createRequire)(__filename);
-var native = requireNative(
-  process.env.PG_ADDON_PATH ?? path.join(__dirname, "wormhole_node.node")
-);
+function loadAddon() {
+  if (process.env.PG_ADDON_PATH) return requireNative(process.env.PG_ADDON_PATH);
+  const platformSpecific = path.join(
+    __dirname,
+    `wormhole_node-${process.platform}-${process.arch}.node`
+  );
+  try {
+    return requireNative(platformSpecific);
+  } catch {
+    return requireNative(path.join(__dirname, "wormhole_node.node"));
+  }
+}
+var native = loadAddon();
 var engine = native;
 
 // src/main.ts

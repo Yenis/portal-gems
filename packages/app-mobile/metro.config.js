@@ -29,6 +29,9 @@ const config = {
       blockDir(path.join(workspaceRoot, 'wormhole-rn/node_modules/react-native')),
       blockDir(path.join(workspaceRoot, 'wormhole-rn/node_modules/react')),
       blockDir(path.join(workspaceRoot, 'wormhole-rn/example')),
+      // core's own node_modules exist only for its test suite; resolving
+      // i18next from there would create a second instance (raw-key bug)
+      blockDir(path.join(workspaceRoot, 'core/node_modules')),
     ],
   },
 };

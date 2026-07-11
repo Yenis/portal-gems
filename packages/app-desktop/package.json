@@ -1,20 +1,24 @@
 {
   "name": "portalgems-desktop",
-  "version": "0.0.1",
+  "version": "0.6.0",
   "private": true,
   "description": "PortalGems desktop app (Phase 0 spike: Electron shell over wormhole-core)",
   "license": "GPL-3.0-or-later",
   "main": "dist/main.js",
   "scripts": {
     "build:native": "cargo build --release --manifest-path ../../native/wormhole-node/Cargo.toml && cp ../../native/wormhole-node/target/release/libwormhole_node.so dist/wormhole_node.node",
-    "build": "NODE_PATH=./node_modules esbuild src/main.ts src/preload.ts --bundle --platform=node --format=cjs --outdir=dist --external:electron && NODE_PATH=./node_modules esbuild src/renderer/index.tsx --bundle --outfile=dist/renderer.js && npm run build:native",
-    "start": "npm run build && electron ."
+    "build": "NODE_PATH=./node_modules esbuild src/main.ts src/preload.ts --bundle --platform=node --format=cjs --outdir=dist --external:electron && NODE_PATH=./node_modules esbuild src/renderer/index.tsx --bundle --alias:i18next=./node_modules/i18next --alias:react-i18next=./node_modules/react-i18next --outfile=dist/renderer.js && npm run build:native",
+    "start": "npm run build && electron .",
+    "build:native:win": "cargo build --release --manifest-path ../../native/wormhole-node/Cargo.toml --target x86_64-pc-windows-gnu && cp ../../native/wormhole-node/target/x86_64-pc-windows-gnu/release/wormhole_node.dll dist/wormhole_node-win32-x64.node",
+    "dist:linux": "npm run build && electron-builder --linux",
+    "dist:win": "npm run build && npm run build:native:win && electron-builder --win"
   },
   "devDependencies": {
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "electron": "^38.0.0",
+    "electron-builder": "^26.15.3",
     "esbuild": "^0.25.0",
     "typescript": "^6.0.3"
   },
@@ -26,5 +30,30 @@
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-i18next": "^17.0.8"
+  },
+  "build": {
+    "appId": "com.gemstech.portalgems",
+    "productName": "PortalGems",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**",
+      "src/renderer/index.html",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "**/*.node"
+    ],
+    "linux": {
+      "target": "AppImage",
+      "category": "Utility"
+    },
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "signAndEditExecutable": false
+    }
   }
 }
