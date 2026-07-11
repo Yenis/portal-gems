@@ -16,11 +16,19 @@ import {
   type Palette,
 } from '@portalgems/core';
 import {
+  setLanguage,
+  themes,
+  SUPPORTED_LANGUAGES,
+  THEME_NAMES,
+  type ThemeName,
+} from '@portalgems/core';
+import {
   completePairingAsScanner,
   loadDevices,
   removeDevice,
   waitForPairingAsDisplayer,
 } from './pairing';
+import { loadThemeName, saveThemeName } from './theme';
 import {
   Card,
   CodeBox,
@@ -75,12 +83,19 @@ type Route =
       device?: PairedDevice;
     }
   | { name: 'receive'; code?: string; device?: PairedDevice }
-  | { name: 'pair' };
+  | { name: 'pair' }
+  | { name: 'settings' }
+  | { name: 'explain' };
 
 export default function App() {
-  const c = usePalette();
+  const [themeName, setThemeNameState] = useState<ThemeName>(loadThemeName());
+  const c = usePalette(themeName);
   const [route, setRoute] = useState<Route>({ name: 'home' });
   const goHome = () => setRoute({ name: 'home' });
+  const setThemeName = (name: ThemeName) => {
+    setThemeNameState(name);
+    saveThemeName(name);
+  };
 
   return (
     <div
@@ -100,11 +115,22 @@ export default function App() {
           onReceive={(code) => setRoute({ name: 'receive', code })}
           onReceiveFrom={(device) => setRoute({ name: 'receive', device })}
           onPair={() => setRoute({ name: 'pair' })}
+          onSettings={() => setRoute({ name: 'settings' })}
+          onExplain={() => setRoute({ name: 'explain' })}
         />
       ) : route.name === 'send' ? (
         <Send c={c} file={route.file} device={route.device} onHome={goHome} />
       ) : route.name === 'receive' ? (
         <Receive c={c} code={route.code} device={route.device} onHome={goHome} />
+      ) : route.name === 'settings' ? (
+        <Settings
+          c={c}
+          themeName={themeName}
+          onTheme={setThemeName}
+          onHome={goHome}
+        />
+      ) : route.name === 'explain' ? (
+        <Explain c={c} onHome={goHome} />
       ) : (
         <Pair c={c} onHome={goHome} />
       )}
@@ -118,6 +144,8 @@ function Home({
   onReceive,
   onReceiveFrom,
   onPair,
+  onSettings,
+  onExplain,
 }: {
   c: Palette;
   onSend: (
@@ -127,6 +155,8 @@ function Home({
   onReceive: (code: string) => void;
   onReceiveFrom: (device: PairedDevice) => void;
   onPair: () => void;
+  onSettings: () => void;
+  onExplain: () => void;
 }) {
   const { t } = useTranslation();
   const [code, setCode] = useState('');
@@ -151,6 +181,18 @@ function Home({
     <>
       <Title c={c}>{t('app.name')}</Title>
       <Muted c={c}>{t('home.tagline')}</Muted>
+      <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: spacing(2) }}>
+        <a
+          onClick={onExplain}
+          style={{ color: c.primary, fontWeight: 600, cursor: 'pointer' }}>
+          {t('home.explainLink')}
+        </a>
+        <a
+          onClick={onSettings}
+          style={{ color: c.primary, fontWeight: 600, cursor: 'pointer' }}>
+          {t('home.settingsLink')}
+        </a>
+      </div>
       <Card c={c}>
         <Subtitle c={c}>{t('home.devicesTitle')}</Subtitle>
         {devices.length === 0 ? <Muted c={c}>{t('home.devicesEmpty')}</Muted> : null}
@@ -660,6 +702,103 @@ function Pair({ c, onHome }: { c: Palette; onHome: () => void }) {
       ) : (
         <GhostButton c={c} label={t('common.cancel')} danger onClick={cancelAndBack} />
       )}
+    </>
+  );
+}
+
+const LANGUAGE_LABELS: Record<string, string> = {
+  en: 'English',
+  de: 'Deutsch',
+  bs: 'Bosanski',
+  ru: 'Русский',
+  fr: 'Français',
+  es: 'Español',
+};
+
+function Settings({
+  c,
+  themeName,
+  onTheme,
+  onHome,
+}: {
+  c: Palette;
+  themeName: ThemeName;
+  onTheme: (name: ThemeName) => void;
+  onHome: () => void;
+}) {
+  const { t, i18n } = useTranslation();
+
+  const chooseLanguage = (lng: string) => {
+    setLanguage(lng);
+    localStorage.setItem('pg-language', lng);
+  };
+
+  const row = (selected: boolean): React.CSSProperties => ({
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    border: `1px solid ${selected ? c.primary : c.border}`,
+    background: selected ? c.codeBg : 'transparent',
+    borderRadius: 10,
+    padding: `${spacing(2.5)}px ${spacing(3)}px`,
+    cursor: 'pointer',
+  });
+
+  return (
+    <>
+      <Title c={c}>{t('settings.title')}</Title>
+      <Card c={c}>
+        <Subtitle c={c}>{t('settings.language')}</Subtitle>
+        {SUPPORTED_LANGUAGES.map((lng) => (
+          <div key={lng} style={row(i18n.language === lng)} onClick={() => chooseLanguage(lng)}>
+            <span style={{ color: c.text }}>{LANGUAGE_LABELS[lng]}</span>
+            {i18n.language === lng ? (
+              <span style={{ color: c.primary, fontWeight: 700 }}>✓</span>
+            ) : null}
+          </div>
+        ))}
+      </Card>
+      <Card c={c}>
+        <Subtitle c={c}>{t('settings.theme')}</Subtitle>
+        {THEME_NAMES.map((name) => (
+          <div key={name} style={row(themeName === name)} onClick={() => onTheme(name)}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: spacing(2.5) }}>
+              <span
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: 9,
+                  background: themes[name].light.primary,
+                }}
+              />
+              <span style={{ color: c.text }}>{t(`settings.themes.${name}`)}</span>
+            </span>
+            {themeName === name ? (
+              <span style={{ color: c.primary, fontWeight: 700 }}>✓</span>
+            ) : null}
+          </div>
+        ))}
+      </Card>
+      <PrimaryButton c={c} label={t('common.done')} onClick={onHome} />
+    </>
+  );
+}
+
+const EXPLAIN_SECTIONS = ['codes', 'e2e', 'direct', 'servers', 'pairing', 'limits'] as const;
+
+function Explain({ c, onHome }: { c: Palette; onHome: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <Title c={c}>{t('explain.title')}</Title>
+      <Muted c={c}>{t('explain.intro')}</Muted>
+      {EXPLAIN_SECTIONS.map((key) => (
+        <Card key={key} c={c}>
+          <Subtitle c={c}>{t(`explain.${key}Title`)}</Subtitle>
+          <Muted c={c}>{t(`explain.${key}Body`)}</Muted>
+        </Card>
+      ))}
+      <PrimaryButton c={c} label={t('common.done')} onClick={onHome} />
     </>
   );
 }

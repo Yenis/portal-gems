@@ -9,5 +9,16 @@
   "peerDependencies": {
     "i18next": "*",
     "react-i18next": "*"
+  },
+  "scripts": {
+    "test": "vitest run"
+  },
+  "keywords": [],
+  "author": "",
+  "devDependencies": {
+    "@noble/hashes": "^2.2.0",
+    "i18next": "^26.3.6",
+    "react-i18next": "^17.0.9",
+    "vitest": "^4.1.10"
   }
 }

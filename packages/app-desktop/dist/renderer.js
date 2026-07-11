@@ -2626,9 +2626,9 @@
           throw Error("getNodeFromInstance: Invalid argument.");
         }
         function getResourcesFromRoot(root2) {
-          var resources = root2[internalRootNodeResourcesKey];
-          resources || (resources = root2[internalRootNodeResourcesKey] = { hoistableStyles: /* @__PURE__ */ new Map(), hoistableScripts: /* @__PURE__ */ new Map() });
-          return resources;
+          var resources2 = root2[internalRootNodeResourcesKey];
+          resources2 || (resources2 = root2[internalRootNodeResourcesKey] = { hoistableStyles: /* @__PURE__ */ new Map(), hoistableScripts: /* @__PURE__ */ new Map() });
+          return resources2;
         }
         function markNodeAsHoistable(node) {
           node[internalHoistableMarker] = true;
@@ -17867,9 +17867,9 @@
             }
           }
         }
-        function insertSuspendedStylesheets(state, resources) {
+        function insertSuspendedStylesheets(state, resources2) {
           state.stylesheets = null;
-          null !== state.unsuspend && (state.count++, precedencesByRoot = /* @__PURE__ */ new Map(), resources.forEach(insertStylesheetIntoRoot, state), precedencesByRoot = null, onUnsuspend.call(state));
+          null !== state.unsuspend && (state.count++, precedencesByRoot = /* @__PURE__ */ new Map(), resources2.forEach(insertStylesheetIntoRoot, state), precedencesByRoot = null, onUnsuspend.call(state));
         }
         function insertStylesheetIntoRoot(root2, resource) {
           if (!(resource.state.loading & Inserted)) {
@@ -23209,11 +23209,11 @@
           while (true) {
             for (let c = 0; c < 2; c++) {
               if (!matrix.isReserved(row, col - c)) {
-                let dark = false;
+                let dark2 = false;
                 if (byteIndex < data.length) {
-                  dark = (data[byteIndex] >>> bitIndex & 1) === 1;
+                  dark2 = (data[byteIndex] >>> bitIndex & 1) === 1;
                 }
-                matrix.set(row, col - c, dark);
+                matrix.set(row, col - c, dark2);
                 bitIndex--;
                 if (bitIndex === -1) {
                   byteIndex++;
@@ -23631,6 +23631,15 @@
   var import_client = __toESM(require_client());
 
   // ../core/src/tokens.ts
+  var THEME_NAMES = [
+    "diamond",
+    "sapphire",
+    "emerald",
+    "ruby",
+    "amethyst"
+  ];
+  var light = { success: "#2E7D32", danger: "#C62828" };
+  var dark = { success: "#81C784", danger: "#EF9A9A" };
   var themes = {
     diamond: {
       light: {
@@ -23641,9 +23650,8 @@
         primary: "#3D5A80",
         onPrimary: "#FFFFFF",
         border: "#E2E5EA",
-        success: "#2E7D32",
-        danger: "#C62828",
-        codeBg: "#EEF1F5"
+        codeBg: "#EEF1F5",
+        ...light
       },
       dark: {
         background: "#12141A",
@@ -23653,9 +23661,104 @@
         primary: "#8FA9CE",
         onPrimary: "#12141A",
         border: "#2A2E38",
-        success: "#81C784",
-        danger: "#EF9A9A",
-        codeBg: "#232733"
+        codeBg: "#232733",
+        ...dark
+      }
+    },
+    sapphire: {
+      light: {
+        background: "#F4F7FB",
+        surface: "#FFFFFF",
+        text: "#131A26",
+        textMuted: "#56637A",
+        primary: "#1D5FBF",
+        onPrimary: "#FFFFFF",
+        border: "#DEE6F2",
+        codeBg: "#E8EFF9",
+        ...light
+      },
+      dark: {
+        background: "#0D1420",
+        surface: "#16202F",
+        text: "#E8EEF7",
+        textMuted: "#8FA0B8",
+        primary: "#6FA3E8",
+        onPrimary: "#0D1420",
+        border: "#24334A",
+        codeBg: "#1C2A3E",
+        ...dark
+      }
+    },
+    emerald: {
+      light: {
+        background: "#F4FAF6",
+        surface: "#FFFFFF",
+        text: "#14201A",
+        textMuted: "#55685E",
+        primary: "#1E7A4E",
+        onPrimary: "#FFFFFF",
+        border: "#DCEBE2",
+        codeBg: "#E7F4EC",
+        ...light
+      },
+      dark: {
+        background: "#0E1713",
+        surface: "#16241D",
+        text: "#E7F2EB",
+        textMuted: "#8CA69A",
+        primary: "#5FC08F",
+        onPrimary: "#0E1713",
+        border: "#23392E",
+        codeBg: "#1B2F25",
+        ...dark
+      }
+    },
+    ruby: {
+      light: {
+        background: "#FBF5F6",
+        surface: "#FFFFFF",
+        text: "#241417",
+        textMuted: "#705A5F",
+        primary: "#B02A3C",
+        onPrimary: "#FFFFFF",
+        border: "#F0DCE0",
+        codeBg: "#F7E9EC",
+        ...light
+      },
+      dark: {
+        background: "#1A0F12",
+        surface: "#261519",
+        text: "#F5E9EB",
+        textMuted: "#B3949B",
+        primary: "#E17285",
+        onPrimary: "#1A0F12",
+        border: "#3E2630",
+        codeBg: "#331E26",
+        ...dark
+      }
+    },
+    amethyst: {
+      light: {
+        background: "#F8F5FB",
+        surface: "#FFFFFF",
+        text: "#1C1426",
+        textMuted: "#635A70",
+        primary: "#6E3BB2",
+        onPrimary: "#FFFFFF",
+        border: "#E7DEF2",
+        codeBg: "#EFE8F7",
+        ...light
+      },
+      dark: {
+        background: "#130E1C",
+        surface: "#1D1629",
+        text: "#EDE7F5",
+        textMuted: "#9E8FB8",
+        primary: "#A97FE0",
+        onPrimary: "#130E1C",
+        border: "#2F2444",
+        codeBg: "#271D3A",
+        ...dark
       }
     }
   };
@@ -24601,40 +24704,40 @@
       setPath(this.data, path, value);
       if (!options.silent) this.emit("added", lng, ns, key, value);
     }
-    addResources(lng, ns, resources, options = {
+    addResources(lng, ns, resources2, options = {
       silent: false
     }) {
-      for (const m in resources) {
-        if (isString(resources[m]) || Array.isArray(resources[m])) this.addResource(lng, ns, m, resources[m], {
+      for (const m in resources2) {
+        if (isString(resources2[m]) || Array.isArray(resources2[m])) this.addResource(lng, ns, m, resources2[m], {
           silent: true
         });
       }
-      if (!options.silent) this.emit("added", lng, ns, resources);
+      if (!options.silent) this.emit("added", lng, ns, resources2);
     }
-    addResourceBundle(lng, ns, resources, deep, overwrite, options = {
+    addResourceBundle(lng, ns, resources2, deep, overwrite, options = {
       silent: false,
       skipCopy: false
     }) {
       let path = [lng, ns];
       if (lng.includes(".")) {
         path = lng.split(".");
-        deep = resources;
-        resources = ns;
+        deep = resources2;
+        resources2 = ns;
         ns = path[1];
       }
       this.addNamespaces(ns);
       let pack = getPath(this.data, path) || {};
-      if (!options.skipCopy) resources = JSON.parse(JSON.stringify(resources));
+      if (!options.skipCopy) resources2 = JSON.parse(JSON.stringify(resources2));
       if (deep) {
-        deepExtend(pack, resources, overwrite);
+        deepExtend(pack, resources2, overwrite);
       } else {
         pack = {
           ...pack,
-          ...resources
+          ...resources2
         };
       }
       setPath(this.data, path, pack);
-      if (!options.silent) this.emit("added", lng, ns, resources);
+      if (!options.silent) this.emit("added", lng, ns, resources2);
     }
     removeResourceBundle(lng, ns) {
       if (this.hasResourceBundle(lng, ns)) {
@@ -27276,12 +27379,250 @@
   // node_modules/react-i18next/dist/es/useSSR.js
   var import_react10 = __toESM(require_react(), 1);
 
+  // ../core/src/i18n/bs.json
+  var bs_default = {
+    app: { name: "PortalGems" },
+    home: {
+      explainLink: "Kako radi i sigurnost",
+      settingsLink: "Postavke",
+      devicesTitle: "Tvoji ure\u0111aji",
+      devicesEmpty: "Upari telefon i laptop jednom \u2014 nakon toga je za slanje dovoljan po jedan dodir na svakoj strani.",
+      pairNew: "Upari novi ure\u0111aj",
+      tagline: "\u0160alji datoteke s ure\u0111aja na ure\u0111aj \u2014 privatno, direktno, bez naloga.",
+      sendTitle: "Po\u0161alji datoteku",
+      sendHint: "Odaberi datoteku i podijeli jednokratni kod s primaocem.",
+      sendButton: "Odaberi datoteku",
+      receiveTitle: "Primi datoteku",
+      receiveHint: "Unesi kod koji ti je poslao po\u0161iljalac.",
+      receivePlaceholder: "npr. 7-crossover-clockwork",
+      receiveButton: "Primi"
+    },
+    send: {
+      title: "Slanje",
+      waitingForReceiver: "Podijeli ovaj kod s primaocem:",
+      copyCode: "Kopiraj kod",
+      codeCopied: "Kopirano!",
+      sending: "\u0160aljem {{name}}\u2026",
+      success: "Datoteka uspje\u0161no poslana.",
+      successDetail: "{{name}} \xB7 {{size}}"
+    },
+    receive: {
+      title: "Primanje",
+      connecting: "Povezivanje\u2026",
+      incoming: "Dolazna datoteka",
+      acceptQuestion: "\u017Deli\u0161 li primiti ovu datoteku?",
+      receiving: "Primanje datoteke\u2026",
+      success: "Datoteka sa\u010Duvana.",
+      savedAs: "Sa\u010Duvano u Downloads kao {{name}}.",
+      declined: "Odbio/la si prijenos."
+    },
+    pair: {
+      title: "Uparivanje ure\u0111aja",
+      showButton: "Prika\u017Ei kod za uparivanje",
+      showHint: "Skeniraj ovaj QR kod drugim ure\u0111ajem ili kopiraj kod za uparivanje i zalijepi ga tamo. Ko god vidi ovaj kod mo\u017Ee se upariti s tobom \u2014 dijeli ga samo privatno.",
+      scanButton: "Skeniraj QR kod",
+      manualPlaceholder: "\u2026ili zalijepi kod za uparivanje ovdje",
+      manualButton: "Upari zalijepljenim kodom",
+      copyPayload: "Kopiraj kod za uparivanje",
+      copied: "Kopirano!",
+      waiting: "\u010Cekam da drugi ure\u0111aj zavr\u0161i uparivanje\u2026",
+      invalidPayload: "Ovo nije va\u017Ee\u0107i PortalGems kod za uparivanje.",
+      success: "Upareno s {{name}}!",
+      failed: "Uparivanje nije uspjelo: {{message}}"
+    },
+    devices: {
+      title: "Ure\u0111aji",
+      send: "Po\u0161alji",
+      receive: "Primi",
+      remove: "Ukloni",
+      empty: "Jo\u0161 nema uparenih ure\u0111aja."
+    },
+    paired: {
+      sendWaiting: "\u010Cekam {{name}} \u2014 provjeri da li je PortalGems tamo otvoren\u2026",
+      notOpen: "Izgleda da {{name}} nema otvoren PortalGems. Zamoli da se aplikacija otvori pa poku\u0161aj ponovo.",
+      receiveWaiting: "Tra\u017Eim prijenos od {{name}}\u2026",
+      nothingFound: "Ni\u0161ta nije stiglo od {{name}}. Provjeri da li je tamo pritisnuto Po\u0161alji, pa poku\u0161aj ponovo."
+    },
+    settings: {
+      title: "Postavke",
+      language: "Jezik",
+      theme: "Tema",
+      themes: {
+        diamond: "Dijamant",
+        sapphire: "Safir",
+        emerald: "Smaragd",
+        ruby: "Rubin",
+        amethyst: "Ametist"
+      }
+    },
+    explain: {
+      title: "Kako radi",
+      intro: "PortalGems koristi magic-wormhole protokol \u2014 otvoreni standard za sigurno slanje datoteka s jednog ure\u0111aja na drugi. Evo \u0161ta se de\u0161ava ispod haube i za\u0161to tome mo\u017Ee\u0161 vjerovati.",
+      codesTitle: "Jedan kod, jedan prijenos",
+      codesBody: "Svaki prijenos po\u010Dinje kratkim jednokratnim kodom poput 7-crossover-clockwork. Oba ure\u0111aja ubacuju taj kod u kriptografsko rukovanje (SPAKE2) i iz njega izvode isti sna\u017Eni klju\u010D za \u0161ifrovanje. Kod vrijedi ta\u010Dno jednom: nakon prijenosa \u2014 ili nakon jednog pogre\u0161nog poku\u0161aja \u2014 postaje beskoristan. Napada\u010D bi morao pogoditi cijeli kod iz prve, a ti bi neuspjeli poku\u0161aj odmah primijetio/la.",
+      e2eTitle: "\u0160ifrovano s kraja na kraj",
+      e2eBody: "Tvoja datoteka se \u0161ifruje na tvom ure\u0111aju, a de\u0161ifruje tek na ure\u0111aju primaoca. Sve izme\u0111u \u2014 uklju\u010Duju\u0107i servere preko kojih se ure\u0111aji pronalaze \u2014 vidi samo ne\u010Ditljiv \u0161ifrat.",
+      directTitle: "Direktno izme\u0111u tvojih ure\u0111aja",
+      directBody: "Kada su oba ure\u0111aja na istoj Wi-Fi mre\u017Ei, datoteka putuje direktno s jednog na drugi punom lokalnom brzinom \u2014 nikada ne napu\u0161ta tvoju mre\u017Eu. Tek kada direktna veza nije mogu\u0107a (npr. jedan ure\u0111aj je na mobilnim podacima), prijenos ide preko javnog releja koji slijepo proslje\u0111uje \u0161ifrovane bajtove koje ne mo\u017Ee pro\u010Ditati.",
+      serversTitle: "\u0160ta serveri vide",
+      serversBody: "PortalGems nema vlastite servere ni korisni\u010Dke naloge. Koristi dva mala javna servisa magic-wormhole zajednice: mailbox server na kojem se dva ure\u0111aja sretnu (kao garderoba) i gore opisani relej. Nijedan ne \u010Duva tvoje datoteke, nijedan ne zna \u0161ta si poslao/la, i oba vide samo \u0161ifrovane podatke.",
+      pairingTitle: "Kako radi uparivanje",
+      pairingBody: "Pri uparivanju dva ure\u0111aja jednom razmijene veliku nasumi\u010Dnu tajnu \u2014 QR kodom ili kopiranjem \u2014 i spreme je u za\u0161ti\u0107enu pohranu ure\u0111aja. Od tada oba ure\u0111aja mogu sama izra\u010Dunati isti jednokratni kod za svaki prijenos, pa samo potvr\u0111uje\u0161 umjesto da kuca\u0161. Ovi izvedeni kodovi su daleko ja\u010Di od kucanih i nikada ne napu\u0161taju tvoje ure\u0111aje. Uklanjanjem uparenog ure\u0111aja tajna se bri\u0161e.",
+      limitsTitle: "Od \u010Dega ovo ne \u0161titi",
+      limitsBody: "Ko god vidi tvoj ekran dok je kod ili QR za uparivanje prikazan, mo\u017Ee ga iskoristiti. Ko ima pun pristup tvom otklju\u010Danom ure\u0111aju, mo\u017Ee \u010Ditati \u0161ta je na njemu. A posmatra\u010D tvoje mre\u017Ee mo\u017Ee znati da si ne\u0161to prenio/la i otprilike koliko je bilo veliko \u2014 ali nikada \u0161ta je bilo."
+    },
+    transfer: {
+      direct: "Direktna veza s drugim ure\u0111ajem",
+      relay: "Povezano preko releja",
+      progress: "{{pct}} %"
+    },
+    common: {
+      cancel: "Otka\u017Ei",
+      done: "Gotovo",
+      back: "Nazad",
+      retry: "Poku\u0161aj ponovo",
+      accept: "Prihvati",
+      decline: "Odbij"
+    },
+    errors: {
+      title: "Ne\u0161to je po\u0161lo po zlu",
+      pickFailed: "Odabranu datoteku nije mogu\u0107e pro\u010Ditati.",
+      invalidCode: "Ovo ne li\u010Di na va\u017Ee\u0107i kod. Kodovi izgledaju ovako: 7-rije\u010D-rije\u010D",
+      wrongCode: "Pod ovim kodom se ne nudi nijedna datoteka. Provjeri kod i da li je aplikacija po\u0161iljaoca jo\u0161 otvorena i \u010Deka.",
+      network: "Problem s mre\u017Eom \u2014 provjeri internet vezu i poku\u0161aj ponovo.",
+      peerGone: "Druga strana je nestala prije zavr\u0161etka prijenosa.",
+      declinedBySender: "Druga strana je odbila ili otkazala prijenos.",
+      transferFailed: "Prijenos nije uspio: {{message}}",
+      cancelled: "Prijenos otkazan."
+    }
+  };
+
+  // ../core/src/i18n/de.json
+  var de_default = {
+    app: { name: "PortalGems" },
+    home: {
+      explainLink: "So funktioniert's & Sicherheit",
+      settingsLink: "Einstellungen",
+      devicesTitle: "Deine Ger\xE4te",
+      devicesEmpty: "Kopple Handy und Laptop einmal \u2014 danach gen\xFCgt zum Senden ein Fingertipp auf beiden Seiten.",
+      pairNew: "Neues Ger\xE4t koppeln",
+      tagline: "Dateien von Ger\xE4t zu Ger\xE4t \u2014 privat, direkt, ohne Konten.",
+      sendTitle: "Datei senden",
+      sendHint: "W\xE4hle eine Datei und teile den Einmal-Code mit dem Empf\xE4nger.",
+      sendButton: "Datei ausw\xE4hlen",
+      receiveTitle: "Datei empfangen",
+      receiveHint: "Gib den Code ein, den dir der Absender gegeben hat.",
+      receivePlaceholder: "z. B. 7-crossover-clockwork",
+      receiveButton: "Empfangen"
+    },
+    send: {
+      title: "Senden",
+      waitingForReceiver: "Teile diesen Code mit dem Empf\xE4nger:",
+      copyCode: "Code kopieren",
+      codeCopied: "Kopiert!",
+      sending: "{{name}} wird gesendet\u2026",
+      success: "Datei erfolgreich gesendet.",
+      successDetail: "{{name}} \xB7 {{size}}"
+    },
+    receive: {
+      title: "Empfangen",
+      connecting: "Verbinden\u2026",
+      incoming: "Eingehende Datei",
+      acceptQuestion: "M\xF6chtest du diese Datei empfangen?",
+      receiving: "Datei wird empfangen\u2026",
+      success: "Datei gespeichert.",
+      savedAs: "In Downloads gespeichert als {{name}}.",
+      declined: "Du hast die \xDCbertragung abgelehnt."
+    },
+    pair: {
+      title: "Ger\xE4t koppeln",
+      showButton: "Kopplungscode anzeigen",
+      showHint: "Scanne diesen QR-Code mit dem anderen Ger\xE4t oder kopiere den Kopplungscode und f\xFCge ihn dort ein. Wer diesen Code sieht, kann sich mit dir koppeln \u2014 teile ihn nur privat.",
+      scanButton: "QR-Code scannen",
+      manualPlaceholder: "\u2026oder Kopplungscode hier einf\xFCgen",
+      manualButton: "Mit eingef\xFCgtem Code koppeln",
+      copyPayload: "Kopplungscode kopieren",
+      copied: "Kopiert!",
+      waiting: "Warte, bis das andere Ger\xE4t die Kopplung abschlie\xDFt\u2026",
+      invalidPayload: "Das ist kein g\xFCltiger PortalGems-Kopplungscode.",
+      success: "Mit {{name}} gekoppelt!",
+      failed: "Kopplung fehlgeschlagen: {{message}}"
+    },
+    devices: {
+      title: "Ger\xE4te",
+      send: "Senden",
+      receive: "Empfangen",
+      remove: "Entfernen",
+      empty: "Noch keine gekoppelten Ger\xE4te."
+    },
+    paired: {
+      sendWaiting: "Warte auf {{name}} \u2014 stelle sicher, dass PortalGems dort ge\xF6ffnet ist\u2026",
+      notOpen: "{{name}} scheint PortalGems nicht ge\xF6ffnet zu haben. Bitte dort die App \xF6ffnen und erneut versuchen.",
+      receiveWaiting: "Suche nach einer \xDCbertragung von {{name}}\u2026",
+      nothingFound: "Von {{name}} ist nichts angekommen. Stelle sicher, dass dort auf Senden getippt wurde, und versuche es erneut."
+    },
+    settings: {
+      title: "Einstellungen",
+      language: "Sprache",
+      theme: "Design",
+      themes: {
+        diamond: "Diamant",
+        sapphire: "Saphir",
+        emerald: "Smaragd",
+        ruby: "Rubin",
+        amethyst: "Amethyst"
+      }
+    },
+    explain: {
+      title: "So funktioniert's",
+      intro: "PortalGems nutzt das Magic-Wormhole-Protokoll \u2014 einen offenen Standard, um Dateien sicher von einem Ger\xE4t zum anderen zu \xFCbertragen. Hier erf\xE4hrst du, was dabei passiert und warum du dem vertrauen kannst.",
+      codesTitle: "Ein Code, eine \xDCbertragung",
+      codesBody: "Jede \xDCbertragung beginnt mit einem kurzen Einmal-Code wie 7-crossover-clockwork. Beide Ger\xE4te speisen diesen Code in einen kryptografischen Handshake (SPAKE2) und leiten daraus denselben starken Schl\xFCssel ab. Der Code funktioniert genau einmal: Nach einer \xDCbertragung \u2014 oder nach einem einzigen falschen Versuch \u2014 ist er wertlos. Ein Angreifer m\xFCsste den gesamten Code beim allerersten Versuch richtig raten, und du w\xFCrdest den Fehlversuch sofort bemerken.",
+      e2eTitle: "Ende-zu-Ende verschl\xFCsselt",
+      e2eBody: "Deine Datei wird auf deinem Ger\xE4t verschl\xFCsselt und erst auf dem Empfangsger\xE4t wieder entschl\xFCsselt. Alles dazwischen \u2014 auch die Server, \xFCber die sich die Ger\xE4te finden \u2014 sieht nur unlesbaren Geheimtext.",
+      directTitle: "Direkt zwischen deinen Ger\xE4ten",
+      directBody: "Sind beide Ger\xE4te im selben WLAN, wandert die Datei direkt von Ger\xE4t zu Ger\xE4t mit voller lokaler Geschwindigkeit \u2014 sie verl\xE4sst dein Netzwerk nie. Nur wenn keine direkte Verbindung m\xF6glich ist (z. B. ein Ger\xE4t im Mobilfunknetz), l\xE4uft die \xDCbertragung \xFCber ein \xF6ffentliches Relay, das verschl\xFCsselte Bytes blind weiterleitet, ohne sie lesen zu k\xF6nnen.",
+      serversTitle: "Was die Server sehen",
+      serversBody: "PortalGems hat keine eigenen Server und keine Benutzerkonten. Es nutzt zwei kleine \xF6ffentliche Dienste der Magic-Wormhole-Community: einen Mailbox-Server, an dem sich zwei Ger\xE4te treffen (wie eine Garderobe), und das oben beschriebene Relay. Keiner speichert deine Dateien, keiner wei\xDF, was du gesendet hast, und beide sehen nur verschl\xFCsselte Daten.",
+      pairingTitle: "So funktioniert die Kopplung",
+      pairingBody: "Beim Koppeln tauschen zwei Ger\xE4te einmalig ein gro\xDFes zuf\xE4lliges Geheimnis aus \u2014 per QR-Code oder Kopieren/Einf\xFCgen \u2014 und legen es im gesch\xFCtzten Speicher deines Ger\xE4ts ab. Danach k\xF6nnen beide Ger\xE4te f\xFCr jede \xDCbertragung selbst denselben Einmal-Code berechnen; du best\xE4tigst nur noch, statt zu tippen. Diese abgeleiteten Codes sind weit st\xE4rker als getippte Codes und verlassen deine Ger\xE4te nie. Beim Entfernen eines gekoppelten Ger\xE4ts wird das Geheimnis gel\xF6scht.",
+      limitsTitle: "Wovor das nicht sch\xFCtzt",
+      limitsBody: "Wer deinen Bildschirm sehen kann, w\xE4hrend ein Code oder Kopplungs-QR angezeigt wird, kann ihn verwenden. Wer vollen Zugriff auf dein entsperrtes Ger\xE4t hat, kann lesen, was darauf gespeichert ist. Und ein Beobachter deines Netzwerks erkennt, dass du etwas \xFCbertragen hast und ungef\xE4hr wie gro\xDF es war \u2014 aber nie, was es war."
+    },
+    transfer: {
+      direct: "Direkte Verbindung zum anderen Ger\xE4t",
+      relay: "Verbunden \xFCber Relay",
+      progress: "{{pct}} %"
+    },
+    common: {
+      cancel: "Abbrechen",
+      done: "Fertig",
+      back: "Zur\xFCck",
+      retry: "Erneut versuchen",
+      accept: "Annehmen",
+      decline: "Ablehnen"
+    },
+    errors: {
+      title: "Etwas ist schiefgelaufen",
+      pickFailed: "Die ausgew\xE4hlte Datei konnte nicht gelesen werden.",
+      invalidCode: "Das sieht nicht nach einem g\xFCltigen Code aus. Codes sehen so aus: 7-wort-wort",
+      wrongCode: "Unter diesem Code wird keine Datei angeboten. Pr\xFCfe den Code und stelle sicher, dass die App des Absenders noch ge\xF6ffnet ist und wartet.",
+      network: "Netzwerkproblem \u2014 pr\xFCfe deine Internetverbindung und versuche es erneut.",
+      peerGone: "Die Gegenseite ist verschwunden, bevor die \xDCbertragung abgeschlossen war.",
+      declinedBySender: "Die \xDCbertragung wurde von der Gegenseite abgelehnt oder abgebrochen.",
+      transferFailed: "Die \xDCbertragung ist fehlgeschlagen: {{message}}",
+      cancelled: "\xDCbertragung abgebrochen."
+    }
+  };
+
   // ../core/src/i18n/en.json
   var en_default = {
     app: {
       name: "PortalGems"
     },
     home: {
+      explainLink: "How it works & security",
+      settingsLink: "Settings",
       devicesTitle: "Your devices",
       devicesEmpty: "Pair your phone and laptop once \u2014 after that, sending needs just a tap on each side.",
       pairNew: "Pair a new device",
@@ -27353,6 +27694,34 @@
       accept: "Accept",
       decline: "Decline"
     },
+    settings: {
+      title: "Settings",
+      language: "Language",
+      theme: "Theme",
+      themes: {
+        diamond: "Diamond",
+        sapphire: "Sapphire",
+        emerald: "Emerald",
+        ruby: "Ruby",
+        amethyst: "Amethyst"
+      }
+    },
+    explain: {
+      title: "How it works",
+      intro: "PortalGems uses the magic-wormhole protocol \u2014 an open standard for sending files safely from one device to another. Here is what happens under the hood, and why you can trust it.",
+      codesTitle: "One code, one transfer",
+      codesBody: "Every transfer starts with a short one-time code like 7-crossover-clockwork. Both devices feed that code into a cryptographic handshake (SPAKE2) and derive the same strong encryption key from it. The code works exactly once: after a transfer \u2014 or after a single wrong guess \u2014 it becomes useless. An attacker would have to guess the entire code correctly on the very first try, and you would notice the failed attempt immediately.",
+      e2eTitle: "Encrypted from end to end",
+      e2eBody: "Your file is encrypted on your device and decrypted only on the receiving device. Everything in between \u2014 including the servers that help the two devices find each other \u2014 sees only unreadable ciphertext.",
+      directTitle: "Direct between your devices",
+      directBody: "When both devices are on the same Wi-Fi network, the file travels directly from one device to the other at full local speed \u2014 it never leaves your network. Only when a direct connection is impossible (for example, one device is on mobile data) does the transfer fall back to a public relay, which blindly forwards encrypted bytes it cannot read.",
+      serversTitle: "What the servers can see",
+      serversBody: "PortalGems has no servers of its own and no user accounts. It uses two small public services run by the magic-wormhole community: a mailbox server where two devices meet (think of a coat-check counter), and the relay described above. Neither stores your files, neither knows what you sent, and both see only encrypted data.",
+      pairingTitle: "How pairing works",
+      pairingBody: "When you pair two devices, they exchange one large random secret \u2014 via QR code or copy/paste \u2014 and store it in your device's protected storage. From then on, both devices can compute the same one-time code by themselves for every transfer, so you only confirm instead of typing. These derived codes are far stronger than typed codes, and they never leave your devices. Removing a paired device deletes the secret.",
+      limitsTitle: "What this does not protect against",
+      limitsBody: "Anyone who can see your screen while a code or pairing QR is visible can use it. Anyone with full access to your unlocked device can read what is stored on it. And an observer of your network can tell that you transferred something and roughly how large it was \u2014 but never what it was."
+    },
     errors: {
       title: "Something went wrong",
       pickFailed: "Could not read the selected file.",
@@ -27366,17 +27735,388 @@
     }
   };
 
+  // ../core/src/i18n/es.json
+  var es_default = {
+    app: { name: "PortalGems" },
+    home: {
+      explainLink: "C\xF3mo funciona y seguridad",
+      settingsLink: "Ajustes",
+      devicesTitle: "Tus dispositivos",
+      devicesEmpty: "Empareja tu tel\xE9fono y tu port\xE1til una sola vez \u2014 despu\xE9s, enviar solo requiere un toque en cada lado.",
+      pairNew: "Emparejar un dispositivo nuevo",
+      tagline: "Env\xEDa archivos de dispositivo a dispositivo \u2014 privado, directo, sin cuentas.",
+      sendTitle: "Enviar un archivo",
+      sendHint: "Elige un archivo y comparte el c\xF3digo de un solo uso con el receptor.",
+      sendButton: "Elegir archivo",
+      receiveTitle: "Recibir un archivo",
+      receiveHint: "Introduce el c\xF3digo que te dio el remitente.",
+      receivePlaceholder: "p. ej. 7-crossover-clockwork",
+      receiveButton: "Recibir"
+    },
+    send: {
+      title: "Enviando",
+      waitingForReceiver: "Comparte este c\xF3digo con el receptor:",
+      copyCode: "Copiar c\xF3digo",
+      codeCopied: "\xA1Copiado!",
+      sending: "Enviando {{name}}\u2026",
+      success: "Archivo enviado correctamente.",
+      successDetail: "{{name}} \xB7 {{size}}"
+    },
+    receive: {
+      title: "Recibiendo",
+      connecting: "Conectando\u2026",
+      incoming: "Archivo entrante",
+      acceptQuestion: "\xBFQuieres recibir este archivo?",
+      receiving: "Recibiendo archivo\u2026",
+      success: "Archivo guardado.",
+      savedAs: "Guardado en Descargas como {{name}}.",
+      declined: "Has rechazado la transferencia."
+    },
+    pair: {
+      title: "Emparejar un dispositivo",
+      showButton: "Mostrar c\xF3digo de emparejamiento",
+      showHint: "Escanea este c\xF3digo QR con el otro dispositivo, o copia el c\xF3digo de emparejamiento y p\xE9galo all\xED. Cualquiera que vea este c\xF3digo puede emparejarse contigo \u2014 comp\xE1rtelo solo en privado.",
+      scanButton: "Escanear c\xF3digo QR",
+      manualPlaceholder: "\u2026o pega aqu\xED un c\xF3digo de emparejamiento",
+      manualButton: "Emparejar con el c\xF3digo pegado",
+      copyPayload: "Copiar c\xF3digo de emparejamiento",
+      copied: "\xA1Copiado!",
+      waiting: "Esperando a que el otro dispositivo termine el emparejamiento\u2026",
+      invalidPayload: "Eso no es un c\xF3digo de emparejamiento v\xE1lido de PortalGems.",
+      success: "\xA1Emparejado con {{name}}!",
+      failed: "El emparejamiento fall\xF3: {{message}}"
+    },
+    devices: {
+      title: "Dispositivos",
+      send: "Enviar",
+      receive: "Recibir",
+      remove: "Quitar",
+      empty: "A\xFAn no hay dispositivos emparejados."
+    },
+    paired: {
+      sendWaiting: "Esperando a {{name}} \u2014 aseg\xFArate de que PortalGems est\xE9 abierto all\xED\u2026",
+      notOpen: "Parece que {{name}} no tiene PortalGems abierto. Pide que abran la aplicaci\xF3n e int\xE9ntalo de nuevo.",
+      receiveWaiting: "Buscando una transferencia de {{name}}\u2026",
+      nothingFound: "No lleg\xF3 nada de {{name}}. Aseg\xFArate de que hayan pulsado Enviar e int\xE9ntalo de nuevo."
+    },
+    settings: {
+      title: "Ajustes",
+      language: "Idioma",
+      theme: "Tema",
+      themes: {
+        diamond: "Diamante",
+        sapphire: "Zafiro",
+        emerald: "Esmeralda",
+        ruby: "Rub\xED",
+        amethyst: "Amatista"
+      }
+    },
+    explain: {
+      title: "C\xF3mo funciona",
+      intro: "PortalGems usa el protocolo magic-wormhole \u2014 un est\xE1ndar abierto para enviar archivos de forma segura de un dispositivo a otro. Esto es lo que ocurre por dentro y por qu\xE9 puedes confiar en ello.",
+      codesTitle: "Un c\xF3digo, una transferencia",
+      codesBody: "Cada transferencia comienza con un c\xF3digo corto de un solo uso como 7-crossover-clockwork. Ambos dispositivos introducen ese c\xF3digo en un intercambio criptogr\xE1fico (SPAKE2) y derivan de \xE9l la misma clave de cifrado robusta. El c\xF3digo funciona exactamente una vez: tras una transferencia \u2014 o tras un \xFAnico intento fallido \u2014 queda inservible. Un atacante tendr\xEDa que adivinar el c\xF3digo completo al primer intento, y t\xFA notar\xEDas el intento fallido de inmediato.",
+      e2eTitle: "Cifrado de extremo a extremo",
+      e2eBody: "Tu archivo se cifra en tu dispositivo y solo se descifra en el dispositivo receptor. Todo lo que hay en medio \u2014 incluidos los servidores que ayudan a los dispositivos a encontrarse \u2014 solo ve texto cifrado ilegible.",
+      directTitle: "Directo entre tus dispositivos",
+      directBody: "Cuando ambos dispositivos est\xE1n en la misma red Wi-Fi, el archivo viaja directamente de uno a otro a plena velocidad local \u2014 nunca sale de tu red. Solo cuando una conexi\xF3n directa es imposible (por ejemplo, un dispositivo con datos m\xF3viles) la transferencia recurre a un rel\xE9 p\xFAblico, que reenv\xEDa a ciegas bytes cifrados que no puede leer.",
+      serversTitle: "Qu\xE9 ven los servidores",
+      serversBody: "PortalGems no tiene servidores propios ni cuentas de usuario. Usa dos peque\xF1os servicios p\xFAblicos gestionados por la comunidad de magic-wormhole: un servidor buz\xF3n donde dos dispositivos se encuentran (como un guardarropa) y el rel\xE9 descrito arriba. Ninguno almacena tus archivos, ninguno sabe qu\xE9 enviaste, y ambos solo ven datos cifrados.",
+      pairingTitle: "C\xF3mo funciona el emparejamiento",
+      pairingBody: "Al emparejar dos dispositivos, estos intercambian una sola vez un gran secreto aleatorio \u2014 mediante c\xF3digo QR o copiar/pegar \u2014 y lo guardan en el almacenamiento protegido de tu dispositivo. Desde entonces, ambos dispositivos pueden calcular por s\xED mismos el mismo c\xF3digo de un solo uso para cada transferencia, as\xED que solo confirmas en lugar de teclear. Estos c\xF3digos derivados son mucho m\xE1s robustos que los tecleados y nunca salen de tus dispositivos. Al quitar un dispositivo emparejado, el secreto se borra.",
+      limitsTitle: "Contra qu\xE9 no protege",
+      limitsBody: "Cualquiera que pueda ver tu pantalla mientras se muestra un c\xF3digo o un QR de emparejamiento puede usarlo. Cualquiera con acceso total a tu dispositivo desbloqueado puede leer lo que contiene. Y un observador de tu red puede saber que transferiste algo y su tama\xF1o aproximado \u2014 pero nunca qu\xE9 era."
+    },
+    transfer: {
+      direct: "Conexi\xF3n directa con el otro dispositivo",
+      relay: "Conectado a trav\xE9s de un rel\xE9",
+      progress: "{{pct}} %"
+    },
+    common: {
+      cancel: "Cancelar",
+      done: "Hecho",
+      back: "Atr\xE1s",
+      retry: "Reintentar",
+      accept: "Aceptar",
+      decline: "Rechazar"
+    },
+    errors: {
+      title: "Algo sali\xF3 mal",
+      pickFailed: "No se pudo leer el archivo seleccionado.",
+      invalidCode: "Eso no parece un c\xF3digo v\xE1lido. Los c\xF3digos son as\xED: 7-palabra-palabra",
+      wrongCode: "Nadie ofrece un archivo con este c\xF3digo. Comprueba el c\xF3digo y aseg\xFArate de que la aplicaci\xF3n del remitente siga abierta y esperando.",
+      network: "Problema de red \u2014 comprueba tu conexi\xF3n a Internet e int\xE9ntalo de nuevo.",
+      peerGone: "La otra parte desapareci\xF3 antes de terminar la transferencia.",
+      declinedBySender: "La otra parte rechaz\xF3 o cancel\xF3 la transferencia.",
+      transferFailed: "La transferencia fall\xF3: {{message}}",
+      cancelled: "Transferencia cancelada."
+    }
+  };
+
+  // ../core/src/i18n/fr.json
+  var fr_default = {
+    app: { name: "PortalGems" },
+    home: {
+      explainLink: "Fonctionnement et s\xE9curit\xE9",
+      settingsLink: "Param\xE8tres",
+      devicesTitle: "Vos appareils",
+      devicesEmpty: "Associez votre t\xE9l\xE9phone et votre ordinateur une seule fois \u2014 ensuite, envoyer ne demande qu'un geste de chaque c\xF4t\xE9.",
+      pairNew: "Associer un nouvel appareil",
+      tagline: "Envoyez des fichiers d'un appareil \xE0 l'autre \u2014 priv\xE9, direct, sans compte.",
+      sendTitle: "Envoyer un fichier",
+      sendHint: "Choisissez un fichier et partagez le code \xE0 usage unique avec le destinataire.",
+      sendButton: "Choisir un fichier",
+      receiveTitle: "Recevoir un fichier",
+      receiveHint: "Saisissez le code que l'exp\xE9diteur vous a donn\xE9.",
+      receivePlaceholder: "p. ex. 7-crossover-clockwork",
+      receiveButton: "Recevoir"
+    },
+    send: {
+      title: "Envoi",
+      waitingForReceiver: "Partagez ce code avec le destinataire :",
+      copyCode: "Copier le code",
+      codeCopied: "Copi\xE9 !",
+      sending: "Envoi de {{name}}\u2026",
+      success: "Fichier envoy\xE9 avec succ\xE8s.",
+      successDetail: "{{name}} \xB7 {{size}}"
+    },
+    receive: {
+      title: "R\xE9ception",
+      connecting: "Connexion\u2026",
+      incoming: "Fichier entrant",
+      acceptQuestion: "Voulez-vous recevoir ce fichier ?",
+      receiving: "R\xE9ception du fichier\u2026",
+      success: "Fichier enregistr\xE9.",
+      savedAs: "Enregistr\xE9 dans T\xE9l\xE9chargements sous {{name}}.",
+      declined: "Vous avez refus\xE9 le transfert."
+    },
+    pair: {
+      title: "Associer un appareil",
+      showButton: "Afficher le code d'association",
+      showHint: "Scannez ce code QR avec l'autre appareil, ou copiez le code d'association et collez-le l\xE0-bas. Quiconque voit ce code peut s'associer \xE0 vous \u2014 partagez-le uniquement en priv\xE9.",
+      scanButton: "Scanner un code QR",
+      manualPlaceholder: "\u2026ou collez un code d'association ici",
+      manualButton: "Associer avec le code coll\xE9",
+      copyPayload: "Copier le code d'association",
+      copied: "Copi\xE9 !",
+      waiting: "En attente que l'autre appareil termine l'association\u2026",
+      invalidPayload: "Ceci n'est pas un code d'association PortalGems valide.",
+      success: "Associ\xE9 \xE0 {{name}} !",
+      failed: "\xC9chec de l'association : {{message}}"
+    },
+    devices: {
+      title: "Appareils",
+      send: "Envoyer",
+      receive: "Recevoir",
+      remove: "Retirer",
+      empty: "Aucun appareil associ\xE9 pour l'instant."
+    },
+    paired: {
+      sendWaiting: "En attente de {{name}} \u2014 v\xE9rifiez que PortalGems y est ouvert\u2026",
+      notOpen: "{{name}} ne semble pas avoir PortalGems ouvert. Demandez de l'ouvrir, puis r\xE9essayez.",
+      receiveWaiting: "Recherche d'un transfert depuis {{name}}\u2026",
+      nothingFound: "Rien n'est arriv\xE9 de {{name}}. V\xE9rifiez qu'Envoyer y a bien \xE9t\xE9 touch\xE9, puis r\xE9essayez."
+    },
+    settings: {
+      title: "Param\xE8tres",
+      language: "Langue",
+      theme: "Th\xE8me",
+      themes: {
+        diamond: "Diamant",
+        sapphire: "Saphir",
+        emerald: "\xC9meraude",
+        ruby: "Rubis",
+        amethyst: "Am\xE9thyste"
+      }
+    },
+    explain: {
+      title: "Comment \xE7a marche",
+      intro: "PortalGems utilise le protocole magic-wormhole \u2014 un standard ouvert pour envoyer des fichiers en toute s\xE9curit\xE9 d'un appareil \xE0 un autre. Voici ce qui se passe sous le capot, et pourquoi vous pouvez lui faire confiance.",
+      codesTitle: "Un code, un transfert",
+      codesBody: "Chaque transfert commence par un court code \xE0 usage unique comme 7-crossover-clockwork. Les deux appareils injectent ce code dans une poign\xE9e de main cryptographique (SPAKE2) et en d\xE9rivent la m\xEAme cl\xE9 de chiffrement robuste. Le code ne fonctionne qu'une seule fois : apr\xE8s un transfert \u2014 ou apr\xE8s une seule tentative erron\xE9e \u2014 il devient inutilisable. Un attaquant devrait deviner le code entier du premier coup, et vous remarqueriez imm\xE9diatement la tentative \xE9chou\xE9e.",
+      e2eTitle: "Chiffr\xE9 de bout en bout",
+      e2eBody: "Votre fichier est chiffr\xE9 sur votre appareil et d\xE9chiffr\xE9 uniquement sur l'appareil du destinataire. Tout ce qui se trouve entre les deux \u2014 y compris les serveurs qui aident les appareils \xE0 se trouver \u2014 ne voit qu'un texte chiffr\xE9 illisible.",
+      directTitle: "En direct entre vos appareils",
+      directBody: "Quand les deux appareils sont sur le m\xEAme r\xE9seau Wi-Fi, le fichier voyage directement de l'un \xE0 l'autre \xE0 pleine vitesse locale \u2014 il ne quitte jamais votre r\xE9seau. Ce n'est que lorsqu'une connexion directe est impossible (par exemple, un appareil en donn\xE9es mobiles) que le transfert passe par un relais public, qui fait suivre aveugl\xE9ment des octets chiffr\xE9s qu'il ne peut pas lire.",
+      serversTitle: "Ce que voient les serveurs",
+      serversBody: "PortalGems n'a ni serveurs propres ni comptes utilisateurs. Il utilise deux petits services publics g\xE9r\xE9s par la communaut\xE9 magic-wormhole : un serveur \xAB bo\xEEte aux lettres \xBB o\xF9 deux appareils se rencontrent (comme un vestiaire), et le relais d\xE9crit ci-dessus. Aucun ne stocke vos fichiers, aucun ne sait ce que vous avez envoy\xE9, et tous deux ne voient que des donn\xE9es chiffr\xE9es.",
+      pairingTitle: "Comment fonctionne l'association",
+      pairingBody: "Lorsque vous associez deux appareils, ils \xE9changent une seule fois un grand secret al\xE9atoire \u2014 par code QR ou copier/coller \u2014 et le conservent dans le stockage prot\xE9g\xE9 de votre appareil. D\xE8s lors, les deux appareils peuvent calculer eux-m\xEAmes le m\xEAme code \xE0 usage unique pour chaque transfert : vous ne faites que confirmer au lieu de taper. Ces codes d\xE9riv\xE9s sont bien plus robustes que les codes tap\xE9s et ne quittent jamais vos appareils. Retirer un appareil associ\xE9 supprime le secret.",
+      limitsTitle: "Ce contre quoi cela ne prot\xE8ge pas",
+      limitsBody: "Quiconque peut voir votre \xE9cran pendant qu'un code ou un QR d'association est affich\xE9 peut l'utiliser. Quiconque a un acc\xE8s complet \xE0 votre appareil d\xE9verrouill\xE9 peut lire ce qui s'y trouve. Et un observateur de votre r\xE9seau peut savoir que vous avez transf\xE9r\xE9 quelque chose et sa taille approximative \u2014 mais jamais ce que c'\xE9tait."
+    },
+    transfer: {
+      direct: "Connexion directe \xE0 l'autre appareil",
+      relay: "Connect\xE9 via un relais",
+      progress: "{{pct}} %"
+    },
+    common: {
+      cancel: "Annuler",
+      done: "Termin\xE9",
+      back: "Retour",
+      retry: "R\xE9essayer",
+      accept: "Accepter",
+      decline: "Refuser"
+    },
+    errors: {
+      title: "Un probl\xE8me est survenu",
+      pickFailed: "Impossible de lire le fichier s\xE9lectionn\xE9.",
+      invalidCode: "Cela ne ressemble pas \xE0 un code valide. Les codes ressemblent \xE0 : 7-mot-mot",
+      wrongCode: "Aucun fichier n'est propos\xE9 sous ce code. V\xE9rifiez le code et assurez-vous que l'application de l'exp\xE9diteur est toujours ouverte et en attente.",
+      network: "Probl\xE8me r\xE9seau \u2014 v\xE9rifiez votre connexion Internet et r\xE9essayez.",
+      peerGone: "L'autre partie a disparu avant la fin du transfert.",
+      declinedBySender: "Le transfert a \xE9t\xE9 refus\xE9 ou annul\xE9 par l'autre partie.",
+      transferFailed: "Le transfert a \xE9chou\xE9 : {{message}}",
+      cancelled: "Transfert annul\xE9."
+    }
+  };
+
+  // ../core/src/i18n/ru.json
+  var ru_default = {
+    app: { name: "PortalGems" },
+    home: {
+      explainLink: "\u041A\u0430\u043A \u044D\u0442\u043E \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442 \u0438 \u0431\u0435\u0437\u043E\u043F\u0430\u0441\u043D\u043E\u0441\u0442\u044C",
+      settingsLink: "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438",
+      devicesTitle: "\u0412\u0430\u0448\u0438 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430",
+      devicesEmpty: "\u0421\u0432\u044F\u0436\u0438\u0442\u0435 \u0442\u0435\u043B\u0435\u0444\u043E\u043D \u0438 \u043D\u043E\u0443\u0442\u0431\u0443\u043A \u043E\u0434\u0438\u043D \u0440\u0430\u0437 \u2014 \u043F\u043E\u0441\u043B\u0435 \u044D\u0442\u043E\u0433\u043E \u0434\u043B\u044F \u043E\u0442\u043F\u0440\u0430\u0432\u043A\u0438 \u0434\u043E\u0441\u0442\u0430\u0442\u043E\u0447\u043D\u043E \u043E\u0434\u043D\u043E\u0433\u043E \u043D\u0430\u0436\u0430\u0442\u0438\u044F \u0441 \u043A\u0430\u0436\u0434\u043E\u0439 \u0441\u0442\u043E\u0440\u043E\u043D\u044B.",
+      pairNew: "\u0421\u0432\u044F\u0437\u0430\u0442\u044C \u043D\u043E\u0432\u043E\u0435 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E",
+      tagline: "\u041F\u0435\u0440\u0435\u0434\u0430\u0432\u0430\u0439\u0442\u0435 \u0444\u0430\u0439\u043B\u044B \u0441 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u043D\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E \u2014 \u043F\u0440\u0438\u0432\u0430\u0442\u043D\u043E, \u043D\u0430\u043F\u0440\u044F\u043C\u0443\u044E, \u0431\u0435\u0437 \u0430\u043A\u043A\u0430\u0443\u043D\u0442\u043E\u0432.",
+      sendTitle: "\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u0444\u0430\u0439\u043B",
+      sendHint: "\u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0444\u0430\u0439\u043B \u0438 \u043F\u0435\u0440\u0435\u0434\u0430\u0439\u0442\u0435 \u043E\u0434\u043D\u043E\u0440\u0430\u0437\u043E\u0432\u044B\u0439 \u043A\u043E\u0434 \u043F\u043E\u043B\u0443\u0447\u0430\u0442\u0435\u043B\u044E.",
+      sendButton: "\u0412\u044B\u0431\u0440\u0430\u0442\u044C \u0444\u0430\u0439\u043B",
+      receiveTitle: "\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C \u0444\u0430\u0439\u043B",
+      receiveHint: "\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u043A\u043E\u0434, \u043A\u043E\u0442\u043E\u0440\u044B\u0439 \u0432\u0430\u043C \u0434\u0430\u043B \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u0435\u043B\u044C.",
+      receivePlaceholder: "\u043D\u0430\u043F\u0440\u0438\u043C\u0435\u0440, 7-crossover-clockwork",
+      receiveButton: "\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C"
+    },
+    send: {
+      title: "\u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430",
+      waitingForReceiver: "\u041F\u0435\u0440\u0435\u0434\u0430\u0439\u0442\u0435 \u044D\u0442\u043E\u0442 \u043A\u043E\u0434 \u043F\u043E\u043B\u0443\u0447\u0430\u0442\u0435\u043B\u044E:",
+      copyCode: "\u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043A\u043E\u0434",
+      codeCopied: "\u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D\u043E!",
+      sending: "\u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 {{name}}\u2026",
+      success: "\u0424\u0430\u0439\u043B \u0443\u0441\u043F\u0435\u0448\u043D\u043E \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u0435\u043D.",
+      successDetail: "{{name}} \xB7 {{size}}"
+    },
+    receive: {
+      title: "\u041F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u0435",
+      connecting: "\u041F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435\u2026",
+      incoming: "\u0412\u0445\u043E\u0434\u044F\u0449\u0438\u0439 \u0444\u0430\u0439\u043B",
+      acceptQuestion: "\u041F\u0440\u0438\u043D\u044F\u0442\u044C \u044D\u0442\u043E\u0442 \u0444\u0430\u0439\u043B?",
+      receiving: "\u041F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u0435 \u0444\u0430\u0439\u043B\u0430\u2026",
+      success: "\u0424\u0430\u0439\u043B \u0441\u043E\u0445\u0440\u0430\u043D\u0451\u043D.",
+      savedAs: "\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E \u0432 \xAB\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0438\xBB \u043A\u0430\u043A {{name}}.",
+      declined: "\u0412\u044B \u043E\u0442\u043A\u043B\u043E\u043D\u0438\u043B\u0438 \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0443."
+    },
+    pair: {
+      title: "\u0421\u0432\u044F\u0437\u0430\u0442\u044C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E",
+      showButton: "\u041F\u043E\u043A\u0430\u0437\u0430\u0442\u044C \u043A\u043E\u0434 \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u044F",
+      showHint: "\u041E\u0442\u0441\u043A\u0430\u043D\u0438\u0440\u0443\u0439\u0442\u0435 \u044D\u0442\u043E\u0442 QR-\u043A\u043E\u0434 \u0434\u0440\u0443\u0433\u0438\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E\u043C \u0438\u043B\u0438 \u0441\u043A\u043E\u043F\u0438\u0440\u0443\u0439\u0442\u0435 \u043A\u043E\u0434 \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u044F \u0438 \u0432\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u0435\u0433\u043E \u0442\u0430\u043C. \u041B\u044E\u0431\u043E\u0439, \u043A\u0442\u043E \u0443\u0432\u0438\u0434\u0438\u0442 \u044D\u0442\u043E\u0442 \u043A\u043E\u0434, \u0441\u043C\u043E\u0436\u0435\u0442 \u0441\u0432\u044F\u0437\u0430\u0442\u044C\u0441\u044F \u0441 \u0432\u0430\u043C\u0438 \u2014 \u0434\u0435\u043B\u0438\u0442\u0435\u0441\u044C \u0438\u043C \u0442\u043E\u043B\u044C\u043A\u043E \u043F\u0440\u0438\u0432\u0430\u0442\u043D\u043E.",
+      scanButton: "\u0421\u043A\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u0442\u044C QR-\u043A\u043E\u0434",
+      manualPlaceholder: "\u2026\u0438\u043B\u0438 \u0432\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u043A\u043E\u0434 \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u044F \u0441\u044E\u0434\u0430",
+      manualButton: "\u0421\u0432\u044F\u0437\u0430\u0442\u044C \u043F\u043E \u0432\u0441\u0442\u0430\u0432\u043B\u0435\u043D\u043D\u043E\u043C\u0443 \u043A\u043E\u0434\u0443",
+      copyPayload: "\u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043A\u043E\u0434 \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u044F",
+      copied: "\u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D\u043E!",
+      waiting: "\u041E\u0436\u0438\u0434\u0430\u043D\u0438\u0435, \u043F\u043E\u043A\u0430 \u0434\u0440\u0443\u0433\u043E\u0435 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E \u0437\u0430\u0432\u0435\u0440\u0448\u0438\u0442 \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u0435\u2026",
+      invalidPayload: "\u042D\u0442\u043E \u043D\u0435 \u043F\u043E\u0445\u043E\u0436\u0435 \u043D\u0430 \u0434\u0435\u0439\u0441\u0442\u0432\u0438\u0442\u0435\u043B\u044C\u043D\u044B\u0439 \u043A\u043E\u0434 \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u044F PortalGems.",
+      success: "\u0421\u0432\u044F\u0437\u0430\u043D\u043E \u0441 {{name}}!",
+      failed: "\u0421\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u0435 \u043D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C: {{message}}"
+    },
+    devices: {
+      title: "\u0423\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430",
+      send: "\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C",
+      receive: "\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C",
+      remove: "\u0423\u0434\u0430\u043B\u0438\u0442\u044C",
+      empty: "\u0421\u0432\u044F\u0437\u0430\u043D\u043D\u044B\u0445 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432 \u043F\u043E\u043A\u0430 \u043D\u0435\u0442."
+    },
+    paired: {
+      sendWaiting: "\u041E\u0436\u0438\u0434\u0430\u043D\u0438\u0435 {{name}} \u2014 \u0443\u0431\u0435\u0434\u0438\u0442\u0435\u0441\u044C, \u0447\u0442\u043E \u0442\u0430\u043C \u043E\u0442\u043A\u0440\u044B\u0442 PortalGems\u2026",
+      notOpen: "\u041F\u043E\u0445\u043E\u0436\u0435, \u043D\u0430 {{name}} \u043D\u0435 \u043E\u0442\u043A\u0440\u044B\u0442 PortalGems. \u041F\u043E\u043F\u0440\u043E\u0441\u0438\u0442\u0435 \u043E\u0442\u043A\u0440\u044B\u0442\u044C \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435 \u0438 \u043F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0441\u043D\u043E\u0432\u0430.",
+      receiveWaiting: "\u0418\u0449\u0443 \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0443 \u043E\u0442 {{name}}\u2026",
+      nothingFound: "\u041E\u0442 {{name}} \u043D\u0438\u0447\u0435\u0433\u043E \u043D\u0435 \u043F\u0440\u0438\u0448\u043B\u043E. \u0423\u0431\u0435\u0434\u0438\u0442\u0435\u0441\u044C, \u0447\u0442\u043E \u0442\u0430\u043C \u043D\u0430\u0436\u0430\u043B\u0438 \xAB\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C\xBB, \u0438 \u043F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0441\u043D\u043E\u0432\u0430."
+    },
+    settings: {
+      title: "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438",
+      language: "\u042F\u0437\u044B\u043A",
+      theme: "\u0422\u0435\u043C\u0430",
+      themes: {
+        diamond: "\u0410\u043B\u043C\u0430\u0437",
+        sapphire: "\u0421\u0430\u043F\u0444\u0438\u0440",
+        emerald: "\u0418\u0437\u0443\u043C\u0440\u0443\u0434",
+        ruby: "\u0420\u0443\u0431\u0438\u043D",
+        amethyst: "\u0410\u043C\u0435\u0442\u0438\u0441\u0442"
+      }
+    },
+    explain: {
+      title: "\u041A\u0430\u043A \u044D\u0442\u043E \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442",
+      intro: "PortalGems \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0435\u0442 \u043F\u0440\u043E\u0442\u043E\u043A\u043E\u043B magic-wormhole \u2014 \u043E\u0442\u043A\u0440\u044B\u0442\u044B\u0439 \u0441\u0442\u0430\u043D\u0434\u0430\u0440\u0442 \u0431\u0435\u0437\u043E\u043F\u0430\u0441\u043D\u043E\u0439 \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0438 \u0444\u0430\u0439\u043B\u043E\u0432 \u0441 \u043E\u0434\u043D\u043E\u0433\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u043D\u0430 \u0434\u0440\u0443\u0433\u043E\u0435. \u0412\u043E\u0442 \u0447\u0442\u043E \u043F\u0440\u043E\u0438\u0441\u0445\u043E\u0434\u0438\u0442 \u043F\u043E\u0434 \u043A\u0430\u043F\u043E\u0442\u043E\u043C \u0438 \u043F\u043E\u0447\u0435\u043C\u0443 \u044D\u0442\u043E\u043C\u0443 \u043C\u043E\u0436\u043D\u043E \u0434\u043E\u0432\u0435\u0440\u044F\u0442\u044C.",
+      codesTitle: "\u041E\u0434\u0438\u043D \u043A\u043E\u0434 \u2014 \u043E\u0434\u043D\u0430 \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0430",
+      codesBody: "\u041A\u0430\u0436\u0434\u0430\u044F \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0430 \u043D\u0430\u0447\u0438\u043D\u0430\u0435\u0442\u0441\u044F \u0441 \u043A\u043E\u0440\u043E\u0442\u043A\u043E\u0433\u043E \u043E\u0434\u043D\u043E\u0440\u0430\u0437\u043E\u0432\u043E\u0433\u043E \u043A\u043E\u0434\u0430 \u0432\u0440\u043E\u0434\u0435 7-crossover-clockwork. \u041E\u0431\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u043F\u043E\u0434\u0430\u044E\u0442 \u044D\u0442\u043E\u0442 \u043A\u043E\u0434 \u0432 \u043A\u0440\u0438\u043F\u0442\u043E\u0433\u0440\u0430\u0444\u0438\u0447\u0435\u0441\u043A\u043E\u0435 \u0440\u0443\u043A\u043E\u043F\u043E\u0436\u0430\u0442\u0438\u0435 (SPAKE2) \u0438 \u0432\u044B\u0432\u043E\u0434\u044F\u0442 \u0438\u0437 \u043D\u0435\u0433\u043E \u043E\u0434\u0438\u043D \u0438 \u0442\u043E\u0442 \u0436\u0435 \u0441\u0442\u043E\u0439\u043A\u0438\u0439 \u043A\u043B\u044E\u0447 \u0448\u0438\u0444\u0440\u043E\u0432\u0430\u043D\u0438\u044F. \u041A\u043E\u0434 \u0434\u0435\u0439\u0441\u0442\u0432\u0443\u0435\u0442 \u0440\u043E\u0432\u043D\u043E \u043E\u0434\u0438\u043D \u0440\u0430\u0437: \u043F\u043E\u0441\u043B\u0435 \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0438 \u2014 \u0438\u043B\u0438 \u043F\u043E\u0441\u043B\u0435 \u0435\u0434\u0438\u043D\u0441\u0442\u0432\u0435\u043D\u043D\u043E\u0439 \u043D\u0435\u0432\u0435\u0440\u043D\u043E\u0439 \u043F\u043E\u043F\u044B\u0442\u043A\u0438 \u2014 \u043E\u043D \u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0442\u0441\u044F \u0431\u0435\u0441\u043F\u043E\u043B\u0435\u0437\u043D\u044B\u043C. \u0417\u043B\u043E\u0443\u043C\u044B\u0448\u043B\u0435\u043D\u043D\u0438\u043A\u0443 \u043F\u0440\u0438\u0448\u043B\u043E\u0441\u044C \u0431\u044B \u0443\u0433\u0430\u0434\u0430\u0442\u044C \u0432\u0435\u0441\u044C \u043A\u043E\u0434 \u0441 \u043F\u0435\u0440\u0432\u043E\u0439 \u043F\u043E\u043F\u044B\u0442\u043A\u0438, \u0430 \u0432\u044B \u0441\u0440\u0430\u0437\u0443 \u0437\u0430\u043C\u0435\u0442\u0438\u043B\u0438 \u0431\u044B \u043D\u0435\u0443\u0434\u0430\u0447\u043D\u0443\u044E \u043F\u043E\u043F\u044B\u0442\u043A\u0443.",
+      e2eTitle: "\u0421\u043A\u0432\u043E\u0437\u043D\u043E\u0435 \u0448\u0438\u0444\u0440\u043E\u0432\u0430\u043D\u0438\u0435",
+      e2eBody: "\u0424\u0430\u0439\u043B \u0448\u0438\u0444\u0440\u0443\u0435\u0442\u0441\u044F \u043D\u0430 \u0432\u0430\u0448\u0435\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0435 \u0438 \u0440\u0430\u0441\u0448\u0438\u0444\u0440\u043E\u0432\u044B\u0432\u0430\u0435\u0442\u0441\u044F \u0442\u043E\u043B\u044C\u043A\u043E \u043D\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0435 \u043F\u043E\u043B\u0443\u0447\u0430\u0442\u0435\u043B\u044F. \u0412\u0441\u0451, \u0447\u0442\u043E \u043C\u0435\u0436\u0434\u0443 \u043D\u0438\u043C\u0438 \u2014 \u0432\u043A\u043B\u044E\u0447\u0430\u044F \u0441\u0435\u0440\u0432\u0435\u0440\u044B, \u043F\u043E\u043C\u043E\u0433\u0430\u044E\u0449\u0438\u0435 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430\u043C \u043D\u0430\u0439\u0442\u0438 \u0434\u0440\u0443\u0433 \u0434\u0440\u0443\u0433\u0430, \u2014 \u0432\u0438\u0434\u0438\u0442 \u043B\u0438\u0448\u044C \u043D\u0435\u0447\u0438\u0442\u0430\u0435\u043C\u044B\u0439 \u0448\u0438\u0444\u0440\u043E\u0442\u0435\u043A\u0441\u0442.",
+      directTitle: "\u041D\u0430\u043F\u0440\u044F\u043C\u0443\u044E \u043C\u0435\u0436\u0434\u0443 \u0432\u0430\u0448\u0438\u043C\u0438 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430\u043C\u0438",
+      directBody: "\u0415\u0441\u043B\u0438 \u043E\u0431\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u0432 \u043E\u0434\u043D\u043E\u0439 \u0441\u0435\u0442\u0438 Wi-Fi, \u0444\u0430\u0439\u043B \u043F\u0435\u0440\u0435\u0434\u0430\u0451\u0442\u0441\u044F \u043D\u0430\u043F\u0440\u044F\u043C\u0443\u044E \u0441 \u043E\u0434\u043D\u043E\u0433\u043E \u043D\u0430 \u0434\u0440\u0443\u0433\u043E\u0435 \u043D\u0430 \u043F\u043E\u043B\u043D\u043E\u0439 \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u043E\u0439 \u0441\u043A\u043E\u0440\u043E\u0441\u0442\u0438 \u2014 \u043E\u043D \u043D\u0438\u043A\u043E\u0433\u0434\u0430 \u043D\u0435 \u043F\u043E\u043A\u0438\u0434\u0430\u0435\u0442 \u0432\u0430\u0448\u0443 \u0441\u0435\u0442\u044C. \u041B\u0438\u0448\u044C \u043A\u043E\u0433\u0434\u0430 \u043F\u0440\u044F\u043C\u043E\u0435 \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u0435 \u043D\u0435\u0432\u043E\u0437\u043C\u043E\u0436\u043D\u043E (\u043D\u0430\u043F\u0440\u0438\u043C\u0435\u0440, \u043E\u0434\u043D\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E \u0432 \u043C\u043E\u0431\u0438\u043B\u044C\u043D\u043E\u0439 \u0441\u0435\u0442\u0438), \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0430 \u0438\u0434\u0451\u0442 \u0447\u0435\u0440\u0435\u0437 \u043F\u0443\u0431\u043B\u0438\u0447\u043D\u044B\u0439 \u0440\u0435\u0442\u0440\u0430\u043D\u0441\u043B\u044F\u0442\u043E\u0440, \u043A\u043E\u0442\u043E\u0440\u044B\u0439 \u0432\u0441\u043B\u0435\u043F\u0443\u044E \u043F\u0435\u0440\u0435\u0441\u044B\u043B\u0430\u0435\u0442 \u0437\u0430\u0448\u0438\u0444\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0435 \u0431\u0430\u0439\u0442\u044B, \u043D\u0435 \u0438\u043C\u0435\u044F \u0432\u043E\u0437\u043C\u043E\u0436\u043D\u043E\u0441\u0442\u0438 \u0438\u0445 \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u0442\u044C.",
+      serversTitle: "\u0427\u0442\u043E \u0432\u0438\u0434\u044F\u0442 \u0441\u0435\u0440\u0432\u0435\u0440\u044B",
+      serversBody: "\u0423 PortalGems \u043D\u0435\u0442 \u0441\u043E\u0431\u0441\u0442\u0432\u0435\u043D\u043D\u044B\u0445 \u0441\u0435\u0440\u0432\u0435\u0440\u043E\u0432 \u0438 \u0443\u0447\u0451\u0442\u043D\u044B\u0445 \u0437\u0430\u043F\u0438\u0441\u0435\u0439. \u0418\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u044E\u0442\u0441\u044F \u0434\u0432\u0430 \u043D\u0435\u0431\u043E\u043B\u044C\u0448\u0438\u0445 \u043F\u0443\u0431\u043B\u0438\u0447\u043D\u044B\u0445 \u0441\u0435\u0440\u0432\u0438\u0441\u0430 \u0441\u043E\u043E\u0431\u0449\u0435\u0441\u0442\u0432\u0430 magic-wormhole: \u043F\u043E\u0447\u0442\u043E\u0432\u044B\u0439 \u0441\u0435\u0440\u0432\u0435\u0440, \u0433\u0434\u0435 \u0432\u0441\u0442\u0440\u0435\u0447\u0430\u044E\u0442\u0441\u044F \u0434\u0432\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 (\u043A\u0430\u043A \u0433\u0430\u0440\u0434\u0435\u0440\u043E\u0431\u043D\u0430\u044F \u0441\u0442\u043E\u0439\u043A\u0430), \u0438 \u043E\u043F\u0438\u0441\u0430\u043D\u043D\u044B\u0439 \u0432\u044B\u0448\u0435 \u0440\u0435\u0442\u0440\u0430\u043D\u0441\u043B\u044F\u0442\u043E\u0440. \u041D\u0438 \u043E\u0434\u0438\u043D \u043D\u0435 \u0445\u0440\u0430\u043D\u0438\u0442 \u0432\u0430\u0448\u0438 \u0444\u0430\u0439\u043B\u044B, \u043D\u0438 \u043E\u0434\u0438\u043D \u043D\u0435 \u0437\u043D\u0430\u0435\u0442, \u0447\u0442\u043E \u0432\u044B \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u043B\u0438, \u0438 \u043E\u0431\u0430 \u0432\u0438\u0434\u044F\u0442 \u0442\u043E\u043B\u044C\u043A\u043E \u0437\u0430\u0448\u0438\u0444\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0435 \u0434\u0430\u043D\u043D\u044B\u0435.",
+      pairingTitle: "\u041A\u0430\u043A \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442 \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u0435",
+      pairingBody: "\u041F\u0440\u0438 \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u0438 \u0434\u0432\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u043E\u0434\u0438\u043D \u0440\u0430\u0437 \u043E\u0431\u043C\u0435\u043D\u0438\u0432\u0430\u044E\u0442\u0441\u044F \u0431\u043E\u043B\u044C\u0448\u0438\u043C \u0441\u043B\u0443\u0447\u0430\u0439\u043D\u044B\u043C \u0441\u0435\u043A\u0440\u0435\u0442\u043E\u043C \u2014 \u0447\u0435\u0440\u0435\u0437 QR-\u043A\u043E\u0434 \u0438\u043B\u0438 \u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u0435 \u2014 \u0438 \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u044E\u0442 \u0435\u0433\u043E \u0432 \u0437\u0430\u0449\u0438\u0449\u0451\u043D\u043D\u043E\u043C \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430. \u0421 \u044D\u0442\u043E\u0433\u043E \u043C\u043E\u043C\u0435\u043D\u0442\u0430 \u043E\u0431\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u043C\u043E\u0433\u0443\u0442 \u0441\u0430\u043C\u0438 \u0432\u044B\u0447\u0438\u0441\u043B\u044F\u0442\u044C \u043E\u0434\u0438\u043D\u0430\u043A\u043E\u0432\u044B\u0439 \u043E\u0434\u043D\u043E\u0440\u0430\u0437\u043E\u0432\u044B\u0439 \u043A\u043E\u0434 \u0434\u043B\u044F \u043A\u0430\u0436\u0434\u043E\u0439 \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0438, \u0438 \u0432\u0430\u043C \u043E\u0441\u0442\u0430\u0451\u0442\u0441\u044F \u043B\u0438\u0448\u044C \u043F\u043E\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u044C, \u0430 \u043D\u0435 \u0432\u0432\u043E\u0434\u0438\u0442\u044C. \u0422\u0430\u043A\u0438\u0435 \u043A\u043E\u0434\u044B \u043D\u0430\u043C\u043D\u043E\u0433\u043E \u0441\u0442\u043E\u0439\u0447\u0435 \u0432\u0432\u043E\u0434\u0438\u043C\u044B\u0445 \u0432\u0440\u0443\u0447\u043D\u0443\u044E \u0438 \u043D\u0438\u043A\u043E\u0433\u0434\u0430 \u043D\u0435 \u043F\u043E\u043A\u0438\u0434\u0430\u044E\u0442 \u0432\u0430\u0448\u0438 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430. \u041F\u0440\u0438 \u0443\u0434\u0430\u043B\u0435\u043D\u0438\u0438 \u0441\u0432\u044F\u0437\u0430\u043D\u043D\u043E\u0433\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u0441\u0435\u043A\u0440\u0435\u0442 \u0441\u0442\u0438\u0440\u0430\u0435\u0442\u0441\u044F.",
+      limitsTitle: "\u041E\u0442 \u0447\u0435\u0433\u043E \u044D\u0442\u043E \u043D\u0435 \u0437\u0430\u0449\u0438\u0449\u0430\u0435\u0442",
+      limitsBody: "\u0422\u043E\u0442, \u043A\u0442\u043E \u0432\u0438\u0434\u0438\u0442 \u0432\u0430\u0448 \u044D\u043A\u0440\u0430\u043D, \u043F\u043E\u043A\u0430 \u043F\u043E\u043A\u0430\u0437\u0430\u043D \u043A\u043E\u0434 \u0438\u043B\u0438 QR \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u044F, \u043C\u043E\u0436\u0435\u0442 \u0438\u043C \u0432\u043E\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u044C\u0441\u044F. \u0422\u043E\u0442, \u0443 \u043A\u043E\u0433\u043E \u043F\u043E\u043B\u043D\u044B\u0439 \u0434\u043E\u0441\u0442\u0443\u043F \u043A \u0432\u0430\u0448\u0435\u043C\u0443 \u0440\u0430\u0437\u0431\u043B\u043E\u043A\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u043E\u043C\u0443 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0443, \u043C\u043E\u0436\u0435\u0442 \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u0442\u044C \u0435\u0433\u043E \u0441\u043E\u0434\u0435\u0440\u0436\u0438\u043C\u043E\u0435. \u0410 \u043D\u0430\u0431\u043B\u044E\u0434\u0430\u0442\u0435\u043B\u044C \u0432\u0430\u0448\u0435\u0439 \u0441\u0435\u0442\u0438 \u043C\u043E\u0436\u0435\u0442 \u043F\u043E\u043D\u044F\u0442\u044C, \u0447\u0442\u043E \u0432\u044B \u0447\u0442\u043E-\u0442\u043E \u043F\u0435\u0440\u0435\u0434\u0430\u043B\u0438, \u0438 \u043F\u0440\u0438\u043C\u0435\u0440\u043D\u043E \u043A\u0430\u043A\u043E\u0433\u043E \u0440\u0430\u0437\u043C\u0435\u0440\u0430 \u2014 \u043D\u043E \u043D\u0438\u043A\u043E\u0433\u0434\u0430 \u043D\u0435 \u0443\u0437\u043D\u0430\u0435\u0442, \u0447\u0442\u043E \u0438\u043C\u0435\u043D\u043D\u043E."
+    },
+    transfer: {
+      direct: "\u041F\u0440\u044F\u043C\u043E\u0435 \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u0435 \u0441 \u0434\u0440\u0443\u0433\u0438\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E\u043C",
+      relay: "\u0421\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u0435 \u0447\u0435\u0440\u0435\u0437 \u0440\u0435\u0442\u0440\u0430\u043D\u0441\u043B\u044F\u0442\u043E\u0440",
+      progress: "{{pct}} %"
+    },
+    common: {
+      cancel: "\u041E\u0442\u043C\u0435\u043D\u0430",
+      done: "\u0413\u043E\u0442\u043E\u0432\u043E",
+      back: "\u041D\u0430\u0437\u0430\u0434",
+      retry: "\u041F\u043E\u0432\u0442\u043E\u0440\u0438\u0442\u044C",
+      accept: "\u041F\u0440\u0438\u043D\u044F\u0442\u044C",
+      decline: "\u041E\u0442\u043A\u043B\u043E\u043D\u0438\u0442\u044C"
+    },
+    errors: {
+      title: "\u0427\u0442\u043E-\u0442\u043E \u043F\u043E\u0448\u043B\u043E \u043D\u0435 \u0442\u0430\u043A",
+      pickFailed: "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u0442\u044C \u0432\u044B\u0431\u0440\u0430\u043D\u043D\u044B\u0439 \u0444\u0430\u0439\u043B.",
+      invalidCode: "\u042D\u0442\u043E \u043D\u0435 \u043F\u043E\u0445\u043E\u0436\u0435 \u043D\u0430 \u0434\u0435\u0439\u0441\u0442\u0432\u0438\u0442\u0435\u043B\u044C\u043D\u044B\u0439 \u043A\u043E\u0434. \u041A\u043E\u0434\u044B \u0432\u044B\u0433\u043B\u044F\u0434\u044F\u0442 \u0442\u0430\u043A: 7-\u0441\u043B\u043E\u0432\u043E-\u0441\u043B\u043E\u0432\u043E",
+      wrongCode: "\u041F\u043E\u0434 \u044D\u0442\u0438\u043C \u043A\u043E\u0434\u043E\u043C \u043D\u0438\u043A\u0442\u043E \u043D\u0435 \u043F\u0440\u0435\u0434\u043B\u0430\u0433\u0430\u0435\u0442 \u0444\u0430\u0439\u043B. \u041F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u043A\u043E\u0434 \u0438 \u0443\u0431\u0435\u0434\u0438\u0442\u0435\u0441\u044C, \u0447\u0442\u043E \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435 \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u0435\u043B\u044F \u0432\u0441\u0451 \u0435\u0449\u0451 \u043E\u0442\u043A\u0440\u044B\u0442\u043E \u0438 \u0436\u0434\u0451\u0442.",
+      network: "\u041F\u0440\u043E\u0431\u043B\u0435\u043C\u0430 \u0441 \u0441\u0435\u0442\u044C\u044E \u2014 \u043F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435 \u043A \u0438\u043D\u0442\u0435\u0440\u043D\u0435\u0442\u0443 \u0438 \u043F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0441\u043D\u043E\u0432\u0430.",
+      peerGone: "\u0414\u0440\u0443\u0433\u0430\u044F \u0441\u0442\u043E\u0440\u043E\u043D\u0430 \u043F\u0440\u043E\u043F\u0430\u043B\u0430 \u0434\u043E \u0437\u0430\u0432\u0435\u0440\u0448\u0435\u043D\u0438\u044F \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0438.",
+      declinedBySender: "\u0414\u0440\u0443\u0433\u0430\u044F \u0441\u0442\u043E\u0440\u043E\u043D\u0430 \u043E\u0442\u043A\u043B\u043E\u043D\u0438\u043B\u0430 \u0438\u043B\u0438 \u043E\u0442\u043C\u0435\u043D\u0438\u043B\u0430 \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0443.",
+      transferFailed: "\u041F\u0435\u0440\u0435\u0434\u0430\u0447\u0430 \u043D\u0435 \u0443\u0434\u0430\u043B\u0430\u0441\u044C: {{message}}",
+      cancelled: "\u041F\u0435\u0440\u0435\u0434\u0430\u0447\u0430 \u043E\u0442\u043C\u0435\u043D\u0435\u043D\u0430."
+    }
+  };
+
   // ../core/src/i18n/index.ts
+  var SUPPORTED_LANGUAGES = ["en", "de", "bs", "ru", "fr", "es"];
+  var resources = {
+    en: { translation: en_default },
+    de: { translation: de_default },
+    bs: { translation: bs_default },
+    ru: { translation: ru_default },
+    fr: { translation: fr_default },
+    es: { translation: es_default }
+  };
+  function isSupportedLanguage(lng) {
+    return SUPPORTED_LANGUAGES.includes(lng);
+  }
   function initI18n(locale) {
+    const lng = (locale ?? "en").split(/[-_]/)[0];
     if (!instance.isInitialized) {
       instance.use(initReactI18next).init({
-        resources: { en: { translation: en_default } },
-        lng: locale ?? "en",
+        resources,
+        lng: isSupportedLanguage(lng) ? lng : "en",
         fallbackLng: "en",
         interpolation: { escapeValue: false }
       });
     }
     return instance;
+  }
+  function setLanguage(lng) {
+    const short = lng.split(/[-_]/)[0];
+    instance.changeLanguage(isSupportedLanguage(short) ? short : "en");
   }
 
   // ../core/src/errors.ts
@@ -27453,10 +28193,37 @@
     throw lastError;
   }
 
-  // src/renderer/components.tsx
+  // src/renderer/theme.ts
   var import_react12 = __toESM(require_react());
+  function loadThemeName() {
+    const saved = localStorage.getItem("pg-theme");
+    return saved && saved in themes ? saved : "diamond";
+  }
+  function saveThemeName(name) {
+    localStorage.setItem("pg-theme", name);
+  }
+  function usePalette(themeName) {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const [dark2, setDark] = (0, import_react12.useState)(mq.matches);
+    (0, import_react12.useEffect)(() => {
+      const onChange = (e2) => setDark(e2.matches);
+      mq.addEventListener("change", onChange);
+      return () => mq.removeEventListener("change", onChange);
+    }, []);
+    return themes[themeName][dark2 ? "dark" : "light"];
+  }
+  function formatSize(bytes) {
+    if (!Number.isFinite(bytes) || bytes < 0) return "";
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+    return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
+  }
+
+  // src/renderer/components.tsx
+  var import_react13 = __toESM(require_react());
   function Card({ c, children }) {
-    return /* @__PURE__ */ import_react12.default.createElement(
+    return /* @__PURE__ */ import_react13.default.createElement(
       "div",
       {
         style: {
@@ -27473,13 +28240,13 @@
     );
   }
   function Title({ c, children }) {
-    return /* @__PURE__ */ import_react12.default.createElement("h1", { style: { color: c.text, fontSize: fontSize.title, fontWeight: 700, margin: 0 } }, children);
+    return /* @__PURE__ */ import_react13.default.createElement("h1", { style: { color: c.text, fontSize: fontSize.title, fontWeight: 700, margin: 0 } }, children);
   }
   function Subtitle({ c, children }) {
-    return /* @__PURE__ */ import_react12.default.createElement("h2", { style: { color: c.text, fontSize: fontSize.subtitle, fontWeight: 600, margin: 0 } }, children);
+    return /* @__PURE__ */ import_react13.default.createElement("h2", { style: { color: c.text, fontSize: fontSize.subtitle, fontWeight: 600, margin: 0 } }, children);
   }
   function Muted({ c, children }) {
-    return /* @__PURE__ */ import_react12.default.createElement("p", { style: { color: c.textMuted, fontSize: fontSize.body, lineHeight: 1.4, margin: 0 } }, children);
+    return /* @__PURE__ */ import_react13.default.createElement("p", { style: { color: c.textMuted, fontSize: fontSize.body, lineHeight: 1.4, margin: 0 } }, children);
   }
   var buttonBase = {
     borderRadius: radius.md,
@@ -27495,7 +28262,7 @@
     onClick,
     disabled
   }) {
-    return /* @__PURE__ */ import_react12.default.createElement(
+    return /* @__PURE__ */ import_react13.default.createElement(
       "button",
       {
         onClick,
@@ -27517,7 +28284,7 @@
     onClick,
     danger
   }) {
-    return /* @__PURE__ */ import_react12.default.createElement(
+    return /* @__PURE__ */ import_react13.default.createElement(
       "button",
       {
         onClick,
@@ -27533,7 +28300,7 @@
   }
   function ProgressBar({ c, pct }) {
     const clamped = Math.max(0, Math.min(100, pct));
-    return /* @__PURE__ */ import_react12.default.createElement("div", { style: { height: 10, borderRadius: 5, background: c.codeBg, overflow: "hidden" } }, /* @__PURE__ */ import_react12.default.createElement(
+    return /* @__PURE__ */ import_react13.default.createElement("div", { style: { height: 10, borderRadius: 5, background: c.codeBg, overflow: "hidden" } }, /* @__PURE__ */ import_react13.default.createElement(
       "div",
       {
         style: {
@@ -27547,7 +28314,7 @@
     ));
   }
   function CodeBox({ c, code }) {
-    return /* @__PURE__ */ import_react12.default.createElement(
+    return /* @__PURE__ */ import_react13.default.createElement(
       "div",
       {
         style: {
@@ -27557,7 +28324,7 @@
           textAlign: "center"
         }
       },
-      /* @__PURE__ */ import_react12.default.createElement(
+      /* @__PURE__ */ import_react13.default.createElement(
         "span",
         {
           style: {
@@ -27578,7 +28345,7 @@
     onChange,
     placeholder
   }) {
-    return /* @__PURE__ */ import_react12.default.createElement(
+    return /* @__PURE__ */ import_react13.default.createElement(
       "input",
       {
         value,
@@ -27600,35 +28367,20 @@
     );
   }
 
-  // src/renderer/theme.ts
-  var import_react13 = __toESM(require_react());
-  function usePalette() {
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const [dark, setDark] = (0, import_react13.useState)(mq.matches);
-    (0, import_react13.useEffect)(() => {
-      const onChange = (e2) => setDark(e2.matches);
-      mq.addEventListener("change", onChange);
-      return () => mq.removeEventListener("change", onChange);
-    }, []);
-    return themes.diamond[dark ? "dark" : "light"];
-  }
-  function formatSize(bytes) {
-    if (!Number.isFinite(bytes) || bytes < 0) return "";
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-    return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
-  }
-
   // src/renderer/App.tsx
   var CODE_RE = /^\d+(-[a-zA-Z0-9]+)+$/;
   var nextId = 1;
   var handlers = /* @__PURE__ */ new Map();
   window.portalgems.onEvent((ev) => handlers.get(ev.id)?.(ev));
   function App() {
-    const c = usePalette();
+    const [themeName, setThemeNameState] = (0, import_react14.useState)(loadThemeName());
+    const c = usePalette(themeName);
     const [route, setRoute] = (0, import_react14.useState)({ name: "home" });
     const goHome = () => setRoute({ name: "home" });
+    const setThemeName = (name) => {
+      setThemeNameState(name);
+      saveThemeName(name);
+    };
     return /* @__PURE__ */ import_react14.default.createElement(
       "div",
       {
@@ -27649,9 +28401,19 @@
           onSend: (file, device) => setRoute({ name: "send", file, device }),
           onReceive: (code) => setRoute({ name: "receive", code }),
           onReceiveFrom: (device) => setRoute({ name: "receive", device }),
-          onPair: () => setRoute({ name: "pair" })
+          onPair: () => setRoute({ name: "pair" }),
+          onSettings: () => setRoute({ name: "settings" }),
+          onExplain: () => setRoute({ name: "explain" })
         }
-      ) : route.name === "send" ? /* @__PURE__ */ import_react14.default.createElement(Send, { c, file: route.file, device: route.device, onHome: goHome }) : route.name === "receive" ? /* @__PURE__ */ import_react14.default.createElement(Receive, { c, code: route.code, device: route.device, onHome: goHome }) : /* @__PURE__ */ import_react14.default.createElement(Pair, { c, onHome: goHome })
+      ) : route.name === "send" ? /* @__PURE__ */ import_react14.default.createElement(Send, { c, file: route.file, device: route.device, onHome: goHome }) : route.name === "receive" ? /* @__PURE__ */ import_react14.default.createElement(Receive, { c, code: route.code, device: route.device, onHome: goHome }) : route.name === "settings" ? /* @__PURE__ */ import_react14.default.createElement(
+        Settings,
+        {
+          c,
+          themeName,
+          onTheme: setThemeName,
+          onHome: goHome
+        }
+      ) : route.name === "explain" ? /* @__PURE__ */ import_react14.default.createElement(Explain, { c, onHome: goHome }) : /* @__PURE__ */ import_react14.default.createElement(Pair, { c, onHome: goHome })
     );
   }
   function Home({
@@ -27659,7 +28421,9 @@
     onSend,
     onReceive,
     onReceiveFrom,
-    onPair
+    onPair,
+    onSettings,
+    onExplain
   }) {
     const { t: t2 } = useTranslation();
     const [code, setCode] = (0, import_react14.useState)("");
@@ -27676,7 +28440,21 @@
         removeDevice(device.id).then(() => loadDevices().then(setDevices));
       }
     };
-    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c }, t2("app.name")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("home.tagline")), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("home.devicesTitle")), devices.length === 0 ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("home.devicesEmpty")) : null, devices.map((device) => /* @__PURE__ */ import_react14.default.createElement(
+    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c }, t2("app.name")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("home.tagline")), /* @__PURE__ */ import_react14.default.createElement("div", { style: { display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: spacing(2) } }, /* @__PURE__ */ import_react14.default.createElement(
+      "a",
+      {
+        onClick: onExplain,
+        style: { color: c.primary, fontWeight: 600, cursor: "pointer" }
+      },
+      t2("home.explainLink")
+    ), /* @__PURE__ */ import_react14.default.createElement(
+      "a",
+      {
+        onClick: onSettings,
+        style: { color: c.primary, fontWeight: 600, cursor: "pointer" }
+      },
+      t2("home.settingsLink")
+    )), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("home.devicesTitle")), devices.length === 0 ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("home.devicesEmpty")) : null, devices.map((device) => /* @__PURE__ */ import_react14.default.createElement(
       "div",
       {
         key: device.id,
@@ -27985,11 +28763,58 @@
       }
     ), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("pair.waiting"))) : null, phase === "working" ? /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("pair.waiting"))) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("pair.success", { name: peerName }))) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "done" || phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.done"), onClick: onHome }) : /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancelAndBack }));
   }
+  var LANGUAGE_LABELS = {
+    en: "English",
+    de: "Deutsch",
+    bs: "Bosanski",
+    ru: "\u0420\u0443\u0441\u0441\u043A\u0438\u0439",
+    fr: "Fran\xE7ais",
+    es: "Espa\xF1ol"
+  };
+  function Settings({
+    c,
+    themeName,
+    onTheme,
+    onHome
+  }) {
+    const { t: t2, i18n } = useTranslation();
+    const chooseLanguage = (lng) => {
+      setLanguage(lng);
+      localStorage.setItem("pg-language", lng);
+    };
+    const row = (selected) => ({
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      border: `1px solid ${selected ? c.primary : c.border}`,
+      background: selected ? c.codeBg : "transparent",
+      borderRadius: 10,
+      padding: `${spacing(2.5)}px ${spacing(3)}px`,
+      cursor: "pointer"
+    });
+    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c }, t2("settings.title")), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("settings.language")), SUPPORTED_LANGUAGES.map((lng) => /* @__PURE__ */ import_react14.default.createElement("div", { key: lng, style: row(i18n.language === lng), onClick: () => chooseLanguage(lng) }, /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.text } }, LANGUAGE_LABELS[lng]), i18n.language === lng ? /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.primary, fontWeight: 700 } }, "\u2713") : null))), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("settings.theme")), THEME_NAMES.map((name) => /* @__PURE__ */ import_react14.default.createElement("div", { key: name, style: row(themeName === name), onClick: () => onTheme(name) }, /* @__PURE__ */ import_react14.default.createElement("span", { style: { display: "flex", alignItems: "center", gap: spacing(2.5) } }, /* @__PURE__ */ import_react14.default.createElement(
+      "span",
+      {
+        style: {
+          width: 18,
+          height: 18,
+          borderRadius: 9,
+          background: themes[name].light.primary
+        }
+      }
+    ), /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.text } }, t2(`settings.themes.${name}`))), themeName === name ? /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.primary, fontWeight: 700 } }, "\u2713") : null))), /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.done"), onClick: onHome }));
+  }
+  var EXPLAIN_SECTIONS = ["codes", "e2e", "direct", "servers", "pairing", "limits"];
+  function Explain({ c, onHome }) {
+    const { t: t2 } = useTranslation();
+    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c }, t2("explain.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("explain.intro")), EXPLAIN_SECTIONS.map((key) => /* @__PURE__ */ import_react14.default.createElement(Card, { key, c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2(`explain.${key}Title`)), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2(`explain.${key}Body`)))), /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.done"), onClick: onHome }));
+  }
 
   // src/renderer/index.tsx
   async function boot() {
-    const locale = await window.portalgems.locale().catch(() => "en");
-    initI18n(locale.split("-")[0]);
+    const saved = localStorage.getItem("pg-language");
+    const locale = saved ?? await window.portalgems.locale().catch(() => "en");
+    initI18n(locale);
     const root = (0, import_client.createRoot)(document.getElementById("root"));
     root.render(/* @__PURE__ */ import_react15.default.createElement(App, null));
   }

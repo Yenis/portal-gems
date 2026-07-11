@@ -36,11 +36,15 @@ export default function HomeScreen({
   onReceive,
   onReceiveFrom,
   onPair,
+  onSettings,
+  onExplain,
 }: {
   onSend: (file: PickedFile, device?: PairedDevice) => void;
   onReceive: (code: string) => void;
   onReceiveFrom: (device: PairedDevice) => void;
   onPair: () => void;
+  onSettings: () => void;
+  onExplain: () => void;
 }) {
   const { t } = useTranslation();
   const c = useTheme();
@@ -90,6 +94,19 @@ export default function HomeScreen({
       contentContainerStyle={styles.container}>
       <Title>{t('app.name')}</Title>
       <Muted>{t('home.tagline')}</Muted>
+
+      <View style={styles.linkRow}>
+        <Pressable onPress={onExplain}>
+          <Text style={{ color: c.primary, fontSize: fontSize.body, fontWeight: '600' }}>
+            {t('home.explainLink')}
+          </Text>
+        </Pressable>
+        <Pressable onPress={onSettings}>
+          <Text style={{ color: c.primary, fontSize: fontSize.body, fontWeight: '600' }}>
+            {t('home.settingsLink')}
+          </Text>
+        </Pressable>
+      </View>
 
       <Card>
         <Subtitle>{t('home.devicesTitle')}</Subtitle>
@@ -182,6 +199,12 @@ const styles = StyleSheet.create({
     paddingVertical: spacing(3),
     fontSize: fontSize.body,
     fontFamily: 'monospace',
+  },
+  linkRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: spacing(2),
   },
   deviceRow: {
     flexDirection: 'row',

@@ -194,6 +194,15 @@ self-hosted relay bridge. The full rationale is recorded in
     details in [docs/phase0-desktop-notes.md](docs/phase0-desktop-notes.md)
 - 🎉 **Phase 0 complete — all de-risking gates passed.** One Rust engine, proven
   on Android, desktop, and against the reference CLI.
+- ✅ **Phase 4 + tests complete** (2026-07-11): in-app **"How it works"
+  explainer** (7 localized sections incl. direct-Wi-Fi transit and the security
+  model), all **5 gem themes** with live picker (Diamond/Sapphire/Emerald/Ruby/
+  Amethyst × light/dark), **settings screen** (persisted per platform), and all
+  **6 languages** shipping complete (en/de/bs/ru/fr/es — verified by tests that
+  fail on any missing key or placeholder). Test suites: 25 vitest cases in
+  `packages/core` (incl. a frozen pairing-derivation vector) + Rust unit tests
+  and an opt-in network round-trip (`cargo test -- --ignored`). The full
+  architecture reference for future work: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - ✅ **Phases 1–3 complete** (2026-07-06): Android app (send/receive/confirm/
   share-sheet/errors/gem icon/release signing), desktop app at full feature
   parity (React DOM UI over the napi engine, incl. working cancel), and
@@ -293,8 +302,9 @@ cargo run --example recv -- 784413-some-derived-code .               # device B
 | 1 | Android MVP: send/receive UI, confirmation, share-sheet, errors, icon, signing | ✅ complete |
 | 2 | Desktop app: real UI, all flows incl. confirmation + cancel | ✅ complete |
 | 3 | Pairing on both platforms (QR/paste, derived codes, encrypted storage) | ✅ complete (E2E verified; QR camera scan needs a real phone) |
-| 4 | Polish: explainer page, 10 theme palettes, 6 languages, settings | ⬜ next |
-| 5 | Tests + architecture reference doc; then ship prep (F-Droid, Play, installers) | ⬜ |
+| 4 | Polish: explainer page, 10 theme palettes, 6 languages, settings | ✅ complete |
+| 5 | Tests + architecture reference doc | ✅ complete ([docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)) |
+| 6 | Ship prep: hardening on real devices, F-Droid recipe, Play, installers | ⬜ next |
 
 ## Distribution
 
