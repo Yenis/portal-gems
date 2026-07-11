@@ -10,6 +10,9 @@ interface PortalGemsNativeSpec {
   incomingDir: string;
   cacheDir: string;
   deviceName: string;
+  locale: string;
+  getSetting(key: string): Promise<string | null>;
+  setSetting(key: string, value: string): Promise<void>;
   copyToCache(uri: string): Promise<PickedFile>;
   saveToDownloads(srcPath: string, fileName: string): Promise<string>;
   consumePendingShare(): Promise<string | null>;
@@ -28,6 +31,10 @@ const native = NativeModules.PortalGemsNative as PortalGemsNativeSpec;
 export const incomingDir: string = native.incomingDir;
 export const cacheDir: string = native.cacheDir;
 export const deviceName: string = native.deviceName;
+export const deviceLocale: string = native.locale;
+export const getSetting = (key: string) => native.getSetting(key);
+export const setSetting = (key: string, value: string) =>
+  native.setSetting(key, value);
 export const copyToCache = (uri: string) => native.copyToCache(uri);
 export const consumePendingShare = () => native.consumePendingShare();
 export const getPairedDevicesJson = () => native.getPairedDevices();

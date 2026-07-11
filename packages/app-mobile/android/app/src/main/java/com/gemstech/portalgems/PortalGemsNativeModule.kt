@@ -63,7 +63,25 @@ class PortalGemsNativeModule(reactContext: ReactApplicationContext) :
       "incomingDir" to incoming.absolutePath,
       "cacheDir" to reactApplicationContext.cacheDir.absolutePath,
       "deviceName" to deviceName,
+      "locale" to java.util.Locale.getDefault().language,
     )
+  }
+
+  // ---- Plain (non-secret) app settings ----
+
+  private val settingsPrefs by lazy {
+    reactApplicationContext.getSharedPreferences("portalgems_settings", 0)
+  }
+
+  @ReactMethod
+  fun getSetting(key: String, promise: Promise) {
+    promise.resolve(settingsPrefs.getString(key, null))
+  }
+
+  @ReactMethod
+  fun setSetting(key: String, value: String, promise: Promise) {
+    settingsPrefs.edit().putString(key, value).apply()
+    promise.resolve(null)
   }
 
   // ---- Pairing secret storage (Android Keystore-backed) ----

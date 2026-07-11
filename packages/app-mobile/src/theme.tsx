@@ -1,13 +1,42 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useColorScheme } from 'react-native';
-import { themes, type Palette } from '@portalgems/core';
+import { themes, type Palette, type ThemeName } from '@portalgems/core';
+import { getSetting, setSetting } from './native';
 
-const ThemeContext = createContext<Palette>(themes.diamond.light);
+interface ThemeContextValue {
+  palette: Palette;
+  themeName: ThemeName;
+  setThemeName: (name: ThemeName) => void;
+}
+
+const ThemeContext = createContext<ThemeContextValue>({
+  palette: themes.diamond.light,
+  themeName: 'diamond',
+  setThemeName: () => {},
+});
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const scheme = useColorScheme();
-  const palette = themes.diamond[scheme === 'dark' ? 'dark' : 'light'];
-  return <ThemeContext.Provider value={palette}>{children}</ThemeContext.Provider>;
+  const [themeName, setThemeNameState] = useState<ThemeName>('diamond');
+
+  useEffect(() => {
+    getSetting('theme').then((saved) => {
+      if (saved && saved in themes) setThemeNameState(saved as ThemeName);
+    });
+  }, []);
+
+  const setThemeName = (name: ThemeName) => {
+    setThemeNameState(name);
+    setSetting('theme', name).catch(() => undefined);
+  };
+
+  const palette = themes[themeName][scheme === 'dark' ? 'dark' : 'light'];
+  return (
+    <ThemeContext.Provider value={{ palette, themeName, setThemeName }}>
+      {children}
+    </ThemeContext.Provider>
+  );
 }
 
-export const useTheme = (): Palette => useContext(ThemeContext);
+export const useTheme = (): Palette => useContext(ThemeContext).palette;
+export const useThemeControl = (): ThemeContextValue => useContext(ThemeContext);
