@@ -3,6 +3,8 @@
     "name": "PortalGems"
   },
   "home": {
+    "explainLink": "How it works & security",
+    "settingsLink": "Settings",
     "devicesTitle": "Your devices",
     "devicesEmpty": "Pair your phone and laptop once — after that, sending needs just a tap on each side.",
     "pairNew": "Pair a new device",
@@ -73,6 +75,34 @@
     "retry": "Try again",
     "accept": "Accept",
     "decline": "Decline"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "theme": "Theme",
+    "themes": {
+      "diamond": "Diamond",
+      "sapphire": "Sapphire",
+      "emerald": "Emerald",
+      "ruby": "Ruby",
+      "amethyst": "Amethyst"
+    }
+  },
+  "explain": {
+    "title": "How it works",
+    "intro": "PortalGems uses the magic-wormhole protocol — an open standard for sending files safely from one device to another. Here is what happens under the hood, and why you can trust it.",
+    "codesTitle": "One code, one transfer",
+    "codesBody": "Every transfer starts with a short one-time code like 7-crossover-clockwork. Both devices feed that code into a cryptographic handshake (SPAKE2) and derive the same strong encryption key from it. The code works exactly once: after a transfer — or after a single wrong guess — it becomes useless. An attacker would have to guess the entire code correctly on the very first try, and you would notice the failed attempt immediately.",
+    "e2eTitle": "Encrypted from end to end",
+    "e2eBody": "Your file is encrypted on your device and decrypted only on the receiving device. Everything in between — including the servers that help the two devices find each other — sees only unreadable ciphertext.",
+    "directTitle": "Direct between your devices",
+    "directBody": "When both devices are on the same Wi-Fi network, the file travels directly from one device to the other at full local speed — it never leaves your network. Only when a direct connection is impossible (for example, one device is on mobile data) does the transfer fall back to a public relay, which blindly forwards encrypted bytes it cannot read.",
+    "serversTitle": "What the servers can see",
+    "serversBody": "PortalGems has no servers of its own and no user accounts. It uses two small public services run by the magic-wormhole community: a mailbox server where two devices meet (think of a coat-check counter), and the relay described above. Neither stores your files, neither knows what you sent, and both see only encrypted data.",
+    "pairingTitle": "How pairing works",
+    "pairingBody": "When you pair two devices, they exchange one large random secret — via QR code or copy/paste — and store it in your device's protected storage. From then on, both devices can compute the same one-time code by themselves for every transfer, so you only confirm instead of typing. These derived codes are far stronger than typed codes, and they never leave your devices. Removing a paired device deletes the secret.",
+    "limitsTitle": "What this does not protect against",
+    "limitsBody": "Anyone who can see your screen while a code or pairing QR is visible can use it. Anyone with full access to your unlocked device can read what is stored on it. And an observer of your network can tell that you transferred something and roughly how large it was — but never what it was."
   },
   "errors": {
     "title": "Something went wrong",
