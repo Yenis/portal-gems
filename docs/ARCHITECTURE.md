@@ -164,11 +164,21 @@ scan / paste), settings (language + theme, persisted), explainer.
    gets a second instance and every string renders as its raw key. Guards:
    esbuild `--alias:i18next/react-i18next` (desktop build script), metro
    blockList on `core/node_modules` (mobile). Keep both when touching builds.
-8. Packaging (electron-builder): `npm run dist:linux` → AppImage;
-   `npm run dist:win` → portable .exe (needs `mingw-w64` +
-   `rustup target add x86_64-pc-windows-gnu` for the addon cross-build;
-   wine present for rcedit). `asarUnpack: **/*.node`; engine.ts prefers
-   `wormhole_node-<platform>-<arch>.node`, falls back to `wormhole_node.node`.
+8. Packaging: **Linux builds locally** - `npm run dist:linux` → AppImage +
+   `.deb` + `.rpm` (the `.rpm` target needs the `rpm` tool). **Windows (.exe)
+   and macOS (.dmg) are built in CI on native runners**
+   (`.github/workflows/release.yml`), NOT cross-compiled: napi-build's
+   GNU-Windows path demands a `libnode.dll` you can't get on Linux, so the old
+   `dist:win`/mingw route is a dead end (build on the target OS, or let CI do
+   it). Desktop bundling is `build:bundles` (esbuild) - it uses `cross-env` for
+   `NODE_PATH` so it runs on Windows runners too; each job copies the per-OS
+   native addon into `dist/` before electron-builder. `asarUnpack: **/*.node`;
+   engine.ts prefers `wormhole_node-<platform>-<arch>.node`, falls back to
+   `wormhole_node.node`. The pipeline (create-release → linux/android/desktop
+   matrix, each uploading binaries + `.sha256`) fires on any `v*` tag;
+   `scripts/package-release.sh` collects local Linux/Android artifacts for
+   manual uploads. Android CI needs `cargo-ndk` + keystore secrets
+   (`ANDROID_KEYSTORE_BASE64` etc.).
 
 ## 6. Feature recipes
 
@@ -187,6 +197,10 @@ checksummed), receive confirmation + decline, share-sheet intake, friendly
 errors, cancel (waiting phase, both engines), pairing (desktop↔emulator),
 settings (language/theme live-switch, persisted), 6-language completeness.
 
+Packaging is done: all six binaries (APK, AppImage, deb, rpm, Windows .exe,
+macOS .dmg) build and publish from a single `v*` tag via CI (first shipped in
+v1.0.0/v1.0.1).
+
 Gaps: QR *camera* scan untested (needs real phone); paired-transfer UI buttons
 E2E (smoke modes exist); mid-transfer cancel; server-URL setting; multi-file
-share; electron-builder packaging; F-Droid recipe; store metadata.
+share; F-Droid recipe; store metadata.

@@ -4,8 +4,8 @@
 
 PortalGems sends files from one device to another with nothing but a short,
 one-time code - no accounts, no cloud storage, no middleman that ever sees your
-data. It runs on **Android** and on the **desktop** (Linux and Windows, built
-with Electron), and it interoperates with **any** magic-wormhole client,
+data. It runs on **Android** and on the **desktop** (Linux, Windows, and macOS,
+built with Electron), and it interoperates with **any** magic-wormhole client,
 including the original `wormhole` CLI on a server or laptop.
 
 ---
@@ -185,7 +185,7 @@ shared by every platform through thin bindings:
                 └──────────┬───────────────────────┬──────────┘
                            │                       │
              packages/app-mobile          packages/app-desktop
-             (React Native, Android)      (Electron: Linux/Windows)
+             (React Native, Android)   (Electron: Linux/Windows/macOS)
                            │                       │
              packages/wormhole-rn         native/wormhole-node
              (uniffi → JSI bindings)      (napi-rs addon)
@@ -221,16 +221,23 @@ Release builds are signed with your own keystore via
 `android/keystore.properties` (see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md));
 without one they fall back to the debug key.
 
-### Desktop (Linux AppImage / Windows portable .exe)
+### Desktop
+
+**Linux** packages build locally:
 
 ```bash
 cd packages/app-desktop && npm install
-npm run dist:linux      # → release/PortalGems-<version>.AppImage
-npm run dist:win        # → release/PortalGems-<version>.exe
+npm run dist:linux      # → release/  (AppImage + .deb + .rpm)
 ```
 
-The Windows build cross-compiles the Rust engine and needs `mingw-w64` and
-`rustup target add x86_64-pc-windows-gnu`.
+The `.rpm` target needs the `rpm` tool (`sudo apt-get install rpm`).
+
+**Windows (`.exe`) and macOS (`.dmg`)** are built in CI on native runners
+(see [`.github/workflows/release.yml`](.github/workflows/release.yml)) - the
+napi-rs engine addon can't be reliably cross-linked to Windows from a Linux
+host, so each desktop OS is built on its own runner. To build them by hand you
+need the matching operating system; pushing a version tag builds and publishes
+all platforms automatically.
 
 ### Tests
 
