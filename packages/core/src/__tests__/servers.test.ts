@@ -3,7 +3,9 @@ import {
   DEFAULT_SERVER_SETTINGS,
   PORTALGEMS_RENDEZVOUS_URL,
   PORTALGEMS_TRANSIT_URL,
+  availableServerChoices,
   isCustomServerUsable,
+  isPortalgemsConfigured,
   isValidRendezvousUrl,
   isValidTransitUrl,
   parseServerSettings,
@@ -31,6 +33,18 @@ describe('resolveServer', () => {
         customTransitUrl: '   ',
       })
     ).toEqual({ rendezvousUrl: 'wss://me.example/v1', transitUrl: undefined });
+  });
+});
+
+describe('availability', () => {
+  it('default is the public server', () => {
+    expect(DEFAULT_SERVER_SETTINGS.choice).toBe('public');
+  });
+
+  it('hides portalgems until its URLs are real', () => {
+    // Placeholder URLs still contain "example", so it must be hidden.
+    expect(isPortalgemsConfigured()).toBe(false);
+    expect(availableServerChoices()).toEqual(['public', 'custom']);
   });
 });
 

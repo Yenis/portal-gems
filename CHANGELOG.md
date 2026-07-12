@@ -7,19 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0] - 2026-07-12
 
-Choose your server. PortalGems is no longer tied to the public community
-mailbox server (which can and does go down, taking every client with it): pick
-the PortalGems server, the public server, or your own self-hosted one.
+Choose your server. When the public community mailbox server goes down (which
+it does, taking every client with it), you can now switch to your own
+self-hosted server instead. The default remains the public server.
 
 ### Added
 
-- **Connection server picker** in Settings: PortalGems / Public / Custom, with
-  fields to enter your own rendezvous and transit-relay URLs.
+- **Connection server picker** in Settings: Public or a Custom self-hosted
+  server, with fields for your own rendezvous and transit-relay URLs. (A
+  first-party "PortalGems" option is wired up and appears once that server is
+  deployed.)
+- **[docs/VPS-SETUP.md](docs/VPS-SETUP.md)** and a README section: run your own
+  mailbox + transit relay on a VPS (systemd, TLS via Caddy, verification).
 - Engine, both binding layers, and both apps thread a `ServerConfig` through
   every send/receive/pair call. The magic-wormhole app id stays fixed, so any
   two clients (including the reference `wormhole` CLI) on the *same* server
   still interoperate.
-- **Self-hosting guide** in the README: run your own mailbox + transit relay.
 
 ### Changed
 

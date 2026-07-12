@@ -15,10 +15,17 @@ export interface ServerConfig {
 }
 
 /// The PortalGems-run server. TODO(deploy): set these to your VPS once the
-/// mailbox + transit relay are running (see the self-hosting guide in the
-/// README). Until then, the 'portalgems' choice cannot connect.
+/// mailbox + transit relay are running (see docs/VPS-SETUP.md). While they
+/// still contain "example" the option is treated as not-yet-available and is
+/// hidden from the picker (see `isPortalgemsConfigured`).
 export const PORTALGEMS_RENDEZVOUS_URL = 'wss://relay.portalgems.example/v1';
 export const PORTALGEMS_TRANSIT_URL = 'tcp://transit.portalgems.example:4001';
+
+/// Whether the dedicated PortalGems server has real addresses yet. Once the
+/// URLs above point at the deployed VPS, this flips to true and the option
+/// appears in the picker automatically.
+export const isPortalgemsConfigured = (): boolean =>
+  !/\bexample\b/.test(PORTALGEMS_RENDEZVOUS_URL);
 
 /// Which server the user picked. Persisted in each app's settings store.
 export type ServerChoice = 'public' | 'portalgems' | 'custom';
@@ -30,18 +37,26 @@ export interface ServerSettings {
   customTransitUrl?: string;
 }
 
-/// Default to the PortalGems server: a shipping app needs a dependable default,
-/// and the public community server is too flaky to be one. Users who want
-/// cross-client interop can switch to 'public' in Settings.
-export const DEFAULT_SERVER_SETTINGS: ServerSettings = { choice: 'portalgems' };
+/// Default to the public community server. It is the zero-config option that
+/// also interoperates with other magic-wormhole clients. (Once the PortalGems
+/// server is deployed we may switch the default to it for reliability.)
+export const DEFAULT_SERVER_SETTINGS: ServerSettings = { choice: 'public' };
 
-/// The list of picker options, in display order. `custom` carries no fixed
-/// config - its addresses come from `ServerSettings`.
+/// All picker options, in display order. `custom` carries no fixed config - its
+/// addresses come from `ServerSettings`.
 export const SERVER_CHOICES: readonly ServerChoice[] = [
-  'portalgems',
   'public',
+  'portalgems',
   'custom',
 ] as const;
+
+/// The options actually offered to the user: the PortalGems server is hidden
+/// until its URLs are real, so we never present a choice that cannot connect.
+export function availableServerChoices(): ServerChoice[] {
+  return SERVER_CHOICES.filter(
+    (c) => c !== 'portalgems' || isPortalgemsConfigured()
+  );
+}
 
 /// Turn the user's stored settings into the concrete config the engine needs.
 export function resolveServer(s: ServerSettings): ServerConfig {

@@ -278,12 +278,15 @@ clause).
 
 PortalGems meets two devices at a **rendezvous** (mailbox) server to exchange
 the short code, then moves the file directly or through a **transit relay** when
-a direct connection is not possible. By default the app uses the PortalGems
-server; you can also point it at the public community server or run your own.
+a direct connection is not possible. By default the app uses the public
+community server; in **Settings -> Connection server** you can switch to your
+own self-hosted server (or the PortalGems server, once it is available).
 
 Running your own means you never depend on anyone else's uptime, and (since the
 file is end-to-end encrypted) the server only ever sees ciphertext. You need a
-small always-on machine - a cheap VPS is plenty.
+small always-on machine - a cheap VPS is plenty. The steps below are the short
+version; see **[docs/VPS-SETUP.md](docs/VPS-SETUP.md)** for the full runbook
+(systemd services, TLS via Caddy, firewall, verification).
 
 ### 1. Install the servers
 

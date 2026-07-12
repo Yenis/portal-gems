@@ -13,7 +13,7 @@ import {
   spacing,
   PAIRED_RECEIVE_TIMEOUT_MS,
   PAIRED_SEND_TIMEOUT_MS,
-  SERVER_CHOICES,
+  availableServerChoices,
   isCustomServerUsable,
   type PairedDevice,
   type Palette,
@@ -807,7 +807,7 @@ function Settings({
       <Card c={c}>
         <Subtitle c={c}>{t('settings.server.title')}</Subtitle>
         <Muted c={c}>{t('settings.server.hint')}</Muted>
-        {SERVER_CHOICES.map((choice) => {
+        {availableServerChoices().map((choice) => {
           const key =
             choice === 'public'
               ? 'choicePublic'
