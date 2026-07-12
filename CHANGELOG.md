@@ -5,6 +5,30 @@ All notable changes to PortalGems are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-07-12
+
+Choose your server. PortalGems is no longer tied to the public community
+mailbox server (which can and does go down, taking every client with it): pick
+the PortalGems server, the public server, or your own self-hosted one.
+
+### Added
+
+- **Connection server picker** in Settings: PortalGems / Public / Custom, with
+  fields to enter your own rendezvous and transit-relay URLs.
+- Engine, both binding layers, and both apps thread a `ServerConfig` through
+  every send/receive/pair call. The magic-wormhole app id stays fixed, so any
+  two clients (including the reference `wormhole` CLI) on the *same* server
+  still interoperate.
+- **Self-hosting guide** in the README: run your own mailbox + transit relay.
+
+### Changed
+
+- When the rendezvous server is unreachable, the error is now plain-language
+  and actionable ("switch servers or self-host"), in all six languages, instead
+  of a raw exception string.
+
+[1.1.0]: https://github.com/Yenis/portal-gems/releases/tag/v1.1.0
+
 ## [1.0.1] - 2026-07-12
 
 Maintenance release. No user-facing changes; the app is functionally identical
