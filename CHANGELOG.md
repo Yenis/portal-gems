@@ -5,7 +5,7 @@ All notable changes to PortalGems are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.1] - 2026-07-12
+## [1.2.0] - 2026-07-12
 
 Choose your server. When the public community mailbox server goes down (which
 it does, taking every client with it), you can now switch to your own
@@ -24,13 +24,23 @@ self-hosted server instead. The default remains the public server.
   two clients (including the reference `wormhole` CLI) on the *same* server
   still interoperate.
 
+- **32-bit device support:** the Android build now includes the `armeabi-v7a`
+  ABI, so older phones can install (they previously failed with "app not
+  supported").
+
 ### Changed
 
 - When the rendezvous server is unreachable, the error is now plain-language
   and actionable ("switch servers or self-host"), in all six languages, instead
   of a raw exception string.
 
-[1.1.1]: https://github.com/Yenis/portal-gems/releases/tag/v1.1.1
+### Fixed
+
+- Pairing no longer crashes: tapping **Show pairing code** threw
+  "crypto.getRandomValues must be defined" because Hermes has no Web Crypto. The
+  secure-random polyfill is now loaded at startup.
+
+[1.2.0]: https://github.com/Yenis/portal-gems/releases/tag/v1.2.0
 
 ## [1.0.1] - 2026-07-12
 
