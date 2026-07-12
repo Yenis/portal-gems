@@ -86,6 +86,20 @@
       "emerald": "Emerald",
       "ruby": "Ruby",
       "amethyst": "Amethyst"
+    },
+    "server": {
+      "title": "Connection server",
+      "hint": "Where your devices meet to set up a transfer. If sending keeps failing, try a different server here.",
+      "choicePublic": "Public server",
+      "choicePublicHint": "Community-run. Works with other magic-wormhole apps. Occasionally unavailable.",
+      "choicePortalgems": "PortalGems server",
+      "choicePortalgemsHint": "Run by PortalGems. Recommended for reliability.",
+      "choiceCustom": "Custom server",
+      "choiceCustomHint": "Your own self-hosted server.",
+      "rendezvousLabel": "Rendezvous URL",
+      "transitLabel": "Transit relay URL",
+      "invalidUrl": "Enter a valid address, or leave blank to use the default.",
+      "leaveBlankHint": "Leave a field blank to keep the public default for it."
     }
   },
   "explain": {
@@ -113,6 +127,8 @@
     "peerGone": "The other side went away before the transfer finished.",
     "declinedBySender": "The transfer was declined or cancelled by the other side.",
     "transferFailed": "The transfer failed: {{message}}",
-    "cancelled": "Transfer cancelled."
+    "cancelled": "Transfer cancelled.",
+    "serverUnreachable": "Could not reach the connection server. It may be temporarily down. Open Settings and switch to the PortalGems server, or use your own - see the self-hosting guide.",
+    "invalidServerUrl": "The server address is not valid. Check it in Settings. A rendezvous URL looks like wss://host/v1 and a relay like tcp://host:4001."
   }
 }

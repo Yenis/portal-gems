@@ -49,9 +49,15 @@ cancel must cover more than the transfer phase):
   wrapped wormhole/transfer/IO). Foreign sides receive the Display string;
   `packages/core/src/errors.ts::friendlyError` pattern-matches it to
   localized messages. If you add error cases, extend BOTH.
-- Wire-compatible with every magic-wormhole client (CLI, Warp, Destiny…);
-  servers are the community defaults hardcoded in `default_relay_hints()` /
-  `APP_CONFIG` (configurable server URLs = known backlog).
+- Wire-compatible with every magic-wormhole client (CLI, Warp, Destiny…) on the
+  SAME servers. Every entry point takes a `ServerConfig { rendezvous_url,
+  transit_url }` (uniffi Record / napi object); empty fields fall back to the
+  community defaults. `app_config()` clones `APP_CONFIG` and overrides only the
+  rendezvous URL - the app id stays fixed, so interop is preserved. Bad URLs
+  surface as `Error::InvalidServerUrl` (mapped in `errors.ts`). The picker model
+  + resolver live in `packages/core/src/servers.ts`; each app persists the
+  choice (mobile `setSetting('pg-server')`, desktop localStorage `pg-server`)
+  and passes the resolved config on every send/receive/pair call.
 
 Tests: `cargo test` (unit) · `cargo test -- --ignored` (network round-trip).
 
@@ -201,6 +207,15 @@ Packaging is done: all six binaries (APK, AppImage, deb, rpm, Windows .exe,
 macOS .dmg) build and publish from a single `v*` tag via CI (first shipped in
 v1.0.0/v1.0.1).
 
-Gaps: QR *camera* scan untested (needs real phone); paired-transfer UI buttons
-E2E (smoke modes exist); mid-transfer cancel; server-URL setting; multi-file
-share; F-Droid recipe; store metadata.
+Server picker (rendezvous + transit override) verified E2E on the desktop
+engine against a locally-run mailbox + transit relay (64 KiB round-trip
+checksummed; bad-URL and unreachable-rendezvous error mappings confirmed). The
+mobile side needs the ubrn regen + on-device wiring, and `PORTALGEMS_*` in
+`servers.ts` are placeholders until the dedicated server is deployed.
+
+Gaps: QR *camera* scan untested (needs real phone) - NOTE: "Show pairing code"
+currently crashes on device (react-native-svg suspected, unconfirmed);
+mobile server-picker UI + ubrn regen; 32-bit `armeabi-v7a` ABI (older phones
+get INSTALL_FAILED_NO_MATCHING_ABIS); paired-transfer UI buttons E2E (smoke
+modes exist); mid-transfer cancel; multi-file share; F-Droid recipe; store
+metadata.

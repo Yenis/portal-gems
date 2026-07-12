@@ -45,6 +45,24 @@ pub struct FileOffer {
     pub file_size: f64,
 }
 
+/// Which servers a transfer should use; empty/missing fields fall back to the
+/// public magic-wormhole defaults. Mirrors `wormhole_core::ServerConfig`.
+#[napi(object)]
+#[derive(Clone, Default)]
+pub struct ServerConfig {
+    pub rendezvous_url: Option<String>,
+    pub transit_url: Option<String>,
+}
+
+impl From<ServerConfig> for wormhole_core::ServerConfig {
+    fn from(s: ServerConfig) -> Self {
+        wormhole_core::ServerConfig {
+            rendezvous_url: s.rendezvous_url,
+            transit_url: s.transit_url,
+        }
+    }
+}
+
 type Callback = ThreadsafeFunction<TransferEvent, ErrorStrategy::Fatal>;
 
 fn emit(cb: &Callback, event: TransferEvent) {
@@ -103,6 +121,7 @@ pub async fn send_file(
     id: u32,
     path: String,
     code: Option<String>,
+    server: ServerConfig,
     callback: Callback,
 ) -> Result<()> {
     let on_code = callback.clone();
@@ -112,6 +131,7 @@ pub async fn send_file(
     let result = wormhole_core::send_file(
         &path,
         code.as_deref(),
+        &server.into(),
         move |c| emit(&on_code, code_event(c)),
         move |i| emit(&on_transit, transit_event(i)),
         move |d, t| emit(&on_progress, progress_event(d, t)),
@@ -124,9 +144,9 @@ pub async fn send_file(
 
 /// Wait for the offer under `code`; park it under `id` for accept/reject.
 #[napi]
-pub async fn request_receive(id: u32, code: String) -> Result<FileOffer> {
+pub async fn request_receive(id: u32, code: String, server: ServerConfig) -> Result<FileOffer> {
     let cancel = cancel_future(id);
-    let result = wormhole_core::request_receive(&code, cancel).await;
+    let result = wormhole_core::request_receive(&code, &server.into(), cancel).await;
     clear_cancel(id);
     let pending = result.map_err(to_napi_err)?;
     let offer = FileOffer {

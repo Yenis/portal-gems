@@ -7,7 +7,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { currentBucket, deriveCode } from '@portalgems/core';
-import { engine, type NativeTransferEvent } from './engine';
+import { engine, type NativeTransferEvent, type ServerConfig } from './engine';
 
 let win: BrowserWindow | null = null;
 
@@ -49,12 +49,16 @@ ipcMain.handle('pg:pickFile', async () => {
   return { path: filePath, name: path.basename(filePath), size: stat.size };
 });
 
-ipcMain.handle('pg:send', (_e, id: number, filePath: string, code?: string) =>
-  engine.sendFile(id, filePath, code ?? null, forward(id))
+ipcMain.handle(
+  'pg:send',
+  (_e, id: number, filePath: string, code?: string, server?: ServerConfig) =>
+    engine.sendFile(id, filePath, code ?? null, server ?? {}, forward(id))
 );
 
-ipcMain.handle('pg:requestReceive', (_e, id: number, code: string) =>
-  engine.requestReceive(id, code)
+ipcMain.handle(
+  'pg:requestReceive',
+  (_e, id: number, code: string, server?: ServerConfig) =>
+    engine.requestReceive(id, code, server ?? {})
 );
 
 ipcMain.handle('pg:accept', async (_e, id: number, destDir?: string) => {
@@ -174,13 +178,22 @@ async function runSmokePairedReceive() {
   app.exit(0);
 }
 
+/// Smoke tests can target a reachable server via env (the public default is
+/// often down), e.g. a locally-run mailbox + transit relay.
+function smokeServer(): ServerConfig {
+  return {
+    rendezvousUrl: process.env.PG_SMOKE_RENDEZVOUS || undefined,
+    transitUrl: process.env.PG_SMOKE_TRANSIT || undefined,
+  };
+}
+
 async function runSmokePairedSend(filePath: string) {
   const devices = JSON.parse(readPairs());
   if (!Array.isArray(devices) || devices.length === 0) {
     throw new Error('no paired devices');
   }
   const code = deriveCode(devices[0].secret, currentBucket());
-  await engine.sendFile(990, filePath, code, (ev) =>
+  await engine.sendFile(990, filePath, code, smokeServer(), (ev) =>
     console.log(`SMOKE-EV:${ev.event}:${ev.info ?? ''}`)
   );
   console.log('SMOKE:PAIRED-SEND-OK');

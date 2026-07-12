@@ -1,5 +1,7 @@
 {
-  "app": { "name": "PortalGems" },
+  "app": {
+    "name": "PortalGems"
+  },
   "home": {
     "explainLink": "Fonctionnement et sécurité",
     "settingsLink": "Paramètres",
@@ -71,6 +73,20 @@
       "emerald": "Émeraude",
       "ruby": "Rubis",
       "amethyst": "Améthyste"
+    },
+    "server": {
+      "title": "Serveur de connexion",
+      "hint": "L'endroit où vos appareils se rejoignent pour établir un transfert. Si l'envoi échoue sans cesse, essayez un autre serveur ici.",
+      "choicePublic": "Serveur public",
+      "choicePublicHint": "Géré par la communauté. Fonctionne avec les autres applis magic-wormhole. Parfois indisponible.",
+      "choicePortalgems": "Serveur PortalGems",
+      "choicePortalgemsHint": "Géré par PortalGems. Recommandé pour la fiabilité.",
+      "choiceCustom": "Serveur personnalisé",
+      "choiceCustomHint": "Votre propre serveur auto-hébergé.",
+      "rendezvousLabel": "URL de rendez-vous",
+      "transitLabel": "URL du relais de transit",
+      "invalidUrl": "Saisissez une adresse valide, ou laissez vide pour utiliser la valeur par défaut.",
+      "leaveBlankHint": "Laissez un champ vide pour en conserver la valeur publique par défaut."
     }
   },
   "explain": {
@@ -111,6 +127,8 @@
     "peerGone": "L'autre partie a disparu avant la fin du transfert.",
     "declinedBySender": "Le transfert a été refusé ou annulé par l'autre partie.",
     "transferFailed": "Le transfert a échoué : {{message}}",
-    "cancelled": "Transfert annulé."
+    "cancelled": "Transfert annulé.",
+    "serverUnreachable": "Impossible de joindre le serveur de connexion. Il est peut-être temporairement hors service. Ouvrez les Paramètres et passez au serveur PortalGems, ou utilisez le vôtre - voir le guide d'auto-hébergement.",
+    "invalidServerUrl": "L'adresse du serveur n'est pas valide. Vérifiez-la dans les Paramètres. Une URL de rendez-vous ressemble à wss://host/v1 et un relais à tcp://host:4001."
   }
 }

@@ -1,5 +1,7 @@
 {
-  "app": { "name": "PortalGems" },
+  "app": {
+    "name": "PortalGems"
+  },
   "home": {
     "explainLink": "Kako radi i sigurnost",
     "settingsLink": "Postavke",
@@ -71,6 +73,20 @@
       "emerald": "Smaragd",
       "ruby": "Rubin",
       "amethyst": "Ametist"
+    },
+    "server": {
+      "title": "Server za povezivanje",
+      "hint": "Gdje se tvoji uređaji susreću da bi uspostavili prijenos. Ako slanje stalno ne uspijeva, ovdje probaj drugi server.",
+      "choicePublic": "Javni server",
+      "choicePublicHint": "Vodi ga zajednica. Radi s drugim magic-wormhole aplikacijama. Povremeno nedostupan.",
+      "choicePortalgems": "PortalGems server",
+      "choicePortalgemsHint": "Vodi ga PortalGems. Preporučeno za pouzdanost.",
+      "choiceCustom": "Prilagođeni server",
+      "choiceCustomHint": "Tvoj vlastiti, samostalno hostani server.",
+      "rendezvousLabel": "Rendezvous URL",
+      "transitLabel": "URL tranzitnog releja",
+      "invalidUrl": "Unesi ispravnu adresu ili ostavi prazno da se koristi zadana.",
+      "leaveBlankHint": "Ostavi polje prazno da za njega zadržiš javnu zadanu vrijednost."
     }
   },
   "explain": {
@@ -111,6 +127,8 @@
     "peerGone": "Druga strana je nestala prije završetka prijenosa.",
     "declinedBySender": "Druga strana je odbila ili otkazala prijenos.",
     "transferFailed": "Prijenos nije uspio: {{message}}",
-    "cancelled": "Prijenos otkazan."
+    "cancelled": "Prijenos otkazan.",
+    "serverUnreachable": "Nije moguće dohvatiti server za povezivanje. Možda je privremeno nedostupan. Otvori Postavke i prebaci se na PortalGems server ili koristi vlastiti - pogledaj vodič za samostalno hostanje.",
+    "invalidServerUrl": "Adresa servera nije ispravna. Provjeri je u Postavkama. Rendezvous URL izgleda kao wss://host/v1, a relej kao tcp://host:4001."
   }
 }

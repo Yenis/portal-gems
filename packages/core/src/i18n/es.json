@@ -1,5 +1,7 @@
 {
-  "app": { "name": "PortalGems" },
+  "app": {
+    "name": "PortalGems"
+  },
   "home": {
     "explainLink": "Cómo funciona y seguridad",
     "settingsLink": "Ajustes",
@@ -71,6 +73,20 @@
       "emerald": "Esmeralda",
       "ruby": "Rubí",
       "amethyst": "Amatista"
+    },
+    "server": {
+      "title": "Servidor de conexión",
+      "hint": "Donde tus dispositivos se encuentran para preparar una transferencia. Si el envío sigue fallando, prueba otro servidor aquí.",
+      "choicePublic": "Servidor público",
+      "choicePublicHint": "Gestionado por la comunidad. Funciona con otras apps de magic-wormhole. A veces no disponible.",
+      "choicePortalgems": "Servidor de PortalGems",
+      "choicePortalgemsHint": "Gestionado por PortalGems. Recomendado por su fiabilidad.",
+      "choiceCustom": "Servidor personalizado",
+      "choiceCustomHint": "Tu propio servidor autoalojado.",
+      "rendezvousLabel": "URL de encuentro",
+      "transitLabel": "URL del relé de tránsito",
+      "invalidUrl": "Introduce una dirección válida o déjalo en blanco para usar el valor predeterminado.",
+      "leaveBlankHint": "Deja un campo en blanco para conservar el valor público predeterminado."
     }
   },
   "explain": {
@@ -111,6 +127,8 @@
     "peerGone": "La otra parte desapareció antes de terminar la transferencia.",
     "declinedBySender": "La otra parte rechazó o canceló la transferencia.",
     "transferFailed": "La transferencia falló: {{message}}",
-    "cancelled": "Transferencia cancelada."
+    "cancelled": "Transferencia cancelada.",
+    "serverUnreachable": "No se pudo contactar con el servidor de conexión. Puede que esté temporalmente caído. Abre Ajustes y cambia al servidor de PortalGems, o usa el tuyo - consulta la guía de autoalojamiento.",
+    "invalidServerUrl": "La dirección del servidor no es válida. Compruébala en Ajustes. Una URL de encuentro es como wss://host/v1 y un relé como tcp://host:4001."
   }
 }

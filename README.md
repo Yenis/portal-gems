@@ -23,6 +23,7 @@ including the original `wormhole` CLI on a server or laptop.
 - [Development](#development)
 - [License](#license)
 - [Acknowledgments](#acknowledgments)
+- [Self-hosting a server](#self-hosting-a-server)
 
 ---
 
@@ -272,3 +273,83 @@ clause).
   maintainers - the Rust implementation at the heart of PortalGems.
 - Please be kind to the public community servers: for heavy use, consider
   self-hosting them.
+
+## Self-hosting a server
+
+PortalGems meets two devices at a **rendezvous** (mailbox) server to exchange
+the short code, then moves the file directly or through a **transit relay** when
+a direct connection is not possible. By default the app uses the PortalGems
+server; you can also point it at the public community server or run your own.
+
+Running your own means you never depend on anyone else's uptime, and (since the
+file is end-to-end encrypted) the server only ever sees ciphertext. You need a
+small always-on machine - a cheap VPS is plenty.
+
+### 1. Install the servers
+
+Both are maintained by the magic-wormhole project and run on Python 3:
+
+```bash
+python3 -m venv ~/wormhole && source ~/wormhole/bin/activate
+pip install magic-wormhole-mailbox-server magic-wormhole-transit-relay
+```
+
+### 2. Run them
+
+```bash
+# Rendezvous / mailbox server - clients connect at ws(s)://host:4000/v1
+twist wormhole-mailbox --port tcp:4000
+
+# Transit relay - clients connect at tcp://host:4001
+twist transitrelay --port tcp:4001
+```
+
+For a real deployment, run each under a process manager so it restarts on
+reboot. A minimal systemd unit for the mailbox:
+
+```ini
+# /etc/systemd/system/wormhole-mailbox.service
+[Unit]
+Description=Magic Wormhole mailbox server
+After=network.target
+
+[Service]
+ExecStart=/home/you/wormhole/bin/twist wormhole-mailbox --port tcp:4000
+Restart=always
+User=you
+
+[Install]
+WantedBy=multi-user.target
+```
+
+(Duplicate it for `transitrelay --port tcp:4001`, then
+`sudo systemctl enable --now wormhole-mailbox wormhole-transitrelay`.)
+
+### 3. Use TLS (recommended)
+
+Mobile networks and browsers prefer secure WebSockets. Put a reverse proxy in
+front of the mailbox so clients can reach it at `wss://relay.example.com/v1`.
+With [Caddy](https://caddyserver.com) it is one line (automatic HTTPS):
+
+```
+relay.example.com {
+    reverse_proxy 127.0.0.1:4000
+}
+```
+
+The transit relay is a raw TCP protocol - expose port 4001 directly (open it in
+your firewall); it does not need TLS because the payload is already encrypted.
+
+### 4. Point the app at it
+
+In **Settings -> Connection server**, choose **Custom** and enter:
+
+- **Rendezvous URL:** `wss://relay.example.com/v1` (or `ws://your-host:4000/v1`
+  without a proxy)
+- **Transit relay URL:** `tcp://your-host:4001`
+
+Leave a field blank to keep the public default for just that server. Every
+device you want to connect must use the **same** rendezvous server. Because
+PortalGems keeps the standard magic-wormhole app id, the reference `wormhole`
+CLI pointed at your server (`wormhole --relay-url ... --transit-helper ...`)
+interoperates too.

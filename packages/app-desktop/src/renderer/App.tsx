@@ -7,13 +7,19 @@ import {
   candidateBuckets,
   deriveCode,
   encodePairingPayload,
+  fontSize,
   friendlyError,
   parsePairingPayload,
   spacing,
   PAIRED_RECEIVE_TIMEOUT_MS,
   PAIRED_SEND_TIMEOUT_MS,
+  SERVER_CHOICES,
+  isCustomServerUsable,
   type PairedDevice,
   type Palette,
+  type ServerChoice,
+  type ServerConfig,
+  type ServerSettings,
 } from '@portalgems/core';
 import {
   setLanguage,
@@ -29,6 +35,7 @@ import {
   waitForPairingAsDisplayer,
 } from './pairing';
 import { loadThemeName, saveThemeName } from './theme';
+import { currentServer, loadServerSettings, saveServerSettings } from './server';
 import {
   Card,
   CodeBox,
@@ -48,10 +55,16 @@ declare global {
     portalgems: {
       locale(): Promise<string>;
       pickFile(): Promise<{ path: string; name: string; size: number } | null>;
-      send(id: number, path: string, code?: string): Promise<void>;
+      send(
+        id: number,
+        path: string,
+        code?: string,
+        server?: ServerConfig
+      ): Promise<void>;
       requestReceive(
         id: number,
-        code: string
+        code: string,
+        server?: ServerConfig
       ): Promise<{ fileName: string; fileSize: number }>;
       accept(id: number, destDir?: string): Promise<string>;
       reject(id: number): Promise<void>;
@@ -311,7 +324,7 @@ function Send({
           }
         }, PAIRED_SEND_TIMEOUT_MS)
       : null;
-    window.portalgems.send(id, file.path, pairedCode).then(
+    window.portalgems.send(id, file.path, pairedCode, currentServer()).then(
       () => setPhase('done'),
       (e) => {
         if (timedOut) setPhase('peerNotOpen');
@@ -462,7 +475,9 @@ function Receive({
             if (cancelledRef.current) break;
             try {
               const derived = deriveCode(device.secret, bucket);
-              gotOffer(await window.portalgems.requestReceive(id, derived));
+              gotOffer(
+                await window.portalgems.requestReceive(id, derived, currentServer())
+              );
               return;
             } catch {
               // unclaimed nameplate = sender not there yet; keep polling
@@ -472,7 +487,9 @@ function Receive({
         failed(new Error(t('paired.nothingFound', { name: device.name })));
       })();
     } else if (code) {
-      window.portalgems.requestReceive(id, code).then(gotOffer, failed);
+      window.portalgems
+        .requestReceive(id, code, currentServer())
+        .then(gotOffer, failed);
     }
     return () => {
       handlers.delete(id);
@@ -727,6 +744,14 @@ function Settings({
   onHome: () => void;
 }) {
   const { t, i18n } = useTranslation();
+  const [server, setServer] = useState<ServerSettings>(() => loadServerSettings());
+
+  const updateServer = (next: ServerSettings) => {
+    setServer(next);
+    saveServerSettings(next);
+  };
+  const chooseServer = (choice: ServerChoice) =>
+    updateServer({ ...server, choice });
 
   const chooseLanguage = (lng: string) => {
     setLanguage(lng);
@@ -778,6 +803,63 @@ function Settings({
             ) : null}
           </div>
         ))}
+      </Card>
+      <Card c={c}>
+        <Subtitle c={c}>{t('settings.server.title')}</Subtitle>
+        <Muted c={c}>{t('settings.server.hint')}</Muted>
+        {SERVER_CHOICES.map((choice) => {
+          const key =
+            choice === 'public'
+              ? 'choicePublic'
+              : choice === 'portalgems'
+                ? 'choicePortalgems'
+                : 'choiceCustom';
+          return (
+            <div
+              key={choice}
+              style={row(server.choice === choice)}
+              onClick={() => chooseServer(choice)}
+            >
+              <span style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ color: c.text }}>{t(`settings.server.${key}`)}</span>
+                <span style={{ color: c.textMuted, fontSize: fontSize.small }}>
+                  {t(`settings.server.${key}Hint`)}
+                </span>
+              </span>
+              {server.choice === choice ? (
+                <span style={{ color: c.primary, fontWeight: 700 }}>✓</span>
+              ) : null}
+            </div>
+          );
+        })}
+        {server.choice === 'custom' ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: spacing(2) }}>
+            <Muted c={c}>{t('settings.server.leaveBlankHint')}</Muted>
+            <span style={{ color: c.textMuted, fontSize: fontSize.small }}>
+              {t('settings.server.rendezvousLabel')}
+            </span>
+            <TextInput
+              c={c}
+              value={server.customRendezvousUrl ?? ''}
+              onChange={(v) => updateServer({ ...server, customRendezvousUrl: v })}
+              placeholder="wss://relay.example/v1"
+            />
+            <span style={{ color: c.textMuted, fontSize: fontSize.small }}>
+              {t('settings.server.transitLabel')}
+            </span>
+            <TextInput
+              c={c}
+              value={server.customTransitUrl ?? ''}
+              onChange={(v) => updateServer({ ...server, customTransitUrl: v })}
+              placeholder="tcp://transit.example:4001"
+            />
+            {!isCustomServerUsable(server) ? (
+              <span style={{ color: c.danger, fontSize: fontSize.small }}>
+                {t('settings.server.invalidUrl')}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
       </Card>
       <PrimaryButton c={c} label={t('common.done')} onClick={onHome} />
     </>

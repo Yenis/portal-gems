@@ -13,6 +13,7 @@ import {
   type PairedDevice,
   type PairingPayload,
 } from '@portalgems/core';
+import { currentServer } from './server';
 
 const pg = () => window.portalgems;
 
@@ -51,7 +52,7 @@ export async function completePairingAsScanner(
   const path = await pg().writeTemp(PAIRING_HANDSHAKE_FILE, encodeHandshake(myName));
   try {
     const code = deriveCode(payload.secret, currentBucket());
-    await pg().send(transferId, path, code);
+    await pg().send(transferId, path, code, currentServer());
     return await addDevice(payload.name, payload.secret);
   } finally {
     pg().deleteFile(path).catch(() => undefined);
@@ -72,7 +73,7 @@ export async function waitForPairingAsDisplayer(
       if (isCancelled()) break;
       try {
         const code = deriveCode(payload.secret, bucket);
-        await pg().requestReceive(transferId, code);
+        await pg().requestReceive(transferId, code, currentServer());
         const saved = await pg().accept(transferId, tempDir);
         const message = parseHandshake(await pg().readText(saved));
         pg().deleteFile(saved).catch(() => undefined);

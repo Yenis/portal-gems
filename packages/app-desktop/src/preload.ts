@@ -9,17 +9,29 @@ export interface PgEvent {
   total?: number;
 }
 
+/// Which servers a transfer should use; empty/missing fields fall back to the
+/// public magic-wormhole defaults.
+export interface ServerConfig {
+  rendezvousUrl?: string;
+  transitUrl?: string;
+}
+
 contextBridge.exposeInMainWorld('portalgems', {
   locale: (): Promise<string> => ipcRenderer.invoke('pg:locale'),
   pickFile: (): Promise<{ path: string; name: string; size: number } | null> =>
     ipcRenderer.invoke('pg:pickFile'),
-  send: (id: number, path: string, code?: string): Promise<void> =>
-    ipcRenderer.invoke('pg:send', id, path, code),
+  send: (
+    id: number,
+    path: string,
+    code?: string,
+    server?: ServerConfig
+  ): Promise<void> => ipcRenderer.invoke('pg:send', id, path, code, server),
   requestReceive: (
     id: number,
-    code: string
+    code: string,
+    server?: ServerConfig
   ): Promise<{ fileName: string; fileSize: number }> =>
-    ipcRenderer.invoke('pg:requestReceive', id, code),
+    ipcRenderer.invoke('pg:requestReceive', id, code, server),
   accept: (id: number, destDir?: string): Promise<string> =>
     ipcRenderer.invoke('pg:accept', id, destDir),
   reject: (id: number): Promise<void> => ipcRenderer.invoke('pg:reject', id),

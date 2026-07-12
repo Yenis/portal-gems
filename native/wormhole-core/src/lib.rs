@@ -13,14 +13,31 @@ uniffi::setup_scaffolding!();
 
 mod ffi;
 pub use ffi::{create_test_file, IncomingFile, TransferListener};
+use std::borrow::Cow;
+
 use magic_wormhole::{
-    transfer::{self, APP_CONFIG},
+    transfer::{self, AppVersion, APP_CONFIG},
     transit::{self, Abilities, RelayHint, TransitInfo},
-    MailboxConnection, Wormhole,
+    AppConfig, MailboxConnection, Wormhole,
 };
 
 /// Number of wordlist words in generated codes (the CLI default).
 pub const DEFAULT_CODE_LENGTH: usize = 2;
+
+/// Which servers a transfer should use. Both fields are optional; a missing or
+/// empty field falls back to the public magic-wormhole defaults. Keeping the
+/// app id fixed (see `app_config`) means any two clients pointed at the SAME
+/// rendezvous server interoperate - including the reference CLI.
+///
+/// - `rendezvous_url`: the mailbox/rendezvous server (`ws(s)://host:port/v1`),
+///   where the two sides exchange the code and run the PAKE handshake.
+/// - `transit_url`: the transit relay used when a direct connection is not
+///   possible (`tcp://host:port`).
+#[derive(Debug, Clone, Default, uniffi::Record)]
+pub struct ServerConfig {
+    pub rendezvous_url: Option<String>,
+    pub transit_url: Option<String>,
+}
 
 #[derive(Debug, thiserror::Error, uniffi::Error)]
 #[uniffi(flat_error)]
@@ -31,6 +48,8 @@ pub enum Error {
     Cancelled,
     #[error("this transfer was already accepted or rejected")]
     AlreadyConsumed,
+    #[error("invalid server URL: {0}")]
+    InvalidServerUrl(String),
     #[error(transparent)]
     Wormhole(#[from] magic_wormhole::WormholeError),
     #[error(transparent)]
@@ -39,11 +58,31 @@ pub enum Error {
     Io(#[from] std::io::Error),
 }
 
-pub(crate) fn default_relay_hints() -> Vec<RelayHint> {
-    vec![
-        RelayHint::from_urls(None, [transit::DEFAULT_RELAY_SERVER.parse().unwrap()])
-            .expect("default relay URL is valid"),
-    ]
+/// The rendezvous/mailbox config for this transfer. We clone the library's
+/// `APP_CONFIG` (which fixes the interop-critical app id) and override only the
+/// rendezvous URL when the caller supplied one.
+pub(crate) fn app_config(server: &ServerConfig) -> AppConfig<AppVersion> {
+    match server.rendezvous_url.as_deref() {
+        Some(url) if !url.is_empty() => APP_CONFIG.rendezvous_url(Cow::Owned(url.to_owned())),
+        _ => APP_CONFIG,
+    }
+}
+
+/// Transit relay hints for this transfer: the caller's relay when given,
+/// otherwise the public default. A malformed URL is a caller error, not a
+/// panic, so we surface it as `InvalidServerUrl`.
+pub(crate) fn relay_hints(server: &ServerConfig) -> Result<Vec<RelayHint>, Error> {
+    let raw = server
+        .transit_url
+        .as_deref()
+        .filter(|s| !s.is_empty())
+        .unwrap_or(transit::DEFAULT_RELAY_SERVER);
+    let url = raw
+        .parse()
+        .map_err(|_| Error::InvalidServerUrl(raw.to_string()))?;
+    let hint =
+        RelayHint::from_urls(None, [url]).map_err(|_| Error::InvalidServerUrl(raw.to_string()))?;
+    Ok(vec![hint])
 }
 
 pub(crate) fn describe_transit(info: &TransitInfo) -> String {
@@ -57,6 +96,7 @@ pub(crate) fn describe_transit(info: &TransitInfo) -> String {
 pub async fn send_file<F, G, H>(
     path: impl AsRef<Path>,
     code: Option<&str>,
+    server: &ServerConfig,
     on_code: F,
     on_transit: G,
     progress: H,
@@ -83,11 +123,12 @@ where
     // receiver blocks inside Wormhole::connect (the PAKE needs a peer), so
     // cancellation must cover more than just the transfer phase.
     let work = async {
+        let relay_hints = relay_hints(server)?;
         let mailbox = match code {
-            None => MailboxConnection::create(APP_CONFIG, DEFAULT_CODE_LENGTH).await?,
+            None => MailboxConnection::create(app_config(server), DEFAULT_CODE_LENGTH).await?,
             Some(raw) => {
                 let code = raw.parse().map_err(|_| Error::InvalidCode(raw.into()))?;
-                MailboxConnection::connect(APP_CONFIG, code, true).await?
+                MailboxConnection::connect(app_config(server), code, true).await?
             },
         };
         on_code(mailbox.code().to_string());
@@ -95,7 +136,7 @@ where
         let wormhole = Wormhole::connect(mailbox).await?;
         transfer::send_file_or_folder(
             wormhole,
-            default_relay_hints(),
+            relay_hints,
             path,
             file_name,
             Abilities::ALL,
@@ -125,15 +166,17 @@ pub struct PendingReceive {
 /// without accepting it.
 pub async fn request_receive(
     code: &str,
+    server: &ServerConfig,
     cancel: impl std::future::Future<Output = ()>,
 ) -> Result<PendingReceive, Error> {
     let work = async {
+        let relay_hints = relay_hints(server)?;
         let parsed = code.parse().map_err(|_| Error::InvalidCode(code.into()))?;
-        let mailbox = MailboxConnection::connect(APP_CONFIG, parsed, false).await?;
+        let mailbox = MailboxConnection::connect(app_config(server), parsed, false).await?;
         let wormhole = Wormhole::connect(mailbox).await?;
         let request = transfer::request_file(
             wormhole,
-            default_relay_hints(),
+            relay_hints,
             Abilities::ALL,
             pending::<()>(),
         )
@@ -190,6 +233,7 @@ impl PendingReceive {
 pub async fn receive_file<G, H>(
     code: &str,
     dest_dir: impl AsRef<Path>,
+    server: &ServerConfig,
     on_transit: G,
     progress: H,
     cancel: impl std::future::Future<Output = ()>,
@@ -198,7 +242,7 @@ where
     G: FnOnce(String),
     H: FnMut(u64, u64) + 'static,
 {
-    let pending_receive = request_receive(code, pending::<()>()).await?;
+    let pending_receive = request_receive(code, server, pending::<()>()).await?;
     pending_receive
         .accept(dest_dir, on_transit, progress, cancel)
         .await
@@ -312,6 +356,7 @@ mod tests {
                 futures_lite::future::block_on(send_file(
                     &src_clone,
                     Some(&send_code),
+                    &ServerConfig::default(),
                     |_| {},
                     |_| {},
                     |_, _| {},
@@ -319,9 +364,16 @@ mod tests {
                 ))
             });
             std::thread::sleep(std::time::Duration::from_secs(2));
-            let dest = receive_file(&code, &dir, |_| {}, |_, _| {}, futures_lite::future::pending::<()>())
-                .await
-                .unwrap();
+            let dest = receive_file(
+                &code,
+                &dir,
+                &ServerConfig::default(),
+                |_| {},
+                |_, _| {},
+                futures_lite::future::pending::<()>(),
+            )
+            .await
+            .unwrap();
             sender.join().unwrap().unwrap();
             assert_eq!(std::fs::read(&src).unwrap(), std::fs::read(&dest).unwrap());
             std::fs::remove_dir_all(&dir).ok();

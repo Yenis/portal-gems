@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 
 use futures_lite::future::pending;
 
-use crate::{Error, PendingReceive};
+use crate::{Error, PendingReceive, ServerConfig};
 
 /// Implemented by the app (Kotlin/TypeScript) to observe a running transfer.
 #[uniffi::export(with_foreign)]
@@ -29,6 +29,7 @@ pub trait TransferListener: Send + Sync {
 pub async fn send_file(
     path: String,
     code: Option<String>,
+    server: ServerConfig,
     listener: Arc<dyn TransferListener>,
 ) -> Result<(), Error> {
     let code_listener = listener.clone();
@@ -36,6 +37,7 @@ pub async fn send_file(
     crate::send_file(
         &path,
         code.as_deref(),
+        &server,
         move |code| code_listener.on_code(code),
         move |info| transit_listener.on_transit(info),
         move |done, total| listener.on_progress(done, total),
@@ -78,8 +80,11 @@ pub struct IncomingFile {
 /// Connect to the wormhole under `code` and wait for the sender's file offer,
 /// without accepting it yet. This is what allows a confirmation UI.
 #[uniffi::export]
-pub async fn request_receive(code: String) -> Result<Arc<IncomingFile>, Error> {
-    let pending_receive = crate::request_receive(&code, pending::<()>()).await?;
+pub async fn request_receive(
+    code: String,
+    server: ServerConfig,
+) -> Result<Arc<IncomingFile>, Error> {
+    let pending_receive = crate::request_receive(&code, &server, pending::<()>()).await?;
     Ok(Arc::new(IncomingFile {
         name: pending_receive.file_name.clone(),
         size: pending_receive.file_size,
@@ -139,12 +144,14 @@ impl IncomingFile {
 pub async fn receive_file(
     code: String,
     dest_dir: String,
+    server: ServerConfig,
     listener: Arc<dyn TransferListener>,
 ) -> Result<String, Error> {
     let transit_listener = listener.clone();
     let path = crate::receive_file(
         &code,
         &dest_dir,
+        &server,
         move |info| transit_listener.on_transit(info),
         move |done, total| listener.on_progress(done, total),
         pending::<()>(),

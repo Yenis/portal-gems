@@ -19,14 +19,26 @@ export interface FileOffer {
   fileSize: number;
 }
 
+/// Which servers a transfer should use; empty/missing fields fall back to the
+/// public magic-wormhole defaults. Mirrors `wormhole_core::ServerConfig`.
+export interface ServerConfig {
+  rendezvousUrl?: string;
+  transitUrl?: string;
+}
+
 interface NativeAddon {
   sendFile(
     id: number,
     path: string,
     code: string | null,
+    server: ServerConfig,
     cb: (ev: NativeTransferEvent) => void
   ): Promise<void>;
-  requestReceive(id: number, code: string): Promise<FileOffer>;
+  requestReceive(
+    id: number,
+    code: string,
+    server: ServerConfig
+  ): Promise<FileOffer>;
   acceptReceive(
     id: number,
     destDir: string,

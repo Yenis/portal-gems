@@ -1,5 +1,7 @@
 {
-  "app": { "name": "PortalGems" },
+  "app": {
+    "name": "PortalGems"
+  },
   "home": {
     "explainLink": "So funktioniert's & Sicherheit",
     "settingsLink": "Einstellungen",
@@ -71,6 +73,20 @@
       "emerald": "Smaragd",
       "ruby": "Rubin",
       "amethyst": "Amethyst"
+    },
+    "server": {
+      "title": "Verbindungsserver",
+      "hint": "Wo sich deine Geräte treffen, um eine Übertragung aufzubauen. Wenn das Senden immer wieder fehlschlägt, probiere hier einen anderen Server.",
+      "choicePublic": "Öffentlicher Server",
+      "choicePublicHint": "Von der Community betrieben. Funktioniert mit anderen magic-wormhole-Apps. Gelegentlich nicht verfügbar.",
+      "choicePortalgems": "PortalGems-Server",
+      "choicePortalgemsHint": "Von PortalGems betrieben. Für Zuverlässigkeit empfohlen.",
+      "choiceCustom": "Eigener Server",
+      "choiceCustomHint": "Dein eigener, selbst gehosteter Server.",
+      "rendezvousLabel": "Rendezvous-URL",
+      "transitLabel": "Transit-Relay-URL",
+      "invalidUrl": "Gib eine gültige Adresse ein oder lass das Feld leer, um die Standardeinstellung zu verwenden.",
+      "leaveBlankHint": "Lass ein Feld leer, um dafür den öffentlichen Standard zu behalten."
     }
   },
   "explain": {
@@ -111,6 +127,8 @@
     "peerGone": "Die Gegenseite ist verschwunden, bevor die Übertragung abgeschlossen war.",
     "declinedBySender": "Die Übertragung wurde von der Gegenseite abgelehnt oder abgebrochen.",
     "transferFailed": "Die Übertragung ist fehlgeschlagen: {{message}}",
-    "cancelled": "Übertragung abgebrochen."
+    "cancelled": "Übertragung abgebrochen.",
+    "serverUnreachable": "Der Verbindungsserver ist nicht erreichbar. Möglicherweise ist er vorübergehend nicht verfügbar. Öffne die Einstellungen und wechsle zum PortalGems-Server oder nutze deinen eigenen - siehe die Anleitung zum Selbsthosten.",
+    "invalidServerUrl": "Die Serveradresse ist ungültig. Prüfe sie in den Einstellungen. Eine Rendezvous-URL sieht aus wie wss://host/v1 und ein Relay wie tcp://host:4001."
   }
 }
