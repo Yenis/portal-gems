@@ -5,6 +5,18 @@ All notable changes to PortalGems are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-07-12
+
+Maintenance release. No user-facing changes; the app is functionally identical
+to 1.0.0.
+
+### Fixed
+
+- Release pipeline now builds every platform (APK, AppImage, deb, rpm, Windows
+  .exe, macOS .dmg) on native CI runners from a single tag push.
+
+[1.0.1]: https://github.com/Yenis/portal-gems/releases/tag/v1.0.1
+
 ## [1.0.0] - 2026-07-12
 
 First public release. Secure, direct device-to-device file transfer over the
