@@ -137,6 +137,11 @@ jobs:
           sdkmanager "ndk;27.1.12297006"
           echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.1.12297006" >> "$GITHUB_ENV"
 
+      # ubrn drives the Android cross-compile via `cargo ndk`, so cargo-ndk must
+      # be on PATH (it's a global install locally; CI runners start clean).
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk --version 4.1.2 --locked
+
       - name: Build Android engine libs (ubrn) + prepare binding
         working-directory: packages/wormhole-rn
         run: |
