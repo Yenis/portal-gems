@@ -1,0 +1,104 @@
+# Builds the PortalGems desktop app on native Windows and macOS runners and
+# attaches the installers to a GitHub release. The Android APK and the Linux
+# packages (AppImage/deb/rpm) are built locally and uploaded by hand - this
+# workflow only covers the two platforms that can't be built on Linux.
+#
+# Triggers:
+#   * push of a tag like v1.2.3  -> builds and uploads to that tag's release
+#   * manual "Run workflow"      -> pick an existing tag to (re)build for
+#
+# The release must already exist (create it from the tag first); assets are
+# added to it with `gh release upload --clobber`.
+
+name: Release desktop (Windows + macOS)
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to build and attach assets to (e.g. v1.0.0)"
+        required: true
+
+# Uploading release assets needs write access to repository contents.
+permissions:
+  contents: write
+
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: win
+            # cdylib on Windows is <name>.dll (no lib prefix)
+            addon_src: native/wormhole-node/target/release/wormhole_node.dll
+            addon_dst: wormhole_node-win32-x64.node
+            sha_cmd: sha256sum
+          - os: macos-latest
+            platform: mac
+            # cdylib on macOS is lib<name>.dylib
+            addon_src: native/wormhole-node/target/release/libwormhole_node.dylib
+            addon_dst: wormhole_node-darwin-arm64.node
+            sha_cmd: shasum -a 256
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash # so NODE_PATH=... prefixes and globs work on Windows too
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Host-native toolchain: Windows runner -> MSVC, macOS runner -> clang.
+      # No cross-compiling, so napi-build's libnode.dll requirement never applies.
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Build native engine addon
+        run: |
+          cargo build --release --manifest-path native/wormhole-node/Cargo.toml
+          mkdir -p packages/app-desktop/dist
+          cp "${{ matrix.addon_src }}" "packages/app-desktop/dist/${{ matrix.addon_dst }}"
+
+      - name: Install desktop dependencies
+        working-directory: packages/app-desktop
+        run: npm install
+
+      - name: Build JS bundles
+        working-directory: packages/app-desktop
+        run: npm run build:bundles
+
+      - name: Package with electron-builder
+        working-directory: packages/app-desktop
+        env:
+          # Produce an unsigned build; without an Apple/Windows cert we don't
+          # want electron-builder to attempt (and fail) code signing.
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: npx electron-builder --${{ matrix.platform }} --publish never
+
+      - name: Rename artifacts + checksums
+        working-directory: packages/app-desktop
+        run: |
+          version=$(node -p "require('./package.json').version")
+          mkdir -p out
+          if [ "${{ matrix.platform }}" = "win" ]; then
+            cp release/*.exe "out/PortalGems-${version}-windows-x64.exe"
+          else
+            # dmg is the primary installer; the zip is handy for auto-update tools
+            cp release/*.dmg "out/PortalGems-${version}-macos-arm64.dmg"
+          fi
+          cd out
+          for f in *; do ${{ matrix.sha_cmd }} "$f" > "$f.sha256"; done
+          ls -la
+
+      - name: Upload assets to the release
+        working-directory: packages/app-desktop
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: gh release upload "$TAG" out/* --clobber

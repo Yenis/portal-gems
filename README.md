@@ -12,6 +12,7 @@ including the original `wormhole` CLI on a server or laptop.
 
 ## Table of contents
 
+- [Download](#download)
 - [Why PortalGems?](#why-portalgems)
 - [Features](#features)
 - [How it works](#how-it-works)
@@ -24,6 +25,39 @@ including the original `wormhole` CLI on a server or laptop.
 - [Acknowledgments](#acknowledgments)
 
 ---
+
+## Download
+
+Grab the latest build for your platform from the
+**[releases page](https://github.com/Yenis/portal-gems/releases/latest)**:
+
+| Platform | File | Notes |
+|---|---|---|
+| 🤖 Android | `PortalGems-<version>-android.apk` | Sideload; enable "install from unknown sources" |
+| 🐧 Linux (portable) | `PortalGems-<version>-linux-x86_64.AppImage` | `chmod +x` then run; no install needed |
+| 🐧 Debian/Ubuntu | `PortalGems-<version>-linux-amd64.deb` | `sudo apt install ./PortalGems-*.deb` |
+| 🐧 Fedora/RHEL | `PortalGems-<version>-linux-x86_64.rpm` | `sudo dnf install ./PortalGems-*.rpm` |
+| 🪟 Windows | `PortalGems-<version>-windows-x64.exe` | Portable; just run it, no installer |
+| 🍎 macOS (Apple Silicon) | `PortalGems-<version>-macos-arm64.dmg` | Unsigned; right-click → Open on first launch |
+
+Building from source instead? See [Building from source](#building-from-source).
+
+### Verifying your download
+
+Every binary ships with a matching `.sha256` file so you can confirm it
+downloaded intact and untampered. After downloading both the binary and its
+`.sha256`, run:
+
+```bash
+# Linux / macOS
+sha256sum -c PortalGems-1.0.0-linux-x86_64.AppImage.sha256
+
+# Windows (PowerShell) - compare the two hashes match
+Get-FileHash PortalGems-1.0.0-windows-x64.exe -Algorithm SHA256
+Get-Content PortalGems-1.0.0-windows-x64.exe.sha256
+```
+
+A matching hash means the file is byte-for-byte what was published.
 
 ## Why PortalGems?
 
