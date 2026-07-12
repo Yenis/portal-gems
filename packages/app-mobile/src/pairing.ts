@@ -24,6 +24,7 @@ import {
   setPairedDevicesJson,
   writeTextFile,
 } from './native';
+import { currentServer } from './server';
 
 export async function loadDevices(): Promise<PairedDevice[]> {
   try {
@@ -78,7 +79,8 @@ export async function completePairingAsScanner(
   );
   try {
     const code = deriveCode(payload.secret, currentBucket());
-    await sendFile(path, code, quietListener, { signal });
+    const server = await currentServer();
+    await sendFile(path, code, server, quietListener, { signal });
     return await addDevice(payload.name, payload.secret);
   } finally {
     deleteFile(path).catch(() => undefined);
@@ -93,6 +95,7 @@ export async function waitForPairingAsDisplayer(
   payload: PairingPayload,
   signal: AbortSignal
 ): Promise<PairedDevice> {
+  const server = await currentServer();
   const deadline = Date.now() + PAIRED_RECEIVE_TIMEOUT_MS;
   let lastError: unknown = new Error('pairing timed out');
   while (Date.now() < deadline && !signal.aborted) {
@@ -100,7 +103,7 @@ export async function waitForPairingAsDisplayer(
       if (signal.aborted) break;
       try {
         const code = deriveCode(payload.secret, bucket);
-        const saved = await receiveFile(code, incomingDir, quietListener, {
+        const saved = await receiveFile(code, incomingDir, server, quietListener, {
           signal,
         });
         const message = parseHandshake(await readTextFile(saved));

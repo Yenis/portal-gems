@@ -26,6 +26,7 @@ import {
   saveToDownloads,
   withTransferService,
 } from '../native';
+import { currentServer } from '../server';
 import { useTheme } from '../theme';
 
 type Phase =
@@ -81,6 +82,7 @@ export default function ReceiveScreen({
       // Paired receive: poll the derived candidate codes until the sender
       // shows up or we give up. An unclaimed nameplate just means "not yet".
       (async () => {
+        const server = await currentServer();
         const deadline = Date.now() + PAIRED_RECEIVE_TIMEOUT_MS;
         let lastError: unknown = new Error(t('paired.nothingFound', { name: device.name }));
         while (Date.now() < deadline && !controller.signal.aborted) {
@@ -88,7 +90,7 @@ export default function ReceiveScreen({
             if (controller.signal.aborted) break;
             try {
               const derived = deriveCode(device.secret, bucket);
-              const incoming = await requestReceive(derived, {
+              const incoming = await requestReceive(derived, server, {
                 signal: controller.signal,
               });
               gotOffer(incoming);
@@ -105,7 +107,13 @@ export default function ReceiveScreen({
         }
       })();
     } else if (code) {
-      requestReceive(code, { signal: controller.signal }).then(gotOffer, failed);
+      void (async () => {
+        const server = await currentServer();
+        requestReceive(code, server, { signal: controller.signal }).then(
+          gotOffer,
+          failed
+        );
+      })();
     }
 
     return () => controller.abort();

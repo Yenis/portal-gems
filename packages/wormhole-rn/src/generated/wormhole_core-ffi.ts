@@ -191,12 +191,17 @@ interface NativeModuleInterface {
   ubrn_uniffi_wormhole_core_fn_func_receive_file(
     code: Uint8Array,
     destDir: Uint8Array,
+    server: Uint8Array,
     listener: bigint
   ): bigint;
-  ubrn_uniffi_wormhole_core_fn_func_request_receive(code: Uint8Array): bigint;
+  ubrn_uniffi_wormhole_core_fn_func_request_receive(
+    code: Uint8Array,
+    server: Uint8Array
+  ): bigint;
   ubrn_uniffi_wormhole_core_fn_func_send_file(
     path: Uint8Array,
     code: Uint8Array,
+    server: Uint8Array,
     listener: bigint
   ): bigint;
   ubrn_uniffi_wormhole_core_fn_method_incomingfile_accept(

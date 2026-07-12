@@ -35,6 +35,7 @@ import {
   destructorGuardSymbol,
   pointerLiteralSymbol,
   uniffiCreateFfiConverterString,
+  uniffiCreateRecord,
   uniffiRustCallAsync,
   uniffiTraitInterfaceCall,
   uniffiTypeNameSymbol,
@@ -83,6 +84,7 @@ export function createTestFile(dir: string, sizeKb: number): string /*throws*/ {
 export async function receiveFile(
   code: string,
   destDir: string,
+  server: ServerConfig,
   listener: TransferListener,
   asyncOpts_?: { signal: AbortSignal }
 ): Promise<string> /*throws*/ {
@@ -94,6 +96,10 @@ export async function receiveFile(
         return nativeModule().ubrn_uniffi_wormhole_core_fn_func_receive_file(
           FfiConverterString.lower(code, nativeModule().rustbuffer_alloc),
           FfiConverterString.lower(destDir, nativeModule().rustbuffer_alloc),
+          FfiConverterTypeServerConfig.lower(
+            server,
+            nativeModule().rustbuffer_alloc
+          ),
           FfiConverterTypeTransferListener.lower(
             listener,
             nativeModule().rustbuffer_alloc
@@ -132,6 +138,7 @@ export async function receiveFile(
  */
 export async function requestReceive(
   code: string,
+  server: ServerConfig,
   asyncOpts_?: { signal: AbortSignal }
 ): Promise<IncomingFileLike> /*throws*/ {
   const __stack = uniffiIsDebug ? new Error().stack : undefined;
@@ -140,7 +147,11 @@ export async function requestReceive(
       /*rustCaller:*/ uniffiCaller,
       /*rustFutureFunc:*/ () => {
         return nativeModule().ubrn_uniffi_wormhole_core_fn_func_request_receive(
-          FfiConverterString.lower(code, nativeModule().rustbuffer_alloc)
+          FfiConverterString.lower(code, nativeModule().rustbuffer_alloc),
+          FfiConverterTypeServerConfig.lower(
+            server,
+            nativeModule().rustbuffer_alloc
+          )
         );
       },
       /*pollFunc:*/ nativeModule().ubrn_ffi_wormhole_core_rust_future_poll_u64,
@@ -177,6 +188,7 @@ export async function requestReceive(
 export async function sendFile(
   path: string,
   code: string | undefined,
+  server: ServerConfig,
   listener: TransferListener,
   asyncOpts_?: { signal: AbortSignal }
 ): Promise<void> /*throws*/ {
@@ -189,6 +201,10 @@ export async function sendFile(
           FfiConverterString.lower(path, nativeModule().rustbuffer_alloc),
           FfiConverterOptionalString.lower(
             code,
+            nativeModule().rustbuffer_alloc
+          ),
+          FfiConverterTypeServerConfig.lower(
+            server,
             nativeModule().rustbuffer_alloc
           ),
           FfiConverterTypeTransferListener.lower(
@@ -216,11 +232,130 @@ export async function sendFile(
   }
 }
 
+// Hermes (React Native ≥ 0.74) ships TextEncoder and encodeInto, but not
+// TextDecoder. For single-string decode (bytesToString), we polyfill via the
+// C++ string_from_buffer helper using a duck-typed object matching the
+// standard TextDecoder.decode signature. Once Hermes ships a real
+// TextDecoder, the `typeof` check will pick it up automatically.
+//
+// For array-of-strings decode (readStringFromBuffer), we keep a dedicated C++
+// helper: the polyfill path (new Uint8Array view + decode) measured ~40%
+// slower on getStringArray benchmarks than a direct (buf, offset, length)
+// call, due to the per-read view allocation and extra property lookups in
+// string_from_buffer.
+const stringConverter = (() => {
+  const encoder = new TextEncoder();
+  const decoder: { decode(input: UniffiByteArray): string } =
+    typeof TextDecoder !== 'undefined'
+      ? new TextDecoder()
+      : {
+          decode: (bytes: UniffiByteArray) =>
+            nativeModule().ubrn_uniffi_internal_fn_func_ffi__string_from_buffer(
+              bytes,
+              undefined as any
+            ) as string,
+        };
+  return {
+    // Single-string lower() uses the C++ helper — TextEncoder.encode
+    // measured ~43% slower on takeString benchmarks.
+    stringToBytes: (s: string) =>
+      nativeModule().ubrn_uniffi_internal_fn_func_ffi__string_to_buffer(
+        s,
+        undefined as any
+      ),
+    bytesToString: (ab: UniffiByteArray) => decoder.decode(ab),
+    // Direct C++ call — bypasses uniffiCaller.rustCall() overhead.
+    // Matters for N-element arrays.
+    stringByteLength: (s: string) =>
+      nativeModule().ubrn_uniffi_internal_fn_func_ffi__string_to_byte_length(
+        s,
+        undefined as any
+      ) as number,
+    // Encode directly into the RustBuffer backing store via
+    // TextEncoder.encodeInto — zero intermediate allocation. Replaces
+    // the old C++ write_string_into_buffer helper.
+    writeStringIntoBuffer: (s: string, buf: any, offset: number): number => {
+      const view = new Uint8Array(
+        buf.arrayBuffer,
+        offset,
+        buf.arrayBuffer.byteLength - offset
+      );
+      return encoder.encodeInto(s, view).written;
+    },
+    // Dedicated C++ helper — avoids per-read Uint8Array allocation and
+    // the double property-lookup in string_from_buffer.
+    readStringFromBuffer: (buf: any, offset: number, length: number): string =>
+      nativeModule().ubrn_uniffi_internal_fn_func_ffi__read_string_from_buffer(
+        buf,
+        offset,
+        length
+      ) as string,
+  };
+})();
+const FfiConverterString = uniffiCreateFfiConverterString(stringConverter);
+
+/**
+ * Which servers a transfer should use. Both fields are optional; a missing or
+ * empty field falls back to the public magic-wormhole defaults. Keeping the
+ * app id fixed (see `app_config`) means any two clients pointed at the SAME
+ * rendezvous server interoperate - including the reference CLI.
+ *
+ * - `rendezvous_url`: the mailbox/rendezvous server (`ws(s)://host:port/v1`),
+ * where the two sides exchange the code and run the PAKE handshake.
+ * - `transit_url`: the transit relay used when a direct connection is not
+ * possible (`tcp://host:port`).
+ */
+export type ServerConfig = {
+  rendezvousUrl?: string;
+  transitUrl?: string;
+};
+
+/**
+ * Generated factory for {@link ServerConfig} record objects.
+ */
+export const ServerConfig = (() => {
+  const defaults = () => ({});
+  const create = (() => {
+    return uniffiCreateRecord<ServerConfig, ReturnType<typeof defaults>>(
+      defaults
+    );
+  })();
+  return Object.freeze({
+    create,
+    new: create,
+    defaults: () => Object.freeze(defaults()) as Partial<ServerConfig>,
+  });
+})();
+
+const FfiConverterTypeServerConfig = (() => {
+  type TypeName = ServerConfig;
+  class FFIConverter extends AbstractFfiConverterByteArray<TypeName> {
+    read(from: RustBuffer): TypeName {
+      return {
+        rendezvousUrl: FfiConverterOptionalString.read(from),
+        transitUrl: FfiConverterOptionalString.read(from),
+      };
+    }
+    write(value: TypeName, into: RustBuffer): void {
+      FfiConverterOptionalString.write(value.rendezvousUrl, into);
+      FfiConverterOptionalString.write(value.transitUrl, into);
+    }
+    allocationSize(value: TypeName): number {
+      return (
+        FfiConverterOptionalString.allocationSize(value.rendezvousUrl) +
+        FfiConverterOptionalString.allocationSize(value.transitUrl)
+      );
+    }
+  }
+  return new FFIConverter();
+})();
+
 // Flat error type: Exception
 export enum Exception_Tags {
   InvalidCode = 'InvalidCode',
   Cancelled = 'Cancelled',
   AlreadyConsumed = 'AlreadyConsumed',
+  InvalidServerUrl = 'InvalidServerUrl',
   Wormhole = 'Wormhole',
   Transfer = 'Transfer',
   Io = 'Io',
@@ -292,7 +427,7 @@ export const Exception = (() => {
       return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 3;
     }
   }
-  class Wormhole extends UniffiError {
+  class InvalidServerUrl extends UniffiError {
     /**
      * @private
      * This field is private and should not be used.
@@ -304,6 +439,28 @@ export const Exception = (() => {
      */
     readonly [variantOrdinalSymbol] = 4;
 
+    readonly tag = Exception_Tags.InvalidServerUrl;
+
+    constructor(message: string) {
+      super('Exception', 'InvalidServerUrl', message);
+    }
+
+    static instanceOf(e: any): e is InvalidServerUrl {
+      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 4;
+    }
+  }
+  class Wormhole extends UniffiError {
+    /**
+     * @private
+     * This field is private and should not be used.
+     */
+    readonly [uniffiTypeNameSymbol]: string = 'Exception';
+    /**
+     * @private
+     * This field is private and should not be used.
+     */
+    readonly [variantOrdinalSymbol] = 5;
+
     readonly tag = Exception_Tags.Wormhole;
 
     constructor(message: string) {
@@ -311,7 +468,7 @@ export const Exception = (() => {
     }
 
     static instanceOf(e: any): e is Wormhole {
-      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 4;
+      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 5;
     }
   }
   class Transfer extends UniffiError {
@@ -324,7 +481,7 @@ export const Exception = (() => {
      * @private
      * This field is private and should not be used.
      */
-    readonly [variantOrdinalSymbol] = 5;
+    readonly [variantOrdinalSymbol] = 6;
 
     readonly tag = Exception_Tags.Transfer;
 
@@ -333,7 +490,7 @@ export const Exception = (() => {
     }
 
     static instanceOf(e: any): e is Transfer {
-      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 5;
+      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 6;
     }
   }
   class Io extends UniffiError {
@@ -346,7 +503,7 @@ export const Exception = (() => {
      * @private
      * This field is private and should not be used.
      */
-    readonly [variantOrdinalSymbol] = 6;
+    readonly [variantOrdinalSymbol] = 7;
 
     readonly tag = Exception_Tags.Io;
 
@@ -355,7 +512,7 @@ export const Exception = (() => {
     }
 
     static instanceOf(e: any): e is Io {
-      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 6;
+      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 7;
     }
   }
 
@@ -367,6 +524,7 @@ export const Exception = (() => {
     InvalidCode,
     Cancelled,
     AlreadyConsumed,
+    InvalidServerUrl,
     Wormhole,
     Transfer,
     Io,
@@ -380,6 +538,7 @@ export type Exception = InstanceType<
     | 'InvalidCode'
     | 'Cancelled'
     | 'AlreadyConsumed'
+    | 'InvalidServerUrl'
     | 'Wormhole'
     | 'Transfer'
     | 'Io']
@@ -401,12 +560,15 @@ const FfiConverterTypeError = (() => {
           return new Exception.AlreadyConsumed(FfiConverterString.read(from));
 
         case 4:
-          return new Exception.Wormhole(FfiConverterString.read(from));
+          return new Exception.InvalidServerUrl(FfiConverterString.read(from));
 
         case 5:
-          return new Exception.Transfer(FfiConverterString.read(from));
+          return new Exception.Wormhole(FfiConverterString.read(from));
 
         case 6:
+          return new Exception.Transfer(FfiConverterString.read(from));
+
+        case 7:
           return new Exception.Io(FfiConverterString.read(from));
 
         default:
@@ -424,68 +586,6 @@ const FfiConverterTypeError = (() => {
   }
   return new FfiConverter();
 })();
-
-// Hermes (React Native ≥ 0.74) ships TextEncoder and encodeInto, but not
-// TextDecoder. For single-string decode (bytesToString), we polyfill via the
-// C++ string_from_buffer helper using a duck-typed object matching the
-// standard TextDecoder.decode signature. Once Hermes ships a real
-// TextDecoder, the `typeof` check will pick it up automatically.
-//
-// For array-of-strings decode (readStringFromBuffer), we keep a dedicated C++
-// helper: the polyfill path (new Uint8Array view + decode) measured ~40%
-// slower on getStringArray benchmarks than a direct (buf, offset, length)
-// call, due to the per-read view allocation and extra property lookups in
-// string_from_buffer.
-const stringConverter = (() => {
-  const encoder = new TextEncoder();
-  const decoder: { decode(input: UniffiByteArray): string } =
-    typeof TextDecoder !== 'undefined'
-      ? new TextDecoder()
-      : {
-          decode: (bytes: UniffiByteArray) =>
-            nativeModule().ubrn_uniffi_internal_fn_func_ffi__string_from_buffer(
-              bytes,
-              undefined as any
-            ) as string,
-        };
-  return {
-    // Single-string lower() uses the C++ helper - TextEncoder.encode
-    // measured ~43% slower on takeString benchmarks.
-    stringToBytes: (s: string) =>
-      nativeModule().ubrn_uniffi_internal_fn_func_ffi__string_to_buffer(
-        s,
-        undefined as any
-      ),
-    bytesToString: (ab: UniffiByteArray) => decoder.decode(ab),
-    // Direct C++ call - bypasses uniffiCaller.rustCall() overhead.
-    // Matters for N-element arrays.
-    stringByteLength: (s: string) =>
-      nativeModule().ubrn_uniffi_internal_fn_func_ffi__string_to_byte_length(
-        s,
-        undefined as any
-      ) as number,
-    // Encode directly into the RustBuffer backing store via
-    // TextEncoder.encodeInto - zero intermediate allocation. Replaces
-    // the old C++ write_string_into_buffer helper.
-    writeStringIntoBuffer: (s: string, buf: any, offset: number): number => {
-      const view = new Uint8Array(
-        buf.arrayBuffer,
-        offset,
-        buf.arrayBuffer.byteLength - offset
-      );
-      return encoder.encodeInto(s, view).written;
-    },
-    // Dedicated C++ helper - avoids per-read Uint8Array allocation and
-    // the double property-lookup in string_from_buffer.
-    readStringFromBuffer: (buf: any, offset: number, length: number): string =>
-      nativeModule().ubrn_uniffi_internal_fn_func_ffi__read_string_from_buffer(
-        buf,
-        offset,
-        length
-      ) as string,
-  };
-})();
-const FfiConverterString = uniffiCreateFfiConverterString(stringConverter);
 
 /**
  * Implemented by the app (Kotlin/TypeScript) to observe a running transfer.
@@ -1018,7 +1118,7 @@ function uniffiEnsureInitialized() {
   }
   if (
     nativeModule().ubrn_uniffi_wormhole_core_checksum_func_receive_file() !==
-    52724
+    13920
   ) {
     throw new UniffiInternalError.ApiChecksumMismatch(
       'uniffi_wormhole_core_checksum_func_receive_file'
@@ -1026,14 +1126,14 @@ function uniffiEnsureInitialized() {
   }
   if (
     nativeModule().ubrn_uniffi_wormhole_core_checksum_func_request_receive() !==
-    23936
+    21853
   ) {
     throw new UniffiInternalError.ApiChecksumMismatch(
       'uniffi_wormhole_core_checksum_func_request_receive'
     );
   }
   if (
-    nativeModule().ubrn_uniffi_wormhole_core_checksum_func_send_file() !== 18737
+    nativeModule().ubrn_uniffi_wormhole_core_checksum_func_send_file() !== 29354
   ) {
     throw new UniffiInternalError.ApiChecksumMismatch(
       'uniffi_wormhole_core_checksum_func_send_file'
@@ -1104,6 +1204,7 @@ export default Object.freeze({
   converters: {
     FfiConverterTypeError,
     FfiConverterTypeIncomingFile,
+    FfiConverterTypeServerConfig,
     FfiConverterTypeTransferListener,
   },
 });

@@ -23,6 +23,7 @@ import {
 } from '../components';
 import { friendlyError } from '../errors';
 import { formatSize, withTransferService, type PickedFile } from '../native';
+import { currentServer } from '../server';
 import { useTheme } from '../theme';
 
 type Phase =
@@ -74,10 +75,13 @@ export default function SendScreen({
         }, PAIRED_SEND_TIMEOUT_MS)
       : null;
 
+    void (async () => {
+    const server = await currentServer();
     withTransferService(t('send.title'), () =>
       sendFile(
         file.path,
         pairedCode,
+        server,
         {
           onCode: (value) => {
             setCode(value);
@@ -109,6 +113,7 @@ export default function SendScreen({
     ).finally(() => {
       if (timer) clearTimeout(timer);
     });
+    })();
 
     return () => {
       cancelled = true;
