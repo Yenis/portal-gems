@@ -1,16 +1,23 @@
-# Builds the PortalGems desktop app on native Windows and macOS runners and
-# attaches the installers to a GitHub release. The Android APK and the Linux
-# packages (AppImage/deb/rpm) are built locally and uploaded by hand - this
-# workflow only covers the two platforms that can't be built on Linux.
+# Full release pipeline. Pushing a tag like v1.2.3 builds every binary on a
+# native runner and attaches it (plus a .sha256) to a GitHub release for that
+# tag - the release is created automatically if it doesn't exist yet.
 #
-# Triggers:
-#   * push of a tag like v1.2.3  -> builds and uploads to that tag's release
-#   * manual "Run workflow"      -> pick an existing tag to (re)build for
+#   create-release  ubuntu   ensures the GitHub release exists (notes from CHANGELOG)
+#   linux           ubuntu   AppImage + deb + rpm
+#   android         ubuntu   signed APK          (needs keystore secrets - see below)
+#   desktop         win/mac  portable .exe + .dmg
 #
-# The release must already exist (create it from the tag first); assets are
-# added to it with `gh release upload --clobber`.
+# All build jobs run in parallel; if one fails the others still publish.
+#
+# Required secrets for the `android` job (Settings -> Secrets and variables ->
+# Actions). Without them the APK is signed with the debug key or the job fails:
+#   ANDROID_KEYSTORE_BASE64    base64 of android/app/portalgems-release.keystore
+#                              (create with: base64 -w0 portalgems-release.keystore)
+#   ANDROID_KEYSTORE_PASSWORD  store password
+#   ANDROID_KEY_ALIAS          key alias (portalgems)
+#   ANDROID_KEY_PASSWORD       key password
 
-name: Release desktop (Windows + macOS)
+name: Release
 
 on:
   push:
@@ -19,44 +26,189 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Existing release tag to build and attach assets to (e.g. v1.0.0)"
+        description: "Tag to build and attach assets to (must already be pushed, e.g. v1.0.1)"
         required: true
 
-# Uploading release assets needs write access to repository contents.
 permissions:
   contents: write
 
 jobs:
+  # --------------------------------------------------------------------------
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: tag
+        run: echo "tag=${{ github.event.inputs.tag || github.ref_name }}" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure the release exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists - assets will be added to it."
+            exit 0
+          fi
+          ver="${TAG#v}"
+          # Pull this version's section out of CHANGELOG.md if present
+          awk -v v="$ver" '
+            $0 ~ "^## \\[" v "\\]" { p=1; next }
+            p && /^## \[/ { p=0 }
+            p { print }
+          ' CHANGELOG.md > notes.md
+          if [ -s notes.md ]; then
+            gh release create "$TAG" --title "PortalGems $TAG" --notes-file notes.md
+          else
+            gh release create "$TAG" --title "PortalGems $TAG" --generate-notes
+          fi
+
+  # --------------------------------------------------------------------------
+  linux:
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install rpm tooling
+        run: sudo apt-get update && sudo apt-get install -y rpm
+
+      - name: Build native engine addon (.so)
+        run: |
+          cargo build --release --manifest-path native/wormhole-node/Cargo.toml
+          mkdir -p packages/app-desktop/dist
+          cp native/wormhole-node/target/release/libwormhole_node.so \
+             packages/app-desktop/dist/wormhole_node-linux-x64.node
+
+      - name: Install desktop dependencies
+        working-directory: packages/app-desktop
+        run: npm install
+
+      - name: Build JS bundles
+        working-directory: packages/app-desktop
+        run: npm run build:bundles
+
+      - name: Package (AppImage + deb + rpm)
+        working-directory: packages/app-desktop
+        run: npx electron-builder --linux AppImage deb rpm --publish never
+
+      - name: Rename + checksum + upload
+        working-directory: packages/app-desktop
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.create-release.outputs.tag }}
+        run: |
+          ver="${TAG#v}"
+          mkdir -p out
+          cp release/*.AppImage "out/PortalGems-${ver}-linux-x86_64.AppImage"
+          cp release/*.deb      "out/PortalGems-${ver}-linux-amd64.deb"
+          cp release/*.rpm      "out/PortalGems-${ver}-linux-x86_64.rpm"
+          cd out
+          for f in *; do sha256sum "$f" > "$f.sha256"; done
+          gh release upload "$TAG" ./* --clobber
+
+  # --------------------------------------------------------------------------
+  android:
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,x86_64-linux-android
+
+      - name: Install matching NDK
+        run: |
+          sdkmanager "ndk;27.1.12297006"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.1.12297006" >> "$GITHUB_ENV"
+
+      - name: Build Android engine libs (ubrn) + prepare binding
+        working-directory: packages/wormhole-rn
+        run: |
+          yarn install --frozen-lockfile || yarn install
+          yarn ubrn:android:release
+          yarn prepare
+
+      - name: Install app dependencies
+        working-directory: packages/app-mobile
+        run: npm install
+
+      - name: Restore signing keystore
+        working-directory: packages/app-mobile/android
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 secret is not set - cannot produce a release-signed APK."
+            exit 1
+          fi
+          echo "$KEYSTORE_B64" | base64 -d > app/portalgems-release.keystore
+          printf 'PORTALGEMS_UPLOAD_STORE_FILE=portalgems-release.keystore\n' >  keystore.properties
+          printf 'PORTALGEMS_UPLOAD_KEY_ALIAS=%s\n'      "$KEY_ALIAS"        >> keystore.properties
+          printf 'PORTALGEMS_UPLOAD_STORE_PASSWORD=%s\n' "$STORE_PASSWORD"   >> keystore.properties
+          printf 'PORTALGEMS_UPLOAD_KEY_PASSWORD=%s\n'   "$KEY_PASSWORD"     >> keystore.properties
+
+      - name: Assemble release APK
+        working-directory: packages/app-mobile/android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Rename + checksum + upload
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.create-release.outputs.tag }}
+        run: |
+          ver="${TAG#v}"
+          mkdir -p out
+          cp packages/app-mobile/android/app/build/outputs/apk/release/app-release.apk \
+             "out/PortalGems-${ver}-android.apk"
+          cd out
+          sha256sum "PortalGems-${ver}-android.apk" > "PortalGems-${ver}-android.apk.sha256"
+          gh release upload "$TAG" ./* --clobber
+
+  # --------------------------------------------------------------------------
   desktop:
+    needs: create-release
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: windows-latest
             platform: win
-            # cdylib on Windows is <name>.dll (no lib prefix)
             addon_src: native/wormhole-node/target/release/wormhole_node.dll
             addon_dst: wormhole_node-win32-x64.node
             sha_cmd: sha256sum
           - os: macos-latest
             platform: mac
-            # cdylib on macOS is lib<name>.dylib
             addon_src: native/wormhole-node/target/release/libwormhole_node.dylib
             addon_dst: wormhole_node-darwin-arm64.node
             sha_cmd: shasum -a 256
     runs-on: ${{ matrix.os }}
     defaults:
       run:
-        shell: bash # so NODE_PATH=... prefixes and globs work on Windows too
+        shell: bash
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-
-      # Host-native toolchain: Windows runner -> MSVC, macOS runner -> clang.
-      # No cross-compiling, so napi-build's libnode.dll requirement never applies.
       - uses: dtolnay/rust-toolchain@stable
 
       - name: Build native engine addon
@@ -76,29 +228,22 @@ jobs:
       - name: Package with electron-builder
         working-directory: packages/app-desktop
         env:
-          # Produce an unsigned build; without an Apple/Windows cert we don't
-          # want electron-builder to attempt (and fail) code signing.
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
         run: npx electron-builder --${{ matrix.platform }} --publish never
 
-      - name: Rename artifacts + checksums
-        working-directory: packages/app-desktop
-        run: |
-          version=$(node -p "require('./package.json').version")
-          mkdir -p out
-          if [ "${{ matrix.platform }}" = "win" ]; then
-            cp release/*.exe "out/PortalGems-${version}-windows-x64.exe"
-          else
-            # dmg is the primary installer; the zip is handy for auto-update tools
-            cp release/*.dmg "out/PortalGems-${version}-macos-arm64.dmg"
-          fi
-          cd out
-          for f in *; do ${{ matrix.sha_cmd }} "$f" > "$f.sha256"; done
-          ls -la
-
-      - name: Upload assets to the release
+      - name: Rename + checksum + upload
         working-directory: packages/app-desktop
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.event.inputs.tag || github.ref_name }}
-        run: gh release upload "$TAG" out/* --clobber
+          TAG: ${{ needs.create-release.outputs.tag }}
+        run: |
+          ver="${TAG#v}"
+          mkdir -p out
+          if [ "${{ matrix.platform }}" = "win" ]; then
+            cp release/*.exe "out/PortalGems-${ver}-windows-x64.exe"
+          else
+            cp release/*.dmg "out/PortalGems-${ver}-macos-arm64.dmg"
+          fi
+          cd out
+          for f in *; do ${{ matrix.sha_cmd }} "$f" > "$f.sha256"; done
+          gh release upload "$TAG" ./* --clobber

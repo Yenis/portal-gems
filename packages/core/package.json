@@ -1,6 +1,6 @@
 {
   "name": "@portalgems/core",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "PortalGems shared logic: theme tokens, i18n resources",
   "license": "GPL-3.0-or-later",
