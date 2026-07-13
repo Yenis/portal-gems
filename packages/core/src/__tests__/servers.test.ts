@@ -41,10 +41,10 @@ describe('availability', () => {
     expect(DEFAULT_SERVER_SETTINGS.choice).toBe('public');
   });
 
-  it('hides portalgems until its URLs are real', () => {
-    // Placeholder URLs still contain "example", so it must be hidden.
-    expect(isPortalgemsConfigured()).toBe(false);
-    expect(availableServerChoices()).toEqual(['public', 'custom']);
+  it('shows portalgems now that its URLs are configured', () => {
+    // Real (non-"example") URLs are set, so the option is available.
+    expect(isPortalgemsConfigured()).toBe(true);
+    expect(availableServerChoices()).toEqual(['public', 'portalgems', 'custom']);
   });
 });
 

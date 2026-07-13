@@ -74,7 +74,8 @@
     "back": "Back",
     "retry": "Try again",
     "accept": "Accept",
-    "decline": "Decline"
+    "decline": "Decline",
+    "gotIt": "Got it"
   },
   "settings": {
     "title": "Settings",
@@ -110,13 +111,15 @@
     "e2eTitle": "Encrypted from end to end",
     "e2eBody": "Your file is encrypted on your device and decrypted only on the receiving device. Everything in between - including the servers that help the two devices find each other - sees only unreadable ciphertext.",
     "directTitle": "Direct between your devices",
-    "directBody": "When both devices are on the same Wi-Fi network, the file travels directly from one device to the other at full local speed - it never leaves your network. Only when a direct connection is impossible (for example, one device is on mobile data) does the transfer fall back to a public relay, which blindly forwards encrypted bytes it cannot read.",
+    "directBody": "When both devices are on the same Wi-Fi network, the file travels directly from one device to the other at full local speed - it never leaves your network. Only when a direct connection is impossible (for example, one device is on mobile data) does the transfer fall back to a public relay, which blindly forwards encrypted bytes it cannot read. Even then, the two devices still first meet at a mailbox server over the internet to run the handshake - so a direct connection is faster, but it is not an offline mode.",
     "serversTitle": "What the servers can see",
-    "serversBody": "PortalGems has no servers of its own and no user accounts. It uses two small public services run by the magic-wormhole community: a mailbox server where two devices meet (think of a coat-check counter), and the relay described above. Neither stores your files, neither knows what you sent, and both see only encrypted data.",
+    "serversBody": "PortalGems keeps no user accounts and stores nothing about you. It relies on a mailbox server - where the two devices meet and confirm their encrypted handshake - and, when a direct connection is not possible, a relay that blindly forwards encrypted bytes. You choose which server to use in Settings: a public one, the PortalGems server, or your own. The mailbox is essential to the security model: without a server to broker the handshake, two devices have no way to find each other or agree on a key. So PortalGems always needs an internet connection and cannot work purely offline on a local network.",
     "pairingTitle": "How pairing works",
     "pairingBody": "When you pair two devices, they exchange one large random secret - via QR code or copy/paste - and store it in your device's protected storage. From then on, both devices can compute the same one-time code by themselves for every transfer, so you only confirm instead of typing. These derived codes are far stronger than typed codes, and they never leave your devices. Removing a paired device deletes the secret.",
     "limitsTitle": "What this does not protect against",
-    "limitsBody": "Anyone who can see your screen while a code or pairing QR is visible can use it. Anyone with full access to your unlocked device can read what is stored on it. And an observer of your network can tell that you transferred something and roughly how large it was - but never what it was."
+    "limitsBody": "Anyone who can see your screen while a code or pairing QR is visible can use it. Anyone with full access to your unlocked device can read what is stored on it. And an observer of your network can tell that you transferred something and roughly how large it was - but never what it was.",
+    "choosingTitle": "Choosing a server",
+    "choosingBody": "PortalGems needs a mailbox server to introduce two devices, and you pick which one in Settings. The Public server is the community-run magic-wormhole one - it works with other wormhole apps but is occasionally unavailable. The PortalGems server is run by us and makes a reliable default. Custom lets you point the app at any server, including one you host yourself - see the self-hosting guide if you are interested. Whichever you choose, your files stay end-to-end encrypted and the server only ever sees scrambled data."
   },
   "errors": {
     "title": "Something went wrong",

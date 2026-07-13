@@ -58,6 +58,17 @@ pub enum Error {
     Io(#[from] std::io::Error),
 }
 
+/// rustls 0.23 needs a process-wide crypto provider selected before any TLS
+/// handshake, or it panics. Install `ring` once, idempotently. Called at every
+/// connection entry point since there is no single init hook across the FFIs.
+pub(crate) fn ensure_crypto_provider() {
+    use std::sync::Once;
+    static INIT: Once = Once::new();
+    INIT.call_once(|| {
+        let _ = rustls::crypto::ring::default_provider().install_default();
+    });
+}
+
 /// The rendezvous/mailbox config for this transfer. We clone the library's
 /// `APP_CONFIG` (which fixes the interop-critical app id) and override only the
 /// rendezvous URL when the caller supplied one.
@@ -107,6 +118,7 @@ where
     G: FnOnce(String),
     H: FnMut(u64, u64) + 'static,
 {
+    ensure_crypto_provider();
     let path = path.as_ref();
     let file_name = path
         .file_name()
@@ -169,6 +181,7 @@ pub async fn request_receive(
     server: &ServerConfig,
     cancel: impl std::future::Future<Output = ()>,
 ) -> Result<PendingReceive, Error> {
+    ensure_crypto_provider();
     let work = async {
         let relay_hints = relay_hints(server)?;
         let parsed = code.parse().map_err(|_| Error::InvalidCode(code.into()))?;

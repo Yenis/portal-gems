@@ -18,8 +18,8 @@ export interface ServerConfig {
 /// mailbox + transit relay are running (see docs/VPS-SETUP.md). While they
 /// still contain "example" the option is treated as not-yet-available and is
 /// hidden from the picker (see `isPortalgemsConfigured`).
-export const PORTALGEMS_RENDEZVOUS_URL = 'wss://relay.portalgems.example/v1';
-export const PORTALGEMS_TRANSIT_URL = 'tcp://transit.portalgems.example:4001';
+export const PORTALGEMS_RENDEZVOUS_URL = 'wss://be-my-guest.io/v1';
+export const PORTALGEMS_TRANSIT_URL = 'tcp://be-my-guest.io:4001';
 
 /// Whether the dedicated PortalGems server has real addresses yet. Once the
 /// URLs above point at the deployed VPS, this flips to true and the option

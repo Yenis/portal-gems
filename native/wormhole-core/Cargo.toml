@@ -10,6 +10,20 @@ crate-type = ["rlib", "cdylib", "staticlib"]
 
 [dependencies]
 magic-wormhole = "0.8.1"
+# Give the engine `wss://` support (without this only cleartext `ws://` works,
+# and TLS rendezvous servers fail with "rendezvous server connection").
+# magic-wormhole talks to the rendezvous over async-tungstenite's smol runtime,
+# but its own `tls` feature maps to async-tungstenite's `async-tls`, which has
+# no smol integration in 0.34 and fails to compile; its `native-tls` feature
+# would drag in OpenSSL (painful to cross-compile to Android). Enabling rustls
+# with bundled webpki roots on the SAME async-tungstenite (Cargo unions
+# features) is pure Rust, cross-compiles cleanly to every Android ABI, keeps the
+# F-Droid "no proprietary deps" rule, and trusts Let's Encrypt out of the box.
+async-tungstenite = { version = "0.34", features = ["futures-rustls-webpki-roots"] }
+# rustls 0.23 requires exactly one crypto provider; futures-rustls ships none, so
+# pick `ring` (cross-compiles to Android cleanly; aws-lc-rs needs more C tooling)
+# and install it as the process default at startup (see `ensure_crypto_provider`).
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 async-fs = "2"
 futures-lite = "2"
 thiserror = "2"

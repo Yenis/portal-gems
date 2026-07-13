@@ -97,13 +97,15 @@
     "e2eTitle": "Ende-zu-Ende verschlüsselt",
     "e2eBody": "Deine Datei wird auf deinem Gerät verschlüsselt und erst auf dem Empfangsgerät wieder entschlüsselt. Alles dazwischen - auch die Server, über die sich die Geräte finden - sieht nur unlesbaren Geheimtext.",
     "directTitle": "Direkt zwischen deinen Geräten",
-    "directBody": "Sind beide Geräte im selben WLAN, wandert die Datei direkt von Gerät zu Gerät mit voller lokaler Geschwindigkeit - sie verlässt dein Netzwerk nie. Nur wenn keine direkte Verbindung möglich ist (z. B. ein Gerät im Mobilfunknetz), läuft die Übertragung über ein öffentliches Relay, das verschlüsselte Bytes blind weiterleitet, ohne sie lesen zu können.",
+    "directBody": "Wenn beide Geräte im selben WLAN sind, wandert die Datei direkt von einem Gerät zum anderen - mit voller lokaler Geschwindigkeit und ohne dein Netzwerk zu verlassen. Nur wenn eine direkte Verbindung nicht möglich ist (zum Beispiel wenn ein Gerät im Mobilfunknetz ist), weicht die Übertragung auf ein öffentliches Relay aus, das die verschlüsselten Daten blind weiterleitet, ohne sie lesen zu können. Selbst dann treffen sich die beiden Geräte zuerst an einem Mailbox-Server im Internet, um den Handshake durchzuführen - eine direkte Verbindung ist also schneller, aber kein Offline-Modus.",
     "serversTitle": "Was die Server sehen",
-    "serversBody": "PortalGems hat keine eigenen Server und keine Benutzerkonten. Es nutzt zwei kleine öffentliche Dienste der Magic-Wormhole-Community: einen Mailbox-Server, an dem sich zwei Geräte treffen (wie eine Garderobe), und das oben beschriebene Relay. Keiner speichert deine Dateien, keiner weiß, was du gesendet hast, und beide sehen nur verschlüsselte Daten.",
+    "serversBody": "PortalGems führt keine Benutzerkonten und speichert nichts über dich. Es nutzt einen Mailbox-Server - wo sich die beiden Geräte treffen und ihren verschlüsselten Handshake bestätigen - und, wenn keine direkte Verbindung möglich ist, ein Relay, das verschlüsselte Daten blind weiterleitet. In den Einstellungen wählst du, welchen Server du nutzt: einen öffentlichen, den PortalGems-Server oder deinen eigenen. Der Mailbox-Server ist für das Sicherheitsmodell unverzichtbar: ohne einen Server, der den Handshake vermittelt, können sich zwei Geräte nicht finden und auf keinen Schlüssel einigen. PortalGems braucht daher immer eine Internetverbindung und kann nicht rein offline in einem lokalen Netzwerk arbeiten.",
     "pairingTitle": "So funktioniert die Kopplung",
     "pairingBody": "Beim Koppeln tauschen zwei Geräte einmalig ein großes zufälliges Geheimnis aus - per QR-Code oder Kopieren/Einfügen - und legen es im geschützten Speicher deines Geräts ab. Danach können beide Geräte für jede Übertragung selbst denselben Einmal-Code berechnen; du bestätigst nur noch, statt zu tippen. Diese abgeleiteten Codes sind weit stärker als getippte Codes und verlassen deine Geräte nie. Beim Entfernen eines gekoppelten Geräts wird das Geheimnis gelöscht.",
     "limitsTitle": "Wovor das nicht schützt",
-    "limitsBody": "Wer deinen Bildschirm sehen kann, während ein Code oder Kopplungs-QR angezeigt wird, kann ihn verwenden. Wer vollen Zugriff auf dein entsperrtes Gerät hat, kann lesen, was darauf gespeichert ist. Und ein Beobachter deines Netzwerks erkennt, dass du etwas übertragen hast und ungefähr wie groß es war - aber nie, was es war."
+    "limitsBody": "Wer deinen Bildschirm sehen kann, während ein Code oder Kopplungs-QR angezeigt wird, kann ihn verwenden. Wer vollen Zugriff auf dein entsperrtes Gerät hat, kann lesen, was darauf gespeichert ist. Und ein Beobachter deines Netzwerks erkennt, dass du etwas übertragen hast und ungefähr wie groß es war - aber nie, was es war.",
+    "choosingTitle": "Server auswählen",
+    "choosingBody": "PortalGems braucht einen Mailbox-Server, um zwei Geräte zusammenzubringen, und in den Einstellungen wählst du, welchen. Der öffentliche Server ist der von der Community betriebene magic-wormhole-Server - er funktioniert mit anderen wormhole-Apps, ist aber gelegentlich nicht verfügbar. Der PortalGems-Server wird von uns betrieben und ist eine zuverlässige Standardwahl. Mit „Eigener\" kannst du die App auf jeden beliebigen Server richten, auch auf einen selbst gehosteten - siehe die Anleitung zum Selbsthosten, falls dich das interessiert. Egal welchen du wählst: deine Dateien bleiben Ende-zu-Ende verschlüsselt, und der Server sieht immer nur unlesbare Daten."
   },
   "transfer": {
     "direct": "Direkte Verbindung zum anderen Gerät",
@@ -116,7 +118,8 @@
     "back": "Zurück",
     "retry": "Erneut versuchen",
     "accept": "Annehmen",
-    "decline": "Ablehnen"
+    "decline": "Ablehnen",
+    "gotIt": "Verstanden"
   },
   "errors": {
     "title": "Etwas ist schiefgelaufen",

@@ -97,13 +97,15 @@
     "e2eTitle": "Chiffré de bout en bout",
     "e2eBody": "Votre fichier est chiffré sur votre appareil et déchiffré uniquement sur l'appareil du destinataire. Tout ce qui se trouve entre les deux - y compris les serveurs qui aident les appareils à se trouver - ne voit qu'un texte chiffré illisible.",
     "directTitle": "En direct entre vos appareils",
-    "directBody": "Quand les deux appareils sont sur le même réseau Wi-Fi, le fichier voyage directement de l'un à l'autre à pleine vitesse locale - il ne quitte jamais votre réseau. Ce n'est que lorsqu'une connexion directe est impossible (par exemple, un appareil en données mobiles) que le transfert passe par un relais public, qui fait suivre aveuglément des octets chiffrés qu'il ne peut pas lire.",
+    "directBody": "Lorsque les deux appareils sont sur le même réseau Wi-Fi, le fichier voyage directement d'un appareil à l'autre à pleine vitesse locale - il ne quitte jamais votre réseau. Ce n'est que lorsqu'une connexion directe est impossible (par exemple, un appareil est en données mobiles) que le transfert bascule vers un relais public, qui transmet à l'aveugle des données chiffrées qu'il ne peut pas lire. Même dans ce cas, les deux appareils se rejoignent d'abord sur un serveur de boîte aux lettres via Internet pour effectuer la poignée de main - une connexion directe est donc plus rapide, mais ce n'est pas un mode hors ligne.",
     "serversTitle": "Ce que voient les serveurs",
-    "serversBody": "PortalGems n'a ni serveurs propres ni comptes utilisateurs. Il utilise deux petits services publics gérés par la communauté magic-wormhole : un serveur « boîte aux lettres » où deux appareils se rencontrent (comme un vestiaire), et le relais décrit ci-dessus. Aucun ne stocke vos fichiers, aucun ne sait ce que vous avez envoyé, et tous deux ne voient que des données chiffrées.",
+    "serversBody": "PortalGems ne tient aucun compte utilisateur et ne stocke rien à votre sujet. Il s'appuie sur un serveur de boîte aux lettres - où les deux appareils se rejoignent et confirment leur poignée de main chiffrée - et, quand une connexion directe est impossible, sur un relais qui transmet à l'aveugle des données chiffrées. Dans les Paramètres, vous choisissez le serveur à utiliser : un serveur public, le serveur PortalGems ou le vôtre. La boîte aux lettres est essentielle au modèle de sécurité : sans serveur pour arbitrer la poignée de main, deux appareils n'ont aucun moyen de se trouver ni de convenir d'une clé. PortalGems a donc toujours besoin d'une connexion Internet et ne peut pas fonctionner entièrement hors ligne sur un réseau local.",
     "pairingTitle": "Comment fonctionne l'association",
     "pairingBody": "Lorsque vous associez deux appareils, ils échangent une seule fois un grand secret aléatoire - par code QR ou copier/coller - et le conservent dans le stockage protégé de votre appareil. Dès lors, les deux appareils peuvent calculer eux-mêmes le même code à usage unique pour chaque transfert : vous ne faites que confirmer au lieu de taper. Ces codes dérivés sont bien plus robustes que les codes tapés et ne quittent jamais vos appareils. Retirer un appareil associé supprime le secret.",
     "limitsTitle": "Ce contre quoi cela ne protège pas",
-    "limitsBody": "Quiconque peut voir votre écran pendant qu'un code ou un QR d'association est affiché peut l'utiliser. Quiconque a un accès complet à votre appareil déverrouillé peut lire ce qui s'y trouve. Et un observateur de votre réseau peut savoir que vous avez transféré quelque chose et sa taille approximative - mais jamais ce que c'était."
+    "limitsBody": "Quiconque peut voir votre écran pendant qu'un code ou un QR d'association est affiché peut l'utiliser. Quiconque a un accès complet à votre appareil déverrouillé peut lire ce qui s'y trouve. Et un observateur de votre réseau peut savoir que vous avez transféré quelque chose et sa taille approximative - mais jamais ce que c'était.",
+    "choosingTitle": "Choisir un serveur",
+    "choosingBody": "PortalGems a besoin d'un serveur de boîte aux lettres pour mettre deux appareils en relation, et vous choisissez lequel dans les Paramètres. Le serveur public est celui de la communauté magic-wormhole - il fonctionne avec les autres applis wormhole mais est parfois indisponible. Le serveur PortalGems est géré par nous et constitue un choix par défaut fiable. « Personnalisé » vous permet de pointer l'appli vers n'importe quel serveur, y compris un que vous hébergez vous-même - voir le guide d'auto-hébergement si cela vous intéresse. Quel que soit votre choix, vos fichiers restent chiffrés de bout en bout et le serveur ne voit jamais que des données brouillées."
   },
   "transfer": {
     "direct": "Connexion directe à l'autre appareil",
@@ -116,7 +118,8 @@
     "back": "Retour",
     "retry": "Réessayer",
     "accept": "Accepter",
-    "decline": "Refuser"
+    "decline": "Refuser",
+    "gotIt": "Compris"
   },
   "errors": {
     "title": "Un problème est survenu",

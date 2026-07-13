@@ -23,7 +23,7 @@ import {
   type ServerSettings,
 } from '@portalgems/core';
 import { Card, PrimaryButton, Subtitle, Title } from '../components';
-import { setSetting } from '../native';
+import { getSetting, setSetting } from '../native';
 import { loadServerSettings, saveServerSettings } from '../server';
 import { useTheme, useThemeControl } from '../theme';
 
@@ -49,6 +49,19 @@ export default function SettingsScreen({ onHome }: { onHome: () => void }) {
     setServer(next);
     saveServerSettings(next).catch(() => undefined);
   };
+
+  // First-visit helper: shown once until dismissed; reopenable via the info button.
+  const [helpSeen, setHelpSeen] = useState(true); // assume seen until loaded (no flash)
+  const [helpOpen, setHelpOpen] = useState(false);
+  useEffect(() => {
+    getSetting('pg-server-help-seen').then((v) => setHelpSeen(v === '1'));
+  }, []);
+  const dismissHelp = () => {
+    setHelpSeen(true);
+    setHelpOpen(false);
+    setSetting('pg-server-help-seen', '1').catch(() => undefined);
+  };
+  const showHelp = !helpSeen || helpOpen;
 
   const chooseLanguage = (lng: string) => {
     setLanguage(lng);
@@ -123,10 +136,38 @@ export default function SettingsScreen({ onHome }: { onHome: () => void }) {
       </Card>
 
       <Card>
-        <Subtitle>{t('settings.server.title')}</Subtitle>
+        <View style={styles.serverHeader}>
+          <Subtitle>{t('settings.server.title')}</Subtitle>
+          <Pressable onPress={() => setHelpOpen(true)} hitSlop={10}>
+            <Text style={{ color: c.primary, fontSize: fontSize.subtitle, fontWeight: '700' }}>
+              ⓘ
+            </Text>
+          </Pressable>
+        </View>
         <Text style={{ color: c.textMuted, fontSize: fontSize.small }}>
           {t('settings.server.hint')}
         </Text>
+        {showHelp ? (
+          <View style={[styles.helpCard, { backgroundColor: c.codeBg, borderColor: c.primary }]}>
+            <Text
+              style={{
+                color: c.text,
+                fontSize: fontSize.body,
+                fontWeight: '700',
+                marginBottom: spacing(1.5),
+              }}>
+              {t('explain.choosingTitle')}
+            </Text>
+            <Text style={{ color: c.text, fontSize: fontSize.small, lineHeight: fontSize.body * 1.4 }}>
+              {t('explain.choosingBody')}
+            </Text>
+            <Pressable onPress={dismissHelp} style={styles.helpDismiss}>
+              <Text style={{ color: c.primary, fontWeight: '700', fontSize: fontSize.body }}>
+                {t('common.gotIt')}
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
         {availableServerChoices().map((choice) => {
           const selected = server.choice === choice;
           return (
@@ -221,6 +262,23 @@ const styles = StyleSheet.create({
   },
   swatchRow: { flexDirection: 'row', alignItems: 'center', gap: spacing(2.5) },
   swatch: { width: 18, height: 18, borderRadius: 9 },
+  serverHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  helpCard: {
+    borderWidth: 1,
+    borderRadius: radius.md,
+    padding: spacing(3),
+    marginTop: spacing(1),
+  },
+  helpDismiss: {
+    alignSelf: 'flex-end',
+    marginTop: spacing(2),
+    paddingVertical: spacing(1),
+    paddingHorizontal: spacing(2),
+  },
   input: {
     borderWidth: 1,
     borderRadius: radius.md,

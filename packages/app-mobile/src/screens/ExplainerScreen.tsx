@@ -10,6 +10,7 @@ const SECTIONS = [
   'e2e',
   'direct',
   'servers',
+  'choosing',
   'pairing',
   'limits',
 ] as const;

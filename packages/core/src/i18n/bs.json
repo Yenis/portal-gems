@@ -97,13 +97,15 @@
     "e2eTitle": "Šifrovano s kraja na kraj",
     "e2eBody": "Tvoja datoteka se šifruje na tvom uređaju, a dešifruje tek na uređaju primaoca. Sve između - uključujući servere preko kojih se uređaji pronalaze - vidi samo nečitljiv šifrat.",
     "directTitle": "Direktno između tvojih uređaja",
-    "directBody": "Kada su oba uređaja na istoj Wi-Fi mreži, datoteka putuje direktno s jednog na drugi punom lokalnom brzinom - nikada ne napušta tvoju mrežu. Tek kada direktna veza nije moguća (npr. jedan uređaj je na mobilnim podacima), prijenos ide preko javnog releja koji slijepo prosljeđuje šifrovane bajtove koje ne može pročitati.",
+    "directBody": "Kada su oba uređaja na istoj Wi-Fi mreži, datoteka putuje direktno s jednog uređaja na drugi punom lokalnom brzinom - nikada ne napušta tvoju mrežu. Samo kada direktna veza nije moguća (na primjer, jedan uređaj je na mobilnim podacima), prijenos prelazi na javni relej, koji slijepo prosljeđuje šifrovane podatke koje ne može pročitati. Čak i tada, oba uređaja se prvo sretnu na mailbox serveru preko interneta da obave handshake - dakle direktna veza je brža, ali nije offline način rada.",
     "serversTitle": "Šta serveri vide",
-    "serversBody": "PortalGems nema vlastite servere ni korisničke naloge. Koristi dva mala javna servisa magic-wormhole zajednice: mailbox server na kojem se dva uređaja sretnu (kao garderoba) i gore opisani relej. Nijedan ne čuva tvoje datoteke, nijedan ne zna šta si poslao/la, i oba vide samo šifrovane podatke.",
+    "serversBody": "PortalGems ne vodi korisničke račune i ne pohranjuje ništa o tebi. Oslanja se na mailbox server - gdje se dva uređaja sretnu i potvrde svoj šifrovani handshake - i, kada direktna veza nije moguća, na relej koji slijepo prosljeđuje šifrovane podatke. U Postavkama biraš koji server koristiš: javni, PortalGems server ili svoj vlastiti. Mailbox server je ključan za sigurnosni model: bez servera koji posreduje handshake, dva uređaja nemaju načina da se pronađu ili dogovore ključ. Zato PortalGems uvijek treba internet vezu i ne može raditi potpuno offline na lokalnoj mreži.",
     "pairingTitle": "Kako radi uparivanje",
     "pairingBody": "Pri uparivanju dva uređaja jednom razmijene veliku nasumičnu tajnu - QR kodom ili kopiranjem - i spreme je u zaštićenu pohranu uređaja. Od tada oba uređaja mogu sama izračunati isti jednokratni kod za svaki prijenos, pa samo potvrđuješ umjesto da kucaš. Ovi izvedeni kodovi su daleko jači od kucanih i nikada ne napuštaju tvoje uređaje. Uklanjanjem uparenog uređaja tajna se briše.",
     "limitsTitle": "Od čega ovo ne štiti",
-    "limitsBody": "Ko god vidi tvoj ekran dok je kod ili QR za uparivanje prikazan, može ga iskoristiti. Ko ima pun pristup tvom otključanom uređaju, može čitati šta je na njemu. A posmatrač tvoje mreže može znati da si nešto prenio/la i otprilike koliko je bilo veliko - ali nikada šta je bilo."
+    "limitsBody": "Ko god vidi tvoj ekran dok je kod ili QR za uparivanje prikazan, može ga iskoristiti. Ko ima pun pristup tvom otključanom uređaju, može čitati šta je na njemu. A posmatrač tvoje mreže može znati da si nešto prenio/la i otprilike koliko je bilo veliko - ali nikada šta je bilo.",
+    "choosingTitle": "Odabir servera",
+    "choosingBody": "PortalGems treba mailbox server da spoji dva uređaja, a u Postavkama biraš koji. Javni server je onaj koji vodi zajednica (magic-wormhole) - radi s drugim wormhole aplikacijama, ali je povremeno nedostupan. PortalGems server vodimo mi i predstavlja pouzdan zadani izbor. „Prilagođeni\" ti omogućava da usmjeriš aplikaciju na bilo koji server, uključujući onaj koji sam hostuješ - pogledaj vodič za samostalno hostanje ako te zanima. Šta god odabereš, tvoje datoteke ostaju end-to-end šifrovane, a server uvijek vidi samo nečitljive podatke."
   },
   "transfer": {
     "direct": "Direktna veza s drugim uređajem",
@@ -116,7 +118,8 @@
     "back": "Nazad",
     "retry": "Pokušaj ponovo",
     "accept": "Prihvati",
-    "decline": "Odbij"
+    "decline": "Odbij",
+    "gotIt": "U redu"
   },
   "errors": {
     "title": "Nešto je pošlo po zlu",

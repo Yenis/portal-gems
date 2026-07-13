@@ -97,13 +97,15 @@
     "e2eTitle": "Cifrado de extremo a extremo",
     "e2eBody": "Tu archivo se cifra en tu dispositivo y solo se descifra en el dispositivo receptor. Todo lo que hay en medio - incluidos los servidores que ayudan a los dispositivos a encontrarse - solo ve texto cifrado ilegible.",
     "directTitle": "Directo entre tus dispositivos",
-    "directBody": "Cuando ambos dispositivos están en la misma red Wi-Fi, el archivo viaja directamente de uno a otro a plena velocidad local - nunca sale de tu red. Solo cuando una conexión directa es imposible (por ejemplo, un dispositivo con datos móviles) la transferencia recurre a un relé público, que reenvía a ciegas bytes cifrados que no puede leer.",
+    "directBody": "Cuando ambos dispositivos están en la misma red Wi-Fi, el archivo viaja directamente de un dispositivo a otro a plena velocidad local, y nunca sale de tu red. Solo cuando una conexión directa es imposible (por ejemplo, un dispositivo está en datos móviles) la transferencia recurre a un relé público, que reenvía a ciegas datos cifrados que no puede leer. Incluso entonces, los dos dispositivos primero se encuentran en un servidor de buzón a través de internet para realizar el apretón de manos, así que una conexión directa es más rápida, pero no es un modo sin conexión.",
     "serversTitle": "Qué ven los servidores",
-    "serversBody": "PortalGems no tiene servidores propios ni cuentas de usuario. Usa dos pequeños servicios públicos gestionados por la comunidad de magic-wormhole: un servidor buzón donde dos dispositivos se encuentran (como un guardarropa) y el relé descrito arriba. Ninguno almacena tus archivos, ninguno sabe qué enviaste, y ambos solo ven datos cifrados.",
+    "serversBody": "PortalGems no mantiene cuentas de usuario ni guarda nada sobre ti. Se apoya en un servidor de buzón - donde los dos dispositivos se encuentran y confirman su apretón de manos cifrado - y, cuando una conexión directa no es posible, en un relé que reenvía a ciegas datos cifrados. En Ajustes eliges qué servidor usar: uno público, el servidor de PortalGems o el tuyo propio. El buzón es esencial para el modelo de seguridad: sin un servidor que medie el apretón de manos, dos dispositivos no tienen forma de encontrarse ni de acordar una clave. Por eso PortalGems siempre necesita conexión a internet y no puede funcionar totalmente sin conexión en una red local.",
     "pairingTitle": "Cómo funciona el emparejamiento",
     "pairingBody": "Al emparejar dos dispositivos, estos intercambian una sola vez un gran secreto aleatorio - mediante código QR o copiar/pegar - y lo guardan en el almacenamiento protegido de tu dispositivo. Desde entonces, ambos dispositivos pueden calcular por sí mismos el mismo código de un solo uso para cada transferencia, así que solo confirmas en lugar de teclear. Estos códigos derivados son mucho más robustos que los tecleados y nunca salen de tus dispositivos. Al quitar un dispositivo emparejado, el secreto se borra.",
     "limitsTitle": "Contra qué no protege",
-    "limitsBody": "Cualquiera que pueda ver tu pantalla mientras se muestra un código o un QR de emparejamiento puede usarlo. Cualquiera con acceso total a tu dispositivo desbloqueado puede leer lo que contiene. Y un observador de tu red puede saber que transferiste algo y su tamaño aproximado - pero nunca qué era."
+    "limitsBody": "Cualquiera que pueda ver tu pantalla mientras se muestra un código o un QR de emparejamiento puede usarlo. Cualquiera con acceso total a tu dispositivo desbloqueado puede leer lo que contiene. Y un observador de tu red puede saber que transferiste algo y su tamaño aproximado - pero nunca qué era.",
+    "choosingTitle": "Elegir un servidor",
+    "choosingBody": "PortalGems necesita un servidor de buzón para poner en contacto a dos dispositivos, y tú eliges cuál en Ajustes. El servidor público es el de la comunidad de magic-wormhole: funciona con otras apps de wormhole, pero a veces no está disponible. El servidor de PortalGems lo gestionamos nosotros y es una opción predeterminada fiable. «Personalizado» te permite apuntar la app a cualquier servidor, incluido uno que alojes tú mismo; consulta la guía de autoalojamiento si te interesa. Elijas lo que elijas, tus archivos siguen cifrados de extremo a extremo y el servidor solo ve datos ilegibles."
   },
   "transfer": {
     "direct": "Conexión directa con el otro dispositivo",
@@ -116,7 +118,8 @@
     "back": "Atrás",
     "retry": "Reintentar",
     "accept": "Aceptar",
-    "decline": "Rechazar"
+    "decline": "Rechazar",
+    "gotIt": "Entendido"
   },
   "errors": {
     "title": "Algo salió mal",

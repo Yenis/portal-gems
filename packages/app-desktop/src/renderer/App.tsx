@@ -753,6 +753,18 @@ function Settings({
   const chooseServer = (choice: ServerChoice) =>
     updateServer({ ...server, choice });
 
+  // First-visit helper: shown once until dismissed; reopenable via the info button.
+  const [helpSeen, setHelpSeen] = useState(
+    () => localStorage.getItem('pg-server-help-seen') === '1'
+  );
+  const [helpOpen, setHelpOpen] = useState(false);
+  const dismissHelp = () => {
+    setHelpSeen(true);
+    setHelpOpen(false);
+    localStorage.setItem('pg-server-help-seen', '1');
+  };
+  const showHelp = !helpSeen || helpOpen;
+
   const chooseLanguage = (lng: string) => {
     setLanguage(lng);
     localStorage.setItem('pg-language', lng);
@@ -805,8 +817,41 @@ function Settings({
         ))}
       </Card>
       <Card c={c}>
-        <Subtitle c={c}>{t('settings.server.title')}</Subtitle>
+        <div
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Subtitle c={c}>{t('settings.server.title')}</Subtitle>
+          <span
+            onClick={() => setHelpOpen(true)}
+            title={t('explain.choosingTitle')}
+            style={{ color: c.primary, fontWeight: 700, cursor: 'pointer', fontSize: fontSize.subtitle }}>
+            ⓘ
+          </span>
+        </div>
         <Muted c={c}>{t('settings.server.hint')}</Muted>
+        {showHelp ? (
+          <div
+            style={{
+              border: `1px solid ${c.primary}`,
+              background: c.codeBg,
+              borderRadius: 10,
+              padding: spacing(3),
+              marginTop: spacing(1),
+            }}>
+            <div style={{ color: c.text, fontWeight: 700, marginBottom: spacing(1.5) }}>
+              {t('explain.choosingTitle')}
+            </div>
+            <div style={{ color: c.text, fontSize: fontSize.small, lineHeight: 1.5 }}>
+              {t('explain.choosingBody')}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: spacing(2) }}>
+              <span
+                onClick={dismissHelp}
+                style={{ color: c.primary, fontWeight: 700, cursor: 'pointer' }}>
+                {t('common.gotIt')}
+              </span>
+            </div>
+          </div>
+        ) : null}
         {availableServerChoices().map((choice) => {
           const key =
             choice === 'public'
@@ -866,7 +911,7 @@ function Settings({
   );
 }
 
-const EXPLAIN_SECTIONS = ['codes', 'e2e', 'direct', 'servers', 'pairing', 'limits'] as const;
+const EXPLAIN_SECTIONS = ['codes', 'e2e', 'direct', 'servers', 'choosing', 'pairing', 'limits'] as const;
 
 function Explain({ c, onHome }: { c: Palette; onHome: () => void }) {
   const { t } = useTranslation();

@@ -134,6 +134,15 @@ A transfer involves three parties: the two devices, plus a lightweight public
    each other, through a public **transit relay** that blindly forwards
    encrypted bytes.
 
+> **PortalGems is not an offline / LAN-only tool.** Even when the file itself
+> travels directly over your local network (step 5), the two devices must first
+> meet at the **mailbox server over the internet** to run the handshake (steps
+> 1-3). That handshake *is* the security model - without a server to broker it,
+> two devices have no way to find each other or agree on a key. So a connection
+> to a mailbox server is **always required**; a direct LAN path only makes the
+> transfer faster, it never removes the mailbox. (If you don't want to depend on
+> the public server, run your own - see [Self-hosting a server](#self-hosting-a-server).)
+
 The in-app **"How it works"** page explains all of this, in all six supported
 languages.
 
@@ -317,9 +326,13 @@ Description=Magic Wormhole mailbox server
 After=network.target
 
 [Service]
+User=you
+# REQUIRED: the mailbox writes its channel DB (relay.sqlite) in its working
+# directory. Without a writable one it crash-loops on startup (systemd's
+# default cwd is `/`, which the service user can't write to).
+WorkingDirectory=/home/you
 ExecStart=/home/you/wormhole/bin/twist wormhole-mailbox --port tcp:4000
 Restart=always
-User=you
 
 [Install]
 WantedBy=multi-user.target
@@ -356,3 +369,28 @@ device you want to connect must use the **same** rendezvous server. Because
 PortalGems keeps the standard magic-wormhole app id, the reference `wormhole`
 CLI pointed at your server (`wormhole --relay-url ... --transit-helper ...`)
 interoperates too.
+
+### Common pitfalls (learned the hard way)
+
+- **The mailbox crash-loops on startup.** It can't write `relay.sqlite` in its
+  working directory. Set `WorkingDirectory` on the service to a writable path
+  (see the unit above), then `systemctl reset-failed wormhole-mailbox` and
+  restart.
+- **Phones can't connect over plain `ws://`.** Android blocks cleartext traffic
+  by default, so for mobile the mailbox effectively **must** be `wss://` (TLS) -
+  do step 3 (Caddy). Desktop works fine with plain `ws://`. TLS is one line with
+  Caddy and the cert is issued automatically, so just use it.
+- **Transit port 4001 is unreachable even after `ufw allow`.** Your VPS
+  provider almost certainly has its own cloud firewall / security group. Open
+  **4001** (and 443) there too - non-standard ports are commonly blocked
+  upstream even when the host firewall allows them.
+- **You already run a web server on port 80.** Caddy can serve the mailbox on
+  443 without touching 80: add a global `{ http_port 8080 }` block to the
+  `Caddyfile` so Caddy never binds 80; the certificate still issues via the
+  TLS-ALPN challenge on 443. Your existing site on 80 is untouched.
+- **Always verify before trusting it.** Run a round-trip with the reference CLI
+  pointed at your server (both `--relay-url wss://host/v1` and
+  `--transit-helper tcp:host:4001`) - if that works, the app will too.
+
+Full, corrected, copy-paste runbook with all of this baked in:
+**[docs/VPS-SETUP.md](docs/VPS-SETUP.md)**.

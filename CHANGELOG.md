@@ -5,25 +5,27 @@ All notable changes to PortalGems are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0] - 2026-07-12
+## [1.2.1] - 2026-07-13
 
 Choose your server. When the public community mailbox server goes down (which
-it does, taking every client with it), you can now switch to your own
-self-hosted server instead. The default remains the public server.
+it does, taking every client with it), you can now switch to the PortalGems
+server or your own self-hosted one. The default remains the public server.
 
 ### Added
 
-- **Connection server picker** in Settings: Public or a Custom self-hosted
-  server, with fields for your own rendezvous and transit-relay URLs. (A
-  first-party "PortalGems" option is wired up and appears once that server is
-  deployed.)
+- **Connection server picker** in Settings: Public, the **PortalGems server**,
+  or a Custom self-hosted server (with fields for your own rendezvous and
+  transit-relay URLs).
+- **Secure (`wss://`) rendezvous support.** The engine now speaks TLS to the
+  mailbox server (rustls + bundled roots), so hosted/self-hosted TLS servers
+  work; previously only cleartext `ws://` did.
 - **[docs/VPS-SETUP.md](docs/VPS-SETUP.md)** and a README section: run your own
-  mailbox + transit relay on a VPS (systemd, TLS via Caddy, verification).
+  mailbox + transit relay on a VPS (systemd, TLS via Caddy, firewall, common
+  pitfalls, verification).
 - Engine, both binding layers, and both apps thread a `ServerConfig` through
   every send/receive/pair call. The magic-wormhole app id stays fixed, so any
   two clients (including the reference `wormhole` CLI) on the *same* server
   still interoperate.
-
 - **32-bit device support:** the Android build now includes the `armeabi-v7a`
   ABI, so older phones can install (they previously failed with "app not
   supported").
@@ -33,6 +35,9 @@ self-hosted server instead. The default remains the public server.
 - When the rendezvous server is unreachable, the error is now plain-language
   and actionable ("switch servers or self-host"), in all six languages, instead
   of a raw exception string.
+- **Clarified that PortalGems is not an offline / LAN-only tool** - a mailbox
+  server always brokers the handshake, even for same-network transfers - in the
+  README and the in-app "How it works" page (all six languages).
 
 ### Fixed
 
@@ -40,7 +45,7 @@ self-hosted server instead. The default remains the public server.
   "crypto.getRandomValues must be defined" because Hermes has no Web Crypto. The
   secure-random polyfill is now loaded at startup.
 
-[1.2.0]: https://github.com/Yenis/portal-gems/releases/tag/v1.2.0
+[1.2.1]: https://github.com/Yenis/portal-gems/releases/tag/v1.2.1
 
 ## [1.0.1] - 2026-07-12
 

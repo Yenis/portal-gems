@@ -58,6 +58,17 @@ cancel must cover more than the transfer phase):
   + resolver live in `packages/core/src/servers.ts`; each app persists the
   choice (mobile `setSetting('pg-server')`, desktop localStorage `pg-server`)
   and passes the resolved config on every send/receive/pair call.
+- **`wss://` (TLS) support is NOT default.** magic-wormhole's own `tls` feature
+  maps to `async-tungstenite/async-tls`, which has no smol-runtime integration in
+  0.34 and fails to compile; `native-tls` would drag in OpenSSL (painful for
+  Android). So `Cargo.toml` instead enables rustls on the shared async-tungstenite
+  (`async-tungstenite` with `futures-rustls-webpki-roots`) plus `rustls` with the
+  `ring` provider, and `lib.rs::ensure_crypto_provider()` installs ring once at
+  each entry point (rustls 0.23 panics without a provider). rustls+ring
+  cross-compiles cleanly to all Android ABIs and trusts Let's Encrypt via bundled
+  webpki roots. Without this, only cleartext `ws://` works and TLS servers fail
+  with "rendezvous server connection". Verified E2E against a real `wss://` server
+  (desktop + mobile, incl. transit-relay fallback).
 
 Tests: `cargo test` (unit) · `cargo test -- --ignored` (network round-trip).
 
@@ -183,8 +194,16 @@ scan / paste), settings (language + theme, persisted), explainer.
    `wormhole_node.node`. The pipeline (create-release → linux/android/desktop
    matrix, each uploading binaries + `.sha256`) fires on any `v*` tag;
    `scripts/package-release.sh` collects local Linux/Android artifacts for
-   manual uploads. Android CI needs `cargo-ndk` + keystore secrets
-   (`ANDROID_KEYSTORE_BASE64` etc.).
+   manual uploads. Android CI needs `cargo-ndk` + the three rustup Android
+   targets (arm64, **armv7**, x86_64 - `release.yml` installs them) + keystore
+   secrets (`ANDROID_KEYSTORE_BASE64` etc.).
+9. **Stale Metro bundle on incremental Android builds**: `assembleRelease`
+   tracks the app's own JS but NOT edits inside the symlinked `@portalgems/core`
+   source, so a change there (e.g. a constant in `servers.ts`) can be silently
+   left out of the packaged Hermes bundle - the app runs old core code. CI is
+   safe (clean checkout); locally, delete `app/build/generated/assets/react` +
+   `app/build/intermediates/{assets,merged_assets}/release` before reassembling,
+   and verify with `strings <apk>/assets/index.android.bundle | grep <token>`.
 
 ## 6. Feature recipes
 

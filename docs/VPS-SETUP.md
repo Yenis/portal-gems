@@ -54,6 +54,10 @@ After=network.target
 
 [Service]
 User=wormhole
+# REQUIRED: the mailbox writes its channel DB (relay.sqlite) in its working
+# directory. systemd's default cwd is `/`, which the service user can't write
+# to, so without this it crash-loops on startup.
+WorkingDirectory=/home/wormhole
 ExecStart=/home/wormhole/venv/bin/twist wormhole-mailbox --port tcp:4000:interface=127.0.0.1
 Restart=always
 
@@ -108,6 +112,26 @@ sudo systemctl restart caddy
 Caddy fetches a Let's Encrypt certificate automatically (ports 80 and 443 must
 be reachable). WebSocket upgrades pass through with no extra configuration.
 
+**Already running another web server on port 80?** Caddy can serve the mailbox
+on 443 without ever binding 80 - set a global `http_port` to an unused port so
+it leaves 80 alone, and the certificate still issues via the TLS-ALPN challenge
+on 443:
+
+```bash
+sudo tee /etc/caddy/Caddyfile >/dev/null <<'EOF'
+{
+    http_port 8080
+}
+
+relay.example.com {
+    reverse_proxy 127.0.0.1:4000
+}
+EOF
+sudo systemctl restart caddy
+```
+
+Your existing site on port 80 keeps working untouched.
+
 ## 5. Firewall
 
 ```bash
@@ -116,6 +140,13 @@ sudo ufw allow 80,443/tcp  # Caddy / TLS
 sudo ufw allow 4001/tcp    # transit relay
 sudo ufw enable
 ```
+
+> **Also open the ports in your VPS provider's firewall.** Most hosts (IONOS,
+> Hetzner, AWS, DigitalOcean, ...) have their own cloud firewall / security
+> group in front of the machine. `ufw` alone is not enough: open **443** and
+> **4001** (and 80, 22) there too. The classic symptom is that 443 works (the
+> cert issued, so the challenge reached Caddy) but the non-standard **4001** is
+> silently dropped upstream even though `ufw status` shows it allowed.
 
 ## 6. Verify - before touching the app
 
@@ -178,3 +209,26 @@ For the no-domain case (IP only): use `ws://<IP>:4000/v1` and
 `tcp://<IP>:4001`. This works on desktop, but Android blocks cleartext `ws://`
 by default - prefer a domain (a free one, e.g. DuckDNS, is enough) so the
 mobile app can use `wss://`.
+
+## Troubleshooting
+
+Symptoms we actually hit, and their fixes:
+
+- **`wormhole-mailbox` shows `Active: failed (Result: exit-code)` / crash-loops
+  ("Start request repeated too quickly").** It can't create `relay.sqlite` in
+  its working directory. Add `WorkingDirectory=/home/wormhole` to the unit (see
+  step 3), then `sudo systemctl reset-failed wormhole-mailbox` and restart. Read
+  the real error with `sudo journalctl -u wormhole-mailbox -n 30 --no-pager`.
+- **The cert never issues.** Ports 80/443 aren't reachable, or DNS doesn't point
+  at this box. Confirm `getent hosts <domain>` matches the VPS IP, that 80+443
+  are open in *both* `ufw` and the provider firewall, and watch
+  `sudo journalctl -u caddy -f` for the ACME result.
+- **443 works but 4001 doesn't** (transfers connect but stall, or only work on
+  the same Wi-Fi). The transit relay port is blocked upstream - open **4001** in
+  your VPS provider's cloud firewall, not just `ufw`.
+- **Desktop connects but a phone won't.** The phone is refusing cleartext
+  `ws://`. Serve the mailbox over `wss://` (steps 3-4); that is the whole reason
+  TLS is recommended.
+- **Confirm the two services are actually listening where you expect:**
+  `sudo ss -ltnp | grep -E ':4000|:4001'` - the mailbox on `127.0.0.1:4000`
+  (behind Caddy) and the relay on `0.0.0.0:4001`.
