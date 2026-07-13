@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.png" alt="PortalGems logo" width="160">
+  <img src="assets/banner.png" alt="PortalGems gem portals" width="800">
 </p>
 
 # PortalGems

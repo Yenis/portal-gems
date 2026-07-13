@@ -164,8 +164,11 @@ scan / paste), settings (language + theme, persisted), explainer.
 ### Branding / icons
 
 - Canonical logo: `assets/logo.png` (450px, opaque black background);
-  `assets/brand-sheet.png` is the full brand exploration sheet. All app icons
-  are generated from the logo - regenerate at these sizes if it changes:
+  `assets/brand-sheet.png` is the full brand exploration sheet;
+  `assets/banner.png` (998x172, README header) has the six gem portals with a
+  transparent background outside each circle so it works on GitHub light and
+  dark themes. All app icons are generated from the logo - regenerate at these
+  sizes if it changes:
 - Android: legacy `mipmap-*/ic_launcher{,_round}.png` (48dp base,
   circle-masked), adaptive foreground rasters
   `mipmap-*/ic_launcher_foreground.png` (108dp base, logo at 70% so the ring
