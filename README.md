@@ -1,4 +1,8 @@
-# PortalGems 💎
+<p align="center">
+  <img src="assets/logo.png" alt="PortalGems logo" width="160">
+</p>
+
+# PortalGems
 
 **Secure device-to-device file transfer, powered by the [magic-wormhole](https://magic-wormhole.readthedocs.io/) protocol.**
 
@@ -34,12 +38,12 @@ Grab the latest build for your platform from the
 
 | Platform | File | Notes |
 |---|---|---|
-| 🤖 Android | `PortalGems-<version>-android.apk` | Sideload; enable "install from unknown sources" |
-| 🐧 Linux (portable) | `PortalGems-<version>-linux-x86_64.AppImage` | `chmod +x` then run; no install needed |
-| 🐧 Debian/Ubuntu | `PortalGems-<version>-linux-amd64.deb` | `sudo apt install ./PortalGems-*.deb` |
-| 🐧 Fedora/RHEL | `PortalGems-<version>-linux-x86_64.rpm` | `sudo dnf install ./PortalGems-*.rpm` |
-| 🪟 Windows | `PortalGems-<version>-windows-x64.exe` | Portable; just run it, no installer |
-| 🍎 macOS (Apple Silicon) | `PortalGems-<version>-macos-arm64.dmg` | Unsigned; right-click → Open on first launch |
+| Android | `PortalGems-<version>-android.apk` | Sideload; enable "install from unknown sources" |
+| Linux (portable) | `PortalGems-<version>-linux-x86_64.AppImage` | `chmod +x` then run; no install needed |
+| Debian/Ubuntu | `PortalGems-<version>-linux-amd64.deb` | `sudo apt install ./PortalGems-*.deb` |
+| Fedora/RHEL | `PortalGems-<version>-linux-x86_64.rpm` | `sudo dnf install ./PortalGems-*.rpm` |
+| Windows | `PortalGems-<version>-windows-x64.exe` | Portable; just run it, no installer |
+| macOS (Apple Silicon) | `PortalGems-<version>-macos-arm64.dmg` | Unsigned; right-click → Open on first launch |
 
 Building from source instead? See [Building from source](#building-from-source).
 
@@ -88,16 +92,16 @@ PortalGems takes a different approach, inherited from magic-wormhole:
 
 | | |
 |---|---|
-| 📤 Send & receive files | Between any two magic-wormhole clients, any direction |
-| ✅ Receive confirmation | See the file name and size, accept or decline, before a byte flows |
-| 📡 Direct LAN transfers | Same Wi-Fi → peer-to-peer at full speed, no relay |
-| 🔗 CLI interop | Works with `wormhole` on servers, laptops, anything |
-| 💠 Device pairing | Scan a QR once; from then on, transfers need only a confirmation tap |
-| 📲 Share-sheet integration | "Share → PortalGems" from any Android app |
-| 🌍 6 languages | English, Deutsch, Bosanski, Русский, Français, Español |
-| 🎨 5 gem themes | Diamond, Sapphire, Emerald, Ruby, Amethyst - each in light & dark |
-| 🔓 No accounts | No backend of ours, no cloud, everything stored locally |
-| 📖 Built-in explainer | The full "how it works & why it's safe" story, in-app |
+| Send & receive files | Between any two magic-wormhole clients, any direction |
+| Receive confirmation | See the file name and size, accept or decline, before a byte flows |
+| Direct LAN transfers | Same Wi-Fi → peer-to-peer at full speed, no relay |
+| CLI interop | Works with `wormhole` on servers, laptops, anything |
+| Device pairing | Scan a QR once; from then on, transfers need only a confirmation tap |
+| Share-sheet integration | "Share → PortalGems" from any Android app |
+| 6 languages | English, Deutsch, Bosanski, Русский, Français, Español |
+| 5 gem themes | Diamond, Sapphire, Emerald, Ruby, Amethyst - each in light & dark |
+| No accounts | No backend of ours, no cloud, everything stored locally |
+| Built-in explainer | The full "how it works & why it's safe" story, in-app |
 
 ## How it works
 

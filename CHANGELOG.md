@@ -5,6 +5,20 @@ All notable changes to PortalGems are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.3] - 2026-07-13
+
+New look. PortalGems has a new brand icon - a diamond gem inside a swirling
+portal - now used everywhere the app shows its face.
+
+### Changed
+
+- **New app icon** on Android (launcher, adaptive, and Android 13+ themed-icon
+  variants) and on desktop (window icon plus AppImage/deb/rpm, Windows .exe,
+  and macOS .dmg icons).
+- README: brand logo added, decorative emoji removed.
+
+[1.2.3]: https://github.com/Yenis/portal-gems/releases/tag/v1.2.3
+
 ## [1.2.2] - 2026-07-13
 
 Choose your server. Transfers now default to the reliable **PortalGems server**,

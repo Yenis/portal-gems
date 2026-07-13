@@ -161,6 +161,20 @@ scan / paste), settings (language + theme, persisted), explainer.
 - Run: `npm run build && npx electron . --no-sandbox`
   (**unset ELECTRON_RUN_AS_NODE** - VS Code shells export it).
 
+### Branding / icons
+
+- Canonical logo: `assets/logo.png` (450px, opaque black background);
+  `assets/brand-sheet.png` is the full brand exploration sheet. All app icons
+  are generated from the logo - regenerate at these sizes if it changes:
+- Android: legacy `mipmap-*/ic_launcher{,_round}.png` (48dp base,
+  circle-masked), adaptive foreground rasters
+  `mipmap-*/ic_launcher_foreground.png` (108dp base, logo at 70% so the ring
+  stays inside the 66dp safe zone), background `#000000` in
+  `values/colors.xml`, themed-icon vector
+  `drawable/ic_launcher_monochrome.xml`.
+- Desktop: `packages/app-desktop/build/icon.png` (512px) - electron-builder
+  auto-derives all platform formats; also the BrowserWindow icon in `main.ts`.
+
 ## 5. Build gotchas (cost hours; read before touching builds)
 
 1. npm `file:` symlinks: Metro needs `watchFolders` + `nodeModulesPaths` +
