@@ -100,7 +100,8 @@
       "rendezvousLabel": "Rendezvous URL",
       "transitLabel": "Transit relay URL",
       "invalidUrl": "Enter a valid address, or leave blank to use the default.",
-      "leaveBlankHint": "Leave a field blank to keep the public default for it."
+      "leaveBlankHint": "Leave a field blank to keep the public default for it.",
+      "change": "Change server"
     }
   },
   "explain": {

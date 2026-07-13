@@ -18,11 +18,43 @@ export function Card({ c, children }: { c: Palette; children: React.ReactNode })
   );
 }
 
-export function Title({ c, children }: { c: Palette; children: React.ReactNode }) {
-  return (
+export function Title({
+  c,
+  children,
+  onBack,
+}: {
+  c: Palette;
+  children: React.ReactNode;
+  onBack?: () => void;
+}) {
+  const heading = (
     <h1 style={{ color: c.text, fontSize: fontSize.title, fontWeight: 700, margin: 0 }}>
       {children}
     </h1>
+  );
+  if (!onBack) return heading;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: spacing(2) }}>
+      <span
+        onClick={onBack}
+        role="button"
+        title="Back"
+        style={{ cursor: 'pointer', display: 'inline-flex', color: c.text }}>
+        <svg
+          width={28}
+          height={28}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2.5}
+          strokeLinecap="round"
+          strokeLinejoin="round">
+          <path d="M19 12H5" />
+          <path d="M12 19l-7-7 7-7" />
+        </svg>
+      </span>
+      {heading}
+    </div>
   );
 }
 

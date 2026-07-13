@@ -131,7 +131,7 @@ export default function PairScreen({ onHome }: { onHome: () => void }) {
 
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
-      <Title>{t('pair.title')}</Title>
+      <Title onBack={onHome}>{t('pair.title')}</Title>
 
       {phase === 'menu' || phase === 'scanning' ? (
         <Card>

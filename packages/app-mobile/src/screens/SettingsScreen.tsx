@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -36,10 +36,26 @@ const LANGUAGE_LABELS: Record<string, string> = {
   es: 'Español',
 };
 
-export default function SettingsScreen({ onHome }: { onHome: () => void }) {
+export default function SettingsScreen({
+  onHome,
+  scrollToServer,
+}: {
+  onHome: () => void;
+  scrollToServer?: boolean;
+}) {
   const { t, i18n } = useTranslation();
   const c = useTheme();
   const { themeName, setThemeName } = useThemeControl();
+
+  // Deep-link target: scroll to the server section when arriving from the
+  // send-screen "Change server" shortcut.
+  const scrollRef = useRef<ScrollView>(null);
+  const [serverY, setServerY] = useState(0);
+  useEffect(() => {
+    if (scrollToServer && serverY > 0) {
+      scrollRef.current?.scrollTo({ y: serverY - spacing(3), animated: true });
+    }
+  }, [scrollToServer, serverY]);
 
   const [server, setServer] = useState<ServerSettings>(DEFAULT_SERVER_SETTINGS);
   useEffect(() => {
@@ -77,9 +93,10 @@ export default function SettingsScreen({ onHome }: { onHome: () => void }) {
 
   return (
     <ScrollView
+      ref={scrollRef}
       style={{ backgroundColor: c.background }}
       contentContainerStyle={styles.container}>
-      <Title>{t('settings.title')}</Title>
+      <Title onBack={onHome}>{t('settings.title')}</Title>
 
       <Card>
         <Subtitle>{t('settings.language')}</Subtitle>
@@ -135,6 +152,7 @@ export default function SettingsScreen({ onHome }: { onHome: () => void }) {
         ))}
       </Card>
 
+      <View onLayout={(e) => setServerY(e.nativeEvent.layout.y)}>
       <Card>
         <View style={styles.serverHeader}>
           <Subtitle>{t('settings.server.title')}</Subtitle>
@@ -238,6 +256,7 @@ export default function SettingsScreen({ onHome }: { onHome: () => void }) {
           </View>
         ) : null}
       </Card>
+      </View>
 
       <PrimaryButton label={t('common.done')} onPress={onHome} />
       <View style={{ height: spacing(6) }} />

@@ -86,7 +86,8 @@
       "rendezvousLabel": "Rendezvous-URL",
       "transitLabel": "Transit-Relay-URL",
       "invalidUrl": "Gib eine gültige Adresse ein oder lass das Feld leer, um die Standardeinstellung zu verwenden.",
-      "leaveBlankHint": "Lass ein Feld leer, um dafür den öffentlichen Standard zu behalten."
+      "leaveBlankHint": "Lass ein Feld leer, um dafür den öffentlichen Standard zu behalten.",
+      "change": "Server ändern"
     }
   },
   "explain": {

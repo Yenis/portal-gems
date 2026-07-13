@@ -86,7 +86,8 @@
       "rendezvousLabel": "URL de encuentro",
       "transitLabel": "URL del relé de tránsito",
       "invalidUrl": "Introduce una dirección válida o déjalo en blanco para usar el valor predeterminado.",
-      "leaveBlankHint": "Deja un campo en blanco para conservar el valor público predeterminado."
+      "leaveBlankHint": "Deja un campo en blanco para conservar el valor público predeterminado.",
+      "change": "Cambiar servidor"
     }
   },
   "explain": {

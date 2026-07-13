@@ -21,7 +21,7 @@ import {
   Subtitle,
   Title,
 } from '../components';
-import { friendlyError } from '../errors';
+import { friendlyError, isServerUnreachableError } from '../errors';
 import { formatSize, withTransferService, type PickedFile } from '../native';
 import { currentServer } from '../server';
 import { useTheme } from '../theme';
@@ -39,10 +39,12 @@ export default function SendScreen({
   file,
   device,
   onHome,
+  onServerSettings,
 }: {
   file: PickedFile;
   device?: PairedDevice;
   onHome: () => void;
+  onServerSettings: () => void;
 }) {
   const { t } = useTranslation();
   const c = useTheme();
@@ -51,6 +53,7 @@ export default function SendScreen({
   const [direct, setDirect] = useState<boolean | null>(null);
   const [pct, setPct] = useState(0);
   const [error, setError] = useState('');
+  const [serverErr, setServerErr] = useState(false);
   const [copied, setCopied] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -107,6 +110,7 @@ export default function SendScreen({
           setPhase('cancelled');
         } else {
           setError(friendlyError(t, e));
+          setServerErr(isServerUnreachableError(e));
           setPhase('error');
         }
       }
@@ -130,7 +134,7 @@ export default function SendScreen({
 
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
-      <Title>{t('send.title')}</Title>
+      <Title onBack={onHome}>{t('send.title')}</Title>
       <Muted>
         {file.name} · {formatSize(file.size)}
       </Muted>
@@ -198,6 +202,14 @@ export default function SendScreen({
           danger
           onPress={() => abortRef.current?.abort()}
         />
+      ) : phase === 'error' && serverErr ? (
+        <>
+          <PrimaryButton
+            label={t('settings.server.change')}
+            onPress={onServerSettings}
+          />
+          <GhostButton label={t('common.done')} onPress={onHome} />
+        </>
       ) : (
         <PrimaryButton label={t('common.done')} onPress={onHome} />
       )}

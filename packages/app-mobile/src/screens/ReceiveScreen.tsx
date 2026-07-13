@@ -167,7 +167,7 @@ export default function ReceiveScreen({
 
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
-      <Title>{t('receive.title')}</Title>
+      <Title onBack={onHome}>{t('receive.title')}</Title>
       <Muted>{device ? device.name : code}</Muted>
 
       <Card>

@@ -1,1 +1,1 @@
-export { friendlyError } from '@portalgems/core';
+export { friendlyError, isServerUnreachableError } from '@portalgems/core';

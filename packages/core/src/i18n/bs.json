@@ -86,7 +86,8 @@
       "rendezvousLabel": "Rendezvous URL",
       "transitLabel": "URL tranzitnog releja",
       "invalidUrl": "Unesi ispravnu adresu ili ostavi prazno da se koristi zadana.",
-      "leaveBlankHint": "Ostavi polje prazno da za njega zadržiš javnu zadanu vrijednost."
+      "leaveBlankHint": "Ostavi polje prazno da za njega zadržiš javnu zadanu vrijednost.",
+      "change": "Promijeni server"
     }
   },
   "explain": {

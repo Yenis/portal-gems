@@ -9,6 +9,7 @@ import {
   encodePairingPayload,
   fontSize,
   friendlyError,
+  isServerUnreachableError,
   parsePairingPayload,
   spacing,
   PAIRED_RECEIVE_TIMEOUT_MS,
@@ -97,14 +98,17 @@ type Route =
     }
   | { name: 'receive'; code?: string; device?: PairedDevice }
   | { name: 'pair' }
-  | { name: 'settings' }
+  | { name: 'settings'; scrollToServer?: boolean }
   | { name: 'explain' };
 
 export default function App() {
   const [themeName, setThemeNameState] = useState<ThemeName>(loadThemeName());
   const c = usePalette(themeName);
-  const [route, setRoute] = useState<Route>({ name: 'home' });
-  const goHome = () => setRoute({ name: 'home' });
+  // History stack so the back arrow pops one page at a time.
+  const [stack, setStack] = useState<Route[]>([{ name: 'home' }]);
+  const route = stack[stack.length - 1];
+  const navigate = (r: Route) => setStack((s) => [...s, r]);
+  const goBack = () => setStack((s) => (s.length > 1 ? s.slice(0, -1) : s));
   const setThemeName = (name: ThemeName) => {
     setThemeNameState(name);
     saveThemeName(name);
@@ -124,28 +128,35 @@ export default function App() {
       {route.name === 'home' ? (
         <Home
           c={c}
-          onSend={(file, device) => setRoute({ name: 'send', file, device })}
-          onReceive={(code) => setRoute({ name: 'receive', code })}
-          onReceiveFrom={(device) => setRoute({ name: 'receive', device })}
-          onPair={() => setRoute({ name: 'pair' })}
-          onSettings={() => setRoute({ name: 'settings' })}
-          onExplain={() => setRoute({ name: 'explain' })}
+          onSend={(file, device) => navigate({ name: 'send', file, device })}
+          onReceive={(code) => navigate({ name: 'receive', code })}
+          onReceiveFrom={(device) => navigate({ name: 'receive', device })}
+          onPair={() => navigate({ name: 'pair' })}
+          onSettings={() => navigate({ name: 'settings' })}
+          onExplain={() => navigate({ name: 'explain' })}
         />
       ) : route.name === 'send' ? (
-        <Send c={c} file={route.file} device={route.device} onHome={goHome} />
+        <Send
+          c={c}
+          file={route.file}
+          device={route.device}
+          onHome={goBack}
+          onServerSettings={() => navigate({ name: 'settings', scrollToServer: true })}
+        />
       ) : route.name === 'receive' ? (
-        <Receive c={c} code={route.code} device={route.device} onHome={goHome} />
+        <Receive c={c} code={route.code} device={route.device} onHome={goBack} />
       ) : route.name === 'settings' ? (
         <Settings
           c={c}
           themeName={themeName}
           onTheme={setThemeName}
-          onHome={goHome}
+          onHome={goBack}
+          scrollToServer={route.scrollToServer}
         />
       ) : route.name === 'explain' ? (
-        <Explain c={c} onHome={goHome} />
+        <Explain c={c} onHome={goBack} />
       ) : (
-        <Pair c={c} onHome={goHome} />
+        <Pair c={c} onHome={goBack} />
       )}
     </div>
   );
@@ -282,11 +293,13 @@ function Send({
   file,
   device,
   onHome,
+  onServerSettings,
 }: {
   c: Palette;
   file: { path: string; name: string; size: number };
   device?: PairedDevice;
   onHome: () => void;
+  onServerSettings: () => void;
 }) {
   const { t } = useTranslation();
   const [phase, setPhase] = useState<SendPhase>('starting');
@@ -294,6 +307,7 @@ function Send({
   const [direct, setDirect] = useState<boolean | null>(null);
   const [pct, setPct] = useState(0);
   const [error, setError] = useState('');
+  const [serverErr, setServerErr] = useState(false);
   const [copied, setCopied] = useState(false);
   const idRef = useRef(0);
   const cancelledRef = useRef(false);
@@ -331,6 +345,7 @@ function Send({
         else if (cancelledRef.current) setPhase('cancelled');
         else {
           setError(friendlyError(t as any, e));
+          setServerErr(isServerUnreachableError(e));
           setPhase('error');
         }
       }
@@ -357,7 +372,7 @@ function Send({
 
   return (
     <>
-      <Title c={c}>{t('send.title')}</Title>
+      <Title c={c} onBack={onHome}>{t('send.title')}</Title>
       <Muted c={c}>
         {file.name} · {formatSize(file.size)}
       </Muted>
@@ -409,6 +424,15 @@ function Send({
       </Card>
       {busy ? (
         <GhostButton c={c} label={t('common.cancel')} danger onClick={cancel} />
+      ) : phase === 'error' && serverErr ? (
+        <>
+          <PrimaryButton
+            c={c}
+            label={t('settings.server.change')}
+            onClick={onServerSettings}
+          />
+          <GhostButton c={c} label={t('common.done')} onClick={onHome} />
+        </>
       ) : (
         <PrimaryButton c={c} label={t('common.done')} onClick={onHome} />
       )}
@@ -528,7 +552,7 @@ function Receive({
 
   return (
     <>
-      <Title c={c}>{t('receive.title')}</Title>
+      <Title c={c} onBack={onHome}>{t('receive.title')}</Title>
       <Muted c={c}>{device ? device.name : code}</Muted>
       <Card c={c}>
         {phase === 'connecting' ? (
@@ -667,7 +691,7 @@ function Pair({ c, onHome }: { c: Palette; onHome: () => void }) {
 
   return (
     <>
-      <Title c={c}>{t('pair.title')}</Title>
+      <Title c={c} onBack={onHome}>{t('pair.title')}</Title>
       {phase === 'menu' ? (
         <Card c={c}>
           <PrimaryButton c={c} label={t('pair.showButton')} onClick={show} />
@@ -737,14 +761,25 @@ function Settings({
   themeName,
   onTheme,
   onHome,
+  scrollToServer,
 }: {
   c: Palette;
   themeName: ThemeName;
   onTheme: (name: ThemeName) => void;
   onHome: () => void;
+  scrollToServer?: boolean;
 }) {
   const { t, i18n } = useTranslation();
   const [server, setServer] = useState<ServerSettings>(() => loadServerSettings());
+
+  // Deep-link target: scroll to the server section when arriving from the
+  // send-screen "Change server" shortcut.
+  const serverRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (scrollToServer) {
+      serverRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [scrollToServer]);
 
   const updateServer = (next: ServerSettings) => {
     setServer(next);
@@ -783,7 +818,7 @@ function Settings({
 
   return (
     <>
-      <Title c={c}>{t('settings.title')}</Title>
+      <Title c={c} onBack={onHome}>{t('settings.title')}</Title>
       <Card c={c}>
         <Subtitle c={c}>{t('settings.language')}</Subtitle>
         {SUPPORTED_LANGUAGES.map((lng) => (
@@ -816,6 +851,7 @@ function Settings({
           </div>
         ))}
       </Card>
+      <div ref={serverRef}>
       <Card c={c}>
         <div
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -906,6 +942,7 @@ function Settings({
           </div>
         ) : null}
       </Card>
+      </div>
       <PrimaryButton c={c} label={t('common.done')} onClick={onHome} />
     </>
   );
@@ -917,7 +954,7 @@ function Explain({ c, onHome }: { c: Palette; onHome: () => void }) {
   const { t } = useTranslation();
   return (
     <>
-      <Title c={c}>{t('explain.title')}</Title>
+      <Title c={c} onBack={onHome}>{t('explain.title')}</Title>
       <Muted c={c}>{t('explain.intro')}</Muted>
       {EXPLAIN_SECTIONS.map((key) => (
         <Card key={key} c={c}>

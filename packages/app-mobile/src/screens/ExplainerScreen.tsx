@@ -23,7 +23,7 @@ export default function ExplainerScreen({ onHome }: { onHome: () => void }) {
     <ScrollView
       style={{ backgroundColor: c.background }}
       contentContainerStyle={styles.container}>
-      <Title>{t('explain.title')}</Title>
+      <Title onBack={onHome}>{t('explain.title')}</Title>
       <Muted>{t('explain.intro')}</Muted>
       {SECTIONS.map((key) => (
         <Card key={key}>

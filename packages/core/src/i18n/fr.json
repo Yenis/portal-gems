@@ -86,7 +86,8 @@
       "rendezvousLabel": "URL de rendez-vous",
       "transitLabel": "URL du relais de transit",
       "invalidUrl": "Saisissez une adresse valide, ou laissez vide pour utiliser la valeur par défaut.",
-      "leaveBlankHint": "Laissez un champ vide pour en conserver la valeur publique par défaut."
+      "leaveBlankHint": "Laissez un champ vide pour en conserver la valeur publique par défaut.",
+      "change": "Changer de serveur"
     }
   },
   "explain": {

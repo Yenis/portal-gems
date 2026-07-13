@@ -5,7 +5,7 @@ All notable changes to PortalGems are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.1] - 2026-07-13
+## [1.2.2] - 2026-07-13
 
 Choose your server. Transfers now default to the reliable **PortalGems server**,
 and when you want you can switch to the public community server (for interop
@@ -29,6 +29,15 @@ with other magic-wormhole clients) or your own self-hosted one.
 - **32-bit device support:** the Android build now includes the `armeabi-v7a`
   ABI, so older phones can install (they previously failed with "app not
   supported").
+- **Back navigation:** a back arrow in the header on every non-home screen (both
+  apps), and on Android the hardware **Back** button / back gesture now goes
+  back one page instead of leaving the app.
+- On a send **connection error**, a **Change server** shortcut jumps straight to
+  Settings and scrolls to the server picker.
+- **First-visit server helper:** a dismissible card in Settings (reopenable via
+  an info button) explaining the Public / PortalGems / self-hosted options, with
+  the same explanation added as a "Choosing a server" section on the in-app "How
+  it works" page.
 
 ### Changed
 
@@ -45,7 +54,7 @@ with other magic-wormhole clients) or your own self-hosted one.
   "crypto.getRandomValues must be defined" because Hermes has no Web Crypto. The
   secure-random polyfill is now loaded at startup.
 
-[1.2.1]: https://github.com/Yenis/portal-gems/releases/tag/v1.2.1
+[1.2.2]: https://github.com/Yenis/portal-gems/releases/tag/v1.2.2
 
 ## [1.0.1] - 2026-07-12
 

@@ -6,6 +6,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { fontSize, radius, spacing } from '@portalgems/core';
 import { useTheme } from './theme';
 
@@ -22,9 +23,39 @@ export function Card({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function Title({ children }: { children: React.ReactNode }) {
+export function Title({
+  children,
+  onBack,
+}: {
+  children: React.ReactNode;
+  onBack?: () => void;
+}) {
   const c = useTheme();
-  return <Text style={[styles.title, { color: c.text }]}>{children}</Text>;
+  const text = <Text style={[styles.title, { color: c.text }]}>{children}</Text>;
+  if (!onBack) return text;
+  return (
+    <View style={styles.titleRow}>
+      <Pressable
+        onPress={onBack}
+        hitSlop={12}
+        accessibilityRole="button"
+        accessibilityLabel="Back">
+        <Svg
+          width={28}
+          height={28}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke={c.text}
+          strokeWidth={2.5}
+          strokeLinecap="round"
+          strokeLinejoin="round">
+          <Path d="M19 12H5" />
+          <Path d="M12 19l-7-7 7-7" />
+        </Svg>
+      </Pressable>
+      {text}
+    </View>
+  );
 }
 
 export function Subtitle({ children }: { children: React.ReactNode }) {
@@ -128,6 +159,7 @@ const styles = StyleSheet.create({
     gap: spacing(3),
   },
   title: { fontSize: fontSize.title, fontWeight: '700' },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing(2) },
   subtitle: { fontSize: fontSize.subtitle, fontWeight: '600' },
   muted: { fontSize: fontSize.body, lineHeight: 21 },
   button: {
