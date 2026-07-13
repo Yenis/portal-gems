@@ -37,10 +37,12 @@ export interface ServerSettings {
   customTransitUrl?: string;
 }
 
-/// Default to the public community server. It is the zero-config option that
-/// also interoperates with other magic-wormhole clients. (Once the PortalGems
-/// server is deployed we may switch the default to it for reliability.)
-export const DEFAULT_SERVER_SETTINGS: ServerSettings = { choice: 'public' };
+/// Default to the PortalGems server: it is deployed and reliable, so it gives
+/// the best out-of-box experience. Users who want interop with other
+/// magic-wormhole clients, or who prefer not to route through our server, can
+/// switch to 'public' or 'custom' in Settings. (Assumes `PORTALGEMS_*` are real;
+/// a fork that blanks them should default to 'public' instead.)
+export const DEFAULT_SERVER_SETTINGS: ServerSettings = { choice: 'portalgems' };
 
 /// All picker options, in display order. `custom` carries no fixed config - its
 /// addresses come from `ServerSettings`.

@@ -37,8 +37,8 @@ describe('resolveServer', () => {
 });
 
 describe('availability', () => {
-  it('default is the public server', () => {
-    expect(DEFAULT_SERVER_SETTINGS.choice).toBe('public');
+  it('default is the PortalGems server', () => {
+    expect(DEFAULT_SERVER_SETTINGS.choice).toBe('portalgems');
   });
 
   it('shows portalgems now that its URLs are configured', () => {

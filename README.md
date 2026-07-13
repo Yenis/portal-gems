@@ -287,9 +287,9 @@ clause).
 
 PortalGems meets two devices at a **rendezvous** (mailbox) server to exchange
 the short code, then moves the file directly or through a **transit relay** when
-a direct connection is not possible. By default the app uses the public
-community server; in **Settings -> Connection server** you can switch to your
-own self-hosted server (or the PortalGems server, once it is available).
+a direct connection is not possible. By default the app uses the **PortalGems
+server**; in **Settings -> Connection server** you can switch to the public
+community server or your own self-hosted one.
 
 Running your own means you never depend on anyone else's uptime, and (since the
 file is end-to-end encrypted) the server only ever sees ciphertext. You need a

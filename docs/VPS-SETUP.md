@@ -2,8 +2,8 @@
 
 PortalGems meets two devices at a **rendezvous** (mailbox) server to exchange
 the short code, then moves the file directly or through a **transit relay** when
-a direct connection is not possible. By default the app uses the public
-community server; you can also point it at your own.
+a direct connection is not possible. By default the app uses the PortalGems
+server; you can also point it at the public community server or your own.
 
 Running your own means you never depend on anyone else's uptime. Because every
 file is end-to-end encrypted, your server only ever sees ciphertext - it cannot

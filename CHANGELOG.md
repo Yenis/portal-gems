@@ -7,9 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.1] - 2026-07-13
 
-Choose your server. When the public community mailbox server goes down (which
-it does, taking every client with it), you can now switch to the PortalGems
-server or your own self-hosted one. The default remains the public server.
+Choose your server. Transfers now default to the reliable **PortalGems server**,
+and when you want you can switch to the public community server (for interop
+with other magic-wormhole clients) or your own self-hosted one.
 
 ### Added
 
