@@ -5,6 +5,25 @@ All notable changes to PortalGems are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.5] - 2026-07-14
+
+Your files, your folder. Received files can now land in a folder you choose,
+and PortalGems asks before overwriting anything.
+
+### Added
+
+- **Default download location** in Settings, on Android and desktop. Pick any
+  folder for received files, or keep the default Downloads folder. If the
+  chosen folder goes missing, desktop recreates it; Android (where a deleted
+  folder cannot be recreated) saves to Downloads instead and says so.
+- **Same-name warning**: when an incoming file's name already exists in your
+  download folder, PortalGems shows the existing file's size and asks -
+  overwrite, keep both, or decline. An overwritten file is only replaced after
+  the transfer has fully completed, so a failed transfer never costs you the
+  original.
+
+[1.2.5]: https://github.com/Yenis/portal-gems/releases/tag/v1.2.5
+
 ## [1.2.4] - 2026-07-14
 
 Tidier settings. The language picker is now a compact dropdown, and on Android
