@@ -40,6 +40,7 @@ import { currentServer, loadServerSettings, saveServerSettings } from './server'
 import {
   Card,
   CodeBox,
+  Dropdown,
   GhostButton,
   Muted,
   PrimaryButton,
@@ -821,14 +822,15 @@ function Settings({
       <Title c={c} onBack={onHome}>{t('settings.title')}</Title>
       <Card c={c}>
         <Subtitle c={c}>{t('settings.language')}</Subtitle>
-        {SUPPORTED_LANGUAGES.map((lng) => (
-          <div key={lng} style={row(i18n.language === lng)} onClick={() => chooseLanguage(lng)}>
-            <span style={{ color: c.text }}>{LANGUAGE_LABELS[lng]}</span>
-            {i18n.language === lng ? (
-              <span style={{ color: c.primary, fontWeight: 700 }}>✓</span>
-            ) : null}
-          </div>
-        ))}
+        <Dropdown
+          c={c}
+          value={i18n.language}
+          onChange={chooseLanguage}
+          options={SUPPORTED_LANGUAGES.map((lng) => ({
+            value: lng,
+            label: LANGUAGE_LABELS[lng],
+          }))}
+        />
       </Card>
       <Card c={c}>
         <Subtitle c={c}>{t('settings.theme')}</Subtitle>

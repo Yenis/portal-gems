@@ -67,6 +67,7 @@
     "title": "Ajustes",
     "language": "Idioma",
     "theme": "Tema",
+    "currentTheme": "Tema actual",
     "themes": {
       "diamond": "Diamante",
       "sapphire": "Zafiro",

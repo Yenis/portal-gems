@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -7,6 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { useTranslation } from 'react-i18next';
 import {
   DEFAULT_SERVER_SETTINGS,
@@ -46,6 +48,7 @@ export default function SettingsScreen({
   const { t, i18n } = useTranslation();
   const c = useTheme();
   const { themeName, setThemeName } = useThemeControl();
+  const [langOpen, setLangOpen] = useState(false);
 
   // Deep-link target: scroll to the server section when arriving from the
   // send-screen "Change server" shortcut.
@@ -100,56 +103,96 @@ export default function SettingsScreen({
 
       <Card>
         <Subtitle>{t('settings.language')}</Subtitle>
-        {SUPPORTED_LANGUAGES.map((lng) => (
-          <Pressable
-            key={lng}
-            onPress={() => chooseLanguage(lng)}
-            style={[
-              styles.row,
-              {
-                borderColor: i18n.language === lng ? c.primary : c.border,
-                backgroundColor: i18n.language === lng ? c.codeBg : 'transparent',
-              },
-            ]}>
-            <Text style={{ color: c.text, fontSize: fontSize.body }}>
-              {LANGUAGE_LABELS[lng]}
-            </Text>
-            {i18n.language === lng ? (
-              <Text style={{ color: c.primary, fontWeight: '700' }}>✓</Text>
-            ) : null}
-          </Pressable>
-        ))}
+        <Pressable
+          onPress={() => setLangOpen(true)}
+          accessibilityRole="button"
+          style={[styles.row, { borderColor: c.border }]}>
+          <Text style={{ color: c.text, fontSize: fontSize.body }}>
+            {LANGUAGE_LABELS[i18n.language] ?? i18n.language}
+          </Text>
+          <Svg
+            width={20}
+            height={20}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke={c.textMuted}
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round">
+            <Path d="M6 9l6 6 6-6" />
+          </Svg>
+        </Pressable>
       </Card>
+
+      <Modal
+        visible={langOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLangOpen(false)}>
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setLangOpen(false)}>
+          <View
+            style={[
+              styles.modalSheet,
+              { backgroundColor: c.surface, borderColor: c.border },
+            ]}>
+            {SUPPORTED_LANGUAGES.map((lng) => (
+              <Pressable
+                key={lng}
+                onPress={() => {
+                  chooseLanguage(lng);
+                  setLangOpen(false);
+                }}
+                style={[
+                  styles.row,
+                  {
+                    borderColor: i18n.language === lng ? c.primary : c.border,
+                    backgroundColor:
+                      i18n.language === lng ? c.codeBg : 'transparent',
+                  },
+                ]}>
+                <Text style={{ color: c.text, fontSize: fontSize.body }}>
+                  {LANGUAGE_LABELS[lng]}
+                </Text>
+                {i18n.language === lng ? (
+                  <Text style={{ color: c.primary, fontWeight: '700' }}>✓</Text>
+                ) : null}
+              </Pressable>
+            ))}
+          </View>
+        </Pressable>
+      </Modal>
 
       <Card>
         <Subtitle>{t('settings.theme')}</Subtitle>
-        {THEME_NAMES.map((name) => (
-          <Pressable
-            key={name}
-            onPress={() => setThemeName(name)}
-            style={[
-              styles.row,
-              {
-                borderColor: themeName === name ? c.primary : c.border,
-                backgroundColor: themeName === name ? c.codeBg : 'transparent',
-              },
-            ]}>
-            <View style={styles.swatchRow}>
-              <View
+        <Text style={{ color: c.textMuted, fontSize: fontSize.small }}>
+          {t('settings.currentTheme')}: {t(`settings.themes.${themeName}`)}
+        </Text>
+        <View style={styles.swatchButtons}>
+          {THEME_NAMES.map((name) => {
+            const selected = themeName === name;
+            return (
+              <Pressable
+                key={name}
+                onPress={() => setThemeName(name)}
+                accessibilityRole="button"
+                accessibilityLabel={t(`settings.themes.${name}`)}
+                accessibilityState={{ selected }}
                 style={[
-                  styles.swatch,
-                  { backgroundColor: themes[name].light.primary },
-                ]}
-              />
-              <Text style={{ color: c.text, fontSize: fontSize.body }}>
-                {t(`settings.themes.${name}`)}
-              </Text>
-            </View>
-            {themeName === name ? (
-              <Text style={{ color: c.primary, fontWeight: '700' }}>✓</Text>
-            ) : null}
-          </Pressable>
-        ))}
+                  styles.swatchButton,
+                  { borderColor: selected ? c.text : 'transparent' },
+                ]}>
+                <View
+                  style={[
+                    styles.swatchLarge,
+                    { backgroundColor: themes[name].light.primary },
+                  ]}
+                />
+              </Pressable>
+            );
+          })}
+        </View>
       </Card>
 
       <View onLayout={(e) => setServerY(e.nativeEvent.layout.y)}>
@@ -279,8 +322,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing(3),
     paddingVertical: spacing(3),
   },
-  swatchRow: { flexDirection: 'row', alignItems: 'center', gap: spacing(2.5) },
-  swatch: { width: 18, height: 18, borderRadius: 9 },
+  swatchButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: spacing(1),
+  },
+  swatchButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  swatchLarge: { width: 30, height: 30, borderRadius: 15 },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: spacing(6),
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  modalSheet: {
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    padding: spacing(4),
+    gap: spacing(2),
+  },
   serverHeader: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -81,6 +81,7 @@
     "title": "Settings",
     "language": "Language",
     "theme": "Theme",
+    "currentTheme": "Current theme",
     "themes": {
       "diamond": "Diamond",
       "sapphire": "Sapphire",

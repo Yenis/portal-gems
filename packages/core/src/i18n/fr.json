@@ -67,6 +67,7 @@
     "title": "Paramètres",
     "language": "Langue",
     "theme": "Thème",
+    "currentTheme": "Thème actuel",
     "themes": {
       "diamond": "Diamant",
       "sapphire": "Saphir",

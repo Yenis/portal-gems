@@ -175,6 +175,141 @@ export function CodeBox({ c, code }: { c: Palette; code: string }) {
   );
 }
 
+export function Dropdown({
+  c,
+  value,
+  options,
+  onChange,
+}: {
+  c: Palette;
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (value: string) => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const onDocDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onDocDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDocDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <div ref={ref} style={{ position: 'relative', width: '100%' }}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: spacing(2),
+          width: '100%',
+          boxSizing: 'border-box',
+          border: `1px solid ${open ? c.primary : c.border}`,
+          background: c.background,
+          color: c.text,
+          borderRadius: radius.md,
+          padding: `${spacing(2.5)}px ${spacing(3)}px`,
+          fontSize: fontSize.body,
+          cursor: 'pointer',
+          textAlign: 'left',
+        }}>
+        <span>{selected?.label ?? value}</span>
+        <svg
+          width={18}
+          height={18}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{
+            color: c.textMuted,
+            flexShrink: 0,
+            transform: open ? 'rotate(180deg)' : 'none',
+            transition: 'transform 120ms ease',
+          }}>
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+      {open ? (
+        <div
+          role="listbox"
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 4px)',
+            left: 0,
+            right: 0,
+            zIndex: 10,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            padding: spacing(1),
+            background: c.surface,
+            border: `1px solid ${c.border}`,
+            borderRadius: radius.md,
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.18)',
+            maxHeight: 280,
+            overflowY: 'auto',
+          }}>
+          {options.map((o) => {
+            const active = o.value === value;
+            return (
+              <div
+                key={o.value}
+                role="option"
+                aria-selected={active}
+                onClick={() => {
+                  onChange(o.value);
+                  setOpen(false);
+                }}
+                onMouseEnter={(e) => {
+                  if (!active) e.currentTarget.style.background = c.codeBg;
+                }}
+                onMouseLeave={(e) => {
+                  if (!active) e.currentTarget.style.background = 'transparent';
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: `${spacing(2)}px ${spacing(2.5)}px`,
+                  borderRadius: radius.sm,
+                  cursor: 'pointer',
+                  color: c.text,
+                  fontSize: fontSize.body,
+                  background: active ? c.codeBg : 'transparent',
+                }}>
+                <span>{o.label}</span>
+                {active ? (
+                  <span style={{ color: c.primary, fontWeight: 700 }}>✓</span>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function TextInput({
   c,
   value,

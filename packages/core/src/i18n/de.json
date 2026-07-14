@@ -67,6 +67,7 @@
     "title": "Einstellungen",
     "language": "Sprache",
     "theme": "Design",
+    "currentTheme": "Aktuelles Design",
     "themes": {
       "diamond": "Diamant",
       "sapphire": "Saphir",

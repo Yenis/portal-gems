@@ -5,6 +5,23 @@ All notable changes to PortalGems are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.4] - 2026-07-14
+
+Tidier settings. The language picker is now a compact dropdown, and on Android
+the theme picker is a row of gem swatches.
+
+### Changed
+
+- **Language selector is now a dropdown** in Settings, on both Android and
+  desktop, instead of a full list - room to add more languages without a long
+  scroll. On desktop it uses a custom menu that matches the app's look rather
+  than the default browser control.
+- **Android theme picker** switched from a labelled vertical list to a
+  horizontal row of the five gem swatches, with a **Current theme** label above
+  so the active theme is always named.
+
+[1.2.4]: https://github.com/Yenis/portal-gems/releases/tag/v1.2.4
+
 ## [1.2.3] - 2026-07-13
 
 New look. PortalGems has a new brand icon - a diamond gem inside a swirling

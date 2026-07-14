@@ -67,6 +67,7 @@
     "title": "Настройки",
     "language": "Язык",
     "theme": "Тема",
+    "currentTheme": "Текущая тема",
     "themes": {
       "diamond": "Алмаз",
       "sapphire": "Сапфир",

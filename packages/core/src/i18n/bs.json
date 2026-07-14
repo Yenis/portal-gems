@@ -67,6 +67,7 @@
     "title": "Postavke",
     "language": "Jezik",
     "theme": "Tema",
+    "currentTheme": "Trenutna tema",
     "themes": {
       "diamond": "Dijamant",
       "sapphire": "Safir",
