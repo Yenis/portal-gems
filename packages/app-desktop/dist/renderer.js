@@ -24339,6 +24339,83 @@
     }
   }
 
+  // ../core/src/servers.ts
+  var PORTALGEMS_RENDEZVOUS_URL = "wss://be-my-guest.io/v1";
+  var PORTALGEMS_TRANSIT_URL = "tcp://be-my-guest.io:4001";
+  var isPortalgemsConfigured = () => !/\bexample\b/.test(PORTALGEMS_RENDEZVOUS_URL);
+  var DEFAULT_SERVER_SETTINGS = { choice: "portalgems" };
+  var SERVER_CHOICES = [
+    "public",
+    "portalgems",
+    "custom"
+  ];
+  function availableServerChoices() {
+    return SERVER_CHOICES.filter(
+      (c) => c !== "portalgems" || isPortalgemsConfigured()
+    );
+  }
+  function resolveServer(s) {
+    switch (s.choice) {
+      case "public":
+        return {};
+      case "portalgems":
+        return {
+          rendezvousUrl: PORTALGEMS_RENDEZVOUS_URL,
+          transitUrl: PORTALGEMS_TRANSIT_URL
+        };
+      case "custom":
+        return {
+          rendezvousUrl: s.customRendezvousUrl?.trim() || void 0,
+          transitUrl: s.customTransitUrl?.trim() || void 0
+        };
+    }
+  }
+  function parseServerSettings(json) {
+    if (!json) return { ...DEFAULT_SERVER_SETTINGS };
+    try {
+      const v = JSON.parse(json);
+      const choice = v.choice === "public" || v.choice === "custom" || v.choice === "portalgems" ? v.choice : DEFAULT_SERVER_SETTINGS.choice;
+      return {
+        choice,
+        customRendezvousUrl: typeof v.customRendezvousUrl === "string" ? v.customRendezvousUrl : void 0,
+        customTransitUrl: typeof v.customTransitUrl === "string" ? v.customTransitUrl : void 0
+      };
+    } catch {
+      return { ...DEFAULT_SERVER_SETTINGS };
+    }
+  }
+  function serializeServerSettings(s) {
+    return JSON.stringify(s);
+  }
+  function isValidRendezvousUrl(url) {
+    const u = url.trim();
+    if (!/^wss?:\/\//i.test(u)) return false;
+    try {
+      new URL(u);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  function isValidTransitUrl(url) {
+    const u = url.trim();
+    if (!/^tcp:\/\//i.test(u)) return false;
+    try {
+      const parsed = new URL(u);
+      return parsed.hostname.length > 0 && parsed.port.length > 0;
+    } catch {
+      return false;
+    }
+  }
+  function isCustomServerUsable(s) {
+    const r = s.customRendezvousUrl?.trim();
+    const t2 = s.customTransitUrl?.trim();
+    if (!r && !t2) return false;
+    if (r && !isValidRendezvousUrl(r)) return false;
+    if (t2 && !isValidTransitUrl(t2)) return false;
+    return true;
+  }
+
   // node_modules/i18next/dist/esm/i18next.js
   var isString = (obj) => typeof obj === "string";
   var defer = () => {
@@ -27381,7 +27458,9 @@
 
   // ../core/src/i18n/bs.json
   var bs_default = {
-    app: { name: "PortalGems" },
+    app: {
+      name: "PortalGems"
+    },
     home: {
       explainLink: "Kako radi i sigurnost",
       settingsLink: "Postavke",
@@ -27447,12 +27526,28 @@
       title: "Postavke",
       language: "Jezik",
       theme: "Tema",
+      currentTheme: "Trenutna tema",
       themes: {
         diamond: "Dijamant",
         sapphire: "Safir",
         emerald: "Smaragd",
         ruby: "Rubin",
         amethyst: "Ametist"
+      },
+      server: {
+        title: "Server za povezivanje",
+        hint: "Gdje se tvoji ure\u0111aji susre\u0107u da bi uspostavili prijenos. Ako slanje stalno ne uspijeva, ovdje probaj drugi server.",
+        choicePublic: "Javni server",
+        choicePublicHint: "Vodi ga zajednica. Radi s drugim magic-wormhole aplikacijama. Povremeno nedostupan.",
+        choicePortalgems: "PortalGems server",
+        choicePortalgemsHint: "Vodi ga PortalGems. Preporu\u010Deno za pouzdanost.",
+        choiceCustom: "Prilago\u0111eni server",
+        choiceCustomHint: "Tvoj vlastiti, samostalno hostani server.",
+        rendezvousLabel: "Rendezvous URL",
+        transitLabel: "URL tranzitnog releja",
+        invalidUrl: "Unesi ispravnu adresu ili ostavi prazno da se koristi zadana.",
+        leaveBlankHint: "Ostavi polje prazno da za njega zadr\u017Ei\u0161 javnu zadanu vrijednost.",
+        change: "Promijeni server"
       }
     },
     explain: {
@@ -27463,13 +27558,15 @@
       e2eTitle: "\u0160ifrovano s kraja na kraj",
       e2eBody: "Tvoja datoteka se \u0161ifruje na tvom ure\u0111aju, a de\u0161ifruje tek na ure\u0111aju primaoca. Sve izme\u0111u - uklju\u010Duju\u0107i servere preko kojih se ure\u0111aji pronalaze - vidi samo ne\u010Ditljiv \u0161ifrat.",
       directTitle: "Direktno izme\u0111u tvojih ure\u0111aja",
-      directBody: "Kada su oba ure\u0111aja na istoj Wi-Fi mre\u017Ei, datoteka putuje direktno s jednog na drugi punom lokalnom brzinom - nikada ne napu\u0161ta tvoju mre\u017Eu. Tek kada direktna veza nije mogu\u0107a (npr. jedan ure\u0111aj je na mobilnim podacima), prijenos ide preko javnog releja koji slijepo proslje\u0111uje \u0161ifrovane bajtove koje ne mo\u017Ee pro\u010Ditati.",
+      directBody: "Kada su oba ure\u0111aja na istoj Wi-Fi mre\u017Ei, datoteka putuje direktno s jednog ure\u0111aja na drugi punom lokalnom brzinom - nikada ne napu\u0161ta tvoju mre\u017Eu. Samo kada direktna veza nije mogu\u0107a (na primjer, jedan ure\u0111aj je na mobilnim podacima), prijenos prelazi na javni relej, koji slijepo proslje\u0111uje \u0161ifrovane podatke koje ne mo\u017Ee pro\u010Ditati. \u010Cak i tada, oba ure\u0111aja se prvo sretnu na mailbox serveru preko interneta da obave handshake - dakle direktna veza je br\u017Ea, ali nije offline na\u010Din rada.",
       serversTitle: "\u0160ta serveri vide",
-      serversBody: "PortalGems nema vlastite servere ni korisni\u010Dke naloge. Koristi dva mala javna servisa magic-wormhole zajednice: mailbox server na kojem se dva ure\u0111aja sretnu (kao garderoba) i gore opisani relej. Nijedan ne \u010Duva tvoje datoteke, nijedan ne zna \u0161ta si poslao/la, i oba vide samo \u0161ifrovane podatke.",
+      serversBody: "PortalGems ne vodi korisni\u010Dke ra\u010Dune i ne pohranjuje ni\u0161ta o tebi. Oslanja se na mailbox server - gdje se dva ure\u0111aja sretnu i potvrde svoj \u0161ifrovani handshake - i, kada direktna veza nije mogu\u0107a, na relej koji slijepo proslje\u0111uje \u0161ifrovane podatke. U Postavkama bira\u0161 koji server koristi\u0161: javni, PortalGems server ili svoj vlastiti. Mailbox server je klju\u010Dan za sigurnosni model: bez servera koji posreduje handshake, dva ure\u0111aja nemaju na\u010Dina da se prona\u0111u ili dogovore klju\u010D. Zato PortalGems uvijek treba internet vezu i ne mo\u017Ee raditi potpuno offline na lokalnoj mre\u017Ei.",
       pairingTitle: "Kako radi uparivanje",
       pairingBody: "Pri uparivanju dva ure\u0111aja jednom razmijene veliku nasumi\u010Dnu tajnu - QR kodom ili kopiranjem - i spreme je u za\u0161ti\u0107enu pohranu ure\u0111aja. Od tada oba ure\u0111aja mogu sama izra\u010Dunati isti jednokratni kod za svaki prijenos, pa samo potvr\u0111uje\u0161 umjesto da kuca\u0161. Ovi izvedeni kodovi su daleko ja\u010Di od kucanih i nikada ne napu\u0161taju tvoje ure\u0111aje. Uklanjanjem uparenog ure\u0111aja tajna se bri\u0161e.",
       limitsTitle: "Od \u010Dega ovo ne \u0161titi",
-      limitsBody: "Ko god vidi tvoj ekran dok je kod ili QR za uparivanje prikazan, mo\u017Ee ga iskoristiti. Ko ima pun pristup tvom otklju\u010Danom ure\u0111aju, mo\u017Ee \u010Ditati \u0161ta je na njemu. A posmatra\u010D tvoje mre\u017Ee mo\u017Ee znati da si ne\u0161to prenio/la i otprilike koliko je bilo veliko - ali nikada \u0161ta je bilo."
+      limitsBody: "Ko god vidi tvoj ekran dok je kod ili QR za uparivanje prikazan, mo\u017Ee ga iskoristiti. Ko ima pun pristup tvom otklju\u010Danom ure\u0111aju, mo\u017Ee \u010Ditati \u0161ta je na njemu. A posmatra\u010D tvoje mre\u017Ee mo\u017Ee znati da si ne\u0161to prenio/la i otprilike koliko je bilo veliko - ali nikada \u0161ta je bilo.",
+      choosingTitle: "Odabir servera",
+      choosingBody: 'PortalGems treba mailbox server da spoji dva ure\u0111aja, a u Postavkama bira\u0161 koji. Javni server je onaj koji vodi zajednica (magic-wormhole) - radi s drugim wormhole aplikacijama, ali je povremeno nedostupan. PortalGems server vodimo mi i predstavlja pouzdan zadani izbor. \u201EPrilago\u0111eni" ti omogu\u0107ava da usmjeri\u0161 aplikaciju na bilo koji server, uklju\u010Duju\u0107i onaj koji sam hostuje\u0161 - pogledaj vodi\u010D za samostalno hostanje ako te zanima. \u0160ta god odabere\u0161, tvoje datoteke ostaju end-to-end \u0161ifrovane, a server uvijek vidi samo ne\u010Ditljive podatke.'
     },
     transfer: {
       direct: "Direktna veza s drugim ure\u0111ajem",
@@ -27482,7 +27579,8 @@
       back: "Nazad",
       retry: "Poku\u0161aj ponovo",
       accept: "Prihvati",
-      decline: "Odbij"
+      decline: "Odbij",
+      gotIt: "U redu"
     },
     errors: {
       title: "Ne\u0161to je po\u0161lo po zlu",
@@ -27493,13 +27591,17 @@
       peerGone: "Druga strana je nestala prije zavr\u0161etka prijenosa.",
       declinedBySender: "Druga strana je odbila ili otkazala prijenos.",
       transferFailed: "Prijenos nije uspio: {{message}}",
-      cancelled: "Prijenos otkazan."
+      cancelled: "Prijenos otkazan.",
+      serverUnreachable: "Nije mogu\u0107e dohvatiti server za povezivanje. Mo\u017Eda je privremeno nedostupan. Otvori Postavke i prebaci se na PortalGems server ili koristi vlastiti - pogledaj vodi\u010D za samostalno hostanje.",
+      invalidServerUrl: "Adresa servera nije ispravna. Provjeri je u Postavkama. Rendezvous URL izgleda kao wss://host/v1, a relej kao tcp://host:4001."
     }
   };
 
   // ../core/src/i18n/de.json
   var de_default = {
-    app: { name: "PortalGems" },
+    app: {
+      name: "PortalGems"
+    },
     home: {
       explainLink: "So funktioniert's & Sicherheit",
       settingsLink: "Einstellungen",
@@ -27565,12 +27667,28 @@
       title: "Einstellungen",
       language: "Sprache",
       theme: "Design",
+      currentTheme: "Aktuelles Design",
       themes: {
         diamond: "Diamant",
         sapphire: "Saphir",
         emerald: "Smaragd",
         ruby: "Rubin",
         amethyst: "Amethyst"
+      },
+      server: {
+        title: "Verbindungsserver",
+        hint: "Wo sich deine Ger\xE4te treffen, um eine \xDCbertragung aufzubauen. Wenn das Senden immer wieder fehlschl\xE4gt, probiere hier einen anderen Server.",
+        choicePublic: "\xD6ffentlicher Server",
+        choicePublicHint: "Von der Community betrieben. Funktioniert mit anderen magic-wormhole-Apps. Gelegentlich nicht verf\xFCgbar.",
+        choicePortalgems: "PortalGems-Server",
+        choicePortalgemsHint: "Von PortalGems betrieben. F\xFCr Zuverl\xE4ssigkeit empfohlen.",
+        choiceCustom: "Eigener Server",
+        choiceCustomHint: "Dein eigener, selbst gehosteter Server.",
+        rendezvousLabel: "Rendezvous-URL",
+        transitLabel: "Transit-Relay-URL",
+        invalidUrl: "Gib eine g\xFCltige Adresse ein oder lass das Feld leer, um die Standardeinstellung zu verwenden.",
+        leaveBlankHint: "Lass ein Feld leer, um daf\xFCr den \xF6ffentlichen Standard zu behalten.",
+        change: "Server \xE4ndern"
       }
     },
     explain: {
@@ -27581,13 +27699,15 @@
       e2eTitle: "Ende-zu-Ende verschl\xFCsselt",
       e2eBody: "Deine Datei wird auf deinem Ger\xE4t verschl\xFCsselt und erst auf dem Empfangsger\xE4t wieder entschl\xFCsselt. Alles dazwischen - auch die Server, \xFCber die sich die Ger\xE4te finden - sieht nur unlesbaren Geheimtext.",
       directTitle: "Direkt zwischen deinen Ger\xE4ten",
-      directBody: "Sind beide Ger\xE4te im selben WLAN, wandert die Datei direkt von Ger\xE4t zu Ger\xE4t mit voller lokaler Geschwindigkeit - sie verl\xE4sst dein Netzwerk nie. Nur wenn keine direkte Verbindung m\xF6glich ist (z. B. ein Ger\xE4t im Mobilfunknetz), l\xE4uft die \xDCbertragung \xFCber ein \xF6ffentliches Relay, das verschl\xFCsselte Bytes blind weiterleitet, ohne sie lesen zu k\xF6nnen.",
+      directBody: "Wenn beide Ger\xE4te im selben WLAN sind, wandert die Datei direkt von einem Ger\xE4t zum anderen - mit voller lokaler Geschwindigkeit und ohne dein Netzwerk zu verlassen. Nur wenn eine direkte Verbindung nicht m\xF6glich ist (zum Beispiel wenn ein Ger\xE4t im Mobilfunknetz ist), weicht die \xDCbertragung auf ein \xF6ffentliches Relay aus, das die verschl\xFCsselten Daten blind weiterleitet, ohne sie lesen zu k\xF6nnen. Selbst dann treffen sich die beiden Ger\xE4te zuerst an einem Mailbox-Server im Internet, um den Handshake durchzuf\xFChren - eine direkte Verbindung ist also schneller, aber kein Offline-Modus.",
       serversTitle: "Was die Server sehen",
-      serversBody: "PortalGems hat keine eigenen Server und keine Benutzerkonten. Es nutzt zwei kleine \xF6ffentliche Dienste der Magic-Wormhole-Community: einen Mailbox-Server, an dem sich zwei Ger\xE4te treffen (wie eine Garderobe), und das oben beschriebene Relay. Keiner speichert deine Dateien, keiner wei\xDF, was du gesendet hast, und beide sehen nur verschl\xFCsselte Daten.",
+      serversBody: "PortalGems f\xFChrt keine Benutzerkonten und speichert nichts \xFCber dich. Es nutzt einen Mailbox-Server - wo sich die beiden Ger\xE4te treffen und ihren verschl\xFCsselten Handshake best\xE4tigen - und, wenn keine direkte Verbindung m\xF6glich ist, ein Relay, das verschl\xFCsselte Daten blind weiterleitet. In den Einstellungen w\xE4hlst du, welchen Server du nutzt: einen \xF6ffentlichen, den PortalGems-Server oder deinen eigenen. Der Mailbox-Server ist f\xFCr das Sicherheitsmodell unverzichtbar: ohne einen Server, der den Handshake vermittelt, k\xF6nnen sich zwei Ger\xE4te nicht finden und auf keinen Schl\xFCssel einigen. PortalGems braucht daher immer eine Internetverbindung und kann nicht rein offline in einem lokalen Netzwerk arbeiten.",
       pairingTitle: "So funktioniert die Kopplung",
       pairingBody: "Beim Koppeln tauschen zwei Ger\xE4te einmalig ein gro\xDFes zuf\xE4lliges Geheimnis aus - per QR-Code oder Kopieren/Einf\xFCgen - und legen es im gesch\xFCtzten Speicher deines Ger\xE4ts ab. Danach k\xF6nnen beide Ger\xE4te f\xFCr jede \xDCbertragung selbst denselben Einmal-Code berechnen; du best\xE4tigst nur noch, statt zu tippen. Diese abgeleiteten Codes sind weit st\xE4rker als getippte Codes und verlassen deine Ger\xE4te nie. Beim Entfernen eines gekoppelten Ger\xE4ts wird das Geheimnis gel\xF6scht.",
       limitsTitle: "Wovor das nicht sch\xFCtzt",
-      limitsBody: "Wer deinen Bildschirm sehen kann, w\xE4hrend ein Code oder Kopplungs-QR angezeigt wird, kann ihn verwenden. Wer vollen Zugriff auf dein entsperrtes Ger\xE4t hat, kann lesen, was darauf gespeichert ist. Und ein Beobachter deines Netzwerks erkennt, dass du etwas \xFCbertragen hast und ungef\xE4hr wie gro\xDF es war - aber nie, was es war."
+      limitsBody: "Wer deinen Bildschirm sehen kann, w\xE4hrend ein Code oder Kopplungs-QR angezeigt wird, kann ihn verwenden. Wer vollen Zugriff auf dein entsperrtes Ger\xE4t hat, kann lesen, was darauf gespeichert ist. Und ein Beobachter deines Netzwerks erkennt, dass du etwas \xFCbertragen hast und ungef\xE4hr wie gro\xDF es war - aber nie, was es war.",
+      choosingTitle: "Server ausw\xE4hlen",
+      choosingBody: 'PortalGems braucht einen Mailbox-Server, um zwei Ger\xE4te zusammenzubringen, und in den Einstellungen w\xE4hlst du, welchen. Der \xF6ffentliche Server ist der von der Community betriebene magic-wormhole-Server - er funktioniert mit anderen wormhole-Apps, ist aber gelegentlich nicht verf\xFCgbar. Der PortalGems-Server wird von uns betrieben und ist eine zuverl\xE4ssige Standardwahl. Mit \u201EEigener" kannst du die App auf jeden beliebigen Server richten, auch auf einen selbst gehosteten - siehe die Anleitung zum Selbsthosten, falls dich das interessiert. Egal welchen du w\xE4hlst: deine Dateien bleiben Ende-zu-Ende verschl\xFCsselt, und der Server sieht immer nur unlesbare Daten.'
     },
     transfer: {
       direct: "Direkte Verbindung zum anderen Ger\xE4t",
@@ -27600,7 +27720,8 @@
       back: "Zur\xFCck",
       retry: "Erneut versuchen",
       accept: "Annehmen",
-      decline: "Ablehnen"
+      decline: "Ablehnen",
+      gotIt: "Verstanden"
     },
     errors: {
       title: "Etwas ist schiefgelaufen",
@@ -27611,7 +27732,9 @@
       peerGone: "Die Gegenseite ist verschwunden, bevor die \xDCbertragung abgeschlossen war.",
       declinedBySender: "Die \xDCbertragung wurde von der Gegenseite abgelehnt oder abgebrochen.",
       transferFailed: "Die \xDCbertragung ist fehlgeschlagen: {{message}}",
-      cancelled: "\xDCbertragung abgebrochen."
+      cancelled: "\xDCbertragung abgebrochen.",
+      serverUnreachable: "Der Verbindungsserver ist nicht erreichbar. M\xF6glicherweise ist er vor\xFCbergehend nicht verf\xFCgbar. \xD6ffne die Einstellungen und wechsle zum PortalGems-Server oder nutze deinen eigenen - siehe die Anleitung zum Selbsthosten.",
+      invalidServerUrl: "Die Serveradresse ist ung\xFCltig. Pr\xFCfe sie in den Einstellungen. Eine Rendezvous-URL sieht aus wie wss://host/v1 und ein Relay wie tcp://host:4001."
     }
   };
 
@@ -27692,18 +27815,35 @@
       back: "Back",
       retry: "Try again",
       accept: "Accept",
-      decline: "Decline"
+      decline: "Decline",
+      gotIt: "Got it"
     },
     settings: {
       title: "Settings",
       language: "Language",
       theme: "Theme",
+      currentTheme: "Current theme",
       themes: {
         diamond: "Diamond",
         sapphire: "Sapphire",
         emerald: "Emerald",
         ruby: "Ruby",
         amethyst: "Amethyst"
+      },
+      server: {
+        title: "Connection server",
+        hint: "Where your devices meet to set up a transfer. If sending keeps failing, try a different server here.",
+        choicePublic: "Public server",
+        choicePublicHint: "Community-run. Works with other magic-wormhole apps. Occasionally unavailable.",
+        choicePortalgems: "PortalGems server",
+        choicePortalgemsHint: "Run by PortalGems. Recommended for reliability.",
+        choiceCustom: "Custom server",
+        choiceCustomHint: "Your own self-hosted server.",
+        rendezvousLabel: "Rendezvous URL",
+        transitLabel: "Transit relay URL",
+        invalidUrl: "Enter a valid address, or leave blank to use the default.",
+        leaveBlankHint: "Leave a field blank to keep the public default for it.",
+        change: "Change server"
       }
     },
     explain: {
@@ -27714,13 +27854,15 @@
       e2eTitle: "Encrypted from end to end",
       e2eBody: "Your file is encrypted on your device and decrypted only on the receiving device. Everything in between - including the servers that help the two devices find each other - sees only unreadable ciphertext.",
       directTitle: "Direct between your devices",
-      directBody: "When both devices are on the same Wi-Fi network, the file travels directly from one device to the other at full local speed - it never leaves your network. Only when a direct connection is impossible (for example, one device is on mobile data) does the transfer fall back to a public relay, which blindly forwards encrypted bytes it cannot read.",
+      directBody: "When both devices are on the same Wi-Fi network, the file travels directly from one device to the other at full local speed - it never leaves your network. Only when a direct connection is impossible (for example, one device is on mobile data) does the transfer fall back to a public relay, which blindly forwards encrypted bytes it cannot read. Even then, the two devices still first meet at a mailbox server over the internet to run the handshake - so a direct connection is faster, but it is not an offline mode.",
       serversTitle: "What the servers can see",
-      serversBody: "PortalGems has no servers of its own and no user accounts. It uses two small public services run by the magic-wormhole community: a mailbox server where two devices meet (think of a coat-check counter), and the relay described above. Neither stores your files, neither knows what you sent, and both see only encrypted data.",
+      serversBody: "PortalGems keeps no user accounts and stores nothing about you. It relies on a mailbox server - where the two devices meet and confirm their encrypted handshake - and, when a direct connection is not possible, a relay that blindly forwards encrypted bytes. You choose which server to use in Settings: a public one, the PortalGems server, or your own. The mailbox is essential to the security model: without a server to broker the handshake, two devices have no way to find each other or agree on a key. So PortalGems always needs an internet connection and cannot work purely offline on a local network.",
       pairingTitle: "How pairing works",
       pairingBody: "When you pair two devices, they exchange one large random secret - via QR code or copy/paste - and store it in your device's protected storage. From then on, both devices can compute the same one-time code by themselves for every transfer, so you only confirm instead of typing. These derived codes are far stronger than typed codes, and they never leave your devices. Removing a paired device deletes the secret.",
       limitsTitle: "What this does not protect against",
-      limitsBody: "Anyone who can see your screen while a code or pairing QR is visible can use it. Anyone with full access to your unlocked device can read what is stored on it. And an observer of your network can tell that you transferred something and roughly how large it was - but never what it was."
+      limitsBody: "Anyone who can see your screen while a code or pairing QR is visible can use it. Anyone with full access to your unlocked device can read what is stored on it. And an observer of your network can tell that you transferred something and roughly how large it was - but never what it was.",
+      choosingTitle: "Choosing a server",
+      choosingBody: "PortalGems needs a mailbox server to introduce two devices, and you pick which one in Settings. The Public server is the community-run magic-wormhole one - it works with other wormhole apps but is occasionally unavailable. The PortalGems server is run by us and makes a reliable default. Custom lets you point the app at any server, including one you host yourself - see the self-hosting guide if you are interested. Whichever you choose, your files stay end-to-end encrypted and the server only ever sees scrambled data."
     },
     errors: {
       title: "Something went wrong",
@@ -27731,13 +27873,17 @@
       peerGone: "The other side went away before the transfer finished.",
       declinedBySender: "The transfer was declined or cancelled by the other side.",
       transferFailed: "The transfer failed: {{message}}",
-      cancelled: "Transfer cancelled."
+      cancelled: "Transfer cancelled.",
+      serverUnreachable: "Could not reach the connection server. It may be temporarily down. Open Settings and switch to the PortalGems server, or use your own - see the self-hosting guide.",
+      invalidServerUrl: "The server address is not valid. Check it in Settings. A rendezvous URL looks like wss://host/v1 and a relay like tcp://host:4001."
     }
   };
 
   // ../core/src/i18n/es.json
   var es_default = {
-    app: { name: "PortalGems" },
+    app: {
+      name: "PortalGems"
+    },
     home: {
       explainLink: "C\xF3mo funciona y seguridad",
       settingsLink: "Ajustes",
@@ -27803,12 +27949,28 @@
       title: "Ajustes",
       language: "Idioma",
       theme: "Tema",
+      currentTheme: "Tema actual",
       themes: {
         diamond: "Diamante",
         sapphire: "Zafiro",
         emerald: "Esmeralda",
         ruby: "Rub\xED",
         amethyst: "Amatista"
+      },
+      server: {
+        title: "Servidor de conexi\xF3n",
+        hint: "Donde tus dispositivos se encuentran para preparar una transferencia. Si el env\xEDo sigue fallando, prueba otro servidor aqu\xED.",
+        choicePublic: "Servidor p\xFAblico",
+        choicePublicHint: "Gestionado por la comunidad. Funciona con otras apps de magic-wormhole. A veces no disponible.",
+        choicePortalgems: "Servidor de PortalGems",
+        choicePortalgemsHint: "Gestionado por PortalGems. Recomendado por su fiabilidad.",
+        choiceCustom: "Servidor personalizado",
+        choiceCustomHint: "Tu propio servidor autoalojado.",
+        rendezvousLabel: "URL de encuentro",
+        transitLabel: "URL del rel\xE9 de tr\xE1nsito",
+        invalidUrl: "Introduce una direcci\xF3n v\xE1lida o d\xE9jalo en blanco para usar el valor predeterminado.",
+        leaveBlankHint: "Deja un campo en blanco para conservar el valor p\xFAblico predeterminado.",
+        change: "Cambiar servidor"
       }
     },
     explain: {
@@ -27819,13 +27981,15 @@
       e2eTitle: "Cifrado de extremo a extremo",
       e2eBody: "Tu archivo se cifra en tu dispositivo y solo se descifra en el dispositivo receptor. Todo lo que hay en medio - incluidos los servidores que ayudan a los dispositivos a encontrarse - solo ve texto cifrado ilegible.",
       directTitle: "Directo entre tus dispositivos",
-      directBody: "Cuando ambos dispositivos est\xE1n en la misma red Wi-Fi, el archivo viaja directamente de uno a otro a plena velocidad local - nunca sale de tu red. Solo cuando una conexi\xF3n directa es imposible (por ejemplo, un dispositivo con datos m\xF3viles) la transferencia recurre a un rel\xE9 p\xFAblico, que reenv\xEDa a ciegas bytes cifrados que no puede leer.",
+      directBody: "Cuando ambos dispositivos est\xE1n en la misma red Wi-Fi, el archivo viaja directamente de un dispositivo a otro a plena velocidad local, y nunca sale de tu red. Solo cuando una conexi\xF3n directa es imposible (por ejemplo, un dispositivo est\xE1 en datos m\xF3viles) la transferencia recurre a un rel\xE9 p\xFAblico, que reenv\xEDa a ciegas datos cifrados que no puede leer. Incluso entonces, los dos dispositivos primero se encuentran en un servidor de buz\xF3n a trav\xE9s de internet para realizar el apret\xF3n de manos, as\xED que una conexi\xF3n directa es m\xE1s r\xE1pida, pero no es un modo sin conexi\xF3n.",
       serversTitle: "Qu\xE9 ven los servidores",
-      serversBody: "PortalGems no tiene servidores propios ni cuentas de usuario. Usa dos peque\xF1os servicios p\xFAblicos gestionados por la comunidad de magic-wormhole: un servidor buz\xF3n donde dos dispositivos se encuentran (como un guardarropa) y el rel\xE9 descrito arriba. Ninguno almacena tus archivos, ninguno sabe qu\xE9 enviaste, y ambos solo ven datos cifrados.",
+      serversBody: "PortalGems no mantiene cuentas de usuario ni guarda nada sobre ti. Se apoya en un servidor de buz\xF3n - donde los dos dispositivos se encuentran y confirman su apret\xF3n de manos cifrado - y, cuando una conexi\xF3n directa no es posible, en un rel\xE9 que reenv\xEDa a ciegas datos cifrados. En Ajustes eliges qu\xE9 servidor usar: uno p\xFAblico, el servidor de PortalGems o el tuyo propio. El buz\xF3n es esencial para el modelo de seguridad: sin un servidor que medie el apret\xF3n de manos, dos dispositivos no tienen forma de encontrarse ni de acordar una clave. Por eso PortalGems siempre necesita conexi\xF3n a internet y no puede funcionar totalmente sin conexi\xF3n en una red local.",
       pairingTitle: "C\xF3mo funciona el emparejamiento",
       pairingBody: "Al emparejar dos dispositivos, estos intercambian una sola vez un gran secreto aleatorio - mediante c\xF3digo QR o copiar/pegar - y lo guardan en el almacenamiento protegido de tu dispositivo. Desde entonces, ambos dispositivos pueden calcular por s\xED mismos el mismo c\xF3digo de un solo uso para cada transferencia, as\xED que solo confirmas en lugar de teclear. Estos c\xF3digos derivados son mucho m\xE1s robustos que los tecleados y nunca salen de tus dispositivos. Al quitar un dispositivo emparejado, el secreto se borra.",
       limitsTitle: "Contra qu\xE9 no protege",
-      limitsBody: "Cualquiera que pueda ver tu pantalla mientras se muestra un c\xF3digo o un QR de emparejamiento puede usarlo. Cualquiera con acceso total a tu dispositivo desbloqueado puede leer lo que contiene. Y un observador de tu red puede saber que transferiste algo y su tama\xF1o aproximado - pero nunca qu\xE9 era."
+      limitsBody: "Cualquiera que pueda ver tu pantalla mientras se muestra un c\xF3digo o un QR de emparejamiento puede usarlo. Cualquiera con acceso total a tu dispositivo desbloqueado puede leer lo que contiene. Y un observador de tu red puede saber que transferiste algo y su tama\xF1o aproximado - pero nunca qu\xE9 era.",
+      choosingTitle: "Elegir un servidor",
+      choosingBody: "PortalGems necesita un servidor de buz\xF3n para poner en contacto a dos dispositivos, y t\xFA eliges cu\xE1l en Ajustes. El servidor p\xFAblico es el de la comunidad de magic-wormhole: funciona con otras apps de wormhole, pero a veces no est\xE1 disponible. El servidor de PortalGems lo gestionamos nosotros y es una opci\xF3n predeterminada fiable. \xABPersonalizado\xBB te permite apuntar la app a cualquier servidor, incluido uno que alojes t\xFA mismo; consulta la gu\xEDa de autoalojamiento si te interesa. Elijas lo que elijas, tus archivos siguen cifrados de extremo a extremo y el servidor solo ve datos ilegibles."
     },
     transfer: {
       direct: "Conexi\xF3n directa con el otro dispositivo",
@@ -27838,7 +28002,8 @@
       back: "Atr\xE1s",
       retry: "Reintentar",
       accept: "Aceptar",
-      decline: "Rechazar"
+      decline: "Rechazar",
+      gotIt: "Entendido"
     },
     errors: {
       title: "Algo sali\xF3 mal",
@@ -27849,13 +28014,17 @@
       peerGone: "La otra parte desapareci\xF3 antes de terminar la transferencia.",
       declinedBySender: "La otra parte rechaz\xF3 o cancel\xF3 la transferencia.",
       transferFailed: "La transferencia fall\xF3: {{message}}",
-      cancelled: "Transferencia cancelada."
+      cancelled: "Transferencia cancelada.",
+      serverUnreachable: "No se pudo contactar con el servidor de conexi\xF3n. Puede que est\xE9 temporalmente ca\xEDdo. Abre Ajustes y cambia al servidor de PortalGems, o usa el tuyo - consulta la gu\xEDa de autoalojamiento.",
+      invalidServerUrl: "La direcci\xF3n del servidor no es v\xE1lida. Compru\xE9bala en Ajustes. Una URL de encuentro es como wss://host/v1 y un rel\xE9 como tcp://host:4001."
     }
   };
 
   // ../core/src/i18n/fr.json
   var fr_default = {
-    app: { name: "PortalGems" },
+    app: {
+      name: "PortalGems"
+    },
     home: {
       explainLink: "Fonctionnement et s\xE9curit\xE9",
       settingsLink: "Param\xE8tres",
@@ -27921,12 +28090,28 @@
       title: "Param\xE8tres",
       language: "Langue",
       theme: "Th\xE8me",
+      currentTheme: "Th\xE8me actuel",
       themes: {
         diamond: "Diamant",
         sapphire: "Saphir",
         emerald: "\xC9meraude",
         ruby: "Rubis",
         amethyst: "Am\xE9thyste"
+      },
+      server: {
+        title: "Serveur de connexion",
+        hint: "L'endroit o\xF9 vos appareils se rejoignent pour \xE9tablir un transfert. Si l'envoi \xE9choue sans cesse, essayez un autre serveur ici.",
+        choicePublic: "Serveur public",
+        choicePublicHint: "G\xE9r\xE9 par la communaut\xE9. Fonctionne avec les autres applis magic-wormhole. Parfois indisponible.",
+        choicePortalgems: "Serveur PortalGems",
+        choicePortalgemsHint: "G\xE9r\xE9 par PortalGems. Recommand\xE9 pour la fiabilit\xE9.",
+        choiceCustom: "Serveur personnalis\xE9",
+        choiceCustomHint: "Votre propre serveur auto-h\xE9berg\xE9.",
+        rendezvousLabel: "URL de rendez-vous",
+        transitLabel: "URL du relais de transit",
+        invalidUrl: "Saisissez une adresse valide, ou laissez vide pour utiliser la valeur par d\xE9faut.",
+        leaveBlankHint: "Laissez un champ vide pour en conserver la valeur publique par d\xE9faut.",
+        change: "Changer de serveur"
       }
     },
     explain: {
@@ -27937,13 +28122,15 @@
       e2eTitle: "Chiffr\xE9 de bout en bout",
       e2eBody: "Votre fichier est chiffr\xE9 sur votre appareil et d\xE9chiffr\xE9 uniquement sur l'appareil du destinataire. Tout ce qui se trouve entre les deux - y compris les serveurs qui aident les appareils \xE0 se trouver - ne voit qu'un texte chiffr\xE9 illisible.",
       directTitle: "En direct entre vos appareils",
-      directBody: "Quand les deux appareils sont sur le m\xEAme r\xE9seau Wi-Fi, le fichier voyage directement de l'un \xE0 l'autre \xE0 pleine vitesse locale - il ne quitte jamais votre r\xE9seau. Ce n'est que lorsqu'une connexion directe est impossible (par exemple, un appareil en donn\xE9es mobiles) que le transfert passe par un relais public, qui fait suivre aveugl\xE9ment des octets chiffr\xE9s qu'il ne peut pas lire.",
+      directBody: "Lorsque les deux appareils sont sur le m\xEAme r\xE9seau Wi-Fi, le fichier voyage directement d'un appareil \xE0 l'autre \xE0 pleine vitesse locale - il ne quitte jamais votre r\xE9seau. Ce n'est que lorsqu'une connexion directe est impossible (par exemple, un appareil est en donn\xE9es mobiles) que le transfert bascule vers un relais public, qui transmet \xE0 l'aveugle des donn\xE9es chiffr\xE9es qu'il ne peut pas lire. M\xEAme dans ce cas, les deux appareils se rejoignent d'abord sur un serveur de bo\xEEte aux lettres via Internet pour effectuer la poign\xE9e de main - une connexion directe est donc plus rapide, mais ce n'est pas un mode hors ligne.",
       serversTitle: "Ce que voient les serveurs",
-      serversBody: "PortalGems n'a ni serveurs propres ni comptes utilisateurs. Il utilise deux petits services publics g\xE9r\xE9s par la communaut\xE9 magic-wormhole : un serveur \xAB bo\xEEte aux lettres \xBB o\xF9 deux appareils se rencontrent (comme un vestiaire), et le relais d\xE9crit ci-dessus. Aucun ne stocke vos fichiers, aucun ne sait ce que vous avez envoy\xE9, et tous deux ne voient que des donn\xE9es chiffr\xE9es.",
+      serversBody: "PortalGems ne tient aucun compte utilisateur et ne stocke rien \xE0 votre sujet. Il s'appuie sur un serveur de bo\xEEte aux lettres - o\xF9 les deux appareils se rejoignent et confirment leur poign\xE9e de main chiffr\xE9e - et, quand une connexion directe est impossible, sur un relais qui transmet \xE0 l'aveugle des donn\xE9es chiffr\xE9es. Dans les Param\xE8tres, vous choisissez le serveur \xE0 utiliser : un serveur public, le serveur PortalGems ou le v\xF4tre. La bo\xEEte aux lettres est essentielle au mod\xE8le de s\xE9curit\xE9 : sans serveur pour arbitrer la poign\xE9e de main, deux appareils n'ont aucun moyen de se trouver ni de convenir d'une cl\xE9. PortalGems a donc toujours besoin d'une connexion Internet et ne peut pas fonctionner enti\xE8rement hors ligne sur un r\xE9seau local.",
       pairingTitle: "Comment fonctionne l'association",
       pairingBody: "Lorsque vous associez deux appareils, ils \xE9changent une seule fois un grand secret al\xE9atoire - par code QR ou copier/coller - et le conservent dans le stockage prot\xE9g\xE9 de votre appareil. D\xE8s lors, les deux appareils peuvent calculer eux-m\xEAmes le m\xEAme code \xE0 usage unique pour chaque transfert : vous ne faites que confirmer au lieu de taper. Ces codes d\xE9riv\xE9s sont bien plus robustes que les codes tap\xE9s et ne quittent jamais vos appareils. Retirer un appareil associ\xE9 supprime le secret.",
       limitsTitle: "Ce contre quoi cela ne prot\xE8ge pas",
-      limitsBody: "Quiconque peut voir votre \xE9cran pendant qu'un code ou un QR d'association est affich\xE9 peut l'utiliser. Quiconque a un acc\xE8s complet \xE0 votre appareil d\xE9verrouill\xE9 peut lire ce qui s'y trouve. Et un observateur de votre r\xE9seau peut savoir que vous avez transf\xE9r\xE9 quelque chose et sa taille approximative - mais jamais ce que c'\xE9tait."
+      limitsBody: "Quiconque peut voir votre \xE9cran pendant qu'un code ou un QR d'association est affich\xE9 peut l'utiliser. Quiconque a un acc\xE8s complet \xE0 votre appareil d\xE9verrouill\xE9 peut lire ce qui s'y trouve. Et un observateur de votre r\xE9seau peut savoir que vous avez transf\xE9r\xE9 quelque chose et sa taille approximative - mais jamais ce que c'\xE9tait.",
+      choosingTitle: "Choisir un serveur",
+      choosingBody: "PortalGems a besoin d'un serveur de bo\xEEte aux lettres pour mettre deux appareils en relation, et vous choisissez lequel dans les Param\xE8tres. Le serveur public est celui de la communaut\xE9 magic-wormhole - il fonctionne avec les autres applis wormhole mais est parfois indisponible. Le serveur PortalGems est g\xE9r\xE9 par nous et constitue un choix par d\xE9faut fiable. \xAB Personnalis\xE9 \xBB vous permet de pointer l'appli vers n'importe quel serveur, y compris un que vous h\xE9bergez vous-m\xEAme - voir le guide d'auto-h\xE9bergement si cela vous int\xE9resse. Quel que soit votre choix, vos fichiers restent chiffr\xE9s de bout en bout et le serveur ne voit jamais que des donn\xE9es brouill\xE9es."
     },
     transfer: {
       direct: "Connexion directe \xE0 l'autre appareil",
@@ -27956,7 +28143,8 @@
       back: "Retour",
       retry: "R\xE9essayer",
       accept: "Accepter",
-      decline: "Refuser"
+      decline: "Refuser",
+      gotIt: "Compris"
     },
     errors: {
       title: "Un probl\xE8me est survenu",
@@ -27967,13 +28155,17 @@
       peerGone: "L'autre partie a disparu avant la fin du transfert.",
       declinedBySender: "Le transfert a \xE9t\xE9 refus\xE9 ou annul\xE9 par l'autre partie.",
       transferFailed: "Le transfert a \xE9chou\xE9 : {{message}}",
-      cancelled: "Transfert annul\xE9."
+      cancelled: "Transfert annul\xE9.",
+      serverUnreachable: "Impossible de joindre le serveur de connexion. Il est peut-\xEAtre temporairement hors service. Ouvrez les Param\xE8tres et passez au serveur PortalGems, ou utilisez le v\xF4tre - voir le guide d'auto-h\xE9bergement.",
+      invalidServerUrl: "L'adresse du serveur n'est pas valide. V\xE9rifiez-la dans les Param\xE8tres. Une URL de rendez-vous ressemble \xE0 wss://host/v1 et un relais \xE0 tcp://host:4001."
     }
   };
 
   // ../core/src/i18n/ru.json
   var ru_default = {
-    app: { name: "PortalGems" },
+    app: {
+      name: "PortalGems"
+    },
     home: {
       explainLink: "\u041A\u0430\u043A \u044D\u0442\u043E \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442 \u0438 \u0431\u0435\u0437\u043E\u043F\u0430\u0441\u043D\u043E\u0441\u0442\u044C",
       settingsLink: "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438",
@@ -28039,12 +28231,28 @@
       title: "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438",
       language: "\u042F\u0437\u044B\u043A",
       theme: "\u0422\u0435\u043C\u0430",
+      currentTheme: "\u0422\u0435\u043A\u0443\u0449\u0430\u044F \u0442\u0435\u043C\u0430",
       themes: {
         diamond: "\u0410\u043B\u043C\u0430\u0437",
         sapphire: "\u0421\u0430\u043F\u0444\u0438\u0440",
         emerald: "\u0418\u0437\u0443\u043C\u0440\u0443\u0434",
         ruby: "\u0420\u0443\u0431\u0438\u043D",
         amethyst: "\u0410\u043C\u0435\u0442\u0438\u0441\u0442"
+      },
+      server: {
+        title: "\u0421\u0435\u0440\u0432\u0435\u0440 \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u044F",
+        hint: "\u0413\u0434\u0435 \u0432\u0430\u0448\u0438 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u0432\u0441\u0442\u0440\u0435\u0447\u0430\u044E\u0442\u0441\u044F, \u0447\u0442\u043E\u0431\u044B \u043D\u0430\u0447\u0430\u0442\u044C \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0443. \u0415\u0441\u043B\u0438 \u043E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 \u043F\u043E\u0441\u0442\u043E\u044F\u043D\u043D\u043E \u043D\u0435 \u0443\u0434\u0430\u0451\u0442\u0441\u044F, \u043F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0434\u0440\u0443\u0433\u043E\u0439 \u0441\u0435\u0440\u0432\u0435\u0440.",
+        choicePublic: "\u041F\u0443\u0431\u043B\u0438\u0447\u043D\u044B\u0439 \u0441\u0435\u0440\u0432\u0435\u0440",
+        choicePublicHint: "\u041F\u043E\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u0435\u0442\u0441\u044F \u0441\u043E\u043E\u0431\u0449\u0435\u0441\u0442\u0432\u043E\u043C. \u0420\u0430\u0431\u043E\u0442\u0430\u0435\u0442 \u0441 \u0434\u0440\u0443\u0433\u0438\u043C\u0438 \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u044F\u043C\u0438 magic-wormhole. \u0418\u043D\u043E\u0433\u0434\u0430 \u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u0435\u043D.",
+        choicePortalgems: "\u0421\u0435\u0440\u0432\u0435\u0440 PortalGems",
+        choicePortalgemsHint: "\u0423\u043F\u0440\u0430\u0432\u043B\u044F\u0435\u0442\u0441\u044F PortalGems. \u0420\u0435\u043A\u043E\u043C\u0435\u043D\u0434\u0443\u0435\u0442\u0441\u044F \u0434\u043B\u044F \u043D\u0430\u0434\u0451\u0436\u043D\u043E\u0441\u0442\u0438.",
+        choiceCustom: "\u0421\u0432\u043E\u0439 \u0441\u0435\u0440\u0432\u0435\u0440",
+        choiceCustomHint: "\u0412\u0430\u0448 \u0441\u043E\u0431\u0441\u0442\u0432\u0435\u043D\u043D\u044B\u0439 \u0441\u0435\u0440\u0432\u0435\u0440 \u043D\u0430 \u0441\u0430\u043C\u043E\u0441\u0442\u043E\u044F\u0442\u0435\u043B\u044C\u043D\u043E\u043C \u0445\u043E\u0441\u0442\u0438\u043D\u0433\u0435.",
+        rendezvousLabel: "URL \u0440\u0430\u043D\u0434\u0435\u0432\u0443",
+        transitLabel: "URL \u0442\u0440\u0430\u043D\u0437\u0438\u0442\u043D\u043E\u0433\u043E \u0440\u0435\u043B\u0435\u044F",
+        invalidUrl: "\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u043A\u043E\u0440\u0440\u0435\u043A\u0442\u043D\u044B\u0439 \u0430\u0434\u0440\u0435\u0441 \u0438\u043B\u0438 \u043E\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u043F\u043E\u043B\u0435 \u043F\u0443\u0441\u0442\u044B\u043C, \u0447\u0442\u043E\u0431\u044B \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u044C \u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0435 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E.",
+        leaveBlankHint: "\u041E\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u043F\u043E\u043B\u0435 \u043F\u0443\u0441\u0442\u044B\u043C, \u0447\u0442\u043E\u0431\u044B \u0441\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C \u0434\u043B\u044F \u043D\u0435\u0433\u043E \u043F\u0443\u0431\u043B\u0438\u0447\u043D\u043E\u0435 \u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0435 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E.",
+        change: "\u0421\u043C\u0435\u043D\u0438\u0442\u044C \u0441\u0435\u0440\u0432\u0435\u0440"
       }
     },
     explain: {
@@ -28055,13 +28263,15 @@
       e2eTitle: "\u0421\u043A\u0432\u043E\u0437\u043D\u043E\u0435 \u0448\u0438\u0444\u0440\u043E\u0432\u0430\u043D\u0438\u0435",
       e2eBody: "\u0424\u0430\u0439\u043B \u0448\u0438\u0444\u0440\u0443\u0435\u0442\u0441\u044F \u043D\u0430 \u0432\u0430\u0448\u0435\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0435 \u0438 \u0440\u0430\u0441\u0448\u0438\u0444\u0440\u043E\u0432\u044B\u0432\u0430\u0435\u0442\u0441\u044F \u0442\u043E\u043B\u044C\u043A\u043E \u043D\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0435 \u043F\u043E\u043B\u0443\u0447\u0430\u0442\u0435\u043B\u044F. \u0412\u0441\u0451, \u0447\u0442\u043E \u043C\u0435\u0436\u0434\u0443 \u043D\u0438\u043C\u0438 - \u0432\u043A\u043B\u044E\u0447\u0430\u044F \u0441\u0435\u0440\u0432\u0435\u0440\u044B, \u043F\u043E\u043C\u043E\u0433\u0430\u044E\u0449\u0438\u0435 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430\u043C \u043D\u0430\u0439\u0442\u0438 \u0434\u0440\u0443\u0433 \u0434\u0440\u0443\u0433\u0430, - \u0432\u0438\u0434\u0438\u0442 \u043B\u0438\u0448\u044C \u043D\u0435\u0447\u0438\u0442\u0430\u0435\u043C\u044B\u0439 \u0448\u0438\u0444\u0440\u043E\u0442\u0435\u043A\u0441\u0442.",
       directTitle: "\u041D\u0430\u043F\u0440\u044F\u043C\u0443\u044E \u043C\u0435\u0436\u0434\u0443 \u0432\u0430\u0448\u0438\u043C\u0438 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430\u043C\u0438",
-      directBody: "\u0415\u0441\u043B\u0438 \u043E\u0431\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u0432 \u043E\u0434\u043D\u043E\u0439 \u0441\u0435\u0442\u0438 Wi-Fi, \u0444\u0430\u0439\u043B \u043F\u0435\u0440\u0435\u0434\u0430\u0451\u0442\u0441\u044F \u043D\u0430\u043F\u0440\u044F\u043C\u0443\u044E \u0441 \u043E\u0434\u043D\u043E\u0433\u043E \u043D\u0430 \u0434\u0440\u0443\u0433\u043E\u0435 \u043D\u0430 \u043F\u043E\u043B\u043D\u043E\u0439 \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u043E\u0439 \u0441\u043A\u043E\u0440\u043E\u0441\u0442\u0438 - \u043E\u043D \u043D\u0438\u043A\u043E\u0433\u0434\u0430 \u043D\u0435 \u043F\u043E\u043A\u0438\u0434\u0430\u0435\u0442 \u0432\u0430\u0448\u0443 \u0441\u0435\u0442\u044C. \u041B\u0438\u0448\u044C \u043A\u043E\u0433\u0434\u0430 \u043F\u0440\u044F\u043C\u043E\u0435 \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u0435 \u043D\u0435\u0432\u043E\u0437\u043C\u043E\u0436\u043D\u043E (\u043D\u0430\u043F\u0440\u0438\u043C\u0435\u0440, \u043E\u0434\u043D\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E \u0432 \u043C\u043E\u0431\u0438\u043B\u044C\u043D\u043E\u0439 \u0441\u0435\u0442\u0438), \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0430 \u0438\u0434\u0451\u0442 \u0447\u0435\u0440\u0435\u0437 \u043F\u0443\u0431\u043B\u0438\u0447\u043D\u044B\u0439 \u0440\u0435\u0442\u0440\u0430\u043D\u0441\u043B\u044F\u0442\u043E\u0440, \u043A\u043E\u0442\u043E\u0440\u044B\u0439 \u0432\u0441\u043B\u0435\u043F\u0443\u044E \u043F\u0435\u0440\u0435\u0441\u044B\u043B\u0430\u0435\u0442 \u0437\u0430\u0448\u0438\u0444\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0435 \u0431\u0430\u0439\u0442\u044B, \u043D\u0435 \u0438\u043C\u0435\u044F \u0432\u043E\u0437\u043C\u043E\u0436\u043D\u043E\u0441\u0442\u0438 \u0438\u0445 \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u0442\u044C.",
+      directBody: "\u041A\u043E\u0433\u0434\u0430 \u043E\u0431\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u0432 \u043E\u0434\u043D\u043E\u0439 \u0441\u0435\u0442\u0438 Wi-Fi, \u0444\u0430\u0439\u043B \u043F\u0435\u0440\u0435\u0434\u0430\u0451\u0442\u0441\u044F \u043D\u0430\u043F\u0440\u044F\u043C\u0443\u044E \u0441 \u043E\u0434\u043D\u043E\u0433\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u043D\u0430 \u0434\u0440\u0443\u0433\u043E\u0435 \u043D\u0430 \u043F\u043E\u043B\u043D\u043E\u0439 \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u043E\u0439 \u0441\u043A\u043E\u0440\u043E\u0441\u0442\u0438 \u0438 \u043D\u0438\u043A\u043E\u0433\u0434\u0430 \u043D\u0435 \u043F\u043E\u043A\u0438\u0434\u0430\u0435\u0442 \u0432\u0430\u0448\u0443 \u0441\u0435\u0442\u044C. \u0422\u043E\u043B\u044C\u043A\u043E \u043A\u043E\u0433\u0434\u0430 \u043F\u0440\u044F\u043C\u043E\u0435 \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u0435 \u043D\u0435\u0432\u043E\u0437\u043C\u043E\u0436\u043D\u043E (\u043D\u0430\u043F\u0440\u0438\u043C\u0435\u0440, \u043E\u0434\u043D\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E \u0432 \u043C\u043E\u0431\u0438\u043B\u044C\u043D\u043E\u0439 \u0441\u0435\u0442\u0438), \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0430 \u043F\u0435\u0440\u0435\u0445\u043E\u0434\u0438\u0442 \u043D\u0430 \u043F\u0443\u0431\u043B\u0438\u0447\u043D\u044B\u0439 \u0440\u0435\u043B\u0435\u0439, \u043A\u043E\u0442\u043E\u0440\u044B\u0439 \u0432\u0441\u043B\u0435\u043F\u0443\u044E \u043F\u0435\u0440\u0435\u0441\u044B\u043B\u0430\u0435\u0442 \u0437\u0430\u0448\u0438\u0444\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0435 \u0434\u0430\u043D\u043D\u044B\u0435, \u043D\u0435 \u0447\u0438\u0442\u0430\u044F \u0438\u0445. \u041D\u043E \u0434\u0430\u0436\u0435 \u0442\u043E\u0433\u0434\u0430 \u043E\u0431\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u0441\u043D\u0430\u0447\u0430\u043B\u0430 \u0432\u0441\u0442\u0440\u0435\u0447\u0430\u044E\u0442\u0441\u044F \u043D\u0430 \u043F\u043E\u0447\u0442\u043E\u0432\u043E\u043C \u0441\u0435\u0440\u0432\u0435\u0440\u0435 (mailbox) \u0447\u0435\u0440\u0435\u0437 \u0438\u043D\u0442\u0435\u0440\u043D\u0435\u0442, \u0447\u0442\u043E\u0431\u044B \u0432\u044B\u043F\u043E\u043B\u043D\u0438\u0442\u044C \u0440\u0443\u043A\u043E\u043F\u043E\u0436\u0430\u0442\u0438\u0435 - \u0442\u043E \u0435\u0441\u0442\u044C \u043F\u0440\u044F\u043C\u043E\u0435 \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u0435 \u0431\u044B\u0441\u0442\u0440\u0435\u0435, \u043D\u043E \u044D\u0442\u043E \u043D\u0435 \u043E\u0444\u043B\u0430\u0439\u043D-\u0440\u0435\u0436\u0438\u043C.",
       serversTitle: "\u0427\u0442\u043E \u0432\u0438\u0434\u044F\u0442 \u0441\u0435\u0440\u0432\u0435\u0440\u044B",
-      serversBody: "\u0423 PortalGems \u043D\u0435\u0442 \u0441\u043E\u0431\u0441\u0442\u0432\u0435\u043D\u043D\u044B\u0445 \u0441\u0435\u0440\u0432\u0435\u0440\u043E\u0432 \u0438 \u0443\u0447\u0451\u0442\u043D\u044B\u0445 \u0437\u0430\u043F\u0438\u0441\u0435\u0439. \u0418\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u044E\u0442\u0441\u044F \u0434\u0432\u0430 \u043D\u0435\u0431\u043E\u043B\u044C\u0448\u0438\u0445 \u043F\u0443\u0431\u043B\u0438\u0447\u043D\u044B\u0445 \u0441\u0435\u0440\u0432\u0438\u0441\u0430 \u0441\u043E\u043E\u0431\u0449\u0435\u0441\u0442\u0432\u0430 magic-wormhole: \u043F\u043E\u0447\u0442\u043E\u0432\u044B\u0439 \u0441\u0435\u0440\u0432\u0435\u0440, \u0433\u0434\u0435 \u0432\u0441\u0442\u0440\u0435\u0447\u0430\u044E\u0442\u0441\u044F \u0434\u0432\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 (\u043A\u0430\u043A \u0433\u0430\u0440\u0434\u0435\u0440\u043E\u0431\u043D\u0430\u044F \u0441\u0442\u043E\u0439\u043A\u0430), \u0438 \u043E\u043F\u0438\u0441\u0430\u043D\u043D\u044B\u0439 \u0432\u044B\u0448\u0435 \u0440\u0435\u0442\u0440\u0430\u043D\u0441\u043B\u044F\u0442\u043E\u0440. \u041D\u0438 \u043E\u0434\u0438\u043D \u043D\u0435 \u0445\u0440\u0430\u043D\u0438\u0442 \u0432\u0430\u0448\u0438 \u0444\u0430\u0439\u043B\u044B, \u043D\u0438 \u043E\u0434\u0438\u043D \u043D\u0435 \u0437\u043D\u0430\u0435\u0442, \u0447\u0442\u043E \u0432\u044B \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u043B\u0438, \u0438 \u043E\u0431\u0430 \u0432\u0438\u0434\u044F\u0442 \u0442\u043E\u043B\u044C\u043A\u043E \u0437\u0430\u0448\u0438\u0444\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0435 \u0434\u0430\u043D\u043D\u044B\u0435.",
+      serversBody: "PortalGems \u043D\u0435 \u0445\u0440\u0430\u043D\u0438\u0442 \u0443\u0447\u0451\u0442\u043D\u044B\u0435 \u0437\u0430\u043F\u0438\u0441\u0438 \u0438 \u043D\u0438\u0447\u0435\u0433\u043E \u043E \u0432\u0430\u0441 \u043D\u0435 \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u0435\u0442. \u041E\u043D \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0435\u0442 \u043F\u043E\u0447\u0442\u043E\u0432\u044B\u0439 \u0441\u0435\u0440\u0432\u0435\u0440 (mailbox) - \u0433\u0434\u0435 \u0434\u0432\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u0432\u0441\u0442\u0440\u0435\u0447\u0430\u044E\u0442\u0441\u044F \u0438 \u043F\u043E\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0430\u044E\u0442 \u0437\u0430\u0448\u0438\u0444\u0440\u043E\u0432\u0430\u043D\u043D\u043E\u0435 \u0440\u0443\u043A\u043E\u043F\u043E\u0436\u0430\u0442\u0438\u0435 - \u0438, \u043A\u043E\u0433\u0434\u0430 \u043F\u0440\u044F\u043C\u043E\u0435 \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u0435 \u043D\u0435\u0432\u043E\u0437\u043C\u043E\u0436\u043D\u043E, \u0440\u0435\u043B\u0435\u0439, \u043A\u043E\u0442\u043E\u0440\u044B\u0439 \u0432\u0441\u043B\u0435\u043F\u0443\u044E \u043F\u0435\u0440\u0435\u0441\u044B\u043B\u0430\u0435\u0442 \u0437\u0430\u0448\u0438\u0444\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0435 \u0434\u0430\u043D\u043D\u044B\u0435. \u0412 \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0430\u0445 \u0432\u044B \u0432\u044B\u0431\u0438\u0440\u0430\u0435\u0442\u0435, \u043A\u0430\u043A\u043E\u0439 \u0441\u0435\u0440\u0432\u0435\u0440 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u044C: \u043F\u0443\u0431\u043B\u0438\u0447\u043D\u044B\u0439, \u0441\u0435\u0440\u0432\u0435\u0440 PortalGems \u0438\u043B\u0438 \u0441\u0432\u043E\u0439 \u0441\u043E\u0431\u0441\u0442\u0432\u0435\u043D\u043D\u044B\u0439. \u041F\u043E\u0447\u0442\u043E\u0432\u044B\u0439 \u0441\u0435\u0440\u0432\u0435\u0440 \u043D\u0435\u043E\u0431\u0445\u043E\u0434\u0438\u043C \u0434\u043B\u044F \u043C\u043E\u0434\u0435\u043B\u0438 \u0431\u0435\u0437\u043E\u043F\u0430\u0441\u043D\u043E\u0441\u0442\u0438: \u0431\u0435\u0437 \u0441\u0435\u0440\u0432\u0435\u0440\u0430, \u043A\u043E\u0442\u043E\u0440\u044B\u0439 \u043F\u043E\u0441\u0440\u0435\u0434\u043D\u0438\u0447\u0430\u0435\u0442 \u0432 \u0440\u0443\u043A\u043E\u043F\u043E\u0436\u0430\u0442\u0438\u0438, \u0434\u0432\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u043D\u0435 \u043C\u043E\u0433\u0443\u0442 \u043D\u0430\u0439\u0442\u0438 \u0434\u0440\u0443\u0433 \u0434\u0440\u0443\u0433\u0430 \u0438\u043B\u0438 \u0441\u043E\u0433\u043B\u0430\u0441\u043E\u0432\u0430\u0442\u044C \u043A\u043B\u044E\u0447. \u041F\u043E\u044D\u0442\u043E\u043C\u0443 PortalGems \u0432\u0441\u0435\u0433\u0434\u0430 \u0442\u0440\u0435\u0431\u0443\u0435\u0442 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u044F \u043A \u0438\u043D\u0442\u0435\u0440\u043D\u0435\u0442\u0443 \u0438 \u043D\u0435 \u043C\u043E\u0436\u0435\u0442 \u0440\u0430\u0431\u043E\u0442\u0430\u0442\u044C \u043F\u043E\u043B\u043D\u043E\u0441\u0442\u044C\u044E \u043E\u0444\u043B\u0430\u0439\u043D \u0432 \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u043E\u0439 \u0441\u0435\u0442\u0438.",
       pairingTitle: "\u041A\u0430\u043A \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442 \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u0435",
       pairingBody: "\u041F\u0440\u0438 \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u0438 \u0434\u0432\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u043E\u0434\u0438\u043D \u0440\u0430\u0437 \u043E\u0431\u043C\u0435\u043D\u0438\u0432\u0430\u044E\u0442\u0441\u044F \u0431\u043E\u043B\u044C\u0448\u0438\u043C \u0441\u043B\u0443\u0447\u0430\u0439\u043D\u044B\u043C \u0441\u0435\u043A\u0440\u0435\u0442\u043E\u043C - \u0447\u0435\u0440\u0435\u0437 QR-\u043A\u043E\u0434 \u0438\u043B\u0438 \u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u0435 - \u0438 \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u044E\u0442 \u0435\u0433\u043E \u0432 \u0437\u0430\u0449\u0438\u0449\u0451\u043D\u043D\u043E\u043C \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430. \u0421 \u044D\u0442\u043E\u0433\u043E \u043C\u043E\u043C\u0435\u043D\u0442\u0430 \u043E\u0431\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u043C\u043E\u0433\u0443\u0442 \u0441\u0430\u043C\u0438 \u0432\u044B\u0447\u0438\u0441\u043B\u044F\u0442\u044C \u043E\u0434\u0438\u043D\u0430\u043A\u043E\u0432\u044B\u0439 \u043E\u0434\u043D\u043E\u0440\u0430\u0437\u043E\u0432\u044B\u0439 \u043A\u043E\u0434 \u0434\u043B\u044F \u043A\u0430\u0436\u0434\u043E\u0439 \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0438, \u0438 \u0432\u0430\u043C \u043E\u0441\u0442\u0430\u0451\u0442\u0441\u044F \u043B\u0438\u0448\u044C \u043F\u043E\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u044C, \u0430 \u043D\u0435 \u0432\u0432\u043E\u0434\u0438\u0442\u044C. \u0422\u0430\u043A\u0438\u0435 \u043A\u043E\u0434\u044B \u043D\u0430\u043C\u043D\u043E\u0433\u043E \u0441\u0442\u043E\u0439\u0447\u0435 \u0432\u0432\u043E\u0434\u0438\u043C\u044B\u0445 \u0432\u0440\u0443\u0447\u043D\u0443\u044E \u0438 \u043D\u0438\u043A\u043E\u0433\u0434\u0430 \u043D\u0435 \u043F\u043E\u043A\u0438\u0434\u0430\u044E\u0442 \u0432\u0430\u0448\u0438 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430. \u041F\u0440\u0438 \u0443\u0434\u0430\u043B\u0435\u043D\u0438\u0438 \u0441\u0432\u044F\u0437\u0430\u043D\u043D\u043E\u0433\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u0441\u0435\u043A\u0440\u0435\u0442 \u0441\u0442\u0438\u0440\u0430\u0435\u0442\u0441\u044F.",
       limitsTitle: "\u041E\u0442 \u0447\u0435\u0433\u043E \u044D\u0442\u043E \u043D\u0435 \u0437\u0430\u0449\u0438\u0449\u0430\u0435\u0442",
-      limitsBody: "\u0422\u043E\u0442, \u043A\u0442\u043E \u0432\u0438\u0434\u0438\u0442 \u0432\u0430\u0448 \u044D\u043A\u0440\u0430\u043D, \u043F\u043E\u043A\u0430 \u043F\u043E\u043A\u0430\u0437\u0430\u043D \u043A\u043E\u0434 \u0438\u043B\u0438 QR \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u044F, \u043C\u043E\u0436\u0435\u0442 \u0438\u043C \u0432\u043E\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u044C\u0441\u044F. \u0422\u043E\u0442, \u0443 \u043A\u043E\u0433\u043E \u043F\u043E\u043B\u043D\u044B\u0439 \u0434\u043E\u0441\u0442\u0443\u043F \u043A \u0432\u0430\u0448\u0435\u043C\u0443 \u0440\u0430\u0437\u0431\u043B\u043E\u043A\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u043E\u043C\u0443 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0443, \u043C\u043E\u0436\u0435\u0442 \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u0442\u044C \u0435\u0433\u043E \u0441\u043E\u0434\u0435\u0440\u0436\u0438\u043C\u043E\u0435. \u0410 \u043D\u0430\u0431\u043B\u044E\u0434\u0430\u0442\u0435\u043B\u044C \u0432\u0430\u0448\u0435\u0439 \u0441\u0435\u0442\u0438 \u043C\u043E\u0436\u0435\u0442 \u043F\u043E\u043D\u044F\u0442\u044C, \u0447\u0442\u043E \u0432\u044B \u0447\u0442\u043E-\u0442\u043E \u043F\u0435\u0440\u0435\u0434\u0430\u043B\u0438, \u0438 \u043F\u0440\u0438\u043C\u0435\u0440\u043D\u043E \u043A\u0430\u043A\u043E\u0433\u043E \u0440\u0430\u0437\u043C\u0435\u0440\u0430 - \u043D\u043E \u043D\u0438\u043A\u043E\u0433\u0434\u0430 \u043D\u0435 \u0443\u0437\u043D\u0430\u0435\u0442, \u0447\u0442\u043E \u0438\u043C\u0435\u043D\u043D\u043E."
+      limitsBody: "\u0422\u043E\u0442, \u043A\u0442\u043E \u0432\u0438\u0434\u0438\u0442 \u0432\u0430\u0448 \u044D\u043A\u0440\u0430\u043D, \u043F\u043E\u043A\u0430 \u043F\u043E\u043A\u0430\u0437\u0430\u043D \u043A\u043E\u0434 \u0438\u043B\u0438 QR \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u044F, \u043C\u043E\u0436\u0435\u0442 \u0438\u043C \u0432\u043E\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u044C\u0441\u044F. \u0422\u043E\u0442, \u0443 \u043A\u043E\u0433\u043E \u043F\u043E\u043B\u043D\u044B\u0439 \u0434\u043E\u0441\u0442\u0443\u043F \u043A \u0432\u0430\u0448\u0435\u043C\u0443 \u0440\u0430\u0437\u0431\u043B\u043E\u043A\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u043E\u043C\u0443 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0443, \u043C\u043E\u0436\u0435\u0442 \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u0442\u044C \u0435\u0433\u043E \u0441\u043E\u0434\u0435\u0440\u0436\u0438\u043C\u043E\u0435. \u0410 \u043D\u0430\u0431\u043B\u044E\u0434\u0430\u0442\u0435\u043B\u044C \u0432\u0430\u0448\u0435\u0439 \u0441\u0435\u0442\u0438 \u043C\u043E\u0436\u0435\u0442 \u043F\u043E\u043D\u044F\u0442\u044C, \u0447\u0442\u043E \u0432\u044B \u0447\u0442\u043E-\u0442\u043E \u043F\u0435\u0440\u0435\u0434\u0430\u043B\u0438, \u0438 \u043F\u0440\u0438\u043C\u0435\u0440\u043D\u043E \u043A\u0430\u043A\u043E\u0433\u043E \u0440\u0430\u0437\u043C\u0435\u0440\u0430 - \u043D\u043E \u043D\u0438\u043A\u043E\u0433\u0434\u0430 \u043D\u0435 \u0443\u0437\u043D\u0430\u0435\u0442, \u0447\u0442\u043E \u0438\u043C\u0435\u043D\u043D\u043E.",
+      choosingTitle: "\u0412\u044B\u0431\u043E\u0440 \u0441\u0435\u0440\u0432\u0435\u0440\u0430",
+      choosingBody: "PortalGems \u043D\u0443\u0436\u0435\u043D \u043F\u043E\u0447\u0442\u043E\u0432\u044B\u0439 \u0441\u0435\u0440\u0432\u0435\u0440 (mailbox), \u0447\u0442\u043E\u0431\u044B \u0441\u0432\u0435\u0441\u0442\u0438 \u0434\u0432\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430, \u0438 \u0432\u044B \u0432\u044B\u0431\u0438\u0440\u0430\u0435\u0442\u0435 \u0435\u0433\u043E \u0432 \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0430\u0445. \u041F\u0443\u0431\u043B\u0438\u0447\u043D\u044B\u0439 \u0441\u0435\u0440\u0432\u0435\u0440 - \u044D\u0442\u043E \u0441\u0435\u0440\u0432\u0435\u0440 \u0441\u043E\u043E\u0431\u0449\u0435\u0441\u0442\u0432\u0430 magic-wormhole: \u043E\u043D \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442 \u0441 \u0434\u0440\u0443\u0433\u0438\u043C\u0438 \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u044F\u043C\u0438 wormhole, \u043D\u043E \u0438\u043D\u043E\u0433\u0434\u0430 \u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u0435\u043D. \u0421\u0435\u0440\u0432\u0435\u0440 PortalGems \u043F\u043E\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u0435\u0442\u0441\u044F \u043D\u0430\u043C\u0438 \u0438 \u043F\u043E\u0434\u0445\u043E\u0434\u0438\u0442 \u043A\u0430\u043A \u043D\u0430\u0434\u0451\u0436\u043D\u044B\u0439 \u0432\u0430\u0440\u0438\u0430\u043D\u0442 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E. \xAB\u0421\u0432\u043E\u0439\xBB \u043F\u043E\u0437\u0432\u043E\u043B\u044F\u0435\u0442 \u0443\u043A\u0430\u0437\u0430\u0442\u044C \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u044E \u043B\u044E\u0431\u043E\u0439 \u0441\u0435\u0440\u0432\u0435\u0440, \u0432 \u0442\u043E\u043C \u0447\u0438\u0441\u043B\u0435 \u0440\u0430\u0437\u043C\u0435\u0449\u0451\u043D\u043D\u044B\u0439 \u0432\u0430\u043C\u0438 \u0441\u0430\u043C\u0438\u043C\u0438 - \u0441\u043C. \u0440\u0443\u043A\u043E\u0432\u043E\u0434\u0441\u0442\u0432\u043E \u043F\u043E \u0441\u0430\u043C\u043E\u0441\u0442\u043E\u044F\u0442\u0435\u043B\u044C\u043D\u043E\u043C\u0443 \u0445\u043E\u0441\u0442\u0438\u043D\u0433\u0443, \u0435\u0441\u043B\u0438 \u0438\u043D\u0442\u0435\u0440\u0435\u0441\u043D\u043E. \u0427\u0442\u043E \u0431\u044B \u0432\u044B \u043D\u0438 \u0432\u044B\u0431\u0440\u0430\u043B\u0438, \u0432\u0430\u0448\u0438 \u0444\u0430\u0439\u043B\u044B \u043E\u0441\u0442\u0430\u044E\u0442\u0441\u044F \u0437\u0430\u0448\u0438\u0444\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u043C\u0438 \u0441\u043A\u0432\u043E\u0437\u043D\u044B\u043C \u043E\u0431\u0440\u0430\u0437\u043E\u043C, \u0430 \u0441\u0435\u0440\u0432\u0435\u0440 \u0432\u0441\u0435\u0433\u0434\u0430 \u0432\u0438\u0434\u0438\u0442 \u0442\u043E\u043B\u044C\u043A\u043E \u043D\u0435\u0447\u0438\u0442\u0430\u0435\u043C\u044B\u0435 \u0434\u0430\u043D\u043D\u044B\u0435."
     },
     transfer: {
       direct: "\u041F\u0440\u044F\u043C\u043E\u0435 \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u0435 \u0441 \u0434\u0440\u0443\u0433\u0438\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E\u043C",
@@ -28074,7 +28284,8 @@
       back: "\u041D\u0430\u0437\u0430\u0434",
       retry: "\u041F\u043E\u0432\u0442\u043E\u0440\u0438\u0442\u044C",
       accept: "\u041F\u0440\u0438\u043D\u044F\u0442\u044C",
-      decline: "\u041E\u0442\u043A\u043B\u043E\u043D\u0438\u0442\u044C"
+      decline: "\u041E\u0442\u043A\u043B\u043E\u043D\u0438\u0442\u044C",
+      gotIt: "\u041F\u043E\u043D\u044F\u0442\u043D\u043E"
     },
     errors: {
       title: "\u0427\u0442\u043E-\u0442\u043E \u043F\u043E\u0448\u043B\u043E \u043D\u0435 \u0442\u0430\u043A",
@@ -28085,7 +28296,9 @@
       peerGone: "\u0414\u0440\u0443\u0433\u0430\u044F \u0441\u0442\u043E\u0440\u043E\u043D\u0430 \u043F\u0440\u043E\u043F\u0430\u043B\u0430 \u0434\u043E \u0437\u0430\u0432\u0435\u0440\u0448\u0435\u043D\u0438\u044F \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0438.",
       declinedBySender: "\u0414\u0440\u0443\u0433\u0430\u044F \u0441\u0442\u043E\u0440\u043E\u043D\u0430 \u043E\u0442\u043A\u043B\u043E\u043D\u0438\u043B\u0430 \u0438\u043B\u0438 \u043E\u0442\u043C\u0435\u043D\u0438\u043B\u0430 \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0443.",
       transferFailed: "\u041F\u0435\u0440\u0435\u0434\u0430\u0447\u0430 \u043D\u0435 \u0443\u0434\u0430\u043B\u0430\u0441\u044C: {{message}}",
-      cancelled: "\u041F\u0435\u0440\u0435\u0434\u0430\u0447\u0430 \u043E\u0442\u043C\u0435\u043D\u0435\u043D\u0430."
+      cancelled: "\u041F\u0435\u0440\u0435\u0434\u0430\u0447\u0430 \u043E\u0442\u043C\u0435\u043D\u0435\u043D\u0430.",
+      serverUnreachable: "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0438\u0442\u044C\u0441\u044F \u043A \u0441\u0435\u0440\u0432\u0435\u0440\u0443 \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u044F. \u0412\u043E\u0437\u043C\u043E\u0436\u043D\u043E, \u043E\u043D \u0432\u0440\u0435\u043C\u0435\u043D\u043D\u043E \u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u0435\u043D. \u041E\u0442\u043A\u0440\u043E\u0439\u0442\u0435 \u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u0438 \u043F\u0435\u0440\u0435\u043A\u043B\u044E\u0447\u0438\u0442\u0435\u0441\u044C \u043D\u0430 \u0441\u0435\u0440\u0432\u0435\u0440 PortalGems \u0438\u043B\u0438 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0439\u0442\u0435 \u0441\u043E\u0431\u0441\u0442\u0432\u0435\u043D\u043D\u044B\u0439 - \u0441\u043C. \u0440\u0443\u043A\u043E\u0432\u043E\u0434\u0441\u0442\u0432\u043E \u043F\u043E \u0441\u0430\u043C\u043E\u0441\u0442\u043E\u044F\u0442\u0435\u043B\u044C\u043D\u043E\u043C\u0443 \u0445\u043E\u0441\u0442\u0438\u043D\u0433\u0443.",
+      invalidServerUrl: "\u0410\u0434\u0440\u0435\u0441 \u0441\u0435\u0440\u0432\u0435\u0440\u0430 \u043D\u0435\u0434\u0435\u0439\u0441\u0442\u0432\u0438\u0442\u0435\u043B\u0435\u043D. \u041F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u0435\u0433\u043E \u0432 \u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0430\u0445. URL \u0440\u0430\u043D\u0434\u0435\u0432\u0443 \u0432\u044B\u0433\u043B\u044F\u0434\u0438\u0442 \u043A\u0430\u043A wss://host/v1, \u0430 \u0440\u0435\u043B\u0435\u0439 - \u043A\u0430\u043A tcp://host:4001."
     }
   };
 
@@ -28120,14 +28333,21 @@
   }
 
   // ../core/src/errors.ts
+  var rawMessage = (error) => String(error?.message ?? error ?? "");
+  var SERVER_UNREACHABLE_RE = /rendezvous|connection refused|could not connect to the rendezvous/i;
+  function isServerUnreachableError(error) {
+    return SERVER_UNREACHABLE_RE.test(rawMessage(error));
+  }
   function friendlyError(t2, error) {
-    const raw = String(error?.message ?? error ?? "");
+    const raw = rawMessage(error);
     if (/nameplate is unclaimed/i.test(raw)) return t2("errors.wrongCode");
+    if (/invalid server url/i.test(raw)) return t2("errors.invalidServerUrl");
     if (/transfer was rejected|rejected the transfer|TransferRejected/i.test(raw))
       return t2("errors.declinedBySender");
+    if (isServerUnreachableError(raw)) return t2("errors.serverUnreachable");
     if (/peer|reset by peer|connection was lost|closed the connection/i.test(raw))
       return t2("errors.peerGone");
-    if (/websocket|connection refused|dns|network|timed? ?out|unreachable|io error/i.test(raw))
+    if (/websocket|dns|network|timed? ?out|unreachable|io error/i.test(raw))
       return t2("errors.network");
     return t2("errors.transferFailed", { message: raw });
   }
@@ -28135,6 +28355,18 @@
   // src/renderer/App.tsx
   var import_react14 = __toESM(require_react());
   var import_qrcode = __toESM(require_browser());
+
+  // src/renderer/server.ts
+  var KEY = "pg-server";
+  function loadServerSettings() {
+    return parseServerSettings(localStorage.getItem(KEY));
+  }
+  function saveServerSettings(s) {
+    localStorage.setItem(KEY, serializeServerSettings(s));
+  }
+  function currentServer() {
+    return resolveServer(loadServerSettings());
+  }
 
   // src/renderer/pairing.ts
   var pg = () => window.portalgems;
@@ -28164,7 +28396,7 @@
     const path = await pg().writeTemp(PAIRING_HANDSHAKE_FILE, encodeHandshake(myName));
     try {
       const code = deriveCode(payload.secret, currentBucket());
-      await pg().send(transferId, path, code);
+      await pg().send(transferId, path, code, currentServer());
       return await addDevice(payload.name, payload.secret);
     } finally {
       pg().deleteFile(path).catch(() => void 0);
@@ -28179,7 +28411,7 @@
         if (isCancelled()) break;
         try {
           const code = deriveCode(payload.secret, bucket);
-          await pg().requestReceive(transferId, code);
+          await pg().requestReceive(transferId, code, currentServer());
           const saved = await pg().accept(transferId, tempDir);
           const message = parseHandshake(await pg().readText(saved));
           pg().deleteFile(saved).catch(() => void 0);
@@ -28239,8 +28471,37 @@
       children
     );
   }
-  function Title({ c, children }) {
-    return /* @__PURE__ */ import_react13.default.createElement("h1", { style: { color: c.text, fontSize: fontSize.title, fontWeight: 700, margin: 0 } }, children);
+  function Title({
+    c,
+    children,
+    onBack
+  }) {
+    const heading = /* @__PURE__ */ import_react13.default.createElement("h1", { style: { color: c.text, fontSize: fontSize.title, fontWeight: 700, margin: 0 } }, children);
+    if (!onBack) return heading;
+    return /* @__PURE__ */ import_react13.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: spacing(2) } }, /* @__PURE__ */ import_react13.default.createElement(
+      "span",
+      {
+        onClick: onBack,
+        role: "button",
+        title: "Back",
+        style: { cursor: "pointer", display: "inline-flex", color: c.text }
+      },
+      /* @__PURE__ */ import_react13.default.createElement(
+        "svg",
+        {
+          width: 28,
+          height: 28,
+          viewBox: "0 0 24 24",
+          fill: "none",
+          stroke: "currentColor",
+          strokeWidth: 2.5,
+          strokeLinecap: "round",
+          strokeLinejoin: "round"
+        },
+        /* @__PURE__ */ import_react13.default.createElement("path", { d: "M19 12H5" }),
+        /* @__PURE__ */ import_react13.default.createElement("path", { d: "M12 19l-7-7 7-7" })
+      )
+    ), heading);
   }
   function Subtitle({ c, children }) {
     return /* @__PURE__ */ import_react13.default.createElement("h2", { style: { color: c.text, fontSize: fontSize.subtitle, fontWeight: 600, margin: 0 } }, children);
@@ -28339,6 +28600,133 @@
       )
     );
   }
+  function Dropdown({
+    c,
+    value,
+    options,
+    onChange
+  }) {
+    const [open, setOpen] = import_react13.default.useState(false);
+    const ref = import_react13.default.useRef(null);
+    import_react13.default.useEffect(() => {
+      if (!open) return;
+      const onDocDown = (e2) => {
+        if (ref.current && !ref.current.contains(e2.target)) setOpen(false);
+      };
+      const onKey = (e2) => {
+        if (e2.key === "Escape") setOpen(false);
+      };
+      document.addEventListener("mousedown", onDocDown);
+      document.addEventListener("keydown", onKey);
+      return () => {
+        document.removeEventListener("mousedown", onDocDown);
+        document.removeEventListener("keydown", onKey);
+      };
+    }, [open]);
+    const selected = options.find((o) => o.value === value);
+    return /* @__PURE__ */ import_react13.default.createElement("div", { ref, style: { position: "relative", width: "100%" } }, /* @__PURE__ */ import_react13.default.createElement(
+      "button",
+      {
+        type: "button",
+        onClick: () => setOpen((v) => !v),
+        "aria-haspopup": "listbox",
+        "aria-expanded": open,
+        style: {
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: spacing(2),
+          width: "100%",
+          boxSizing: "border-box",
+          border: `1px solid ${open ? c.primary : c.border}`,
+          background: c.background,
+          color: c.text,
+          borderRadius: radius.md,
+          padding: `${spacing(2.5)}px ${spacing(3)}px`,
+          fontSize: fontSize.body,
+          cursor: "pointer",
+          textAlign: "left"
+        }
+      },
+      /* @__PURE__ */ import_react13.default.createElement("span", null, selected?.label ?? value),
+      /* @__PURE__ */ import_react13.default.createElement(
+        "svg",
+        {
+          width: 18,
+          height: 18,
+          viewBox: "0 0 24 24",
+          fill: "none",
+          stroke: "currentColor",
+          strokeWidth: 2,
+          strokeLinecap: "round",
+          strokeLinejoin: "round",
+          style: {
+            color: c.textMuted,
+            flexShrink: 0,
+            transform: open ? "rotate(180deg)" : "none",
+            transition: "transform 120ms ease"
+          }
+        },
+        /* @__PURE__ */ import_react13.default.createElement("path", { d: "M6 9l6 6 6-6" })
+      )
+    ), open ? /* @__PURE__ */ import_react13.default.createElement(
+      "div",
+      {
+        role: "listbox",
+        style: {
+          position: "absolute",
+          top: "calc(100% + 4px)",
+          left: 0,
+          right: 0,
+          zIndex: 10,
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+          padding: spacing(1),
+          background: c.surface,
+          border: `1px solid ${c.border}`,
+          borderRadius: radius.md,
+          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.18)",
+          maxHeight: 280,
+          overflowY: "auto"
+        }
+      },
+      options.map((o) => {
+        const active = o.value === value;
+        return /* @__PURE__ */ import_react13.default.createElement(
+          "div",
+          {
+            key: o.value,
+            role: "option",
+            "aria-selected": active,
+            onClick: () => {
+              onChange(o.value);
+              setOpen(false);
+            },
+            onMouseEnter: (e2) => {
+              if (!active) e2.currentTarget.style.background = c.codeBg;
+            },
+            onMouseLeave: (e2) => {
+              if (!active) e2.currentTarget.style.background = "transparent";
+            },
+            style: {
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: `${spacing(2)}px ${spacing(2.5)}px`,
+              borderRadius: radius.sm,
+              cursor: "pointer",
+              color: c.text,
+              fontSize: fontSize.body,
+              background: active ? c.codeBg : "transparent"
+            }
+          },
+          /* @__PURE__ */ import_react13.default.createElement("span", null, o.label),
+          active ? /* @__PURE__ */ import_react13.default.createElement("span", { style: { color: c.primary, fontWeight: 700 } }, "\u2713") : null
+        );
+      })
+    ) : null);
+  }
   function TextInput({
     c,
     value,
@@ -28375,8 +28763,10 @@
   function App() {
     const [themeName, setThemeNameState] = (0, import_react14.useState)(loadThemeName());
     const c = usePalette(themeName);
-    const [route, setRoute] = (0, import_react14.useState)({ name: "home" });
-    const goHome = () => setRoute({ name: "home" });
+    const [stack, setStack] = (0, import_react14.useState)([{ name: "home" }]);
+    const route = stack[stack.length - 1];
+    const navigate = (r) => setStack((s) => [...s, r]);
+    const goBack = () => setStack((s) => s.length > 1 ? s.slice(0, -1) : s);
     const setThemeName = (name) => {
       setThemeNameState(name);
       saveThemeName(name);
@@ -28398,22 +28788,32 @@
         Home,
         {
           c,
-          onSend: (file, device) => setRoute({ name: "send", file, device }),
-          onReceive: (code) => setRoute({ name: "receive", code }),
-          onReceiveFrom: (device) => setRoute({ name: "receive", device }),
-          onPair: () => setRoute({ name: "pair" }),
-          onSettings: () => setRoute({ name: "settings" }),
-          onExplain: () => setRoute({ name: "explain" })
+          onSend: (file, device) => navigate({ name: "send", file, device }),
+          onReceive: (code) => navigate({ name: "receive", code }),
+          onReceiveFrom: (device) => navigate({ name: "receive", device }),
+          onPair: () => navigate({ name: "pair" }),
+          onSettings: () => navigate({ name: "settings" }),
+          onExplain: () => navigate({ name: "explain" })
         }
-      ) : route.name === "send" ? /* @__PURE__ */ import_react14.default.createElement(Send, { c, file: route.file, device: route.device, onHome: goHome }) : route.name === "receive" ? /* @__PURE__ */ import_react14.default.createElement(Receive, { c, code: route.code, device: route.device, onHome: goHome }) : route.name === "settings" ? /* @__PURE__ */ import_react14.default.createElement(
+      ) : route.name === "send" ? /* @__PURE__ */ import_react14.default.createElement(
+        Send,
+        {
+          c,
+          file: route.file,
+          device: route.device,
+          onHome: goBack,
+          onServerSettings: () => navigate({ name: "settings", scrollToServer: true })
+        }
+      ) : route.name === "receive" ? /* @__PURE__ */ import_react14.default.createElement(Receive, { c, code: route.code, device: route.device, onHome: goBack }) : route.name === "settings" ? /* @__PURE__ */ import_react14.default.createElement(
         Settings,
         {
           c,
           themeName,
           onTheme: setThemeName,
-          onHome: goHome
+          onHome: goBack,
+          scrollToServer: route.scrollToServer
         }
-      ) : route.name === "explain" ? /* @__PURE__ */ import_react14.default.createElement(Explain, { c, onHome: goHome }) : /* @__PURE__ */ import_react14.default.createElement(Pair, { c, onHome: goHome })
+      ) : route.name === "explain" ? /* @__PURE__ */ import_react14.default.createElement(Explain, { c, onHome: goBack }) : /* @__PURE__ */ import_react14.default.createElement(Pair, { c, onHome: goBack })
     );
   }
   function Home({
@@ -28514,7 +28914,8 @@
     c,
     file,
     device,
-    onHome
+    onHome,
+    onServerSettings
   }) {
     const { t: t2 } = useTranslation();
     const [phase, setPhase] = (0, import_react14.useState)("starting");
@@ -28522,6 +28923,7 @@
     const [direct, setDirect] = (0, import_react14.useState)(null);
     const [pct, setPct] = (0, import_react14.useState)(0);
     const [error, setError] = (0, import_react14.useState)("");
+    const [serverErr, setServerErr] = (0, import_react14.useState)(false);
     const [copied, setCopied] = (0, import_react14.useState)(false);
     const idRef = (0, import_react14.useRef)(0);
     const cancelledRef = (0, import_react14.useRef)(false);
@@ -28549,13 +28951,14 @@
           window.portalgems.cancel(id);
         }
       }, PAIRED_SEND_TIMEOUT_MS) : null;
-      window.portalgems.send(id, file.path, pairedCode).then(
+      window.portalgems.send(id, file.path, pairedCode, currentServer()).then(
         () => setPhase("done"),
         (e2) => {
           if (timedOut) setPhase("peerNotOpen");
           else if (cancelledRef.current) setPhase("cancelled");
           else {
             setError(friendlyError(t2, e2));
+            setServerErr(isServerUnreachableError(e2));
             setPhase("error");
           }
         }
@@ -28575,14 +28978,21 @@
       setTimeout(() => setCopied(false), 1500);
     };
     const busy = phase === "starting" || phase === "waiting" || phase === "transferring";
-    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c }, t2("send.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, file.name, " \xB7 ", formatSize(file.size)), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, phase === "starting" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.connecting")) : null, phase === "waiting" ? device ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("paired.sendWaiting", { name: device.name })) : /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("send.waitingForReceiver")), /* @__PURE__ */ import_react14.default.createElement(CodeBox, { c, code }), /* @__PURE__ */ import_react14.default.createElement(
+    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("send.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, file.name, " \xB7 ", formatSize(file.size)), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, phase === "starting" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.connecting")) : null, phase === "waiting" ? device ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("paired.sendWaiting", { name: device.name })) : /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("send.waitingForReceiver")), /* @__PURE__ */ import_react14.default.createElement(CodeBox, { c, code }), /* @__PURE__ */ import_react14.default.createElement(
       PrimaryButton,
       {
         c,
         label: copied ? t2("send.codeCopied") : t2("send.copyCode"),
         onClick: copy2
       }
-    )) : null, phase === "transferring" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("send.sending", { name: file.name })), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, direct ? t2("transfer.direct") : t2("transfer.relay")), /* @__PURE__ */ import_react14.default.createElement(ProgressBar, { c, pct }), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("transfer.progress", { pct }))) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("send.success")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.success, margin: 0 } }, t2("send.successDetail", { name: file.name, size: formatSize(file.size) }))) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "cancelled" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("errors.cancelled")) : null, phase === "peerNotOpen" && device ? /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, t2("paired.notOpen", { name: device.name })) : null), busy ? /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancel }) : /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.done"), onClick: onHome }));
+    )) : null, phase === "transferring" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("send.sending", { name: file.name })), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, direct ? t2("transfer.direct") : t2("transfer.relay")), /* @__PURE__ */ import_react14.default.createElement(ProgressBar, { c, pct }), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("transfer.progress", { pct }))) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("send.success")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.success, margin: 0 } }, t2("send.successDetail", { name: file.name, size: formatSize(file.size) }))) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "cancelled" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("errors.cancelled")) : null, phase === "peerNotOpen" && device ? /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, t2("paired.notOpen", { name: device.name })) : null), busy ? /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancel }) : phase === "error" && serverErr ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(
+      PrimaryButton,
+      {
+        c,
+        label: t2("settings.server.change"),
+        onClick: onServerSettings
+      }
+    ), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.done"), onClick: onHome })) : /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.done"), onClick: onHome }));
   }
   function Receive({
     c,
@@ -28628,7 +29038,9 @@
               if (cancelledRef.current) break;
               try {
                 const derived = deriveCode(device.secret, bucket);
-                gotOffer(await window.portalgems.requestReceive(id, derived));
+                gotOffer(
+                  await window.portalgems.requestReceive(id, derived, currentServer())
+                );
                 return;
               } catch {
               }
@@ -28637,7 +29049,7 @@
           failed(new Error(t2("paired.nothingFound", { name: device.name })));
         })();
       } else if (code) {
-        window.portalgems.requestReceive(id, code).then(gotOffer, failed);
+        window.portalgems.requestReceive(id, code, currentServer()).then(gotOffer, failed);
       }
       return () => {
         handlers.delete(id);
@@ -28668,7 +29080,7 @@
       window.portalgems.cancel(idRef.current);
     };
     const busy = phase === "connecting" || phase === "transferring";
-    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c }, t2("receive.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, device ? device.name : code), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, phase === "connecting" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, device ? t2("paired.receiveWaiting", { name: device.name }) : t2("receive.connecting")) : null, phase === "confirm" && offer ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("receive.incoming")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.text, margin: 0 } }, offer.fileName, " \xB7 ", formatSize(offer.fileSize)), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.acceptQuestion")), /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.accept"), onClick: accept }), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.decline"), danger: true, onClick: decline })) : null, phase === "transferring" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("receive.receiving")), direct !== null ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, direct ? t2("transfer.direct") : t2("transfer.relay")) : null, /* @__PURE__ */ import_react14.default.createElement(ProgressBar, { c, pct }), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("transfer.progress", { pct }))) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("receive.success")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.success, margin: 0 } }, t2("receive.savedAs", { name: savedName }))) : null, phase === "declined" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.declined")) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "cancelled" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("errors.cancelled")) : null), busy ? /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancel }) : phase === "confirm" ? null : /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.done"), onClick: onHome }));
+    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("receive.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, device ? device.name : code), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, phase === "connecting" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, device ? t2("paired.receiveWaiting", { name: device.name }) : t2("receive.connecting")) : null, phase === "confirm" && offer ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("receive.incoming")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.text, margin: 0 } }, offer.fileName, " \xB7 ", formatSize(offer.fileSize)), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.acceptQuestion")), /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.accept"), onClick: accept }), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.decline"), danger: true, onClick: decline })) : null, phase === "transferring" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("receive.receiving")), direct !== null ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, direct ? t2("transfer.direct") : t2("transfer.relay")) : null, /* @__PURE__ */ import_react14.default.createElement(ProgressBar, { c, pct }), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("transfer.progress", { pct }))) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("receive.success")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.success, margin: 0 } }, t2("receive.savedAs", { name: savedName }))) : null, phase === "declined" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.declined")) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "cancelled" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("errors.cancelled")) : null), busy ? /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancel }) : phase === "confirm" ? null : /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.done"), onClick: onHome }));
   }
   function Pair({ c, onHome }) {
     const { t: t2 } = useTranslation();
@@ -28739,7 +29151,7 @@
       window.portalgems.cancel(idRef.current);
       onHome();
     };
-    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c }, t2("pair.title")), phase === "menu" ? /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("pair.showButton"), onClick: show }), /* @__PURE__ */ import_react14.default.createElement(
+    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("pair.title")), phase === "menu" ? /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("pair.showButton"), onClick: show }), /* @__PURE__ */ import_react14.default.createElement(
       TextInput,
       {
         c,
@@ -28775,9 +29187,32 @@
     c,
     themeName,
     onTheme,
-    onHome
+    onHome,
+    scrollToServer
   }) {
     const { t: t2, i18n } = useTranslation();
+    const [server, setServer] = (0, import_react14.useState)(() => loadServerSettings());
+    const serverRef = (0, import_react14.useRef)(null);
+    (0, import_react14.useEffect)(() => {
+      if (scrollToServer) {
+        serverRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, [scrollToServer]);
+    const updateServer = (next) => {
+      setServer(next);
+      saveServerSettings(next);
+    };
+    const chooseServer = (choice) => updateServer({ ...server, choice });
+    const [helpSeen, setHelpSeen] = (0, import_react14.useState)(
+      () => localStorage.getItem("pg-server-help-seen") === "1"
+    );
+    const [helpOpen, setHelpOpen] = (0, import_react14.useState)(false);
+    const dismissHelp = () => {
+      setHelpSeen(true);
+      setHelpOpen(false);
+      localStorage.setItem("pg-server-help-seen", "1");
+    };
+    const showHelp = !helpSeen || helpOpen;
     const chooseLanguage = (lng) => {
       setLanguage(lng);
       localStorage.setItem("pg-language", lng);
@@ -28792,7 +29227,18 @@
       padding: `${spacing(2.5)}px ${spacing(3)}px`,
       cursor: "pointer"
     });
-    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c }, t2("settings.title")), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("settings.language")), SUPPORTED_LANGUAGES.map((lng) => /* @__PURE__ */ import_react14.default.createElement("div", { key: lng, style: row(i18n.language === lng), onClick: () => chooseLanguage(lng) }, /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.text } }, LANGUAGE_LABELS[lng]), i18n.language === lng ? /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.primary, fontWeight: 700 } }, "\u2713") : null))), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("settings.theme")), THEME_NAMES.map((name) => /* @__PURE__ */ import_react14.default.createElement("div", { key: name, style: row(themeName === name), onClick: () => onTheme(name) }, /* @__PURE__ */ import_react14.default.createElement("span", { style: { display: "flex", alignItems: "center", gap: spacing(2.5) } }, /* @__PURE__ */ import_react14.default.createElement(
+    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("settings.title")), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("settings.language")), /* @__PURE__ */ import_react14.default.createElement(
+      Dropdown,
+      {
+        c,
+        value: i18n.language,
+        onChange: chooseLanguage,
+        options: SUPPORTED_LANGUAGES.map((lng) => ({
+          value: lng,
+          label: LANGUAGE_LABELS[lng]
+        }))
+      }
+    )), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("settings.theme")), THEME_NAMES.map((name) => /* @__PURE__ */ import_react14.default.createElement("div", { key: name, style: row(themeName === name), onClick: () => onTheme(name) }, /* @__PURE__ */ import_react14.default.createElement("span", { style: { display: "flex", alignItems: "center", gap: spacing(2.5) } }, /* @__PURE__ */ import_react14.default.createElement(
       "span",
       {
         style: {
@@ -28802,12 +29248,76 @@
           background: themes[name].light.primary
         }
       }
-    ), /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.text } }, t2(`settings.themes.${name}`))), themeName === name ? /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.primary, fontWeight: 700 } }, "\u2713") : null))), /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.done"), onClick: onHome }));
+    ), /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.text } }, t2(`settings.themes.${name}`))), themeName === name ? /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.primary, fontWeight: 700 } }, "\u2713") : null))), /* @__PURE__ */ import_react14.default.createElement("div", { ref: serverRef }, /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(
+      "div",
+      {
+        style: { display: "flex", alignItems: "center", justifyContent: "space-between" }
+      },
+      /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("settings.server.title")),
+      /* @__PURE__ */ import_react14.default.createElement(
+        "span",
+        {
+          onClick: () => setHelpOpen(true),
+          title: t2("explain.choosingTitle"),
+          style: { color: c.primary, fontWeight: 700, cursor: "pointer", fontSize: fontSize.subtitle }
+        },
+        "\u24D8"
+      )
+    ), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("settings.server.hint")), showHelp ? /* @__PURE__ */ import_react14.default.createElement(
+      "div",
+      {
+        style: {
+          border: `1px solid ${c.primary}`,
+          background: c.codeBg,
+          borderRadius: 10,
+          padding: spacing(3),
+          marginTop: spacing(1)
+        }
+      },
+      /* @__PURE__ */ import_react14.default.createElement("div", { style: { color: c.text, fontWeight: 700, marginBottom: spacing(1.5) } }, t2("explain.choosingTitle")),
+      /* @__PURE__ */ import_react14.default.createElement("div", { style: { color: c.text, fontSize: fontSize.small, lineHeight: 1.5 } }, t2("explain.choosingBody")),
+      /* @__PURE__ */ import_react14.default.createElement("div", { style: { display: "flex", justifyContent: "flex-end", marginTop: spacing(2) } }, /* @__PURE__ */ import_react14.default.createElement(
+        "span",
+        {
+          onClick: dismissHelp,
+          style: { color: c.primary, fontWeight: 700, cursor: "pointer" }
+        },
+        t2("common.gotIt")
+      ))
+    ) : null, availableServerChoices().map((choice) => {
+      const key = choice === "public" ? "choicePublic" : choice === "portalgems" ? "choicePortalgems" : "choiceCustom";
+      return /* @__PURE__ */ import_react14.default.createElement(
+        "div",
+        {
+          key: choice,
+          style: row(server.choice === choice),
+          onClick: () => chooseServer(choice)
+        },
+        /* @__PURE__ */ import_react14.default.createElement("span", { style: { display: "flex", flexDirection: "column" } }, /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.text } }, t2(`settings.server.${key}`)), /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.textMuted, fontSize: fontSize.small } }, t2(`settings.server.${key}Hint`))),
+        server.choice === choice ? /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.primary, fontWeight: 700 } }, "\u2713") : null
+      );
+    }), server.choice === "custom" ? /* @__PURE__ */ import_react14.default.createElement("div", { style: { display: "flex", flexDirection: "column", gap: spacing(2) } }, /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("settings.server.leaveBlankHint")), /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.textMuted, fontSize: fontSize.small } }, t2("settings.server.rendezvousLabel")), /* @__PURE__ */ import_react14.default.createElement(
+      TextInput,
+      {
+        c,
+        value: server.customRendezvousUrl ?? "",
+        onChange: (v) => updateServer({ ...server, customRendezvousUrl: v }),
+        placeholder: "wss://relay.example/v1"
+      }
+    ), /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.textMuted, fontSize: fontSize.small } }, t2("settings.server.transitLabel")), /* @__PURE__ */ import_react14.default.createElement(
+      TextInput,
+      {
+        c,
+        value: server.customTransitUrl ?? "",
+        onChange: (v) => updateServer({ ...server, customTransitUrl: v }),
+        placeholder: "tcp://transit.example:4001"
+      }
+    ), !isCustomServerUsable(server) ? /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.danger, fontSize: fontSize.small } }, t2("settings.server.invalidUrl")) : null) : null)), /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.done"), onClick: onHome }));
   }
-  var EXPLAIN_SECTIONS = ["codes", "e2e", "direct", "servers", "pairing", "limits"];
+  var EXPLAIN_SECTIONS = ["codes", "e2e", "direct", "servers", "choosing", "pairing", "limits"];
   function Explain({ c, onHome }) {
     const { t: t2 } = useTranslation();
-    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c }, t2("explain.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("explain.intro")), EXPLAIN_SECTIONS.map((key) => /* @__PURE__ */ import_react14.default.createElement(Card, { key, c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2(`explain.${key}Title`)), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2(`explain.${key}Body`)))), /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.done"), onClick: onHome }));
+    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("explain.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("explain.intro")), EXPLAIN_SECTIONS.map((key) => /* @__PURE__ */ import_react14.default.createElement(Card, { key, c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2(`explain.${key}Title`)), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2(`explain.${key}Body`)))), /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.done"), onClick: onHome }));
   }
 
   // src/renderer/index.tsx

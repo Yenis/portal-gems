@@ -20,8 +20,8 @@ var import_electron = require("electron");
 import_electron.contextBridge.exposeInMainWorld("portalgems", {
   locale: () => import_electron.ipcRenderer.invoke("pg:locale"),
   pickFile: () => import_electron.ipcRenderer.invoke("pg:pickFile"),
-  send: (id, path, code) => import_electron.ipcRenderer.invoke("pg:send", id, path, code),
-  requestReceive: (id, code) => import_electron.ipcRenderer.invoke("pg:requestReceive", id, code),
+  send: (id, path, code, server) => import_electron.ipcRenderer.invoke("pg:send", id, path, code, server),
+  requestReceive: (id, code, server) => import_electron.ipcRenderer.invoke("pg:requestReceive", id, code, server),
   accept: (id, destDir) => import_electron.ipcRenderer.invoke("pg:accept", id, destDir),
   reject: (id) => import_electron.ipcRenderer.invoke("pg:reject", id),
   cancel: (id) => import_electron.ipcRenderer.invoke("pg:cancel", id),

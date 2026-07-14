@@ -5091,11 +5091,11 @@ import_electron.ipcMain.handle("pg:pickFile", async () => {
 });
 import_electron.ipcMain.handle(
   "pg:send",
-  (_e, id, filePath, code) => engine.sendFile(id, filePath, code ?? null, forward(id))
+  (_e, id, filePath, code, server) => engine.sendFile(id, filePath, code ?? null, server ?? {}, forward(id))
 );
 import_electron.ipcMain.handle(
   "pg:requestReceive",
-  (_e, id, code) => engine.requestReceive(id, code)
+  (_e, id, code, server) => engine.requestReceive(id, code, server ?? {})
 );
 import_electron.ipcMain.handle("pg:accept", async (_e, id, destDir) => {
   const saved = await engine.acceptReceive(
@@ -5128,6 +5128,7 @@ import_electron.app.whenReady().then(async () => {
     minWidth: 480,
     minHeight: 560,
     title: "PortalGems",
+    icon: path2.join(__dirname, "..", "build", "icon.png"),
     autoHideMenuBar: true,
     webPreferences: {
       preload: path2.join(__dirname, "preload.js"),
@@ -5200,6 +5201,12 @@ async function runSmokePairedReceive() {
   console.log("SMOKE:PAIRED-RECEIVE-OK");
   import_electron.app.exit(0);
 }
+function smokeServer() {
+  return {
+    rendezvousUrl: process.env.PG_SMOKE_RENDEZVOUS || void 0,
+    transitUrl: process.env.PG_SMOKE_TRANSIT || void 0
+  };
+}
 async function runSmokePairedSend(filePath) {
   const devices = JSON.parse(readPairs());
   if (!Array.isArray(devices) || devices.length === 0) {
@@ -5210,6 +5217,7 @@ async function runSmokePairedSend(filePath) {
     990,
     filePath,
     code,
+    smokeServer(),
     (ev) => console.log(`SMOKE-EV:${ev.event}:${ev.info ?? ""}`)
   );
   console.log("SMOKE:PAIRED-SEND-OK");
