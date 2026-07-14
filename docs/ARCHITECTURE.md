@@ -142,7 +142,16 @@ scan / paste), settings (language + theme, persisted), explainer.
   AppState active), EncryptedSharedPreferences pair store, zxing-embedded
   `scanQr()`, plain SharedPreferences `get/setSetting`, constants
   (`incomingDir`, `cacheDir`, `deviceName`, `locale`).
-- Receive path: engine → app cache → MediaStore publish → visible in Downloads.
+- Receive path: engine → app cache → publish. Default target is MediaStore
+  Downloads (`saveToDownloads`); if the user picked a download folder in
+  Settings (SAF `ACTION_OPEN_DOCUMENT_TREE`, persisted grant; settings
+  `pg-download-dir` + `pg-download-dir-label`), `saveToDownloadDir` writes into
+  that tree instead. Because the source is staged in cache, an overwrite only
+  touches the existing file after the transfer completed. Same-name conflicts
+  are detected pre-accept via `statDownloadTarget` (custom folder only -
+  MediaStore can't see other apps' files, the system de-dupes there). A
+  deleted/revoked tree CANNOT be recreated (no grant on its parent): the save
+  falls back to Downloads and the UI shows a notice (`fallback: true`).
 - Release signing: `android/keystore.properties` + keystore (gitignored;
   falls back to debug key when absent). ABIs: arm64-v8a + x86_64 (add armv7
   before store release).
@@ -153,11 +162,24 @@ scan / paste), settings (language + theme, persisted), explainer.
   *brains* in core, thin per-platform UIs), esbuild-bundled
   (`NODE_PATH=./node_modules` for the symlinked core's deps).
 - Pairing storage: `safeStorage`-encrypted file in userData. Settings:
-  localStorage. Device name: hostname. Receives into `~/Downloads`.
+  localStorage. Device name: hostname.
+- Receives into `~/Downloads` or the folder picked in Settings (localStorage
+  `pg-download-dir`). `pg:acceptDownload` stages the transfer in
+  `userData/incoming/<id>` and only then moves it into the destination
+  (recreating a deleted folder with `mkdir -p`); overwrite replaces the
+  existing file only after the transfer completed, keep-both applies the
+  `name (n).ext` convention. `pg:statTarget` powers the pre-accept same-name
+  warning; `pg:accept` (explicit dir, pairing handshake) is unchanged.
 - Smoke harness (dev-only, env-guarded in main.ts): `PG_SMOKE_RECEIVE=<code>`,
   `PG_SMOKE_RECEIVE_CANCEL=<code>`, `PG_SMOKE_PAIR_SHOW=1`,
   `PG_SMOKE_PAIRED_RECEIVE=1`, `PG_SMOKE_PAIRED_SEND=<file>` - drives the real
-  renderer via executeJavaScript; used for all E2E verification.
+  renderer via executeJavaScript; used for all E2E verification. Receive
+  add-ons: `PG_SMOKE_DL_DIR=<dir>` (seed the download-folder setting; cleared
+  when unset - the profile persists) and `PG_SMOKE_CONFLICT=overwrite|keepboth`
+  (expect the same-name warning and resolve it). Isolate from the real profile
+  with `XDG_CONFIG_HOME=<tmp>` (copy `user-dirs.dirs` in, else `getPath('downloads')`
+  degrades to `$HOME`); note the smoke's `Receive` click hits a paired-device
+  row first if the profile has devices.
 - Run: `npm run build && npx electron . --no-sandbox`
   (**unset ELECTRON_RUN_AS_NODE** - VS Code shells export it).
 
@@ -229,7 +251,8 @@ scan / paste), settings (language + theme, persisted), explainer.
   ffi.rs uniffi export → `yarn ubrn:android` + `yarn prepare` →
   wormhole-node napi fn → engine.ts/main.ts/preload.ts IPC → both UIs.
 - **New setting** → mobile `get/setSetting` + desktop localStorage; add to
-  both settings screens.
+  both settings screens. (Example: the download-location picker -
+  `pg-download-dir` on both platforms.)
 - **New screen** → Route union + screen component per app; strings in core.
 
 ## 7. Verified-state summary & known gaps
@@ -238,6 +261,16 @@ Verified E2E over real servers: manual send/receive (all platform pairs,
 checksummed), receive confirmation + decline, share-sheet intake, friendly
 errors, cancel (waiting phase, both engines), pairing (desktop↔emulator),
 settings (language/theme live-switch, persisted), 6-language completeness.
+
+Download location + same-name handling (2026-07-14) verified E2E against the
+live PortalGems server on BOTH platforms. Desktop (smoke harness): custom
+folder, deleted-folder recreation, overwrite (content replaced only after
+completion), keep-both (`name (1).ext`), default-Downloads regression.
+Android (Pixel 6a, release APK, adb-driven UI): SAF picker + persisted grant,
+receive into the chosen tree, conflict prompt with existing-file size,
+overwrite, keep-both, deleted-tree fallback to Downloads with notice, reset
+to default. Note: the app's engine connect has no timeout - with Wi-Fi off it
+hangs on "Connecting" until cancelled (pre-existing; candidate for a fix).
 
 Packaging is done: all six binaries (APK, AppImage, deb, rpm, Windows .exe,
 macOS .dmg) build and publish from a single `v*` tag via CI (first shipped in

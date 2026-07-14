@@ -34,6 +34,12 @@
     "receiving": "Recibiendo archivo…",
     "success": "Archivo guardado.",
     "savedAs": "Guardado en Descargas como {{name}}.",
+    "savedAsIn": "Guardado como {{name}} en {{folder}}.",
+    "folderFallback": "La carpeta de descargas elegida no estaba disponible, así que el archivo se guardó en Descargas.",
+    "existsTitle": "El archivo ya existe",
+    "existsBody": "{{name}} ya existe en tu carpeta de descargas ({{size}}). ¿Quieres sobrescribirlo?",
+    "overwrite": "Sobrescribir",
+    "keepBoth": "Conservar ambos",
     "declined": "Has rechazado la transferencia."
   },
   "pair": {
@@ -74,6 +80,13 @@
       "emerald": "Esmeralda",
       "ruby": "Rubí",
       "amethyst": "Amatista"
+    },
+    "downloads": {
+      "title": "Ubicación de descargas",
+      "hint": "Los archivos recibidos se guardan aquí. Por defecto van a tu carpeta de Descargas.",
+      "defaultLabel": "Carpeta de Descargas (predeterminada)",
+      "choose": "Elegir carpeta",
+      "reset": "Usar la predeterminada"
     },
     "server": {
       "title": "Servidor de conexión",

@@ -130,6 +130,9 @@ dependencies {
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 
+    // SAF folder access for the user-chosen download location
+    implementation("androidx.documentfile:documentfile:1.0.1")
+
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
     } else {

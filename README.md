@@ -94,6 +94,7 @@ PortalGems takes a different approach, inherited from magic-wormhole:
 |---|---|
 | Send & receive files | Between any two magic-wormhole clients, any direction |
 | Receive confirmation | See the file name and size, accept or decline, before a byte flows |
+| Your download folder | Pick where received files land (defaults to Downloads); same-name files warn you first - overwrite or keep both |
 | Direct LAN transfers | Same Wi-Fi → peer-to-peer at full speed, no relay |
 | CLI interop | Works with `wormhole` on servers, laptops, anything |
 | Device pairing | Scan a QR once; from then on, transfers need only a confirmation tap |

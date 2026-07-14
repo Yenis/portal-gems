@@ -5080,6 +5080,32 @@ function writePairs(json) {
 var forward = (id) => (ev) => {
   win?.webContents.send("pg:event", { id, ...ev });
 };
+function safeFileName(name) {
+  const base = path2.basename(name.replace(/\\/g, "/"));
+  return base === "" || base === "." || base === ".." ? "received.bin" : base;
+}
+var resolveDownloadDir = (dir2) => dir2 && dir2.trim() !== "" ? dir2 : import_electron.app.getPath("downloads");
+function dedupPath(dir2, name) {
+  const dot = name.lastIndexOf(".");
+  const stem = dot > 0 ? name.slice(0, dot) : name;
+  const ext = dot > 0 ? name.slice(dot) : "";
+  let dest = path2.join(dir2, name);
+  for (let n = 1; fs.existsSync(dest); n++) {
+    dest = path2.join(dir2, `${stem} (${n})${ext}`);
+  }
+  return dest;
+}
+async function moveFile(src, dest) {
+  try {
+    await fs.promises.rename(src, dest);
+  } catch (e) {
+    if (e.code !== "EXDEV") throw e;
+    const part = `${dest}.pgpart`;
+    await fs.promises.copyFile(src, part);
+    await fs.promises.rename(part, dest);
+    await fs.promises.unlink(src);
+  }
+}
 import_electron.ipcMain.handle("pg:locale", () => import_electron.app.getLocale());
 import_electron.ipcMain.handle("pg:pickFile", async () => {
   if (!win) return null;
@@ -5098,12 +5124,41 @@ import_electron.ipcMain.handle(
   (_e, id, code, server) => engine.requestReceive(id, code, server ?? {})
 );
 import_electron.ipcMain.handle("pg:accept", async (_e, id, destDir) => {
-  const saved = await engine.acceptReceive(
-    id,
-    destDir ?? import_electron.app.getPath("downloads"),
-    forward(id)
-  );
-  return destDir ? saved : path2.basename(saved);
+  return engine.acceptReceive(id, destDir, forward(id));
+});
+import_electron.ipcMain.handle(
+  "pg:acceptDownload",
+  async (_e, id, dir2, overwrite) => {
+    const staging = path2.join(import_electron.app.getPath("userData"), "incoming", String(id));
+    await fs.promises.mkdir(staging, { recursive: true });
+    try {
+      const saved = await engine.acceptReceive(id, staging, forward(id));
+      const destDir = resolveDownloadDir(dir2);
+      await fs.promises.mkdir(destDir, { recursive: true });
+      const name = path2.basename(saved);
+      const dest = overwrite ? path2.join(destDir, name) : dedupPath(destDir, name);
+      await moveFile(saved, dest);
+      return path2.basename(dest);
+    } finally {
+      await fs.promises.rm(staging, { recursive: true, force: true }).catch(() => void 0);
+    }
+  }
+);
+import_electron.ipcMain.handle("pg:pickDirectory", async () => {
+  if (!win) return null;
+  const result = await import_electron.dialog.showOpenDialog(win, {
+    properties: ["openDirectory", "createDirectory"]
+  });
+  return result.canceled || result.filePaths.length === 0 ? null : result.filePaths[0];
+});
+import_electron.ipcMain.handle("pg:statTarget", async (_e, dir2, fileName) => {
+  const target = path2.join(resolveDownloadDir(dir2), safeFileName(fileName));
+  try {
+    const st = await fs.promises.stat(target);
+    return { exists: st.isFile(), size: st.size };
+  } catch {
+    return { exists: false, size: 0 };
+  }
 });
 import_electron.ipcMain.handle("pg:deviceName", () => os.hostname());
 import_electron.ipcMain.handle("pg:tempDir", () => import_electron.app.getPath("temp"));
@@ -5241,6 +5296,10 @@ async function runSmoke(code, cancelInstead) {
     }
   };
   await waitFor("PortalGems", 1e4);
+  const dlDir = process.env.PG_SMOKE_DL_DIR;
+  await exec(
+    dlDir ? `localStorage.setItem('pg-download-dir', ${JSON.stringify(dlDir)})` : `localStorage.removeItem('pg-download-dir')`
+  );
   await exec(`(() => {
     const input = document.querySelector('input');
     const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
@@ -5257,7 +5316,13 @@ async function runSmoke(code, cancelInstead) {
     await waitFor("Do you want to receive this file?", 45e3);
     console.log("SMOKE:CONFIRM-VISIBLE");
     await clickButton("Accept");
-    await waitFor("Saved to Downloads", 9e4);
+    const conflict = process.env.PG_SMOKE_CONFLICT;
+    if (conflict) {
+      await waitFor("File already exists", 15e3);
+      console.log("SMOKE:CONFLICT-VISIBLE");
+      await clickButton(conflict === "overwrite" ? "Overwrite" : "Keep both");
+    }
+    await waitFor(dlDir ? "Saved as" : "Saved to Downloads", 9e4);
     console.log("SMOKE:RECEIVE-OK");
   }
   import_electron.app.exit(0);

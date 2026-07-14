@@ -34,6 +34,12 @@
     "receiving": "Réception du fichier…",
     "success": "Fichier enregistré.",
     "savedAs": "Enregistré dans Téléchargements sous {{name}}.",
+    "savedAsIn": "Enregistré sous {{name}} dans {{folder}}.",
+    "folderFallback": "Le dossier de téléchargement choisi n'était pas disponible, le fichier a donc été enregistré dans Téléchargements.",
+    "existsTitle": "Le fichier existe déjà",
+    "existsBody": "{{name}} existe déjà dans votre dossier de téléchargement ({{size}}). L'écraser ?",
+    "overwrite": "Écraser",
+    "keepBoth": "Garder les deux",
     "declined": "Vous avez refusé le transfert."
   },
   "pair": {
@@ -74,6 +80,13 @@
       "emerald": "Émeraude",
       "ruby": "Rubis",
       "amethyst": "Améthyste"
+    },
+    "downloads": {
+      "title": "Emplacement de téléchargement",
+      "hint": "Les fichiers reçus sont enregistrés ici. Par défaut, ils vont dans votre dossier Téléchargements.",
+      "defaultLabel": "Dossier Téléchargements (par défaut)",
+      "choose": "Choisir un dossier",
+      "reset": "Utiliser le dossier par défaut"
     },
     "server": {
       "title": "Serveur de connexion",

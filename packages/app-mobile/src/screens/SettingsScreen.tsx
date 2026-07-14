@@ -24,8 +24,16 @@ import {
   type ServerChoice,
   type ServerSettings,
 } from '@portalgems/core';
-import { Card, PrimaryButton, Subtitle, Title } from '../components';
-import { getSetting, setSetting } from '../native';
+import { Card, GhostButton, PrimaryButton, Subtitle, Title } from '../components';
+import {
+  getSetting,
+  loadDownloadDir,
+  pickDownloadDirectory,
+  releaseDownloadDirectory,
+  saveDownloadDir,
+  setSetting,
+  type PickedDirectory,
+} from '../native';
 import { loadServerSettings, saveServerSettings } from '../server';
 import { useTheme, useThemeControl } from '../theme';
 
@@ -85,6 +93,25 @@ export default function SettingsScreen({
   const chooseLanguage = (lng: string) => {
     setLanguage(lng);
     setSetting('language', lng).catch(() => undefined);
+  };
+
+  const [downloadDir, setDownloadDir] = useState<PickedDirectory | null>(null);
+  useEffect(() => {
+    loadDownloadDir().then(setDownloadDir);
+  }, []);
+  const chooseDownloadDir = async () => {
+    const picked = await pickDownloadDirectory().catch(() => null);
+    if (!picked) return; // user backed out
+    if (downloadDir && downloadDir.uri !== picked.uri) {
+      releaseDownloadDirectory(downloadDir.uri).catch(() => undefined);
+    }
+    setDownloadDir(picked);
+    saveDownloadDir(picked).catch(() => undefined);
+  };
+  const resetDownloadDir = () => {
+    if (downloadDir) releaseDownloadDirectory(downloadDir.uri).catch(() => undefined);
+    setDownloadDir(null);
+    saveDownloadDir(null).catch(() => undefined);
   };
 
   const serverKey = (choice: ServerChoice) =>
@@ -193,6 +220,28 @@ export default function SettingsScreen({
             );
           })}
         </View>
+      </Card>
+
+      <Card>
+        <Subtitle>{t('settings.downloads.title')}</Subtitle>
+        <Text style={{ color: c.textMuted, fontSize: fontSize.small }}>
+          {t('settings.downloads.hint')}
+        </Text>
+        <View style={[styles.row, { borderColor: c.border }]}>
+          <Text style={{ color: c.text, fontSize: fontSize.body, flex: 1 }}>
+            {downloadDir ? downloadDir.label : t('settings.downloads.defaultLabel')}
+          </Text>
+        </View>
+        <PrimaryButton
+          label={t('settings.downloads.choose')}
+          onPress={chooseDownloadDir}
+        />
+        {downloadDir ? (
+          <GhostButton
+            label={t('settings.downloads.reset')}
+            onPress={resetDownloadDir}
+          />
+        ) : null}
       </Card>
 
       <View onLayout={(e) => setServerY(e.nativeEvent.layout.y)}>

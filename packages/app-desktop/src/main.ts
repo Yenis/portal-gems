@@ -38,6 +38,45 @@ const forward = (id: number) => (ev: NativeTransferEvent) => {
   win?.webContents.send('pg:event', { id, ...ev });
 };
 
+// ---- Download destination helpers ----
+
+// Mirrors the engine's sanitize_file_name: the offered name is already
+// sanitized by the engine, but the stat check receives it over IPC, so
+// defend here too.
+function safeFileName(name: string): string {
+  const base = path.basename(name.replace(/\\/g, '/'));
+  return base === '' || base === '.' || base === '..' ? 'received.bin' : base;
+}
+
+/** The folder received files should land in: the user's choice, else Downloads. */
+const resolveDownloadDir = (dir?: string | null) =>
+  dir && dir.trim() !== '' ? dir : app.getPath('downloads');
+
+/** First free `name`, `name (1)`, `name (2)`, … inside `dir` (engine convention). */
+function dedupPath(dir: string, name: string): string {
+  const dot = name.lastIndexOf('.');
+  const stem = dot > 0 ? name.slice(0, dot) : name;
+  const ext = dot > 0 ? name.slice(dot) : '';
+  let dest = path.join(dir, name);
+  for (let n = 1; fs.existsSync(dest); n++) {
+    dest = path.join(dir, `${stem} (${n})${ext}`);
+  }
+  return dest;
+}
+
+/** Move across filesystems if needed; lands at `dest` via an atomic rename. */
+async function moveFile(src: string, dest: string): Promise<void> {
+  try {
+    await fs.promises.rename(src, dest);
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code !== 'EXDEV') throw e;
+    const part = `${dest}.pgpart`;
+    await fs.promises.copyFile(src, part);
+    await fs.promises.rename(part, dest);
+    await fs.promises.unlink(src);
+  }
+}
+
 ipcMain.handle('pg:locale', () => app.getLocale());
 
 ipcMain.handle('pg:pickFile', async () => {
@@ -61,13 +100,55 @@ ipcMain.handle(
     engine.requestReceive(id, code, server ?? {})
 );
 
-ipcMain.handle('pg:accept', async (_e, id: number, destDir?: string) => {
-  const saved = await engine.acceptReceive(
-    id,
-    destDir ?? app.getPath('downloads'),
-    forward(id)
-  );
-  return destDir ? saved : path.basename(saved);
+// Plain accept into an explicit directory; used by the pairing handshake.
+ipcMain.handle('pg:accept', async (_e, id: number, destDir: string) => {
+  return engine.acceptReceive(id, destDir, forward(id));
+});
+
+// Accept a user-visible download. The transfer lands in a per-transfer
+// staging dir first, so the destination - including a file the user agreed
+// to overwrite - is only touched after the file has fully arrived. A failed
+// or cancelled transfer leaves the existing file untouched.
+ipcMain.handle(
+  'pg:acceptDownload',
+  async (_e, id: number, dir: string | null, overwrite: boolean) => {
+    const staging = path.join(app.getPath('userData'), 'incoming', String(id));
+    await fs.promises.mkdir(staging, { recursive: true });
+    try {
+      const saved = await engine.acceptReceive(id, staging, forward(id));
+      const destDir = resolveDownloadDir(dir);
+      // Recreate the folder if the user deleted it since choosing it.
+      await fs.promises.mkdir(destDir, { recursive: true });
+      const name = path.basename(saved);
+      const dest = overwrite ? path.join(destDir, name) : dedupPath(destDir, name);
+      await moveFile(saved, dest);
+      return path.basename(dest);
+    } finally {
+      await fs.promises
+        .rm(staging, { recursive: true, force: true })
+        .catch(() => undefined);
+    }
+  }
+);
+
+ipcMain.handle('pg:pickDirectory', async () => {
+  if (!win) return null;
+  const result = await dialog.showOpenDialog(win, {
+    properties: ['openDirectory', 'createDirectory'],
+  });
+  return result.canceled || result.filePaths.length === 0 ? null : result.filePaths[0];
+});
+
+// Does the incoming file's name collide in the download folder? Checked
+// before accepting so the user can decide between overwrite and keep-both.
+ipcMain.handle('pg:statTarget', async (_e, dir: string | null, fileName: string) => {
+  const target = path.join(resolveDownloadDir(dir), safeFileName(fileName));
+  try {
+    const st = await fs.promises.stat(target);
+    return { exists: st.isFile(), size: st.size };
+  } catch {
+    return { exists: false, size: 0 };
+  }
 });
 
 ipcMain.handle('pg:deviceName', () => os.hostname());
@@ -221,6 +302,14 @@ async function runSmoke(code: string, cancelInstead: boolean) {
   };
 
   await waitFor('PortalGems', 10000);
+  // Optional: receive into a custom download folder instead of Downloads.
+  // Always clear otherwise - the smoke profile persists across runs.
+  const dlDir = process.env.PG_SMOKE_DL_DIR;
+  await exec(
+    dlDir
+      ? `localStorage.setItem('pg-download-dir', ${JSON.stringify(dlDir)})`
+      : `localStorage.removeItem('pg-download-dir')`
+  );
   await exec(`(() => {
     const input = document.querySelector('input');
     const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
@@ -237,7 +326,15 @@ async function runSmoke(code: string, cancelInstead: boolean) {
     await waitFor('Do you want to receive this file?', 45000);
     console.log('SMOKE:CONFIRM-VISIBLE');
     await clickButton('Accept');
-    await waitFor('Saved to Downloads', 90000);
+    // Optional: expect the same-name warning and resolve it.
+    //   PG_SMOKE_CONFLICT=overwrite | keepboth
+    const conflict = process.env.PG_SMOKE_CONFLICT;
+    if (conflict) {
+      await waitFor('File already exists', 15000);
+      console.log('SMOKE:CONFLICT-VISIBLE');
+      await clickButton(conflict === 'overwrite' ? 'Overwrite' : 'Keep both');
+    }
+    await waitFor(dlDir ? 'Saved as' : 'Saved to Downloads', 90000);
     console.log('SMOKE:RECEIVE-OK');
   }
   app.exit(0);

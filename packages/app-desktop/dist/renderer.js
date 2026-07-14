@@ -27493,6 +27493,12 @@
       receiving: "Primanje datoteke\u2026",
       success: "Datoteka sa\u010Duvana.",
       savedAs: "Sa\u010Duvano u Downloads kao {{name}}.",
+      savedAsIn: "Sa\u010Duvano kao {{name}} u {{folder}}.",
+      folderFallback: "Odabrani folder za preuzimanja nije bio dostupan, pa je datoteka sa\u010Duvana u Downloads.",
+      existsTitle: "Datoteka ve\u0107 postoji",
+      existsBody: "{{name}} ve\u0107 postoji u tvom folderu za preuzimanja ({{size}}). Prepisati je?",
+      overwrite: "Prepi\u0161i",
+      keepBoth: "Zadr\u017Ei obje",
       declined: "Odbio/la si prijenos."
     },
     pair: {
@@ -27533,6 +27539,13 @@
         emerald: "Smaragd",
         ruby: "Rubin",
         amethyst: "Ametist"
+      },
+      downloads: {
+        title: "Lokacija preuzimanja",
+        hint: "Primljene datoteke se \u010Duvaju ovdje. Podrazumijevano idu u folder Downloads.",
+        defaultLabel: "Downloads folder (podrazumijevano)",
+        choose: "Odaberi folder",
+        reset: "Koristi podrazumijevano"
       },
       server: {
         title: "Server za povezivanje",
@@ -27634,6 +27647,12 @@
       receiving: "Datei wird empfangen\u2026",
       success: "Datei gespeichert.",
       savedAs: "In Downloads gespeichert als {{name}}.",
+      savedAsIn: "Gespeichert als {{name}} in {{folder}}.",
+      folderFallback: "Der gew\xE4hlte Download-Ordner war nicht verf\xFCgbar, die Datei wurde stattdessen in Downloads gespeichert.",
+      existsTitle: "Datei existiert bereits",
+      existsBody: "{{name}} existiert bereits in deinem Download-Ordner ({{size}}). \xDCberschreiben?",
+      overwrite: "\xDCberschreiben",
+      keepBoth: "Beide behalten",
       declined: "Du hast die \xDCbertragung abgelehnt."
     },
     pair: {
@@ -27674,6 +27693,13 @@
         emerald: "Smaragd",
         ruby: "Rubin",
         amethyst: "Amethyst"
+      },
+      downloads: {
+        title: "Speicherort f\xFCr Downloads",
+        hint: "Empfangene Dateien werden hier gespeichert. Standardm\xE4\xDFig landen sie in deinem Downloads-Ordner.",
+        defaultLabel: "Downloads-Ordner (Standard)",
+        choose: "Ordner w\xE4hlen",
+        reset: "Standard verwenden"
       },
       server: {
         title: "Verbindungsserver",
@@ -27775,6 +27801,12 @@
       receiving: "Receiving file\u2026",
       success: "File saved.",
       savedAs: "Saved to Downloads as {{name}}.",
+      savedAsIn: "Saved as {{name}} in {{folder}}.",
+      folderFallback: "The chosen download folder was not available, so the file was saved to Downloads.",
+      existsTitle: "File already exists",
+      existsBody: "{{name}} already exists in your download folder ({{size}}). Overwrite it?",
+      overwrite: "Overwrite",
+      keepBoth: "Keep both",
       declined: "You declined the transfer."
     },
     pair: {
@@ -27829,6 +27861,13 @@
         emerald: "Emerald",
         ruby: "Ruby",
         amethyst: "Amethyst"
+      },
+      downloads: {
+        title: "Download location",
+        hint: "Received files go here. By default they go to your Downloads folder.",
+        defaultLabel: "Downloads folder (default)",
+        choose: "Choose folder",
+        reset: "Use default"
       },
       server: {
         title: "Connection server",
@@ -27916,6 +27955,12 @@
       receiving: "Recibiendo archivo\u2026",
       success: "Archivo guardado.",
       savedAs: "Guardado en Descargas como {{name}}.",
+      savedAsIn: "Guardado como {{name}} en {{folder}}.",
+      folderFallback: "La carpeta de descargas elegida no estaba disponible, as\xED que el archivo se guard\xF3 en Descargas.",
+      existsTitle: "El archivo ya existe",
+      existsBody: "{{name}} ya existe en tu carpeta de descargas ({{size}}). \xBFQuieres sobrescribirlo?",
+      overwrite: "Sobrescribir",
+      keepBoth: "Conservar ambos",
       declined: "Has rechazado la transferencia."
     },
     pair: {
@@ -27956,6 +28001,13 @@
         emerald: "Esmeralda",
         ruby: "Rub\xED",
         amethyst: "Amatista"
+      },
+      downloads: {
+        title: "Ubicaci\xF3n de descargas",
+        hint: "Los archivos recibidos se guardan aqu\xED. Por defecto van a tu carpeta de Descargas.",
+        defaultLabel: "Carpeta de Descargas (predeterminada)",
+        choose: "Elegir carpeta",
+        reset: "Usar la predeterminada"
       },
       server: {
         title: "Servidor de conexi\xF3n",
@@ -28057,6 +28109,12 @@
       receiving: "R\xE9ception du fichier\u2026",
       success: "Fichier enregistr\xE9.",
       savedAs: "Enregistr\xE9 dans T\xE9l\xE9chargements sous {{name}}.",
+      savedAsIn: "Enregistr\xE9 sous {{name}} dans {{folder}}.",
+      folderFallback: "Le dossier de t\xE9l\xE9chargement choisi n'\xE9tait pas disponible, le fichier a donc \xE9t\xE9 enregistr\xE9 dans T\xE9l\xE9chargements.",
+      existsTitle: "Le fichier existe d\xE9j\xE0",
+      existsBody: "{{name}} existe d\xE9j\xE0 dans votre dossier de t\xE9l\xE9chargement ({{size}}). L'\xE9craser ?",
+      overwrite: "\xC9craser",
+      keepBoth: "Garder les deux",
       declined: "Vous avez refus\xE9 le transfert."
     },
     pair: {
@@ -28097,6 +28155,13 @@
         emerald: "\xC9meraude",
         ruby: "Rubis",
         amethyst: "Am\xE9thyste"
+      },
+      downloads: {
+        title: "Emplacement de t\xE9l\xE9chargement",
+        hint: "Les fichiers re\xE7us sont enregistr\xE9s ici. Par d\xE9faut, ils vont dans votre dossier T\xE9l\xE9chargements.",
+        defaultLabel: "Dossier T\xE9l\xE9chargements (par d\xE9faut)",
+        choose: "Choisir un dossier",
+        reset: "Utiliser le dossier par d\xE9faut"
       },
       server: {
         title: "Serveur de connexion",
@@ -28198,6 +28263,12 @@
       receiving: "\u041F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u0435 \u0444\u0430\u0439\u043B\u0430\u2026",
       success: "\u0424\u0430\u0439\u043B \u0441\u043E\u0445\u0440\u0430\u043D\u0451\u043D.",
       savedAs: "\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E \u0432 \xAB\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0438\xBB \u043A\u0430\u043A {{name}}.",
+      savedAsIn: "\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E \u043A\u0430\u043A {{name}} \u0432 {{folder}}.",
+      folderFallback: "\u0412\u044B\u0431\u0440\u0430\u043D\u043D\u0430\u044F \u043F\u0430\u043F\u043A\u0430 \u0437\u0430\u0433\u0440\u0443\u0437\u043E\u043A \u0431\u044B\u043B\u0430 \u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u043D\u0430, \u043F\u043E\u044D\u0442\u043E\u043C\u0443 \u0444\u0430\u0439\u043B \u0441\u043E\u0445\u0440\u0430\u043D\u0451\u043D \u0432 \xAB\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0438\xBB.",
+      existsTitle: "\u0424\u0430\u0439\u043B \u0443\u0436\u0435 \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u0435\u0442",
+      existsBody: "{{name}} \u0443\u0436\u0435 \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u0435\u0442 \u0432 \u043F\u0430\u043F\u043A\u0435 \u0437\u0430\u0433\u0440\u0443\u0437\u043E\u043A ({{size}}). \u041F\u0435\u0440\u0435\u0437\u0430\u043F\u0438\u0441\u0430\u0442\u044C?",
+      overwrite: "\u041F\u0435\u0440\u0435\u0437\u0430\u043F\u0438\u0441\u0430\u0442\u044C",
+      keepBoth: "\u041E\u0441\u0442\u0430\u0432\u0438\u0442\u044C \u043E\u0431\u0430",
       declined: "\u0412\u044B \u043E\u0442\u043A\u043B\u043E\u043D\u0438\u043B\u0438 \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0443."
     },
     pair: {
@@ -28238,6 +28309,13 @@
         emerald: "\u0418\u0437\u0443\u043C\u0440\u0443\u0434",
         ruby: "\u0420\u0443\u0431\u0438\u043D",
         amethyst: "\u0410\u043C\u0435\u0442\u0438\u0441\u0442"
+      },
+      downloads: {
+        title: "\u041F\u0430\u043F\u043A\u0430 \u0434\u043B\u044F \u0437\u0430\u0433\u0440\u0443\u0437\u043E\u043A",
+        hint: "\u041F\u043E\u043B\u0443\u0447\u0435\u043D\u043D\u044B\u0435 \u0444\u0430\u0439\u043B\u044B \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u044E\u0442\u0441\u044F \u0441\u044E\u0434\u0430. \u041F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E \u043E\u043D\u0438 \u043F\u043E\u043F\u0430\u0434\u0430\u044E\u0442 \u0432 \u043F\u0430\u043F\u043A\u0443 \xAB\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0438\xBB.",
+        defaultLabel: "\u041F\u0430\u043F\u043A\u0430 \xAB\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0438\xBB (\u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E)",
+        choose: "\u0412\u044B\u0431\u0440\u0430\u0442\u044C \u043F\u0430\u043F\u043A\u0443",
+        reset: "\u0418\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u044C \u043F\u0430\u043F\u043A\u0443 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E"
       },
       server: {
         title: "\u0421\u0435\u0440\u0432\u0435\u0440 \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u044F",
@@ -28450,6 +28528,17 @@
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
     return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
+  }
+
+  // src/renderer/downloads.ts
+  var KEY2 = "pg-download-dir";
+  function loadDownloadDir() {
+    const v = localStorage.getItem(KEY2);
+    return v && v.trim() !== "" ? v : null;
+  }
+  function saveDownloadDir(dir2) {
+    if (dir2) localStorage.setItem(KEY2, dir2);
+    else localStorage.removeItem(KEY2);
   }
 
   // src/renderer/components.tsx
@@ -29006,9 +29095,11 @@
     const [direct, setDirect] = (0, import_react14.useState)(null);
     const [pct, setPct] = (0, import_react14.useState)(0);
     const [savedName, setSavedName] = (0, import_react14.useState)("");
+    const [existingSize, setExistingSize] = (0, import_react14.useState)(0);
     const [error, setError] = (0, import_react14.useState)("");
     const idRef = (0, import_react14.useRef)(0);
     const cancelledRef = (0, import_react14.useRef)(false);
+    const downloadDirRef = (0, import_react14.useRef)(loadDownloadDir());
     (0, import_react14.useEffect)(() => {
       const id = nextId++;
       idRef.current = id;
@@ -29055,9 +29146,9 @@
         handlers.delete(id);
       };
     }, []);
-    const accept = () => {
+    const startTransfer = (overwrite) => {
       setPhase("transferring");
-      window.portalgems.accept(idRef.current).then(
+      window.portalgems.acceptDownload(idRef.current, downloadDirRef.current, overwrite).then(
         (name) => {
           setSavedName(name);
           setPhase("done");
@@ -29071,6 +29162,16 @@
         }
       );
     };
+    const accept = async () => {
+      if (!offer) return;
+      const target = await window.portalgems.statTarget(downloadDirRef.current, offer.fileName).catch(() => ({ exists: false, size: 0 }));
+      if (target.exists) {
+        setExistingSize(target.size);
+        setPhase("conflict");
+        return;
+      }
+      startTransfer(false);
+    };
     const decline = () => {
       window.portalgems.reject(idRef.current).catch(() => void 0);
       setPhase("declined");
@@ -29080,7 +29181,28 @@
       window.portalgems.cancel(idRef.current);
     };
     const busy = phase === "connecting" || phase === "transferring";
-    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("receive.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, device ? device.name : code), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, phase === "connecting" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, device ? t2("paired.receiveWaiting", { name: device.name }) : t2("receive.connecting")) : null, phase === "confirm" && offer ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("receive.incoming")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.text, margin: 0 } }, offer.fileName, " \xB7 ", formatSize(offer.fileSize)), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.acceptQuestion")), /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.accept"), onClick: accept }), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.decline"), danger: true, onClick: decline })) : null, phase === "transferring" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("receive.receiving")), direct !== null ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, direct ? t2("transfer.direct") : t2("transfer.relay")) : null, /* @__PURE__ */ import_react14.default.createElement(ProgressBar, { c, pct }), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("transfer.progress", { pct }))) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("receive.success")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.success, margin: 0 } }, t2("receive.savedAs", { name: savedName }))) : null, phase === "declined" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.declined")) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "cancelled" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("errors.cancelled")) : null), busy ? /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancel }) : phase === "confirm" ? null : /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.done"), onClick: onHome }));
+    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("receive.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, device ? device.name : code), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, phase === "connecting" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, device ? t2("paired.receiveWaiting", { name: device.name }) : t2("receive.connecting")) : null, phase === "confirm" && offer ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("receive.incoming")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.text, margin: 0 } }, offer.fileName, " \xB7 ", formatSize(offer.fileSize)), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.acceptQuestion")), /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.accept"), onClick: accept }), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.decline"), danger: true, onClick: decline })) : null, phase === "conflict" && offer ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("receive.existsTitle")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.text, margin: 0 } }, t2("receive.existsBody", {
+      name: offer.fileName,
+      size: formatSize(existingSize)
+    })), /* @__PURE__ */ import_react14.default.createElement(
+      PrimaryButton,
+      {
+        c,
+        label: t2("receive.keepBoth"),
+        onClick: () => startTransfer(false)
+      }
+    ), /* @__PURE__ */ import_react14.default.createElement(
+      GhostButton,
+      {
+        c,
+        label: t2("receive.overwrite"),
+        danger: true,
+        onClick: () => startTransfer(true)
+      }
+    ), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.decline"), onClick: decline })) : null, phase === "transferring" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("receive.receiving")), direct !== null ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, direct ? t2("transfer.direct") : t2("transfer.relay")) : null, /* @__PURE__ */ import_react14.default.createElement(ProgressBar, { c, pct }), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("transfer.progress", { pct }))) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("receive.success")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.success, margin: 0 } }, downloadDirRef.current ? t2("receive.savedAsIn", {
+      name: savedName,
+      folder: downloadDirRef.current
+    }) : t2("receive.savedAs", { name: savedName }))) : null, phase === "declined" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.declined")) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "cancelled" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("errors.cancelled")) : null), busy ? /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancel }) : phase === "confirm" || phase === "conflict" ? null : /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.done"), onClick: onHome }));
   }
   function Pair({ c, onHome }) {
     const { t: t2 } = useTranslation();
@@ -29192,6 +29314,17 @@
   }) {
     const { t: t2, i18n } = useTranslation();
     const [server, setServer] = (0, import_react14.useState)(() => loadServerSettings());
+    const [downloadDir, setDownloadDir] = (0, import_react14.useState)(() => loadDownloadDir());
+    const chooseDownloadDir = async () => {
+      const dir2 = await window.portalgems.pickDirectory();
+      if (!dir2) return;
+      saveDownloadDir(dir2);
+      setDownloadDir(dir2);
+    };
+    const resetDownloadDir = () => {
+      saveDownloadDir(null);
+      setDownloadDir(null);
+    };
     const serverRef = (0, import_react14.useRef)(null);
     (0, import_react14.useEffect)(() => {
       if (scrollToServer) {
@@ -29248,7 +29381,32 @@
           background: themes[name].light.primary
         }
       }
-    ), /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.text } }, t2(`settings.themes.${name}`))), themeName === name ? /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.primary, fontWeight: 700 } }, "\u2713") : null))), /* @__PURE__ */ import_react14.default.createElement("div", { ref: serverRef }, /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(
+    ), /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.text } }, t2(`settings.themes.${name}`))), themeName === name ? /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.primary, fontWeight: 700 } }, "\u2713") : null))), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("settings.downloads.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("settings.downloads.hint")), /* @__PURE__ */ import_react14.default.createElement("div", { style: { ...row(false), cursor: "default" } }, /* @__PURE__ */ import_react14.default.createElement(
+      "span",
+      {
+        style: {
+          color: c.text,
+          fontFamily: downloadDir ? "monospace" : void 0,
+          fontSize: downloadDir ? fontSize.small : void 0,
+          overflowWrap: "anywhere"
+        }
+      },
+      downloadDir ?? t2("settings.downloads.defaultLabel")
+    )), /* @__PURE__ */ import_react14.default.createElement(
+      PrimaryButton,
+      {
+        c,
+        label: t2("settings.downloads.choose"),
+        onClick: chooseDownloadDir
+      }
+    ), downloadDir ? /* @__PURE__ */ import_react14.default.createElement(
+      GhostButton,
+      {
+        c,
+        label: t2("settings.downloads.reset"),
+        onClick: resetDownloadDir
+      }
+    ) : null), /* @__PURE__ */ import_react14.default.createElement("div", { ref: serverRef }, /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(
       "div",
       {
         style: { display: "flex", alignItems: "center", justifyContent: "space-between" }

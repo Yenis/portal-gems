@@ -34,6 +34,12 @@
     "receiving": "Primanje datoteke…",
     "success": "Datoteka sačuvana.",
     "savedAs": "Sačuvano u Downloads kao {{name}}.",
+    "savedAsIn": "Sačuvano kao {{name}} u {{folder}}.",
+    "folderFallback": "Odabrani folder za preuzimanja nije bio dostupan, pa je datoteka sačuvana u Downloads.",
+    "existsTitle": "Datoteka već postoji",
+    "existsBody": "{{name}} već postoji u tvom folderu za preuzimanja ({{size}}). Prepisati je?",
+    "overwrite": "Prepiši",
+    "keepBoth": "Zadrži obje",
     "declined": "Odbio/la si prijenos."
   },
   "pair": {
@@ -74,6 +80,13 @@
       "emerald": "Smaragd",
       "ruby": "Rubin",
       "amethyst": "Ametist"
+    },
+    "downloads": {
+      "title": "Lokacija preuzimanja",
+      "hint": "Primljene datoteke se čuvaju ovdje. Podrazumijevano idu u folder Downloads.",
+      "defaultLabel": "Downloads folder (podrazumijevano)",
+      "choose": "Odaberi folder",
+      "reset": "Koristi podrazumijevano"
     },
     "server": {
       "title": "Server za povezivanje",

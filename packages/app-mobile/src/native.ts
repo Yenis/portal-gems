@@ -6,6 +6,23 @@ export interface PickedFile {
   size: number;
 }
 
+export interface PickedDirectory {
+  uri: string;
+  label: string;
+}
+
+export interface DownloadTargetStat {
+  dirOk: boolean;
+  exists: boolean;
+  size: number;
+}
+
+export interface SavedToDir {
+  name: string;
+  /** True when the chosen folder was gone and the file went to Downloads. */
+  fallback: boolean;
+}
+
 interface PortalGemsNativeSpec {
   incomingDir: string;
   cacheDir: string;
@@ -15,6 +32,15 @@ interface PortalGemsNativeSpec {
   setSetting(key: string, value: string): Promise<void>;
   copyToCache(uri: string): Promise<PickedFile>;
   saveToDownloads(srcPath: string, fileName: string): Promise<string>;
+  pickDownloadDirectory(): Promise<PickedDirectory | null>;
+  releaseDownloadDirectory(uri: string): Promise<void>;
+  statDownloadTarget(dirUri: string, fileName: string): Promise<DownloadTargetStat>;
+  saveToDownloadDir(
+    srcPath: string,
+    dirUri: string,
+    fileName: string,
+    overwrite: boolean
+  ): Promise<SavedToDir>;
   consumePendingShare(): Promise<string | null>;
   startTransferService(title: string): Promise<void>;
   stopTransferService(): Promise<void>;
@@ -46,6 +72,31 @@ export const readTextFile = (path: string) => native.readTextFile(path);
 export const deleteFile = (path: string) => native.deleteFile(path);
 export const saveToDownloads = (srcPath: string, fileName: string) =>
   native.saveToDownloads(srcPath, fileName);
+export const pickDownloadDirectory = () => native.pickDownloadDirectory();
+export const releaseDownloadDirectory = (uri: string) =>
+  native.releaseDownloadDirectory(uri);
+export const statDownloadTarget = (dirUri: string, fileName: string) =>
+  native.statDownloadTarget(dirUri, fileName);
+export const saveToDownloadDir = (
+  srcPath: string,
+  dirUri: string,
+  fileName: string,
+  overwrite: boolean
+) => native.saveToDownloadDir(srcPath, dirUri, fileName, overwrite);
+
+/** The persisted download-folder choice; null means default Downloads. */
+export async function loadDownloadDir(): Promise<PickedDirectory | null> {
+  const [uri, label] = await Promise.all([
+    getSetting('pg-download-dir'),
+    getSetting('pg-download-dir-label'),
+  ]);
+  return uri ? { uri, label: label || uri } : null;
+}
+
+export async function saveDownloadDir(dir: PickedDirectory | null): Promise<void> {
+  await setSetting('pg-download-dir', dir?.uri ?? '');
+  await setSetting('pg-download-dir-label', dir?.label ?? '');
+}
 
 /** Hold the foreground service for the duration of `work`. */
 export async function withTransferService<T>(

@@ -34,6 +34,12 @@
     "receiving": "Receiving file…",
     "success": "File saved.",
     "savedAs": "Saved to Downloads as {{name}}.",
+    "savedAsIn": "Saved as {{name}} in {{folder}}.",
+    "folderFallback": "The chosen download folder was not available, so the file was saved to Downloads.",
+    "existsTitle": "File already exists",
+    "existsBody": "{{name}} already exists in your download folder ({{size}}). Overwrite it?",
+    "overwrite": "Overwrite",
+    "keepBoth": "Keep both",
     "declined": "You declined the transfer."
   },
   "pair": {
@@ -88,6 +94,13 @@
       "emerald": "Emerald",
       "ruby": "Ruby",
       "amethyst": "Amethyst"
+    },
+    "downloads": {
+      "title": "Download location",
+      "hint": "Received files go here. By default they go to your Downloads folder.",
+      "defaultLabel": "Downloads folder (default)",
+      "choose": "Choose folder",
+      "reset": "Use default"
     },
     "server": {
       "title": "Connection server",

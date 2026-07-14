@@ -37,6 +37,7 @@ import {
 } from './pairing';
 import { loadThemeName, saveThemeName } from './theme';
 import { currentServer, loadServerSettings, saveServerSettings } from './server';
+import { loadDownloadDir, saveDownloadDir } from './downloads';
 import {
   Card,
   CodeBox,
@@ -68,7 +69,17 @@ declare global {
         code: string,
         server?: ServerConfig
       ): Promise<{ fileName: string; fileSize: number }>;
-      accept(id: number, destDir?: string): Promise<string>;
+      accept(id: number, destDir: string): Promise<string>;
+      acceptDownload(
+        id: number,
+        dir: string | null,
+        overwrite: boolean
+      ): Promise<string>;
+      pickDirectory(): Promise<string | null>;
+      statTarget(
+        dir: string | null,
+        fileName: string
+      ): Promise<{ exists: boolean; size: number }>;
       reject(id: number): Promise<void>;
       cancel(id: number): Promise<void>;
       deviceName(): Promise<string>;
@@ -444,6 +455,7 @@ function Send({
 type ReceivePhase =
   | 'connecting'
   | 'confirm'
+  | 'conflict'
   | 'transferring'
   | 'done'
   | 'declined'
@@ -467,9 +479,13 @@ function Receive({
   const [direct, setDirect] = useState<boolean | null>(null);
   const [pct, setPct] = useState(0);
   const [savedName, setSavedName] = useState('');
+  const [existingSize, setExistingSize] = useState(0);
   const [error, setError] = useState('');
   const idRef = useRef(0);
   const cancelledRef = useRef(false);
+  // Where this transfer will be saved; read once - changing the setting
+  // mid-receive should not affect a transfer already on screen.
+  const downloadDirRef = useRef<string | null>(loadDownloadDir());
 
   useEffect(() => {
     const id = nextId++;
@@ -522,9 +538,9 @@ function Receive({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const accept = () => {
+  const startTransfer = (overwrite: boolean) => {
     setPhase('transferring');
-    window.portalgems.accept(idRef.current).then(
+    window.portalgems.acceptDownload(idRef.current, downloadDirRef.current, overwrite).then(
       (name) => {
         setSavedName(name);
         setPhase('done');
@@ -537,6 +553,21 @@ function Receive({
         }
       }
     );
+  };
+
+  // A same-named file in the download folder gets a warning first; the
+  // engine sanitizes the offered name, so it is exactly the name saved.
+  const accept = async () => {
+    if (!offer) return;
+    const target = await window.portalgems
+      .statTarget(downloadDirRef.current, offer.fileName)
+      .catch(() => ({ exists: false, size: 0 }));
+    if (target.exists) {
+      setExistingSize(target.size);
+      setPhase('conflict');
+      return;
+    }
+    startTransfer(false);
   };
 
   const decline = () => {
@@ -574,6 +605,29 @@ function Receive({
             <GhostButton c={c} label={t('common.decline')} danger onClick={decline} />
           </>
         ) : null}
+        {phase === 'conflict' && offer ? (
+          <>
+            <Subtitle c={c}>{t('receive.existsTitle')}</Subtitle>
+            <p style={{ color: c.text, margin: 0 }}>
+              {t('receive.existsBody', {
+                name: offer.fileName,
+                size: formatSize(existingSize),
+              })}
+            </p>
+            <PrimaryButton
+              c={c}
+              label={t('receive.keepBoth')}
+              onClick={() => startTransfer(false)}
+            />
+            <GhostButton
+              c={c}
+              label={t('receive.overwrite')}
+              danger
+              onClick={() => startTransfer(true)}
+            />
+            <GhostButton c={c} label={t('common.decline')} onClick={decline} />
+          </>
+        ) : null}
         {phase === 'transferring' ? (
           <>
             <Subtitle c={c}>{t('receive.receiving')}</Subtitle>
@@ -588,7 +642,12 @@ function Receive({
           <>
             <Subtitle c={c}>{t('receive.success')}</Subtitle>
             <p style={{ color: c.success, margin: 0 }}>
-              {t('receive.savedAs', { name: savedName })}
+              {downloadDirRef.current
+                ? t('receive.savedAsIn', {
+                    name: savedName,
+                    folder: downloadDirRef.current,
+                  })
+                : t('receive.savedAs', { name: savedName })}
             </p>
           </>
         ) : null}
@@ -603,7 +662,7 @@ function Receive({
       </Card>
       {busy ? (
         <GhostButton c={c} label={t('common.cancel')} danger onClick={cancel} />
-      ) : phase === 'confirm' ? null : (
+      ) : phase === 'confirm' || phase === 'conflict' ? null : (
         <PrimaryButton c={c} label={t('common.done')} onClick={onHome} />
       )}
     </>
@@ -772,6 +831,18 @@ function Settings({
 }) {
   const { t, i18n } = useTranslation();
   const [server, setServer] = useState<ServerSettings>(() => loadServerSettings());
+  const [downloadDir, setDownloadDir] = useState<string | null>(() => loadDownloadDir());
+
+  const chooseDownloadDir = async () => {
+    const dir = await window.portalgems.pickDirectory();
+    if (!dir) return;
+    saveDownloadDir(dir);
+    setDownloadDir(dir);
+  };
+  const resetDownloadDir = () => {
+    saveDownloadDir(null);
+    setDownloadDir(null);
+  };
 
   // Deep-link target: scroll to the server section when arriving from the
   // send-screen "Change server" shortcut.
@@ -852,6 +923,33 @@ function Settings({
             ) : null}
           </div>
         ))}
+      </Card>
+      <Card c={c}>
+        <Subtitle c={c}>{t('settings.downloads.title')}</Subtitle>
+        <Muted c={c}>{t('settings.downloads.hint')}</Muted>
+        <div style={{ ...row(false), cursor: 'default' }}>
+          <span
+            style={{
+              color: c.text,
+              fontFamily: downloadDir ? 'monospace' : undefined,
+              fontSize: downloadDir ? fontSize.small : undefined,
+              overflowWrap: 'anywhere',
+            }}>
+            {downloadDir ?? t('settings.downloads.defaultLabel')}
+          </span>
+        </div>
+        <PrimaryButton
+          c={c}
+          label={t('settings.downloads.choose')}
+          onClick={chooseDownloadDir}
+        />
+        {downloadDir ? (
+          <GhostButton
+            c={c}
+            label={t('settings.downloads.reset')}
+            onClick={resetDownloadDir}
+          />
+        ) : null}
       </Card>
       <div ref={serverRef}>
       <Card c={c}>

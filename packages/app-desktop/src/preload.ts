@@ -32,8 +32,19 @@ contextBridge.exposeInMainWorld('portalgems', {
     server?: ServerConfig
   ): Promise<{ fileName: string; fileSize: number }> =>
     ipcRenderer.invoke('pg:requestReceive', id, code, server),
-  accept: (id: number, destDir?: string): Promise<string> =>
+  accept: (id: number, destDir: string): Promise<string> =>
     ipcRenderer.invoke('pg:accept', id, destDir),
+  acceptDownload: (
+    id: number,
+    dir: string | null,
+    overwrite: boolean
+  ): Promise<string> => ipcRenderer.invoke('pg:acceptDownload', id, dir, overwrite),
+  pickDirectory: (): Promise<string | null> => ipcRenderer.invoke('pg:pickDirectory'),
+  statTarget: (
+    dir: string | null,
+    fileName: string
+  ): Promise<{ exists: boolean; size: number }> =>
+    ipcRenderer.invoke('pg:statTarget', dir, fileName),
   reject: (id: number): Promise<void> => ipcRenderer.invoke('pg:reject', id),
   cancel: (id: number): Promise<void> => ipcRenderer.invoke('pg:cancel', id),
   deviceName: (): Promise<string> => ipcRenderer.invoke('pg:deviceName'),

@@ -23,8 +23,12 @@ import { friendlyError } from '../errors';
 import {
   formatSize,
   incomingDir,
+  loadDownloadDir,
+  saveToDownloadDir,
   saveToDownloads,
+  statDownloadTarget,
   withTransferService,
+  type PickedDirectory,
 } from '../native';
 import { currentServer } from '../server';
 import { useTheme } from '../theme';
@@ -32,6 +36,7 @@ import { useTheme } from '../theme';
 type Phase =
   | 'connecting'
   | 'confirm'
+  | 'conflict'
   | 'transferring'
   | 'saving'
   | 'done'
@@ -56,9 +61,19 @@ export default function ReceiveScreen({
   const [direct, setDirect] = useState<boolean | null>(null);
   const [pct, setPct] = useState(0);
   const [savedName, setSavedName] = useState('');
+  const [existingSize, setExistingSize] = useState(0);
+  const [usedFallback, setUsedFallback] = useState(false);
   const [error, setError] = useState('');
   const abortRef = useRef<AbortController | null>(null);
   const incomingRef = useRef<IncomingFileInterface | null>(null);
+  // Where this transfer will be saved; loaded once - changing the setting
+  // mid-receive should not affect a transfer already on screen.
+  const downloadDirRef = useRef<PickedDirectory | null>(null);
+  useEffect(() => {
+    loadDownloadDir().then((dir) => {
+      downloadDirRef.current = dir;
+    });
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -120,7 +135,7 @@ export default function ReceiveScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const accept = () => {
+  const startTransfer = (overwrite: boolean) => {
     const incoming = incomingRef.current;
     if (!incoming) return;
     const controller = new AbortController();
@@ -128,6 +143,9 @@ export default function ReceiveScreen({
     setPhase('transferring');
 
     withTransferService(t('receive.title'), async () => {
+      // The engine stages into the app cache, so the download folder - and a
+      // file the user agreed to overwrite - is only touched after the file
+      // has fully arrived; a failed transfer leaves it untouched.
       const savedPath = await incoming.accept(
         incomingDir,
         {
@@ -141,6 +159,12 @@ export default function ReceiveScreen({
       );
       setPhase('saving');
       const fileName = savedPath.split('/').pop() ?? 'received.bin';
+      const dir = downloadDirRef.current;
+      if (dir) {
+        const result = await saveToDownloadDir(savedPath, dir.uri, fileName, overwrite);
+        setUsedFallback(result.fallback);
+        return result.name;
+      }
       return saveToDownloads(savedPath, fileName);
     }).then(
       (finalName) => {
@@ -155,6 +179,22 @@ export default function ReceiveScreen({
         }
       }
     );
+  };
+
+  // With a custom folder we can see other apps' files, so warn about a
+  // same-name collision before accepting. (Default MediaStore Downloads keeps
+  // the system's automatic renaming - other apps' files are not visible.)
+  const accept = async () => {
+    const dir = downloadDirRef.current;
+    if (dir && offerName) {
+      const target = await statDownloadTarget(dir.uri, offerName).catch(() => null);
+      if (target?.exists) {
+        setExistingSize(target.size);
+        setPhase('conflict');
+        return;
+      }
+    }
+    startTransfer(false);
   };
 
   const decline = () => {
@@ -191,6 +231,28 @@ export default function ReceiveScreen({
           </>
         ) : null}
 
+        {phase === 'conflict' ? (
+          <>
+            <Subtitle>{t('receive.existsTitle')}</Subtitle>
+            <Text style={{ color: c.text, fontSize: fontSize.body }}>
+              {t('receive.existsBody', {
+                name: offerName,
+                size: formatSize(existingSize),
+              })}
+            </Text>
+            <PrimaryButton
+              label={t('receive.keepBoth')}
+              onPress={() => startTransfer(false)}
+            />
+            <GhostButton
+              label={t('receive.overwrite')}
+              danger
+              onPress={() => startTransfer(true)}
+            />
+            <GhostButton label={t('common.decline')} onPress={decline} />
+          </>
+        ) : null}
+
         {phase === 'transferring' || phase === 'saving' ? (
           <>
             <Subtitle>{t('receive.receiving')}</Subtitle>
@@ -206,8 +268,14 @@ export default function ReceiveScreen({
           <>
             <Subtitle>{t('receive.success')}</Subtitle>
             <Text style={{ color: c.success, fontSize: fontSize.body }}>
-              {t('receive.savedAs', { name: savedName })}
+              {downloadDirRef.current && !usedFallback
+                ? t('receive.savedAsIn', {
+                    name: savedName,
+                    folder: downloadDirRef.current.label,
+                  })
+                : t('receive.savedAs', { name: savedName })}
             </Text>
+            {usedFallback ? <Muted>{t('receive.folderFallback')}</Muted> : null}
           </>
         ) : null}
 
@@ -231,7 +299,7 @@ export default function ReceiveScreen({
           danger
           onPress={() => abortRef.current?.abort()}
         />
-      ) : phase === 'confirm' ? null : (
+      ) : phase === 'confirm' || phase === 'conflict' ? null : (
         <PrimaryButton label={t('common.done')} onPress={onHome} />
       )}
     </View>

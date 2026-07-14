@@ -34,6 +34,12 @@
     "receiving": "Datei wird empfangen…",
     "success": "Datei gespeichert.",
     "savedAs": "In Downloads gespeichert als {{name}}.",
+    "savedAsIn": "Gespeichert als {{name}} in {{folder}}.",
+    "folderFallback": "Der gewählte Download-Ordner war nicht verfügbar, die Datei wurde stattdessen in Downloads gespeichert.",
+    "existsTitle": "Datei existiert bereits",
+    "existsBody": "{{name}} existiert bereits in deinem Download-Ordner ({{size}}). Überschreiben?",
+    "overwrite": "Überschreiben",
+    "keepBoth": "Beide behalten",
     "declined": "Du hast die Übertragung abgelehnt."
   },
   "pair": {
@@ -74,6 +80,13 @@
       "emerald": "Smaragd",
       "ruby": "Rubin",
       "amethyst": "Amethyst"
+    },
+    "downloads": {
+      "title": "Speicherort für Downloads",
+      "hint": "Empfangene Dateien werden hier gespeichert. Standardmäßig landen sie in deinem Downloads-Ordner.",
+      "defaultLabel": "Downloads-Ordner (Standard)",
+      "choose": "Ordner wählen",
+      "reset": "Standard verwenden"
     },
     "server": {
       "title": "Verbindungsserver",
