@@ -46,6 +46,61 @@ pub async fn send_file(
     .await
 }
 
+/// Send a folder as a protocol-v1 directory offer: the tree at `path` is
+/// zipped into a temp archive and the receiver unpacks it back into a folder.
+/// Only usable where the folder is a real filesystem path (not Android SAF).
+#[uniffi::export]
+pub async fn send_folder(
+    path: String,
+    code: Option<String>,
+    server: ServerConfig,
+    listener: Arc<dyn TransferListener>,
+) -> Result<(), Error> {
+    let code_listener = listener.clone();
+    let transit_listener = listener.clone();
+    crate::send_folder(
+        &path,
+        code.as_deref(),
+        &server,
+        move |code| code_listener.on_code(code),
+        move |info| transit_listener.on_transit(info),
+        move |done, total| listener.on_progress(done, total),
+        pending::<()>(),
+    )
+    .await
+}
+
+/// Send an already-zipped folder as a protocol-v1 directory offer. This is
+/// the Android path: the app zips the SAF tree into `zip_path` (cache dir)
+/// first and passes the file count and unpacked byte total it counted while
+/// zipping. The zip must hold paths relative to the folder root.
+#[uniffi::export]
+pub async fn send_zip_as_folder(
+    zip_path: String,
+    dir_name: String,
+    num_files: u64,
+    num_bytes: u64,
+    code: Option<String>,
+    server: ServerConfig,
+    listener: Arc<dyn TransferListener>,
+) -> Result<(), Error> {
+    let code_listener = listener.clone();
+    let transit_listener = listener.clone();
+    crate::send_zip_as_folder(
+        &zip_path,
+        &dir_name,
+        num_files,
+        num_bytes,
+        code.as_deref(),
+        &server,
+        move |code| code_listener.on_code(code),
+        move |info| transit_listener.on_transit(info),
+        move |done, total| listener.on_progress(done, total),
+        pending::<()>(),
+    )
+    .await
+}
+
 /// Phase 0 test helper: write a `size_kb` KiB file into `dir` and return its
 /// path, so the spike app has something to send without a filesystem library.
 #[uniffi::export]
@@ -68,12 +123,27 @@ pub fn create_test_file(dir: String, size_kb: u32) -> Result<String, Error> {
     Ok(path.to_string_lossy().into_owned())
 }
 
-/// A pending file offer. Inspect `file_name`/`file_size`, then `accept` into a
-/// destination directory or `reject` to tell the sender you declined.
+/// Folder metadata of a directory offer, for the receive confirmation UI.
+/// All values are sender-claimed; the engine enforces `num_bytes` (plus
+/// slack) as an unpack cap.
+#[derive(uniffi::Record)]
+pub struct FolderOfferInfo {
+    /// Sanitized folder name
+    pub dir_name: String,
+    /// Number of files inside the folder
+    pub num_files: u64,
+    /// Total unpacked size in bytes
+    pub num_bytes: u64,
+}
+
+/// A pending file (or folder) offer. Inspect `file_name`/`file_size` and
+/// `folder_offer`, then `accept` into a destination directory or `reject` to
+/// tell the sender you declined.
 #[derive(uniffi::Object)]
 pub struct IncomingFile {
     name: String,
     size: u64,
+    folder: Option<crate::FolderOffer>,
     request: Mutex<Option<PendingReceive>>,
 }
 
@@ -88,6 +158,7 @@ pub async fn request_receive(
     Ok(Arc::new(IncomingFile {
         name: pending_receive.file_name.clone(),
         size: pending_receive.file_size,
+        folder: pending_receive.folder.clone(),
         request: Mutex::new(Some(pending_receive)),
     }))
 }
@@ -102,7 +173,19 @@ impl IncomingFile {
         self.size
     }
 
-    /// Accept the offer, writing into `dest_dir`; returns the saved path.
+    /// Folder metadata when this is a directory offer; `None` for plain files.
+    /// When present, `accept` unpacks the folder and returns its path, and
+    /// `file_name`/`file_size` describe the underlying zip transfer instead.
+    pub fn folder_offer(&self) -> Option<FolderOfferInfo> {
+        self.folder.as_ref().map(|f| FolderOfferInfo {
+            dir_name: f.dir_name.clone(),
+            num_files: f.num_files,
+            num_bytes: f.num_bytes,
+        })
+    }
+
+    /// Accept the offer, writing into `dest_dir`; returns the saved path
+    /// (a file path, or the unpacked folder path for directory offers).
     pub async fn accept(
         &self,
         dest_dir: String,

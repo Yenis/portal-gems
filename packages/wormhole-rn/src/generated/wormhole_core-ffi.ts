@@ -204,6 +204,21 @@ interface NativeModuleInterface {
     server: Uint8Array,
     listener: bigint
   ): bigint;
+  ubrn_uniffi_wormhole_core_fn_func_send_folder(
+    path: Uint8Array,
+    code: Uint8Array,
+    server: Uint8Array,
+    listener: bigint
+  ): bigint;
+  ubrn_uniffi_wormhole_core_fn_func_send_zip_as_folder(
+    zipPath: Uint8Array,
+    dirName: Uint8Array,
+    numFiles: bigint,
+    numBytes: bigint,
+    code: Uint8Array,
+    server: Uint8Array,
+    listener: bigint
+  ): bigint;
   ubrn_uniffi_wormhole_core_fn_method_incomingfile_accept(
     uniffiSelf: bigint,
     destDir: Uint8Array,
@@ -217,6 +232,10 @@ interface NativeModuleInterface {
     uniffiSelf: bigint,
     uniffi_out_err: UniffiRustCallStatus
   ): bigint;
+  ubrn_uniffi_wormhole_core_fn_method_incomingfile_folder_offer(
+    uniffiSelf: bigint,
+    uniffi_out_err: UniffiRustCallStatus
+  ): Uint8Array;
   ubrn_uniffi_wormhole_core_fn_method_incomingfile_reject(
     uniffiSelf: bigint
   ): bigint;
@@ -241,9 +260,12 @@ interface NativeModuleInterface {
   ubrn_uniffi_wormhole_core_checksum_func_receive_file(): number;
   ubrn_uniffi_wormhole_core_checksum_func_request_receive(): number;
   ubrn_uniffi_wormhole_core_checksum_func_send_file(): number;
+  ubrn_uniffi_wormhole_core_checksum_func_send_folder(): number;
+  ubrn_uniffi_wormhole_core_checksum_func_send_zip_as_folder(): number;
   ubrn_uniffi_wormhole_core_checksum_method_incomingfile_accept(): number;
   ubrn_uniffi_wormhole_core_checksum_method_incomingfile_file_name(): number;
   ubrn_uniffi_wormhole_core_checksum_method_incomingfile_file_size(): number;
+  ubrn_uniffi_wormhole_core_checksum_method_incomingfile_folder_offer(): number;
   ubrn_uniffi_wormhole_core_checksum_method_incomingfile_reject(): number;
   ubrn_uniffi_wormhole_core_checksum_method_transferlistener_on_code(): number;
   ubrn_uniffi_wormhole_core_checksum_method_transferlistener_on_transit(): number;

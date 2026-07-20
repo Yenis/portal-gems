@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Clipboard from '@react-native-clipboard/clipboard';
-import { sendFile } from 'wormhole-rn';
+import { sendFile, sendZipAsFolder } from 'wormhole-rn';
 import {
   currentBucket,
   deriveCode,
@@ -22,12 +22,20 @@ import {
   Title,
 } from '../components';
 import { friendlyError, isServerUnreachableError } from '../errors';
-import { formatSize, withTransferService, type PickedFile } from '../native';
+import {
+  deleteFile,
+  formatSize,
+  withTransferService,
+  zipTreeToCache,
+  type SendItem,
+  type ZippedFolder,
+} from '../native';
 import { currentServer } from '../server';
 import { useTheme } from '../theme';
 
 type Phase =
   | 'starting'
+  | 'preparing'
   | 'waiting'
   | 'transferring'
   | 'done'
@@ -36,12 +44,12 @@ type Phase =
   | 'peerNotOpen';
 
 export default function SendScreen({
-  file,
+  item,
   device,
   onHome,
   onServerSettings,
 }: {
-  file: PickedFile;
+  item: SendItem;
   device?: PairedDevice;
   onHome: () => void;
   onServerSettings: () => void;
@@ -52,6 +60,7 @@ export default function SendScreen({
   const [code, setCode] = useState('');
   const [direct, setDirect] = useState<boolean | null>(null);
   const [pct, setPct] = useState(0);
+  const [folderStats, setFolderStats] = useState<ZippedFolder | null>(null);
   const [error, setError] = useState('');
   const [serverErr, setServerErr] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -66,42 +75,74 @@ export default function SendScreen({
 
     // Paired sends: the code is derived, never typed. If the peer doesn't
     // pick up within the timeout, give up with a "device not open" message.
+    // The timer is armed when the wormhole work starts - for folders that is
+    // AFTER zipping, so a slow zip cannot eat into the peer's window.
     const pairedCode = device
       ? deriveCode(device.secret, currentBucket())
       : undefined;
-    const timer = device
-      ? setTimeout(() => {
-          if (!connected) {
-            timedOut = true;
-            controller.abort();
-          }
-        }, PAIRED_SEND_TIMEOUT_MS)
-      : null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const armPairedTimeout = () => {
+      if (!device) return;
+      timer = setTimeout(() => {
+        if (!connected) {
+          timedOut = true;
+          controller.abort();
+        }
+      }, PAIRED_SEND_TIMEOUT_MS);
+    };
+
+    const listener = {
+      onCode: (value: string) => {
+        setCode(value);
+        setPhase('waiting');
+      },
+      onTransit: (info: string) => {
+        connected = true;
+        setDirect(info.startsWith('Direct'));
+        setPhase('transferring');
+      },
+      onProgress: (done: bigint, total: bigint) => {
+        setPct(total === 0n ? 100 : Number((done * 100n) / total));
+      },
+    };
 
     void (async () => {
     const server = await currentServer();
-    withTransferService(t('send.title'), () =>
-      sendFile(
-        file.path,
-        pairedCode,
-        server,
-        {
-          onCode: (value) => {
-            setCode(value);
-            setPhase('waiting');
-          },
-          onTransit: (info) => {
-            connected = true;
-            setDirect(info.startsWith('Direct'));
-            setPhase('transferring');
-          },
-          onProgress: (done, total) => {
-            setPct(total === 0n ? 100 : Number((done * 100n) / total));
-          },
-        },
-        { signal: controller.signal }
-      )
-    ).then(
+    const work = async () => {
+      if (item.kind === 'folder') {
+        // The SAF tree is zipped into the cache first (Rust cannot read
+        // content:// URIs); the engine then sends the zip under a
+        // protocol-v1 directory offer with the stats counted while zipping.
+        setPhase('preparing');
+        const zipped = await zipTreeToCache(item.uri);
+        setFolderStats(zipped);
+        if (controller.signal.aborted) {
+          await deleteFile(zipped.path).catch(() => undefined);
+          throw new Error('cancelled');
+        }
+        armPairedTimeout();
+        try {
+          await sendZipAsFolder(
+            zipped.path,
+            zipped.name,
+            BigInt(zipped.fileCount),
+            BigInt(zipped.totalBytes),
+            pairedCode,
+            server,
+            listener,
+            { signal: controller.signal }
+          );
+        } finally {
+          await deleteFile(zipped.path).catch(() => undefined);
+        }
+      } else {
+        armPairedTimeout();
+        await sendFile(item.path, pairedCode, server, listener, {
+          signal: controller.signal,
+        });
+      }
+    };
+    withTransferService(t('send.title'), work).then(
       () => setPhase('done'),
       (e) => {
         if (timedOut) {
@@ -132,15 +173,25 @@ export default function SendScreen({
     setTimeout(() => setCopied(false), 1500);
   };
 
+  const summary =
+    item.kind === 'folder'
+      ? folderStats
+        ? t('folder.summary', {
+            name: item.name,
+            count: folderStats.fileCount,
+            size: formatSize(folderStats.totalBytes),
+          })
+        : item.name
+      : `${item.name} · ${formatSize(item.size)}`;
+
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
       <Title onBack={onHome}>{t('send.title')}</Title>
-      <Muted>
-        {file.name} · {formatSize(file.size)}
-      </Muted>
+      <Muted>{summary}</Muted>
 
       <Card>
         {phase === 'starting' ? <Muted>{t('receive.connecting')}</Muted> : null}
+        {phase === 'preparing' ? <Muted>{t('send.preparingFolder')}</Muted> : null}
 
         {phase === 'waiting' ? (
           device ? (
@@ -159,7 +210,11 @@ export default function SendScreen({
 
         {phase === 'transferring' ? (
           <>
-            <Subtitle>{t('send.sending', { name: file.name })}</Subtitle>
+            <Subtitle>
+              {item.kind === 'folder'
+                ? t('send.sendingFolder', { name: item.name })
+                : t('send.sending', { name: item.name })}
+            </Subtitle>
             <Muted>{direct ? t('transfer.direct') : t('transfer.relay')}</Muted>
             <ProgressBar pct={pct} />
             <Muted>{t('transfer.progress', { pct })}</Muted>
@@ -168,12 +223,11 @@ export default function SendScreen({
 
         {phase === 'done' ? (
           <>
-            <Subtitle>{t('send.success')}</Subtitle>
+            <Subtitle>
+              {item.kind === 'folder' ? t('send.successFolder') : t('send.success')}
+            </Subtitle>
             <Text style={{ color: c.success, fontSize: fontSize.body }}>
-              {t('send.successDetail', {
-                name: file.name,
-                size: formatSize(file.size),
-              })}
+              {summary}
             </Text>
           </>
         ) : null}
@@ -196,7 +250,10 @@ export default function SendScreen({
         ) : null}
       </Card>
 
-      {phase === 'waiting' || phase === 'transferring' || phase === 'starting' ? (
+      {phase === 'waiting' ||
+      phase === 'transferring' ||
+      phase === 'starting' ||
+      phase === 'preparing' ? (
         <GhostButton
           label={t('common.cancel')}
           danger

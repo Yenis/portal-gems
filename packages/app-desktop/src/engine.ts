@@ -14,9 +14,18 @@ export interface NativeTransferEvent {
   total?: number;
 }
 
+export interface FolderOffer {
+  dirName: string;
+  numFiles: number;
+  numBytes: number;
+}
+
+/// For folder (directory) offers `folder` is set and fileName/fileSize
+/// describe the underlying zip transfer; the UI presents the folder fields.
 export interface FileOffer {
   fileName: string;
   fileSize: number;
+  folder?: FolderOffer | null;
 }
 
 /// Which servers a transfer should use; empty/missing fields fall back to the
@@ -28,6 +37,13 @@ export interface ServerConfig {
 
 interface NativeAddon {
   sendFile(
+    id: number,
+    path: string,
+    code: string | null,
+    server: ServerConfig,
+    cb: (ev: NativeTransferEvent) => void
+  ): Promise<void>;
+  sendFolder(
     id: number,
     path: string,
     code: string | null,

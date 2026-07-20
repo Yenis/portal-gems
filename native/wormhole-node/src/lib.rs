@@ -37,12 +37,25 @@ pub struct TransferEvent {
     pub total: Option<f64>,
 }
 
-/// The file offer produced by `request_receive`.
+/// The offer produced by `request_receive`. For folder (directory) offers
+/// `folder` is set and `file_name`/`file_size` describe the underlying zip
+/// transfer (`<dirname>.zip`); the UI should present the folder fields.
 #[napi(object)]
 #[derive(Clone)]
 pub struct FileOffer {
     pub file_name: String,
     pub file_size: f64,
+    pub folder: Option<FolderOffer>,
+}
+
+/// Folder metadata of a directory offer (sender-claimed; the engine caps the
+/// unpack at `num_bytes` plus slack).
+#[napi(object)]
+#[derive(Clone)]
+pub struct FolderOffer {
+    pub dir_name: String,
+    pub num_files: f64,
+    pub num_bytes: f64,
 }
 
 /// Which servers a transfer should use; empty/missing fields fall back to the
@@ -142,6 +155,34 @@ pub async fn send_file(
     result.map_err(to_napi_err)
 }
 
+/// Send the folder at `path` as a protocol-v1 directory offer (zipped into a
+/// temp archive; the receiver unpacks it back into a folder).
+#[napi]
+pub async fn send_folder(
+    id: u32,
+    path: String,
+    code: Option<String>,
+    server: ServerConfig,
+    callback: Callback,
+) -> Result<()> {
+    let on_code = callback.clone();
+    let on_transit = callback.clone();
+    let on_progress = callback;
+    let cancel = cancel_future(id);
+    let result = wormhole_core::send_folder(
+        &path,
+        code.as_deref(),
+        &server.into(),
+        move |c| emit(&on_code, code_event(c)),
+        move |i| emit(&on_transit, transit_event(i)),
+        move |d, t| emit(&on_progress, progress_event(d, t)),
+        cancel,
+    )
+    .await;
+    clear_cancel(id);
+    result.map_err(to_napi_err)
+}
+
 /// Wait for the offer under `code`; park it under `id` for accept/reject.
 #[napi]
 pub async fn request_receive(id: u32, code: String, server: ServerConfig) -> Result<FileOffer> {
@@ -152,6 +193,11 @@ pub async fn request_receive(id: u32, code: String, server: ServerConfig) -> Res
     let offer = FileOffer {
         file_name: pending.file_name.clone(),
         file_size: pending.file_size as f64,
+        folder: pending.folder.as_ref().map(|f| FolderOffer {
+            dir_name: f.dir_name.clone(),
+            num_files: f.num_files as f64,
+            num_bytes: f.num_bytes as f64,
+        }),
     };
     RECEIVES.lock().unwrap().insert(id, pending);
     Ok(offer)

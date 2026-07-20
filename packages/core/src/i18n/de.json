@@ -12,6 +12,7 @@
     "sendTitle": "Datei senden",
     "sendHint": "Wähle eine Datei und teile den Einmal-Code mit dem Empfänger.",
     "sendButton": "Datei auswählen",
+    "sendFolderButton": "Ordner auswählen",
     "receiveTitle": "Datei empfangen",
     "receiveHint": "Gib den Code ein, den dir der Absender gegeben hat.",
     "receivePlaceholder": "z. B. 7-crossover-clockwork",
@@ -23,21 +24,33 @@
     "copyCode": "Code kopieren",
     "codeCopied": "Kopiert!",
     "sending": "{{name}} wird gesendet…",
+    "preparingFolder": "Ordner wird vorbereitet…",
+    "sendingFolder": "Ordner {{name}} wird gesendet…",
     "success": "Datei erfolgreich gesendet.",
-    "successDetail": "{{name}} · {{size}}"
+    "successDetail": "{{name}} · {{size}}",
+    "successFolder": "Ordner erfolgreich gesendet."
+  },
+  "folder": {
+    "summary": "{{name}} · {{count}} Dateien · {{size}}"
   },
   "receive": {
     "title": "Empfangen",
     "connecting": "Verbinden…",
     "incoming": "Eingehende Datei",
+    "incomingFolder": "Eingehender Ordner",
     "acceptQuestion": "Möchtest du diese Datei empfangen?",
+    "acceptQuestionFolder": "Möchtest du diesen Ordner empfangen?",
     "receiving": "Datei wird empfangen…",
+    "receivingFolder": "Ordner wird empfangen…",
     "success": "Datei gespeichert.",
+    "successFolder": "Ordner gespeichert.",
     "savedAs": "In Downloads gespeichert als {{name}}.",
     "savedAsIn": "Gespeichert als {{name}} in {{folder}}.",
     "folderFallback": "Der gewählte Download-Ordner war nicht verfügbar, die Datei wurde stattdessen in Downloads gespeichert.",
     "existsTitle": "Datei existiert bereits",
     "existsBody": "{{name}} existiert bereits in deinem Download-Ordner ({{size}}). Überschreiben?",
+    "existsTitleFolder": "Ordner existiert bereits",
+    "existsBodyFolder": "Ein Ordner namens {{name}} ({{size}}) existiert bereits in deinem Download-Ordner. Beim Überschreiben wird er vollständig ersetzt.",
     "overwrite": "Überschreiben",
     "keepBoth": "Beide behalten",
     "declined": "Du hast die Übertragung abgelehnt."

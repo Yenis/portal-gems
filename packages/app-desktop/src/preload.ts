@@ -20,18 +20,33 @@ contextBridge.exposeInMainWorld('portalgems', {
   locale: (): Promise<string> => ipcRenderer.invoke('pg:locale'),
   pickFile: (): Promise<{ path: string; name: string; size: number } | null> =>
     ipcRenderer.invoke('pg:pickFile'),
+  pickFolder: (): Promise<{
+    path: string;
+    name: string;
+    fileCount: number;
+    totalBytes: number;
+  } | null> => ipcRenderer.invoke('pg:pickFolder'),
   send: (
     id: number,
     path: string,
     code?: string,
     server?: ServerConfig
   ): Promise<void> => ipcRenderer.invoke('pg:send', id, path, code, server),
+  sendFolder: (
+    id: number,
+    path: string,
+    code?: string,
+    server?: ServerConfig
+  ): Promise<void> => ipcRenderer.invoke('pg:sendFolder', id, path, code, server),
   requestReceive: (
     id: number,
     code: string,
     server?: ServerConfig
-  ): Promise<{ fileName: string; fileSize: number }> =>
-    ipcRenderer.invoke('pg:requestReceive', id, code, server),
+  ): Promise<{
+    fileName: string;
+    fileSize: number;
+    folder?: { dirName: string; numFiles: number; numBytes: number } | null;
+  }> => ipcRenderer.invoke('pg:requestReceive', id, code, server),
   accept: (id: number, destDir: string): Promise<string> =>
     ipcRenderer.invoke('pg:accept', id, destDir),
   acceptDownload: (
@@ -43,7 +58,7 @@ contextBridge.exposeInMainWorld('portalgems', {
   statTarget: (
     dir: string | null,
     fileName: string
-  ): Promise<{ exists: boolean; size: number }> =>
+  ): Promise<{ exists: boolean; size: number; isFolder: boolean }> =>
     ipcRenderer.invoke('pg:statTarget', dir, fileName),
   reject: (id: number): Promise<void> => ipcRenderer.invoke('pg:reject', id),
   cancel: (id: number): Promise<void> => ipcRenderer.invoke('pg:cancel', id),

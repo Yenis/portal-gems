@@ -104,19 +104,22 @@ export function GhostButton({
   label,
   onPress,
   danger,
+  disabled,
 }: {
   label: string;
   onPress: () => void;
   danger?: boolean;
+  disabled?: boolean;
 }) {
   const c = useTheme();
   return (
     <Pressable
       onPress={onPress}
+      disabled={disabled}
       style={({ pressed }) => [
         styles.button,
         styles.ghost,
-        { borderColor: c.border, opacity: pressed ? 0.7 : 1 },
+        { borderColor: c.border, opacity: disabled ? 0.45 : pressed ? 0.7 : 1 },
       ]}>
       <Text style={[styles.buttonLabel, { color: danger ? c.danger : c.text }]}>
         {label}

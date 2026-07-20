@@ -12,6 +12,7 @@
     "sendTitle": "Отправить файл",
     "sendHint": "Выберите файл и передайте одноразовый код получателю.",
     "sendButton": "Выбрать файл",
+    "sendFolderButton": "Выбрать папку",
     "receiveTitle": "Получить файл",
     "receiveHint": "Введите код, который вам дал отправитель.",
     "receivePlaceholder": "например, 7-crossover-clockwork",
@@ -23,21 +24,33 @@
     "copyCode": "Скопировать код",
     "codeCopied": "Скопировано!",
     "sending": "Отправка {{name}}…",
+    "preparingFolder": "Подготовка папки…",
+    "sendingFolder": "Отправка папки {{name}}…",
     "success": "Файл успешно отправлен.",
-    "successDetail": "{{name}} · {{size}}"
+    "successDetail": "{{name}} · {{size}}",
+    "successFolder": "Папка успешно отправлена."
+  },
+  "folder": {
+    "summary": "{{name}} · файлов: {{count}} · {{size}}"
   },
   "receive": {
     "title": "Получение",
     "connecting": "Подключение…",
     "incoming": "Входящий файл",
+    "incomingFolder": "Входящая папка",
     "acceptQuestion": "Принять этот файл?",
+    "acceptQuestionFolder": "Принять эту папку?",
     "receiving": "Получение файла…",
+    "receivingFolder": "Получение папки…",
     "success": "Файл сохранён.",
+    "successFolder": "Папка сохранена.",
     "savedAs": "Сохранено в «Загрузки» как {{name}}.",
     "savedAsIn": "Сохранено как {{name}} в {{folder}}.",
     "folderFallback": "Выбранная папка загрузок была недоступна, поэтому файл сохранён в «Загрузки».",
     "existsTitle": "Файл уже существует",
     "existsBody": "{{name}} уже существует в папке загрузок ({{size}}). Перезаписать?",
+    "existsTitleFolder": "Папка уже существует",
+    "existsBodyFolder": "Папка с именем {{name}} ({{size}}) уже существует в папке загрузок. При перезаписи она будет полностью заменена.",
     "overwrite": "Перезаписать",
     "keepBoth": "Оставить оба",
     "declined": "Вы отклонили передачу."

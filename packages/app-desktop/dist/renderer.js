@@ -27471,6 +27471,7 @@
       sendTitle: "Po\u0161alji datoteku",
       sendHint: "Odaberi datoteku i podijeli jednokratni kod s primaocem.",
       sendButton: "Odaberi datoteku",
+      sendFolderButton: "Odaberi folder",
       receiveTitle: "Primi datoteku",
       receiveHint: "Unesi kod koji ti je poslao po\u0161iljalac.",
       receivePlaceholder: "npr. 7-crossover-clockwork",
@@ -27482,21 +27483,33 @@
       copyCode: "Kopiraj kod",
       codeCopied: "Kopirano!",
       sending: "\u0160aljem {{name}}\u2026",
+      preparingFolder: "Pripremam folder\u2026",
+      sendingFolder: "\u0160aljem folder {{name}}\u2026",
       success: "Datoteka uspje\u0161no poslana.",
-      successDetail: "{{name}} \xB7 {{size}}"
+      successDetail: "{{name}} \xB7 {{size}}",
+      successFolder: "Folder uspje\u0161no poslan."
+    },
+    folder: {
+      summary: "{{name}} \xB7 {{count}} datoteka \xB7 {{size}}"
     },
     receive: {
       title: "Primanje",
       connecting: "Povezivanje\u2026",
       incoming: "Dolazna datoteka",
+      incomingFolder: "Dolazni folder",
       acceptQuestion: "\u017Deli\u0161 li primiti ovu datoteku?",
+      acceptQuestionFolder: "\u017Deli\u0161 li primiti ovaj folder?",
       receiving: "Primanje datoteke\u2026",
+      receivingFolder: "Primanje foldera\u2026",
       success: "Datoteka sa\u010Duvana.",
+      successFolder: "Folder sa\u010Duvan.",
       savedAs: "Sa\u010Duvano u Downloads kao {{name}}.",
       savedAsIn: "Sa\u010Duvano kao {{name}} u {{folder}}.",
       folderFallback: "Odabrani folder za preuzimanja nije bio dostupan, pa je datoteka sa\u010Duvana u Downloads.",
       existsTitle: "Datoteka ve\u0107 postoji",
       existsBody: "{{name}} ve\u0107 postoji u tvom folderu za preuzimanja ({{size}}). Prepisati je?",
+      existsTitleFolder: "Folder ve\u0107 postoji",
+      existsBodyFolder: "Folder s imenom {{name}} ({{size}}) ve\u0107 postoji u tvom folderu za preuzimanja. Prepisivanje ga u potpunosti zamjenjuje.",
       overwrite: "Prepi\u0161i",
       keepBoth: "Zadr\u017Ei obje",
       declined: "Odbio/la si prijenos."
@@ -27625,6 +27638,7 @@
       sendTitle: "Datei senden",
       sendHint: "W\xE4hle eine Datei und teile den Einmal-Code mit dem Empf\xE4nger.",
       sendButton: "Datei ausw\xE4hlen",
+      sendFolderButton: "Ordner ausw\xE4hlen",
       receiveTitle: "Datei empfangen",
       receiveHint: "Gib den Code ein, den dir der Absender gegeben hat.",
       receivePlaceholder: "z. B. 7-crossover-clockwork",
@@ -27636,21 +27650,33 @@
       copyCode: "Code kopieren",
       codeCopied: "Kopiert!",
       sending: "{{name}} wird gesendet\u2026",
+      preparingFolder: "Ordner wird vorbereitet\u2026",
+      sendingFolder: "Ordner {{name}} wird gesendet\u2026",
       success: "Datei erfolgreich gesendet.",
-      successDetail: "{{name}} \xB7 {{size}}"
+      successDetail: "{{name}} \xB7 {{size}}",
+      successFolder: "Ordner erfolgreich gesendet."
+    },
+    folder: {
+      summary: "{{name}} \xB7 {{count}} Dateien \xB7 {{size}}"
     },
     receive: {
       title: "Empfangen",
       connecting: "Verbinden\u2026",
       incoming: "Eingehende Datei",
+      incomingFolder: "Eingehender Ordner",
       acceptQuestion: "M\xF6chtest du diese Datei empfangen?",
+      acceptQuestionFolder: "M\xF6chtest du diesen Ordner empfangen?",
       receiving: "Datei wird empfangen\u2026",
+      receivingFolder: "Ordner wird empfangen\u2026",
       success: "Datei gespeichert.",
+      successFolder: "Ordner gespeichert.",
       savedAs: "In Downloads gespeichert als {{name}}.",
       savedAsIn: "Gespeichert als {{name}} in {{folder}}.",
       folderFallback: "Der gew\xE4hlte Download-Ordner war nicht verf\xFCgbar, die Datei wurde stattdessen in Downloads gespeichert.",
       existsTitle: "Datei existiert bereits",
       existsBody: "{{name}} existiert bereits in deinem Download-Ordner ({{size}}). \xDCberschreiben?",
+      existsTitleFolder: "Ordner existiert bereits",
+      existsBodyFolder: "Ein Ordner namens {{name}} ({{size}}) existiert bereits in deinem Download-Ordner. Beim \xDCberschreiben wird er vollst\xE4ndig ersetzt.",
       overwrite: "\xDCberschreiben",
       keepBoth: "Beide behalten",
       declined: "Du hast die \xDCbertragung abgelehnt."
@@ -27779,6 +27805,7 @@
       sendTitle: "Send a file",
       sendHint: "Pick a file and share the one-time code with the receiver.",
       sendButton: "Choose file to send",
+      sendFolderButton: "Choose folder to send",
       receiveTitle: "Receive a file",
       receiveHint: "Enter the code the sender gave you.",
       receivePlaceholder: "e.g. 7-crossover-clockwork",
@@ -27790,21 +27817,33 @@
       copyCode: "Copy code",
       codeCopied: "Copied!",
       sending: "Sending {{name}}\u2026",
+      preparingFolder: "Preparing folder\u2026",
+      sendingFolder: "Sending folder {{name}}\u2026",
       success: "File sent successfully.",
-      successDetail: "{{name}} \xB7 {{size}}"
+      successDetail: "{{name}} \xB7 {{size}}",
+      successFolder: "Folder sent successfully."
+    },
+    folder: {
+      summary: "{{name}} \xB7 {{count}} files \xB7 {{size}}"
     },
     receive: {
       title: "Receiving",
       connecting: "Connecting\u2026",
       incoming: "Incoming file",
+      incomingFolder: "Incoming folder",
       acceptQuestion: "Do you want to receive this file?",
+      acceptQuestionFolder: "Do you want to receive this folder?",
       receiving: "Receiving file\u2026",
+      receivingFolder: "Receiving folder\u2026",
       success: "File saved.",
+      successFolder: "Folder saved.",
       savedAs: "Saved to Downloads as {{name}}.",
       savedAsIn: "Saved as {{name}} in {{folder}}.",
       folderFallback: "The chosen download folder was not available, so the file was saved to Downloads.",
       existsTitle: "File already exists",
       existsBody: "{{name}} already exists in your download folder ({{size}}). Overwrite it?",
+      existsTitleFolder: "Folder already exists",
+      existsBodyFolder: "A folder named {{name}} ({{size}}) already exists in your download folder. Overwriting replaces it entirely.",
       overwrite: "Overwrite",
       keepBoth: "Keep both",
       declined: "You declined the transfer."
@@ -27933,6 +27972,7 @@
       sendTitle: "Enviar un archivo",
       sendHint: "Elige un archivo y comparte el c\xF3digo de un solo uso con el receptor.",
       sendButton: "Elegir archivo",
+      sendFolderButton: "Elegir carpeta",
       receiveTitle: "Recibir un archivo",
       receiveHint: "Introduce el c\xF3digo que te dio el remitente.",
       receivePlaceholder: "p. ej. 7-crossover-clockwork",
@@ -27944,21 +27984,33 @@
       copyCode: "Copiar c\xF3digo",
       codeCopied: "\xA1Copiado!",
       sending: "Enviando {{name}}\u2026",
+      preparingFolder: "Preparando carpeta\u2026",
+      sendingFolder: "Enviando carpeta {{name}}\u2026",
       success: "Archivo enviado correctamente.",
-      successDetail: "{{name}} \xB7 {{size}}"
+      successDetail: "{{name}} \xB7 {{size}}",
+      successFolder: "Carpeta enviada correctamente."
+    },
+    folder: {
+      summary: "{{name}} \xB7 {{count}} archivos \xB7 {{size}}"
     },
     receive: {
       title: "Recibiendo",
       connecting: "Conectando\u2026",
       incoming: "Archivo entrante",
+      incomingFolder: "Carpeta entrante",
       acceptQuestion: "\xBFQuieres recibir este archivo?",
+      acceptQuestionFolder: "\xBFQuieres recibir esta carpeta?",
       receiving: "Recibiendo archivo\u2026",
+      receivingFolder: "Recibiendo carpeta\u2026",
       success: "Archivo guardado.",
+      successFolder: "Carpeta guardada.",
       savedAs: "Guardado en Descargas como {{name}}.",
       savedAsIn: "Guardado como {{name}} en {{folder}}.",
       folderFallback: "La carpeta de descargas elegida no estaba disponible, as\xED que el archivo se guard\xF3 en Descargas.",
       existsTitle: "El archivo ya existe",
       existsBody: "{{name}} ya existe en tu carpeta de descargas ({{size}}). \xBFQuieres sobrescribirlo?",
+      existsTitleFolder: "La carpeta ya existe",
+      existsBodyFolder: "Una carpeta llamada {{name}} ({{size}}) ya existe en tu carpeta de descargas. Sobrescribirla la reemplazar\xE1 por completo.",
       overwrite: "Sobrescribir",
       keepBoth: "Conservar ambos",
       declined: "Has rechazado la transferencia."
@@ -28087,6 +28139,7 @@
       sendTitle: "Envoyer un fichier",
       sendHint: "Choisissez un fichier et partagez le code \xE0 usage unique avec le destinataire.",
       sendButton: "Choisir un fichier",
+      sendFolderButton: "Choisir un dossier",
       receiveTitle: "Recevoir un fichier",
       receiveHint: "Saisissez le code que l'exp\xE9diteur vous a donn\xE9.",
       receivePlaceholder: "p. ex. 7-crossover-clockwork",
@@ -28098,21 +28151,33 @@
       copyCode: "Copier le code",
       codeCopied: "Copi\xE9 !",
       sending: "Envoi de {{name}}\u2026",
+      preparingFolder: "Pr\xE9paration du dossier\u2026",
+      sendingFolder: "Envoi du dossier {{name}}\u2026",
       success: "Fichier envoy\xE9 avec succ\xE8s.",
-      successDetail: "{{name}} \xB7 {{size}}"
+      successDetail: "{{name}} \xB7 {{size}}",
+      successFolder: "Dossier envoy\xE9 avec succ\xE8s."
+    },
+    folder: {
+      summary: "{{name}} \xB7 {{count}} fichiers \xB7 {{size}}"
     },
     receive: {
       title: "R\xE9ception",
       connecting: "Connexion\u2026",
       incoming: "Fichier entrant",
+      incomingFolder: "Dossier entrant",
       acceptQuestion: "Voulez-vous recevoir ce fichier ?",
+      acceptQuestionFolder: "Voulez-vous recevoir ce dossier ?",
       receiving: "R\xE9ception du fichier\u2026",
+      receivingFolder: "R\xE9ception du dossier\u2026",
       success: "Fichier enregistr\xE9.",
+      successFolder: "Dossier enregistr\xE9.",
       savedAs: "Enregistr\xE9 dans T\xE9l\xE9chargements sous {{name}}.",
       savedAsIn: "Enregistr\xE9 sous {{name}} dans {{folder}}.",
       folderFallback: "Le dossier de t\xE9l\xE9chargement choisi n'\xE9tait pas disponible, le fichier a donc \xE9t\xE9 enregistr\xE9 dans T\xE9l\xE9chargements.",
       existsTitle: "Le fichier existe d\xE9j\xE0",
       existsBody: "{{name}} existe d\xE9j\xE0 dans votre dossier de t\xE9l\xE9chargement ({{size}}). L'\xE9craser ?",
+      existsTitleFolder: "Le dossier existe d\xE9j\xE0",
+      existsBodyFolder: "Un dossier nomm\xE9 {{name}} ({{size}}) existe d\xE9j\xE0 dans votre dossier de t\xE9l\xE9chargement. L'\xE9craser le remplacera enti\xE8rement.",
       overwrite: "\xC9craser",
       keepBoth: "Garder les deux",
       declined: "Vous avez refus\xE9 le transfert."
@@ -28241,6 +28306,7 @@
       sendTitle: "\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u0444\u0430\u0439\u043B",
       sendHint: "\u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0444\u0430\u0439\u043B \u0438 \u043F\u0435\u0440\u0435\u0434\u0430\u0439\u0442\u0435 \u043E\u0434\u043D\u043E\u0440\u0430\u0437\u043E\u0432\u044B\u0439 \u043A\u043E\u0434 \u043F\u043E\u043B\u0443\u0447\u0430\u0442\u0435\u043B\u044E.",
       sendButton: "\u0412\u044B\u0431\u0440\u0430\u0442\u044C \u0444\u0430\u0439\u043B",
+      sendFolderButton: "\u0412\u044B\u0431\u0440\u0430\u0442\u044C \u043F\u0430\u043F\u043A\u0443",
       receiveTitle: "\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C \u0444\u0430\u0439\u043B",
       receiveHint: "\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u043A\u043E\u0434, \u043A\u043E\u0442\u043E\u0440\u044B\u0439 \u0432\u0430\u043C \u0434\u0430\u043B \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u0435\u043B\u044C.",
       receivePlaceholder: "\u043D\u0430\u043F\u0440\u0438\u043C\u0435\u0440, 7-crossover-clockwork",
@@ -28252,21 +28318,33 @@
       copyCode: "\u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043A\u043E\u0434",
       codeCopied: "\u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D\u043E!",
       sending: "\u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 {{name}}\u2026",
+      preparingFolder: "\u041F\u043E\u0434\u0433\u043E\u0442\u043E\u0432\u043A\u0430 \u043F\u0430\u043F\u043A\u0438\u2026",
+      sendingFolder: "\u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 \u043F\u0430\u043F\u043A\u0438 {{name}}\u2026",
       success: "\u0424\u0430\u0439\u043B \u0443\u0441\u043F\u0435\u0448\u043D\u043E \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u0435\u043D.",
-      successDetail: "{{name}} \xB7 {{size}}"
+      successDetail: "{{name}} \xB7 {{size}}",
+      successFolder: "\u041F\u0430\u043F\u043A\u0430 \u0443\u0441\u043F\u0435\u0448\u043D\u043E \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u0430."
+    },
+    folder: {
+      summary: "{{name}} \xB7 \u0444\u0430\u0439\u043B\u043E\u0432: {{count}} \xB7 {{size}}"
     },
     receive: {
       title: "\u041F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u0435",
       connecting: "\u041F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435\u2026",
       incoming: "\u0412\u0445\u043E\u0434\u044F\u0449\u0438\u0439 \u0444\u0430\u0439\u043B",
+      incomingFolder: "\u0412\u0445\u043E\u0434\u044F\u0449\u0430\u044F \u043F\u0430\u043F\u043A\u0430",
       acceptQuestion: "\u041F\u0440\u0438\u043D\u044F\u0442\u044C \u044D\u0442\u043E\u0442 \u0444\u0430\u0439\u043B?",
+      acceptQuestionFolder: "\u041F\u0440\u0438\u043D\u044F\u0442\u044C \u044D\u0442\u0443 \u043F\u0430\u043F\u043A\u0443?",
       receiving: "\u041F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u0435 \u0444\u0430\u0439\u043B\u0430\u2026",
+      receivingFolder: "\u041F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u0435 \u043F\u0430\u043F\u043A\u0438\u2026",
       success: "\u0424\u0430\u0439\u043B \u0441\u043E\u0445\u0440\u0430\u043D\u0451\u043D.",
+      successFolder: "\u041F\u0430\u043F\u043A\u0430 \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0430.",
       savedAs: "\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E \u0432 \xAB\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0438\xBB \u043A\u0430\u043A {{name}}.",
       savedAsIn: "\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E \u043A\u0430\u043A {{name}} \u0432 {{folder}}.",
       folderFallback: "\u0412\u044B\u0431\u0440\u0430\u043D\u043D\u0430\u044F \u043F\u0430\u043F\u043A\u0430 \u0437\u0430\u0433\u0440\u0443\u0437\u043E\u043A \u0431\u044B\u043B\u0430 \u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u043D\u0430, \u043F\u043E\u044D\u0442\u043E\u043C\u0443 \u0444\u0430\u0439\u043B \u0441\u043E\u0445\u0440\u0430\u043D\u0451\u043D \u0432 \xAB\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0438\xBB.",
       existsTitle: "\u0424\u0430\u0439\u043B \u0443\u0436\u0435 \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u0435\u0442",
       existsBody: "{{name}} \u0443\u0436\u0435 \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u0435\u0442 \u0432 \u043F\u0430\u043F\u043A\u0435 \u0437\u0430\u0433\u0440\u0443\u0437\u043E\u043A ({{size}}). \u041F\u0435\u0440\u0435\u0437\u0430\u043F\u0438\u0441\u0430\u0442\u044C?",
+      existsTitleFolder: "\u041F\u0430\u043F\u043A\u0430 \u0443\u0436\u0435 \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u0435\u0442",
+      existsBodyFolder: "\u041F\u0430\u043F\u043A\u0430 \u0441 \u0438\u043C\u0435\u043D\u0435\u043C {{name}} ({{size}}) \u0443\u0436\u0435 \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u0435\u0442 \u0432 \u043F\u0430\u043F\u043A\u0435 \u0437\u0430\u0433\u0440\u0443\u0437\u043E\u043A. \u041F\u0440\u0438 \u043F\u0435\u0440\u0435\u0437\u0430\u043F\u0438\u0441\u0438 \u043E\u043D\u0430 \u0431\u0443\u0434\u0435\u0442 \u043F\u043E\u043B\u043D\u043E\u0441\u0442\u044C\u044E \u0437\u0430\u043C\u0435\u043D\u0435\u043D\u0430.",
       overwrite: "\u041F\u0435\u0440\u0435\u0437\u0430\u043F\u0438\u0441\u0430\u0442\u044C",
       keepBoth: "\u041E\u0441\u0442\u0430\u0432\u0438\u0442\u044C \u043E\u0431\u0430",
       declined: "\u0412\u044B \u043E\u0442\u043A\u043B\u043E\u043D\u0438\u043B\u0438 \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0443."
@@ -28877,7 +28955,7 @@
         Home,
         {
           c,
-          onSend: (file, device) => navigate({ name: "send", file, device }),
+          onSend: (item, device) => navigate({ name: "send", item, device }),
           onReceive: (code) => navigate({ name: "receive", code }),
           onReceiveFrom: (device) => navigate({ name: "receive", device }),
           onPair: () => navigate({ name: "pair" }),
@@ -28888,7 +28966,7 @@
         Send,
         {
           c,
-          file: route.file,
+          item: route.item,
           device: route.device,
           onHome: goBack,
           onServerSettings: () => navigate({ name: "settings", scrollToServer: true })
@@ -28922,7 +29000,11 @@
     }, []);
     const pick = async (device) => {
       const file = await window.portalgems.pickFile();
-      if (file) onSend(file, device);
+      if (file) onSend({ kind: "file", ...file }, device);
+    };
+    const pickFolder = async (device) => {
+      const folder = await window.portalgems.pickFolder();
+      if (folder) onSend({ kind: "folder", ...folder }, device);
     };
     const remove = (device) => {
       if (window.confirm(`${t2("devices.remove")}: ${device.name}?`)) {
@@ -28981,7 +29063,14 @@
           onClick: () => remove(device)
         }
       ))
-    )), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("home.pairNew"), onClick: onPair })), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("home.sendTitle")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("home.sendHint")), /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("home.sendButton"), onClick: () => pick() })), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("home.receiveTitle")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("home.receiveHint")), /* @__PURE__ */ import_react14.default.createElement(
+    )), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("home.pairNew"), onClick: onPair })), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("home.sendTitle")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("home.sendHint")), /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("home.sendButton"), onClick: () => pick() }), /* @__PURE__ */ import_react14.default.createElement(
+      GhostButton,
+      {
+        c,
+        label: t2("home.sendFolderButton"),
+        onClick: () => pickFolder()
+      }
+    )), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("home.receiveTitle")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("home.receiveHint")), /* @__PURE__ */ import_react14.default.createElement(
       TextInput,
       {
         c,
@@ -29001,7 +29090,7 @@
   }
   function Send({
     c,
-    file,
+    item,
     device,
     onHome,
     onServerSettings
@@ -29040,7 +29129,8 @@
           window.portalgems.cancel(id);
         }
       }, PAIRED_SEND_TIMEOUT_MS) : null;
-      window.portalgems.send(id, file.path, pairedCode, currentServer()).then(
+      const start = item.kind === "folder" ? window.portalgems.sendFolder : window.portalgems.send;
+      start(id, item.path, pairedCode, currentServer()).then(
         () => setPhase("done"),
         (e2) => {
           if (timedOut) setPhase("peerNotOpen");
@@ -29067,14 +29157,19 @@
       setTimeout(() => setCopied(false), 1500);
     };
     const busy = phase === "starting" || phase === "waiting" || phase === "transferring";
-    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("send.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, file.name, " \xB7 ", formatSize(file.size)), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, phase === "starting" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.connecting")) : null, phase === "waiting" ? device ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("paired.sendWaiting", { name: device.name })) : /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("send.waitingForReceiver")), /* @__PURE__ */ import_react14.default.createElement(CodeBox, { c, code }), /* @__PURE__ */ import_react14.default.createElement(
+    const summary = item.kind === "folder" ? t2("folder.summary", {
+      name: item.name,
+      count: item.fileCount,
+      size: formatSize(item.totalBytes)
+    }) : `${item.name} \xB7 ${formatSize(item.size)}`;
+    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("send.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, summary), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, phase === "starting" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.connecting")) : null, phase === "waiting" ? device ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("paired.sendWaiting", { name: device.name })) : /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("send.waitingForReceiver")), /* @__PURE__ */ import_react14.default.createElement(CodeBox, { c, code }), /* @__PURE__ */ import_react14.default.createElement(
       PrimaryButton,
       {
         c,
         label: copied ? t2("send.codeCopied") : t2("send.copyCode"),
         onClick: copy2
       }
-    )) : null, phase === "transferring" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("send.sending", { name: file.name })), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, direct ? t2("transfer.direct") : t2("transfer.relay")), /* @__PURE__ */ import_react14.default.createElement(ProgressBar, { c, pct }), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("transfer.progress", { pct }))) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("send.success")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.success, margin: 0 } }, t2("send.successDetail", { name: file.name, size: formatSize(file.size) }))) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "cancelled" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("errors.cancelled")) : null, phase === "peerNotOpen" && device ? /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, t2("paired.notOpen", { name: device.name })) : null), busy ? /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancel }) : phase === "error" && serverErr ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(
+    )) : null, phase === "transferring" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, item.kind === "folder" ? t2("send.sendingFolder", { name: item.name }) : t2("send.sending", { name: item.name })), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, direct ? t2("transfer.direct") : t2("transfer.relay")), /* @__PURE__ */ import_react14.default.createElement(ProgressBar, { c, pct }), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("transfer.progress", { pct }))) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, item.kind === "folder" ? t2("send.successFolder") : t2("send.success")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.success, margin: 0 } }, summary)) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "cancelled" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("errors.cancelled")) : null, phase === "peerNotOpen" && device ? /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, t2("paired.notOpen", { name: device.name })) : null), busy ? /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancel }) : phase === "error" && serverErr ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(
       PrimaryButton,
       {
         c,
@@ -29162,9 +29257,10 @@
         }
       );
     };
+    const targetName = offer ? offer.folder?.dirName ?? offer.fileName : "";
     const accept = async () => {
       if (!offer) return;
-      const target = await window.portalgems.statTarget(downloadDirRef.current, offer.fileName).catch(() => ({ exists: false, size: 0 }));
+      const target = await window.portalgems.statTarget(downloadDirRef.current, targetName).catch(() => ({ exists: false, size: 0, isFolder: false }));
       if (target.exists) {
         setExistingSize(target.size);
         setPhase("conflict");
@@ -29181,8 +29277,12 @@
       window.portalgems.cancel(idRef.current);
     };
     const busy = phase === "connecting" || phase === "transferring";
-    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("receive.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, device ? device.name : code), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, phase === "connecting" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, device ? t2("paired.receiveWaiting", { name: device.name }) : t2("receive.connecting")) : null, phase === "confirm" && offer ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("receive.incoming")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.text, margin: 0 } }, offer.fileName, " \xB7 ", formatSize(offer.fileSize)), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.acceptQuestion")), /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.accept"), onClick: accept }), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.decline"), danger: true, onClick: decline })) : null, phase === "conflict" && offer ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("receive.existsTitle")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.text, margin: 0 } }, t2("receive.existsBody", {
-      name: offer.fileName,
+    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("receive.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, device ? device.name : code), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, phase === "connecting" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, device ? t2("paired.receiveWaiting", { name: device.name }) : t2("receive.connecting")) : null, phase === "confirm" && offer ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, offer.folder ? t2("receive.incomingFolder") : t2("receive.incoming")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.text, margin: 0 } }, offer.folder ? t2("folder.summary", {
+      name: offer.folder.dirName,
+      count: offer.folder.numFiles,
+      size: formatSize(offer.folder.numBytes)
+    }) : `${offer.fileName} \xB7 ${formatSize(offer.fileSize)}`), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, offer.folder ? t2("receive.acceptQuestionFolder") : t2("receive.acceptQuestion")), /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.accept"), onClick: accept }), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.decline"), danger: true, onClick: decline })) : null, phase === "conflict" && offer ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, offer.folder ? t2("receive.existsTitleFolder") : t2("receive.existsTitle")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.text, margin: 0 } }, t2(offer.folder ? "receive.existsBodyFolder" : "receive.existsBody", {
+      name: targetName,
       size: formatSize(existingSize)
     })), /* @__PURE__ */ import_react14.default.createElement(
       PrimaryButton,
@@ -29199,7 +29299,7 @@
         danger: true,
         onClick: () => startTransfer(true)
       }
-    ), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.decline"), onClick: decline })) : null, phase === "transferring" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("receive.receiving")), direct !== null ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, direct ? t2("transfer.direct") : t2("transfer.relay")) : null, /* @__PURE__ */ import_react14.default.createElement(ProgressBar, { c, pct }), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("transfer.progress", { pct }))) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("receive.success")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.success, margin: 0 } }, downloadDirRef.current ? t2("receive.savedAsIn", {
+    ), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.decline"), onClick: decline })) : null, phase === "transferring" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, offer?.folder ? t2("receive.receivingFolder") : t2("receive.receiving")), direct !== null ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, direct ? t2("transfer.direct") : t2("transfer.relay")) : null, /* @__PURE__ */ import_react14.default.createElement(ProgressBar, { c, pct }), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("transfer.progress", { pct }))) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, offer?.folder ? t2("receive.successFolder") : t2("receive.success")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.success, margin: 0 } }, downloadDirRef.current ? t2("receive.savedAsIn", {
       name: savedName,
       folder: downloadDirRef.current
     }) : t2("receive.savedAs", { name: savedName }))) : null, phase === "declined" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.declined")) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "cancelled" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("errors.cancelled")) : null), busy ? /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancel }) : phase === "confirm" || phase === "conflict" ? null : /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.done"), onClick: onHome }));

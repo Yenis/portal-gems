@@ -27,6 +27,7 @@ class NativeWormholeCore : public jsi::HostObject {
     jsi::Value cpp_uniffi_wormhole_core_fn_method_incomingfile_accept(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count);
     jsi::Value cpp_uniffi_wormhole_core_fn_method_incomingfile_file_name(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count);
     jsi::Value cpp_uniffi_wormhole_core_fn_method_incomingfile_file_size(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count);
+    jsi::Value cpp_uniffi_wormhole_core_fn_method_incomingfile_folder_offer(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count);
     jsi::Value cpp_uniffi_wormhole_core_fn_method_incomingfile_reject(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count);
     jsi::Value cpp_uniffi_wormhole_core_fn_clone_transferlistener(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count);
     jsi::Value cpp_uniffi_wormhole_core_fn_free_transferlistener(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count);
@@ -38,6 +39,8 @@ class NativeWormholeCore : public jsi::HostObject {
     jsi::Value cpp_uniffi_wormhole_core_fn_func_receive_file(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count);
     jsi::Value cpp_uniffi_wormhole_core_fn_func_request_receive(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count);
     jsi::Value cpp_uniffi_wormhole_core_fn_func_send_file(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count);
+    jsi::Value cpp_uniffi_wormhole_core_fn_func_send_folder(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count);
+    jsi::Value cpp_uniffi_wormhole_core_fn_func_send_zip_as_folder(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count);
     jsi::Value cpp_ffi_wormhole_core_rust_future_poll_u8(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count);
     jsi::Value cpp_ffi_wormhole_core_rust_future_cancel_u8(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count);
     jsi::Value cpp_ffi_wormhole_core_rust_future_free_u8(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count);
@@ -90,9 +93,12 @@ class NativeWormholeCore : public jsi::HostObject {
     jsi::Value cpp_uniffi_wormhole_core_checksum_func_receive_file(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count);
     jsi::Value cpp_uniffi_wormhole_core_checksum_func_request_receive(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count);
     jsi::Value cpp_uniffi_wormhole_core_checksum_func_send_file(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count);
+    jsi::Value cpp_uniffi_wormhole_core_checksum_func_send_folder(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count);
+    jsi::Value cpp_uniffi_wormhole_core_checksum_func_send_zip_as_folder(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count);
     jsi::Value cpp_uniffi_wormhole_core_checksum_method_incomingfile_accept(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count);
     jsi::Value cpp_uniffi_wormhole_core_checksum_method_incomingfile_file_name(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count);
     jsi::Value cpp_uniffi_wormhole_core_checksum_method_incomingfile_file_size(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count);
+    jsi::Value cpp_uniffi_wormhole_core_checksum_method_incomingfile_folder_offer(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count);
     jsi::Value cpp_uniffi_wormhole_core_checksum_method_incomingfile_reject(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count);
     jsi::Value cpp_uniffi_wormhole_core_checksum_method_transferlistener_on_code(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count);
     jsi::Value cpp_uniffi_wormhole_core_checksum_method_transferlistener_on_transit(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count);

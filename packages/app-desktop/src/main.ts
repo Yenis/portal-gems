@@ -52,9 +52,10 @@ function safeFileName(name: string): string {
 const resolveDownloadDir = (dir?: string | null) =>
   dir && dir.trim() !== '' ? dir : app.getPath('downloads');
 
-/** First free `name`, `name (1)`, `name (2)`, … inside `dir` (engine convention). */
-function dedupPath(dir: string, name: string): string {
-  const dot = name.lastIndexOf('.');
+/** First free `name`, `name (1)`, `name (2)`, … inside `dir` (engine
+ * convention). Folder names never get extension-split (`my.stuff (1)`). */
+function dedupPath(dir: string, name: string, isFolder = false): string {
+  const dot = isFolder ? -1 : name.lastIndexOf('.');
   const stem = dot > 0 ? name.slice(0, dot) : name;
   const ext = dot > 0 ? name.slice(dot) : '';
   let dest = path.join(dir, name);
@@ -64,17 +65,46 @@ function dedupPath(dir: string, name: string): string {
   return dest;
 }
 
-/** Move across filesystems if needed; lands at `dest` via an atomic rename. */
-async function moveFile(src: string, dest: string): Promise<void> {
+/** Move across filesystems if needed; lands at `dest` via an atomic rename.
+ * Handles both files and directories (a received folder is a directory). */
+async function moveEntry(src: string, dest: string): Promise<void> {
   try {
     await fs.promises.rename(src, dest);
   } catch (e) {
     if ((e as NodeJS.ErrnoException).code !== 'EXDEV') throw e;
     const part = `${dest}.pgpart`;
-    await fs.promises.copyFile(src, part);
+    const st = await fs.promises.stat(src);
+    if (st.isDirectory()) {
+      await fs.promises.cp(src, part, { recursive: true });
+    } else {
+      await fs.promises.copyFile(src, part);
+    }
     await fs.promises.rename(part, dest);
-    await fs.promises.unlink(src);
+    await fs.promises.rm(src, { recursive: true, force: true });
   }
+}
+
+/** File count and total size of a directory tree (symlinks skipped, matching
+ * what the engine will actually zip and send). */
+async function walkStats(dir: string): Promise<{ fileCount: number; totalBytes: number }> {
+  let fileCount = 0;
+  let totalBytes = 0;
+  const stack = [dir];
+  while (stack.length > 0) {
+    const current = stack.pop()!;
+    const entries = await fs.promises.readdir(current, { withFileTypes: true });
+    for (const entry of entries) {
+      const p = path.join(current, entry.name);
+      if (entry.isSymbolicLink()) continue;
+      if (entry.isDirectory()) {
+        stack.push(p);
+      } else if (entry.isFile()) {
+        fileCount += 1;
+        totalBytes += (await fs.promises.stat(p)).size;
+      }
+    }
+  }
+  return { fileCount, totalBytes };
 }
 
 ipcMain.handle('pg:locale', () => app.getLocale());
@@ -88,10 +118,32 @@ ipcMain.handle('pg:pickFile', async () => {
   return { path: filePath, name: path.basename(filePath), size: stat.size };
 });
 
+// Pick a folder to send: returns its path plus the file count and total size
+// shown to the user before sending.
+ipcMain.handle('pg:pickFolder', async () => {
+  if (!win) return null;
+  const result = await dialog.showOpenDialog(win, { properties: ['openDirectory'] });
+  if (result.canceled || result.filePaths.length === 0) return null;
+  const folderPath = result.filePaths[0];
+  const stats = await walkStats(folderPath);
+  return {
+    path: folderPath,
+    name: path.basename(folderPath),
+    fileCount: stats.fileCount,
+    totalBytes: stats.totalBytes,
+  };
+});
+
 ipcMain.handle(
   'pg:send',
   (_e, id: number, filePath: string, code?: string, server?: ServerConfig) =>
     engine.sendFile(id, filePath, code ?? null, server ?? {}, forward(id))
+);
+
+ipcMain.handle(
+  'pg:sendFolder',
+  (_e, id: number, folderPath: string, code?: string, server?: ServerConfig) =>
+    engine.sendFolder(id, folderPath, code ?? null, server ?? {}, forward(id))
 );
 
 ipcMain.handle(
@@ -116,12 +168,21 @@ ipcMain.handle(
     await fs.promises.mkdir(staging, { recursive: true });
     try {
       const saved = await engine.acceptReceive(id, staging, forward(id));
+      const isFolder = (await fs.promises.stat(saved)).isDirectory();
       const destDir = resolveDownloadDir(dir);
       // Recreate the folder if the user deleted it since choosing it.
       await fs.promises.mkdir(destDir, { recursive: true });
       const name = path.basename(saved);
-      const dest = overwrite ? path.join(destDir, name) : dedupPath(destDir, name);
-      await moveFile(saved, dest);
+      const dest = overwrite
+        ? path.join(destDir, name)
+        : dedupPath(destDir, name, isFolder);
+      if (overwrite) {
+        // rename() replaces files but not directories; clear the target
+        // explicitly. The transfer already completed, so this is the
+        // "only touch the destination after full arrival" moment.
+        await fs.promises.rm(dest, { recursive: true, force: true });
+      }
+      await moveEntry(saved, dest);
       return path.basename(dest);
     } finally {
       await fs.promises
@@ -139,15 +200,21 @@ ipcMain.handle('pg:pickDirectory', async () => {
   return result.canceled || result.filePaths.length === 0 ? null : result.filePaths[0];
 });
 
-// Does the incoming file's name collide in the download folder? Checked
-// before accepting so the user can decide between overwrite and keep-both.
+// Does the incoming file's (or folder's) name collide in the download
+// folder? Checked before accepting so the user can decide between overwrite
+// and keep-both. Any occupant of the name counts - a folder offer collides
+// with an existing file of that name and vice versa.
 ipcMain.handle('pg:statTarget', async (_e, dir: string | null, fileName: string) => {
   const target = path.join(resolveDownloadDir(dir), safeFileName(fileName));
   try {
     const st = await fs.promises.stat(target);
-    return { exists: st.isFile(), size: st.size };
+    if (st.isDirectory()) {
+      const stats = await walkStats(target);
+      return { exists: true, size: stats.totalBytes, isFolder: true };
+    }
+    return { exists: st.isFile(), size: st.size, isFolder: false };
   } catch {
-    return { exists: false, size: 0 };
+    return { exists: false, size: 0, isFolder: false };
   }
 });
 
@@ -210,6 +277,14 @@ app.whenReady().then(async () => {
   }
   if (process.env.PG_SMOKE_PAIRED_SEND) {
     runSmokePairedSend(process.env.PG_SMOKE_PAIRED_SEND).catch((e) => {
+      console.log(`SMOKE:ERROR:${e}`);
+      app.exit(1);
+    });
+  }
+  // Send a folder on a fixed code (PG_SMOKE_CODE), bypassing the picker
+  // dialog (showOpenDialog cannot be scripted).
+  if (process.env.PG_SMOKE_SEND_FOLDER) {
+    runSmokeSendFolder(process.env.PG_SMOKE_SEND_FOLDER).catch((e) => {
       console.log(`SMOKE:ERROR:${e}`);
       app.exit(1);
     });
@@ -282,6 +357,16 @@ async function runSmokePairedSend(filePath: string) {
   app.exit(0);
 }
 
+async function runSmokeSendFolder(folderPath: string) {
+  const code = process.env.PG_SMOKE_CODE;
+  if (!code) throw new Error('PG_SMOKE_SEND_FOLDER needs PG_SMOKE_CODE');
+  await engine.sendFolder(991, folderPath, code, smokeServer(), (ev) =>
+    console.log(`SMOKE-EV:${ev.event}:${ev.info ?? ''}`)
+  );
+  console.log('SMOKE:SEND-FOLDER-OK');
+  app.exit(0);
+}
+
 async function runSmoke(code: string, cancelInstead: boolean) {
   const exec = <T>(js: string): Promise<T> => win!.webContents.executeJavaScript(js);
   const bodyText = () => exec<string>('document.body.innerText');
@@ -323,14 +408,15 @@ async function runSmoke(code: string, cancelInstead: boolean) {
     await waitFor('Transfer cancelled', 15000);
     console.log('SMOKE:CANCELLED-OK');
   } else {
-    await waitFor('Do you want to receive this file?', 45000);
+    // matches both the file and the folder confirmation question
+    await waitFor('Do you want to receive this', 45000);
     console.log('SMOKE:CONFIRM-VISIBLE');
     await clickButton('Accept');
     // Optional: expect the same-name warning and resolve it.
     //   PG_SMOKE_CONFLICT=overwrite | keepboth
     const conflict = process.env.PG_SMOKE_CONFLICT;
     if (conflict) {
-      await waitFor('File already exists', 15000);
+      await waitFor('already exists', 15000);
       console.log('SMOKE:CONFLICT-VISIBLE');
       await clickButton(conflict === 'overwrite' ? 'Overwrite' : 'Keep both');
     }

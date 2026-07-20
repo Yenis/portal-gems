@@ -6,9 +6,9 @@
 
 **Secure device-to-device file transfer, powered by the [magic-wormhole](https://magic-wormhole.readthedocs.io/) protocol.**
 
-PortalGems sends files from one device to another with nothing but a short,
-one-time code - no accounts, no cloud storage, no middleman that ever sees your
-data. It runs on **Android** and on the **desktop** (Linux, Windows, and macOS,
+PortalGems sends files - or whole folders - from one device to another with
+nothing but a short, one-time code - no accounts, no cloud storage, no
+middleman that ever sees your data. It runs on **Android** and on the **desktop** (Linux, Windows, and macOS,
 built with Electron), and it interoperates with **any** magic-wormhole client,
 including the original `wormhole` CLI on a server or laptop.
 
@@ -93,8 +93,9 @@ PortalGems takes a different approach, inherited from magic-wormhole:
 | | |
 |---|---|
 | Send & receive files | Between any two magic-wormhole clients, any direction |
-| Receive confirmation | See the file name and size, accept or decline, before a byte flows |
-| Your download folder | Pick where received files land (defaults to Downloads); same-name files warn you first - overwrite or keep both |
+| Send whole folders | Pick a folder and it arrives as a folder - subfolders and all, using the standard wormhole directory transfer (CLI-compatible) |
+| Receive confirmation | See the file name and size - or the folder name, file count, and total size - and accept or decline before a byte flows |
+| Your download folder | Pick where received files land (defaults to Downloads); same-name files and folders warn you first - overwrite or keep both |
 | Direct LAN transfers | Same Wi-Fi → peer-to-peer at full speed, no relay |
 | CLI interop | Works with `wormhole` on servers, laptops, anything |
 | Device pairing | Scan a QR once; from then on, transfers need only a confirmation tap |
@@ -190,8 +191,10 @@ other device and the stored secret becomes useless.
 ## Architecture
 
 One protocol engine, written in Rust on top of
-[magic-wormhole.rs](https://github.com/magic-wormhole/magic-wormhole.rs),
-shared by every platform through thin bindings:
+[magic-wormhole.rs](https://github.com/magic-wormhole/magic-wormhole.rs)
+(vendored with a small patch that adds the protocol's standard folder
+transfer, `native/magic-wormhole/PORTALGEMS-PATCH.md`), shared by every
+platform through thin bindings:
 
 ```
                 ┌─────────────────────────────────────────────┐

@@ -232,6 +232,117 @@ export async function sendFile(
   }
 }
 
+/**
+ * Send a folder as a protocol-v1 directory offer: the tree at `path` is
+ * zipped into a temp archive and the receiver unpacks it back into a folder.
+ * Only usable where the folder is a real filesystem path (not Android SAF).
+ */
+export async function sendFolder(
+  path: string,
+  code: string | undefined,
+  server: ServerConfig,
+  listener: TransferListener,
+  asyncOpts_?: { signal: AbortSignal }
+): Promise<void> /*throws*/ {
+  const __stack = uniffiIsDebug ? new Error().stack : undefined;
+  try {
+    return await uniffiRustCallAsync(
+      /*rustCaller:*/ uniffiCaller,
+      /*rustFutureFunc:*/ () => {
+        return nativeModule().ubrn_uniffi_wormhole_core_fn_func_send_folder(
+          FfiConverterString.lower(path, nativeModule().rustbuffer_alloc),
+          FfiConverterOptionalString.lower(
+            code,
+            nativeModule().rustbuffer_alloc
+          ),
+          FfiConverterTypeServerConfig.lower(
+            server,
+            nativeModule().rustbuffer_alloc
+          ),
+          FfiConverterTypeTransferListener.lower(
+            listener,
+            nativeModule().rustbuffer_alloc
+          )
+        );
+      },
+      /*pollFunc:*/ nativeModule().ubrn_ffi_wormhole_core_rust_future_poll_void,
+      /*cancelFunc:*/ nativeModule()
+        .ubrn_ffi_wormhole_core_rust_future_cancel_void,
+      /*completeFunc:*/ nativeModule()
+        .ubrn_ffi_wormhole_core_rust_future_complete_void,
+      /*freeFunc:*/ nativeModule().ubrn_ffi_wormhole_core_rust_future_free_void,
+      /*liftFunc:*/ (_v) => {},
+      /*liftString:*/ FfiConverterString.lift.bind(FfiConverterString),
+      /*asyncOpts:*/ asyncOpts_,
+      /*errorHandler:*/ FfiConverterTypeError.lift.bind(FfiConverterTypeError)
+    );
+  } catch (__error: any) {
+    if (uniffiIsDebug && __error instanceof Error) {
+      __error.stack = __stack;
+    }
+    throw __error;
+  }
+}
+
+/**
+ * Send an already-zipped folder as a protocol-v1 directory offer. This is
+ * the Android path: the app zips the SAF tree into `zip_path` (cache dir)
+ * first and passes the file count and unpacked byte total it counted while
+ * zipping. The zip must hold paths relative to the folder root.
+ */
+export async function sendZipAsFolder(
+  zipPath: string,
+  dirName: string,
+  numFiles: bigint,
+  numBytes: bigint,
+  code: string | undefined,
+  server: ServerConfig,
+  listener: TransferListener,
+  asyncOpts_?: { signal: AbortSignal }
+): Promise<void> /*throws*/ {
+  const __stack = uniffiIsDebug ? new Error().stack : undefined;
+  try {
+    return await uniffiRustCallAsync(
+      /*rustCaller:*/ uniffiCaller,
+      /*rustFutureFunc:*/ () => {
+        return nativeModule().ubrn_uniffi_wormhole_core_fn_func_send_zip_as_folder(
+          FfiConverterString.lower(zipPath, nativeModule().rustbuffer_alloc),
+          FfiConverterString.lower(dirName, nativeModule().rustbuffer_alloc),
+          FfiConverterUInt64.lower(numFiles, nativeModule().rustbuffer_alloc),
+          FfiConverterUInt64.lower(numBytes, nativeModule().rustbuffer_alloc),
+          FfiConverterOptionalString.lower(
+            code,
+            nativeModule().rustbuffer_alloc
+          ),
+          FfiConverterTypeServerConfig.lower(
+            server,
+            nativeModule().rustbuffer_alloc
+          ),
+          FfiConverterTypeTransferListener.lower(
+            listener,
+            nativeModule().rustbuffer_alloc
+          )
+        );
+      },
+      /*pollFunc:*/ nativeModule().ubrn_ffi_wormhole_core_rust_future_poll_void,
+      /*cancelFunc:*/ nativeModule()
+        .ubrn_ffi_wormhole_core_rust_future_cancel_void,
+      /*completeFunc:*/ nativeModule()
+        .ubrn_ffi_wormhole_core_rust_future_complete_void,
+      /*freeFunc:*/ nativeModule().ubrn_ffi_wormhole_core_rust_future_free_void,
+      /*liftFunc:*/ (_v) => {},
+      /*liftString:*/ FfiConverterString.lift.bind(FfiConverterString),
+      /*asyncOpts:*/ asyncOpts_,
+      /*errorHandler:*/ FfiConverterTypeError.lift.bind(FfiConverterTypeError)
+    );
+  } catch (__error: any) {
+    if (uniffiIsDebug && __error instanceof Error) {
+      __error.stack = __stack;
+    }
+    throw __error;
+  }
+}
+
 // Hermes (React Native ≥ 0.74) ships TextEncoder and encodeInto, but not
 // TextDecoder. For single-string decode (bytesToString), we polyfill via the
 // C++ string_from_buffer helper using a duck-typed object matching the
@@ -295,6 +406,69 @@ const stringConverter = (() => {
 const FfiConverterString = uniffiCreateFfiConverterString(stringConverter);
 
 /**
+ * Folder metadata of a directory offer, for the receive confirmation UI.
+ * All values are sender-claimed; the engine enforces `num_bytes` (plus
+ * slack) as an unpack cap.
+ */
+export type FolderOfferInfo = {
+  /**
+   * Sanitized folder name
+   */
+  dirName: string;
+  /**
+   * Number of files inside the folder
+   */
+  numFiles: bigint;
+  /**
+   * Total unpacked size in bytes
+   */
+  numBytes: bigint;
+};
+
+/**
+ * Generated factory for {@link FolderOfferInfo} record objects.
+ */
+export const FolderOfferInfo = (() => {
+  const defaults = () => ({});
+  const create = (() => {
+    return uniffiCreateRecord<FolderOfferInfo, ReturnType<typeof defaults>>(
+      defaults
+    );
+  })();
+  return Object.freeze({
+    create,
+    new: create,
+    defaults: () => Object.freeze(defaults()) as Partial<FolderOfferInfo>,
+  });
+})();
+
+const FfiConverterTypeFolderOfferInfo = (() => {
+  type TypeName = FolderOfferInfo;
+  class FFIConverter extends AbstractFfiConverterByteArray<TypeName> {
+    read(from: RustBuffer): TypeName {
+      return {
+        dirName: FfiConverterString.read(from),
+        numFiles: FfiConverterUInt64.read(from),
+        numBytes: FfiConverterUInt64.read(from),
+      };
+    }
+    write(value: TypeName, into: RustBuffer): void {
+      FfiConverterString.write(value.dirName, into);
+      FfiConverterUInt64.write(value.numFiles, into);
+      FfiConverterUInt64.write(value.numBytes, into);
+    }
+    allocationSize(value: TypeName): number {
+      return (
+        FfiConverterString.allocationSize(value.dirName) +
+        FfiConverterUInt64.allocationSize(value.numFiles) +
+        FfiConverterUInt64.allocationSize(value.numBytes)
+      );
+    }
+  }
+  return new FFIConverter();
+})();
+
+/**
  * Which servers a transfer should use. Both fields are optional; a missing or
  * empty field falls back to the public magic-wormhole defaults. Keeping the
  * app id fixed (see `app_config`) means any two clients pointed at the SAME
@@ -356,6 +530,7 @@ export enum Exception_Tags {
   Cancelled = 'Cancelled',
   AlreadyConsumed = 'AlreadyConsumed',
   InvalidServerUrl = 'InvalidServerUrl',
+  Archive = 'Archive',
   Wormhole = 'Wormhole',
   Transfer = 'Transfer',
   Io = 'Io',
@@ -449,7 +624,7 @@ export const Exception = (() => {
       return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 4;
     }
   }
-  class Wormhole extends UniffiError {
+  class Archive extends UniffiError {
     /**
      * @private
      * This field is private and should not be used.
@@ -461,6 +636,28 @@ export const Exception = (() => {
      */
     readonly [variantOrdinalSymbol] = 5;
 
+    readonly tag = Exception_Tags.Archive;
+
+    constructor(message: string) {
+      super('Exception', 'Archive', message);
+    }
+
+    static instanceOf(e: any): e is Archive {
+      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 5;
+    }
+  }
+  class Wormhole extends UniffiError {
+    /**
+     * @private
+     * This field is private and should not be used.
+     */
+    readonly [uniffiTypeNameSymbol]: string = 'Exception';
+    /**
+     * @private
+     * This field is private and should not be used.
+     */
+    readonly [variantOrdinalSymbol] = 6;
+
     readonly tag = Exception_Tags.Wormhole;
 
     constructor(message: string) {
@@ -468,7 +665,7 @@ export const Exception = (() => {
     }
 
     static instanceOf(e: any): e is Wormhole {
-      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 5;
+      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 6;
     }
   }
   class Transfer extends UniffiError {
@@ -481,7 +678,7 @@ export const Exception = (() => {
      * @private
      * This field is private and should not be used.
      */
-    readonly [variantOrdinalSymbol] = 6;
+    readonly [variantOrdinalSymbol] = 7;
 
     readonly tag = Exception_Tags.Transfer;
 
@@ -490,7 +687,7 @@ export const Exception = (() => {
     }
 
     static instanceOf(e: any): e is Transfer {
-      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 6;
+      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 7;
     }
   }
   class Io extends UniffiError {
@@ -503,7 +700,7 @@ export const Exception = (() => {
      * @private
      * This field is private and should not be used.
      */
-    readonly [variantOrdinalSymbol] = 7;
+    readonly [variantOrdinalSymbol] = 8;
 
     readonly tag = Exception_Tags.Io;
 
@@ -512,7 +709,7 @@ export const Exception = (() => {
     }
 
     static instanceOf(e: any): e is Io {
-      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 7;
+      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 8;
     }
   }
 
@@ -525,6 +722,7 @@ export const Exception = (() => {
     Cancelled,
     AlreadyConsumed,
     InvalidServerUrl,
+    Archive,
     Wormhole,
     Transfer,
     Io,
@@ -539,6 +737,7 @@ export type Exception = InstanceType<
     | 'Cancelled'
     | 'AlreadyConsumed'
     | 'InvalidServerUrl'
+    | 'Archive'
     | 'Wormhole'
     | 'Transfer'
     | 'Io']
@@ -563,12 +762,15 @@ const FfiConverterTypeError = (() => {
           return new Exception.InvalidServerUrl(FfiConverterString.read(from));
 
         case 5:
-          return new Exception.Wormhole(FfiConverterString.read(from));
+          return new Exception.Archive(FfiConverterString.read(from));
 
         case 6:
-          return new Exception.Transfer(FfiConverterString.read(from));
+          return new Exception.Wormhole(FfiConverterString.read(from));
 
         case 7:
+          return new Exception.Transfer(FfiConverterString.read(from));
+
+        case 8:
           return new Exception.Io(FfiConverterString.read(from));
 
         default:
@@ -841,12 +1043,14 @@ const uniffiCallbackInterfaceTransferListener: {
 };
 
 /**
- * A pending file offer. Inspect `file_name`/`file_size`, then `accept` into a
- * destination directory or `reject` to tell the sender you declined.
+ * A pending file (or folder) offer. Inspect `file_name`/`file_size` and
+ * `folder_offer`, then `accept` into a destination directory or `reject` to
+ * tell the sender you declined.
  */
 export interface IncomingFileLike {
   /**
-   * Accept the offer, writing into `dest_dir`; returns the saved path.
+   * Accept the offer, writing into `dest_dir`; returns the saved path
+   * (a file path, or the unpacked folder path for directory offers).
    */
   accept(
     destDir: string,
@@ -855,6 +1059,12 @@ export interface IncomingFileLike {
   ) /*throws*/ : Promise<string>;
   fileName(): string;
   fileSize(): bigint;
+  /**
+   * Folder metadata when this is a directory offer; `None` for plain files.
+   * When present, `accept` unpacks the folder and returns its path, and
+   * `file_name`/`file_size` describe the underlying zip transfer instead.
+   */
+  folderOffer(): FolderOfferInfo | undefined;
   /**
    * Decline the offer; the sender sees the transfer fail cleanly.
    */
@@ -866,8 +1076,9 @@ export interface IncomingFileLike {
 export type IncomingFileInterface = IncomingFileLike;
 
 /**
- * A pending file offer. Inspect `file_name`/`file_size`, then `accept` into a
- * destination directory or `reject` to tell the sender you declined.
+ * A pending file (or folder) offer. Inspect `file_name`/`file_size` and
+ * `folder_offer`, then `accept` into a destination directory or `reject` to
+ * tell the sender you declined.
  */
 export class IncomingFile
   extends UniffiAbstractObject
@@ -885,7 +1096,8 @@ export class IncomingFile
   }
 
   /**
-   * Accept the offer, writing into `dest_dir`; returns the saved path.
+   * Accept the offer, writing into `dest_dir`; returns the saved path
+   * (a file path, or the unpacked folder path for directory offers).
    */
   async accept(
     destDir: string,
@@ -957,6 +1169,31 @@ export class IncomingFile
       uniffiCaller.rustCall(
         /*caller:*/ (callStatus) => {
           return nativeModule().ubrn_uniffi_wormhole_core_fn_method_incomingfile_file_size(
+            uniffiTypeIncomingFileObjectFactory.clonePointer(this),
+            callStatus
+          );
+        },
+        /*liftString:*/ FfiConverterString.lift.bind(FfiConverterString)
+      )
+    );
+  }
+
+  /**
+   * Folder metadata when this is a directory offer; `None` for plain files.
+   * When present, `accept` unpacks the folder and returns its path, and
+   * `file_name`/`file_size` describe the underlying zip transfer instead.
+   */
+  folderOffer(): FolderOfferInfo | undefined {
+    return ((__rb: Uint8Array) => {
+      try {
+        return FfiConverterOptionalTypeFolderOfferInfo.lift(__rb);
+      } finally {
+        nativeModule().rustbuffer_free(__rb);
+      }
+    })(
+      uniffiCaller.rustCall(
+        /*caller:*/ (callStatus) => {
+          return nativeModule().ubrn_uniffi_wormhole_core_fn_method_incomingfile_folder_offer(
             uniffiTypeIncomingFileObjectFactory.clonePointer(this),
             callStatus
           );
@@ -1086,6 +1323,11 @@ const FfiConverterTypeIncomingFile = new FfiConverterObject(
 // FfiConverter for string | undefined
 const FfiConverterOptionalString = new FfiConverterOptional(FfiConverterString);
 
+// FfiConverter for FolderOfferInfo | undefined
+const FfiConverterOptionalTypeFolderOfferInfo = new FfiConverterOptional(
+  FfiConverterTypeFolderOfferInfo
+);
+
 /**
  * This should be called before anything else.
  *
@@ -1140,8 +1382,24 @@ function uniffiEnsureInitialized() {
     );
   }
   if (
+    nativeModule().ubrn_uniffi_wormhole_core_checksum_func_send_folder() !==
+    33068
+  ) {
+    throw new UniffiInternalError.ApiChecksumMismatch(
+      'uniffi_wormhole_core_checksum_func_send_folder'
+    );
+  }
+  if (
+    nativeModule().ubrn_uniffi_wormhole_core_checksum_func_send_zip_as_folder() !==
+    37812
+  ) {
+    throw new UniffiInternalError.ApiChecksumMismatch(
+      'uniffi_wormhole_core_checksum_func_send_zip_as_folder'
+    );
+  }
+  if (
     nativeModule().ubrn_uniffi_wormhole_core_checksum_method_incomingfile_accept() !==
-    39165
+    48875
   ) {
     throw new UniffiInternalError.ApiChecksumMismatch(
       'uniffi_wormhole_core_checksum_method_incomingfile_accept'
@@ -1161,6 +1419,14 @@ function uniffiEnsureInitialized() {
   ) {
     throw new UniffiInternalError.ApiChecksumMismatch(
       'uniffi_wormhole_core_checksum_method_incomingfile_file_size'
+    );
+  }
+  if (
+    nativeModule().ubrn_uniffi_wormhole_core_checksum_method_incomingfile_folder_offer() !==
+    18826
+  ) {
+    throw new UniffiInternalError.ApiChecksumMismatch(
+      'uniffi_wormhole_core_checksum_method_incomingfile_folder_offer'
     );
   }
   if (
@@ -1203,6 +1469,7 @@ export default Object.freeze({
   initialize: uniffiEnsureInitialized,
   converters: {
     FfiConverterTypeError,
+    FfiConverterTypeFolderOfferInfo,
     FfiConverterTypeIncomingFile,
     FfiConverterTypeServerConfig,
     FfiConverterTypeTransferListener,

@@ -19,7 +19,7 @@ import {
   copyToCache,
   deviceLocale,
   getSetting,
-  type PickedFile,
+  type SendItem,
 } from './src/native';
 
 initI18n(deviceLocale);
@@ -29,7 +29,7 @@ getSetting('language')
 
 type Route =
   | { name: 'home' }
-  | { name: 'send'; file: PickedFile; device?: PairedDevice }
+  | { name: 'send'; item: SendItem; device?: PairedDevice }
   | { name: 'receive'; code?: string; device?: PairedDevice }
   | { name: 'pair' }
   | { name: 'settings'; scrollToServer?: boolean }
@@ -77,7 +77,12 @@ function AppShell() {
       const uri = await consumePendingShare().catch(() => null);
       if (uri) {
         const file = await copyToCache(uri).catch(() => null);
-        if (file) setStack([{ name: 'home' }, { name: 'send', file }]);
+        if (file) {
+          setStack([
+            { name: 'home' },
+            { name: 'send', item: { kind: 'file', ...file } },
+          ]);
+        }
       }
     };
     check();
@@ -91,7 +96,7 @@ function AppShell() {
     <View style={{ flex: 1, backgroundColor: c.background }}>
       {route.name === 'home' ? (
         <HomeScreen
-          onSend={(file, device) => navigate({ name: 'send', file, device })}
+          onSend={(item, device) => navigate({ name: 'send', item, device })}
           onReceive={(code) => navigate({ name: 'receive', code })}
           onReceiveFrom={(device) => navigate({ name: 'receive', device })}
           onPair={() => navigate({ name: 'pair' })}
@@ -100,7 +105,7 @@ function AppShell() {
         />
       ) : route.name === 'send' ? (
         <SendScreen
-          file={route.file}
+          item={route.item}
           device={route.device}
           onHome={goBack}
           onServerSettings={() => navigate({ name: 'settings', scrollToServer: true })}

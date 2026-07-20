@@ -11,10 +11,32 @@ export interface PickedDirectory {
   label: string;
 }
 
+/** A folder picked for sending (SAF tree; zipped app-side before the engine
+ * sees it, because Rust cannot read content:// URIs). */
+export interface PickedSendFolder {
+  uri: string;
+  name: string;
+}
+
+/** The staged zip of a picked folder, with the stats counted while zipping. */
+export interface ZippedFolder {
+  path: string;
+  name: string;
+  fileCount: number;
+  totalBytes: number;
+}
+
+/** What the user picked to send: a single file, or a whole folder. */
+export type SendItem =
+  | ({ kind: 'file' } & PickedFile)
+  | ({ kind: 'folder' } & PickedSendFolder);
+
 export interface DownloadTargetStat {
   dirOk: boolean;
   exists: boolean;
   size: number;
+  /** True when the existing occupant of the name is a folder. */
+  isFolder: boolean;
 }
 
 export interface SavedToDir {
@@ -39,6 +61,15 @@ interface PortalGemsNativeSpec {
     srcPath: string,
     dirUri: string,
     fileName: string,
+    overwrite: boolean
+  ): Promise<SavedToDir>;
+  pickSendFolder(): Promise<PickedSendFolder | null>;
+  zipTreeToCache(uri: string): Promise<ZippedFolder>;
+  saveFolderToDownloads(srcDirPath: string, folderName: string): Promise<string>;
+  saveFolderToDownloadDir(
+    srcDirPath: string,
+    dirUri: string,
+    folderName: string,
     overwrite: boolean
   ): Promise<SavedToDir>;
   consumePendingShare(): Promise<string | null>;
@@ -83,6 +114,16 @@ export const saveToDownloadDir = (
   fileName: string,
   overwrite: boolean
 ) => native.saveToDownloadDir(srcPath, dirUri, fileName, overwrite);
+export const pickSendFolder = () => native.pickSendFolder();
+export const zipTreeToCache = (uri: string) => native.zipTreeToCache(uri);
+export const saveFolderToDownloads = (srcDirPath: string, folderName: string) =>
+  native.saveFolderToDownloads(srcDirPath, folderName);
+export const saveFolderToDownloadDir = (
+  srcDirPath: string,
+  dirUri: string,
+  folderName: string,
+  overwrite: boolean
+) => native.saveFolderToDownloadDir(srcDirPath, dirUri, folderName, overwrite);
 
 /** The persisted download-folder choice; null means default Downloads. */
 export async function loadDownloadDir(): Promise<PickedDirectory | null> {

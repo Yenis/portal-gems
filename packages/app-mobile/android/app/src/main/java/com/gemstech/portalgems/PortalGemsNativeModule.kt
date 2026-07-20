@@ -35,10 +35,12 @@ class PortalGemsNativeModule(reactContext: ReactApplicationContext) :
   companion object {
     // IntentIntegrator.REQUEST_CODE is 49374; stay clear of it.
     private const val PICK_DIR_REQUEST = 49375
+    private const val PICK_SEND_FOLDER_REQUEST = 49376
   }
 
   private var scanPromise: Promise? = null
   private var pickDirPromise: Promise? = null
+  private var pickSendFolderPromise: Promise? = null
 
   private val activityListener: ActivityEventListener =
     object : BaseActivityEventListener() {
@@ -72,6 +74,29 @@ class PortalGemsNativeModule(reactContext: ReactApplicationContext) :
             )
           } catch (e: Exception) {
             promise.reject("pick_dir_failed", e.message, e)
+          }
+          return
+        }
+        if (requestCode == PICK_SEND_FOLDER_REQUEST) {
+          val promise = pickSendFolderPromise ?: return
+          pickSendFolderPromise = null
+          val uri = data?.data
+          if (resultCode != Activity.RESULT_OK || uri == null) {
+            promise.resolve(null) // user backed out
+            return
+          }
+          try {
+            val name =
+              DocumentFile.fromTreeUri(reactApplicationContext, uri)?.name
+                ?: uri.lastPathSegment ?: "folder"
+            promise.resolve(
+              WritableNativeMap().apply {
+                putString("uri", uri.toString())
+                putString("name", name)
+              }
+            )
+          } catch (e: Exception) {
+            promise.reject("pick_folder_failed", e.message, e)
           }
           return
         }
@@ -348,21 +373,32 @@ class PortalGemsNativeModule(reactContext: ReactApplicationContext) :
       null
     }
 
+  /** Any occupant of the name counts as a conflict - an incoming folder
+   *  collides with an existing file of that name and vice versa. Runs on a
+   *  worker thread because sizing an existing folder walks its tree. */
   @ReactMethod
   fun statDownloadTarget(dirUri: String, fileName: String, promise: Promise) {
-    try {
-      val dir = openTreeDir(dirUri)
-      val existing = dir?.findFile(fileName)?.takeIf { it.isFile }
-      promise.resolve(
-        WritableNativeMap().apply {
-          putBoolean("dirOk", dir != null)
-          putBoolean("exists", existing != null)
-          putDouble("size", existing?.length()?.toDouble() ?: 0.0)
+    Thread {
+      try {
+        val dir = openTreeDir(dirUri)
+        val existing = dir?.findFile(fileName)
+        val size = when {
+          existing == null -> 0.0
+          existing.isDirectory -> treeSize(existing).toDouble()
+          else -> existing.length().toDouble()
         }
-      )
-    } catch (e: Exception) {
-      promise.reject("stat_target_failed", e.message, e)
-    }
+        promise.resolve(
+          WritableNativeMap().apply {
+            putBoolean("dirOk", dir != null)
+            putBoolean("exists", existing != null)
+            putDouble("size", size)
+            putBoolean("isFolder", existing?.isDirectory == true)
+          }
+        )
+      } catch (e: Exception) {
+        promise.reject("stat_target_failed", e.message, e)
+      }
+    }.start()
   }
 
   @ReactMethod
@@ -429,6 +465,250 @@ class PortalGemsNativeModule(reactContext: ReactApplicationContext) :
     } catch (e: Exception) {
       promise.reject("save_to_dir_failed", e.message, e)
     }
+  }
+
+  // ---- Send-folder support ----
+  //
+  // Rust cannot read content:// trees, so folder sending is staged app-side:
+  // pick a SAF tree, zip it into the cache in one pass (counting files and
+  // bytes as we go), then hand the zip + stats to the engine, which sends a
+  // protocol-v1 directory offer.
+
+  @ReactMethod
+  fun pickSendFolder(promise: Promise) {
+    val activity: Activity? = reactApplicationContext.currentActivity
+    if (activity == null) {
+      promise.reject("no_activity", "no current activity")
+      return
+    }
+    if (pickSendFolderPromise != null) {
+      promise.reject("pick_in_progress", "a folder pick is already in progress")
+      return
+    }
+    pickSendFolderPromise = promise
+    try {
+      // Read grant only, for the duration of this task - the folder is zipped
+      // immediately, so no persistable permission is needed.
+      val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+      activity.startActivityForResult(intent, PICK_SEND_FOLDER_REQUEST)
+    } catch (e: Exception) {
+      pickSendFolderPromise = null
+      promise.reject("pick_folder_failed", e.message, e)
+    }
+  }
+
+  /** Zip the picked SAF tree into the cache. Entry paths are relative to the
+   *  folder root (no top-level folder-name component), directories are stored
+   *  so empty ones survive, and file count + total bytes are counted in the
+   *  same pass. Returns { path, name, fileCount, totalBytes }. */
+  @ReactMethod
+  fun zipTreeToCache(uriString: String, promise: Promise) {
+    Thread {
+      try {
+        val root = DocumentFile.fromTreeUri(reactApplicationContext, Uri.parse(uriString))
+          ?.takeIf { it.isDirectory }
+          ?: throw IllegalStateException("folder is not readable")
+        val name = root.name ?: "folder"
+
+        val outDir = File(reactApplicationContext.cacheDir, "outgoing").apply { mkdirs() }
+        var zipFile = File(outDir, "$name.zip")
+        var n = 1
+        while (zipFile.exists()) zipFile = File(outDir, "$name ($n).zip").also { n++ }
+
+        var fileCount = 0L
+        var totalBytes = 0L
+        val resolver = reactApplicationContext.contentResolver
+        java.util.zip.ZipOutputStream(zipFile.outputStream().buffered()).use { zip ->
+          fun walk(dir: DocumentFile, prefix: String) {
+            for (child in dir.listFiles()) {
+              val childName = child.name ?: continue
+              val rel = if (prefix.isEmpty()) childName else "$prefix/$childName"
+              if (child.isDirectory) {
+                zip.putNextEntry(java.util.zip.ZipEntry("$rel/"))
+                zip.closeEntry()
+                walk(child, rel)
+              } else if (child.isFile) {
+                zip.putNextEntry(java.util.zip.ZipEntry(rel))
+                resolver.openInputStream(child.uri).use { input ->
+                  requireNotNull(input) { "could not read $rel" }
+                  val buf = ByteArray(64 * 1024)
+                  while (true) {
+                    val read = input.read(buf)
+                    if (read < 0) break
+                    zip.write(buf, 0, read)
+                    totalBytes += read
+                  }
+                }
+                zip.closeEntry()
+                fileCount++
+              }
+            }
+          }
+          walk(root, "")
+        }
+
+        promise.resolve(
+          WritableNativeMap().apply {
+            putString("path", zipFile.absolutePath)
+            putString("name", name)
+            putDouble("fileCount", fileCount.toDouble())
+            putDouble("totalBytes", totalBytes.toDouble())
+          }
+        )
+      } catch (e: Exception) {
+        promise.reject("zip_tree_failed", e.message, e)
+      }
+    }.start()
+  }
+
+  // ---- Receive-folder publish paths ----
+
+  /** Recursive size of a SAF tree (for the conflict prompt). */
+  private fun treeSize(dir: DocumentFile): Long {
+    var total = 0L
+    for (child in dir.listFiles()) {
+      total += if (child.isDirectory) treeSize(child) else child.length()
+    }
+    return total
+  }
+
+  private fun mimeFor(name: String): String {
+    val ext = name.substringAfterLast('.', "")
+    return MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext.lowercase())
+      ?: "application/octet-stream"
+  }
+
+  /** Publish a received folder tree into public Downloads. On Q+ each file is
+   *  inserted with RELATIVE_PATH Download/<folder>/<subdirs>; MediaStore has
+   *  no directory objects, so empty subfolders are dropped and a same-named
+   *  folder is merged into (its files are de-duped individually by the
+   *  system, like plain file receives). Deletes `srcDir`. */
+  private fun publishFolderToDownloads(srcDir: File, folderName: String): String {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+      val resolver = reactApplicationContext.contentResolver
+      srcDir.walkTopDown().filter { it.isFile }.forEach { file ->
+        val rel = file.parentFile!!.relativeTo(srcDir).path
+        val relativePath =
+          if (rel.isEmpty()) "${Environment.DIRECTORY_DOWNLOADS}/$folderName"
+          else "${Environment.DIRECTORY_DOWNLOADS}/$folderName/$rel"
+        val values = ContentValues().apply {
+          put(MediaStore.Downloads.DISPLAY_NAME, file.name)
+          put(MediaStore.Downloads.RELATIVE_PATH, relativePath)
+          put(MediaStore.Downloads.IS_PENDING, 1)
+        }
+        val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+          ?: throw IllegalStateException("MediaStore insert failed for ${file.name}")
+        resolver.openOutputStream(uri).use { output ->
+          requireNotNull(output) { "could not open output stream" }
+          file.inputStream().use { input -> input.copyTo(output) }
+        }
+        values.clear()
+        values.put(MediaStore.Downloads.IS_PENDING, 0)
+        resolver.update(uri, values, null, null)
+      }
+      srcDir.deleteRecursively()
+      return folderName
+    } else {
+      @Suppress("DEPRECATION")
+      val downloads =
+        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+      downloads.mkdirs()
+      var dest = File(downloads, folderName)
+      var n = 1
+      while (dest.exists()) dest = File(downloads, "$folderName ($n)").also { n++ }
+      srcDir.copyRecursively(dest)
+      srcDir.deleteRecursively()
+      return dest.name
+    }
+  }
+
+  @ReactMethod
+  fun saveFolderToDownloads(srcDirPath: String, folderName: String, promise: Promise) {
+    Thread {
+      try {
+        val src = File(srcDirPath)
+        require(src.isDirectory) { "source folder does not exist: $srcDirPath" }
+        promise.resolve(publishFolderToDownloads(src, folderName))
+      } catch (e: Exception) {
+        promise.reject("save_folder_failed", e.message, e)
+      }
+    }.start()
+  }
+
+  @ReactMethod
+  fun saveFolderToDownloadDir(
+    srcDirPath: String,
+    dirUri: String,
+    folderName: String,
+    overwrite: Boolean,
+    promise: Promise,
+  ) {
+    Thread {
+      try {
+        val src = File(srcDirPath)
+        require(src.isDirectory) { "source folder does not exist: $srcDirPath" }
+
+        val dir = openTreeDir(dirUri)
+        if (dir == null) {
+          val name = publishFolderToDownloads(src, folderName)
+          promise.resolve(
+            WritableNativeMap().apply {
+              putString("name", name)
+              putBoolean("fallback", true)
+            }
+          )
+          return@Thread
+        }
+
+        var targetName = folderName
+        val existing = dir.findFile(folderName)
+        if (existing != null) {
+          if (overwrite) {
+            // `src` is already fully received (staged in the app cache), so
+            // the existing folder is only replaced now; a failed transfer
+            // never gets this far and leaves it untouched.
+            existing.delete()
+          } else {
+            var n = 1
+            while (dir.findFile(targetName) != null) {
+              targetName = "$folderName ($n)"
+              n++
+            }
+          }
+        }
+
+        val destRoot = dir.createDirectory(targetName)
+          ?: throw IllegalStateException("could not create folder in the chosen folder")
+        val resolver = reactApplicationContext.contentResolver
+        fun copyInto(from: File, into: DocumentFile) {
+          for (child in from.listFiles() ?: emptyArray()) {
+            if (child.isDirectory) {
+              val sub = into.createDirectory(child.name)
+                ?: throw IllegalStateException("could not create ${child.name}")
+              copyInto(child, sub)
+            } else {
+              val out = into.createFile(mimeFor(child.name), child.name)
+                ?: throw IllegalStateException("could not create ${child.name}")
+              resolver.openOutputStream(out.uri).use { output ->
+                requireNotNull(output) { "could not open output stream" }
+                child.inputStream().use { input -> input.copyTo(output) }
+              }
+            }
+          }
+        }
+        copyInto(src, destRoot)
+        src.deleteRecursively()
+        promise.resolve(
+          WritableNativeMap().apply {
+            putString("name", destRoot.name ?: targetName)
+            putBoolean("fallback", false)
+          }
+        )
+      } catch (e: Exception) {
+        promise.reject("save_folder_failed", e.message, e)
+      }
+    }.start()
   }
 
   @ReactMethod

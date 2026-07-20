@@ -12,6 +12,7 @@
     "sendTitle": "Send a file",
     "sendHint": "Pick a file and share the one-time code with the receiver.",
     "sendButton": "Choose file to send",
+    "sendFolderButton": "Choose folder to send",
     "receiveTitle": "Receive a file",
     "receiveHint": "Enter the code the sender gave you.",
     "receivePlaceholder": "e.g. 7-crossover-clockwork",
@@ -23,21 +24,33 @@
     "copyCode": "Copy code",
     "codeCopied": "Copied!",
     "sending": "Sending {{name}}…",
+    "preparingFolder": "Preparing folder…",
+    "sendingFolder": "Sending folder {{name}}…",
     "success": "File sent successfully.",
-    "successDetail": "{{name}} · {{size}}"
+    "successDetail": "{{name}} · {{size}}",
+    "successFolder": "Folder sent successfully."
+  },
+  "folder": {
+    "summary": "{{name}} · {{count}} files · {{size}}"
   },
   "receive": {
     "title": "Receiving",
     "connecting": "Connecting…",
     "incoming": "Incoming file",
+    "incomingFolder": "Incoming folder",
     "acceptQuestion": "Do you want to receive this file?",
+    "acceptQuestionFolder": "Do you want to receive this folder?",
     "receiving": "Receiving file…",
+    "receivingFolder": "Receiving folder…",
     "success": "File saved.",
+    "successFolder": "Folder saved.",
     "savedAs": "Saved to Downloads as {{name}}.",
     "savedAsIn": "Saved as {{name}} in {{folder}}.",
     "folderFallback": "The chosen download folder was not available, so the file was saved to Downloads.",
     "existsTitle": "File already exists",
     "existsBody": "{{name}} already exists in your download folder ({{size}}). Overwrite it?",
+    "existsTitleFolder": "Folder already exists",
+    "existsBodyFolder": "A folder named {{name}} ({{size}}) already exists in your download folder. Overwriting replaces it entirely.",
     "overwrite": "Overwrite",
     "keepBoth": "Keep both",
     "declined": "You declined the transfer."

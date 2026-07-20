@@ -24,7 +24,7 @@ import {
   Subtitle,
   Title,
 } from '../components';
-import { copyToCache, type PickedFile } from '../native';
+import { copyToCache, pickSendFolder, type SendItem } from '../native';
 import { loadDevices, removeDevice } from '../pairing';
 import { useTheme } from '../theme';
 
@@ -39,7 +39,7 @@ export default function HomeScreen({
   onSettings,
   onExplain,
 }: {
-  onSend: (file: PickedFile, device?: PairedDevice) => void;
+  onSend: (item: SendItem, device?: PairedDevice) => void;
   onReceive: (code: string) => void;
   onReceiveFrom: (device: PairedDevice) => void;
   onPair: () => void;
@@ -63,12 +63,25 @@ export default function HomeScreen({
     try {
       const [result] = await pick();
       const file = await copyToCache(result.uri);
-      onSend(file, device);
+      onSend({ kind: 'file', ...file }, device);
     } catch (e: any) {
       // User closing the picker is not an error.
       if (e?.code !== 'OPERATION_CANCELED') {
         setPickError(t('errors.pickFailed'));
       }
+    } finally {
+      setPicking(false);
+    }
+  };
+
+  const pickFolder = async (device?: PairedDevice) => {
+    setPickError(null);
+    setPicking(true);
+    try {
+      const folder = await pickSendFolder();
+      if (folder) onSend({ kind: 'folder', ...folder }, device);
+    } catch {
+      setPickError(t('errors.pickFailed'));
     } finally {
       setPicking(false);
     }
@@ -147,6 +160,11 @@ export default function HomeScreen({
           label={t('home.sendButton')}
           onPress={() => pickFile()}
           busy={picking}
+        />
+        <GhostButton
+          label={t('home.sendFolderButton')}
+          onPress={() => pickFolder()}
+          disabled={picking}
         />
         {pickError ? (
           <Text style={{ color: c.danger, fontSize: fontSize.small }}>

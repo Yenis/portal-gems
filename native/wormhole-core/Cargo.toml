@@ -9,7 +9,11 @@ description = "PortalGems wormhole engine: app-shaped wrapper around magic-wormh
 crate-type = ["rlib", "cdylib", "staticlib"]
 
 [dependencies]
-magic-wormhole = "0.8.1"
+# Vendored copy of magic-wormhole 0.8.1 (EUPL-1.2) with a small local patch:
+# protocol-v1 "directory" offers (zipped folder send + offer-kind surfaced on
+# receive) that the released crate does not expose. See
+# native/magic-wormhole/PORTALGEMS-PATCH.md for the exact diff rationale.
+magic-wormhole = { path = "../magic-wormhole" }
 # Give the engine `wss://` support (without this only cleartext `ws://` works,
 # and TLS rendezvous servers fail with "rendezvous server connection").
 # magic-wormhole talks to the rendezvous over async-tungstenite's smol runtime,
@@ -28,6 +32,8 @@ async-fs = "2"
 futures-lite = "2"
 thiserror = "2"
 uniffi = "0.31"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+blocking = "1"
 
 [dev-dependencies]
 async-io = "2"

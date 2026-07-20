@@ -12,6 +12,7 @@
     "sendTitle": "Enviar un archivo",
     "sendHint": "Elige un archivo y comparte el código de un solo uso con el receptor.",
     "sendButton": "Elegir archivo",
+    "sendFolderButton": "Elegir carpeta",
     "receiveTitle": "Recibir un archivo",
     "receiveHint": "Introduce el código que te dio el remitente.",
     "receivePlaceholder": "p. ej. 7-crossover-clockwork",
@@ -23,21 +24,33 @@
     "copyCode": "Copiar código",
     "codeCopied": "¡Copiado!",
     "sending": "Enviando {{name}}…",
+    "preparingFolder": "Preparando carpeta…",
+    "sendingFolder": "Enviando carpeta {{name}}…",
     "success": "Archivo enviado correctamente.",
-    "successDetail": "{{name}} · {{size}}"
+    "successDetail": "{{name}} · {{size}}",
+    "successFolder": "Carpeta enviada correctamente."
+  },
+  "folder": {
+    "summary": "{{name}} · {{count}} archivos · {{size}}"
   },
   "receive": {
     "title": "Recibiendo",
     "connecting": "Conectando…",
     "incoming": "Archivo entrante",
+    "incomingFolder": "Carpeta entrante",
     "acceptQuestion": "¿Quieres recibir este archivo?",
+    "acceptQuestionFolder": "¿Quieres recibir esta carpeta?",
     "receiving": "Recibiendo archivo…",
+    "receivingFolder": "Recibiendo carpeta…",
     "success": "Archivo guardado.",
+    "successFolder": "Carpeta guardada.",
     "savedAs": "Guardado en Descargas como {{name}}.",
     "savedAsIn": "Guardado como {{name}} en {{folder}}.",
     "folderFallback": "La carpeta de descargas elegida no estaba disponible, así que el archivo se guardó en Descargas.",
     "existsTitle": "El archivo ya existe",
     "existsBody": "{{name}} ya existe en tu carpeta de descargas ({{size}}). ¿Quieres sobrescribirlo?",
+    "existsTitleFolder": "La carpeta ya existe",
+    "existsBodyFolder": "Una carpeta llamada {{name}} ({{size}}) ya existe en tu carpeta de descargas. Sobrescribirla la reemplazará por completo.",
     "overwrite": "Sobrescribir",
     "keepBoth": "Conservar ambos",
     "declined": "Has rechazado la transferencia."

@@ -58,7 +58,19 @@ declare global {
     portalgems: {
       locale(): Promise<string>;
       pickFile(): Promise<{ path: string; name: string; size: number } | null>;
+      pickFolder(): Promise<{
+        path: string;
+        name: string;
+        fileCount: number;
+        totalBytes: number;
+      } | null>;
       send(
+        id: number,
+        path: string,
+        code?: string,
+        server?: ServerConfig
+      ): Promise<void>;
+      sendFolder(
         id: number,
         path: string,
         code?: string,
@@ -68,7 +80,7 @@ declare global {
         id: number,
         code: string,
         server?: ServerConfig
-      ): Promise<{ fileName: string; fileSize: number }>;
+      ): Promise<ReceiveOffer>;
       accept(id: number, destDir: string): Promise<string>;
       acceptDownload(
         id: number,
@@ -79,7 +91,7 @@ declare global {
       statTarget(
         dir: string | null,
         fileName: string
-      ): Promise<{ exists: boolean; size: number }>;
+      ): Promise<{ exists: boolean; size: number; isFolder: boolean }>;
       reject(id: number): Promise<void>;
       cancel(id: number): Promise<void>;
       deviceName(): Promise<string>;
@@ -94,6 +106,18 @@ declare global {
   }
 }
 
+/** What the user picked to send: a single file, or a whole folder. */
+type SendItem =
+  | { kind: 'file'; path: string; name: string; size: number }
+  | { kind: 'folder'; path: string; name: string; fileCount: number; totalBytes: number };
+
+/** The sender's offer; `folder` is set for folder (directory) offers. */
+interface ReceiveOffer {
+  fileName: string;
+  fileSize: number;
+  folder?: { dirName: string; numFiles: number; numBytes: number } | null;
+}
+
 const CODE_RE = /^\d+(-[a-zA-Z0-9]+)+$/;
 let nextId = 1;
 
@@ -103,11 +127,7 @@ window.portalgems.onEvent((ev) => handlers.get(ev.id)?.(ev));
 
 type Route =
   | { name: 'home' }
-  | {
-      name: 'send';
-      file: { path: string; name: string; size: number };
-      device?: PairedDevice;
-    }
+  | { name: 'send'; item: SendItem; device?: PairedDevice }
   | { name: 'receive'; code?: string; device?: PairedDevice }
   | { name: 'pair' }
   | { name: 'settings'; scrollToServer?: boolean }
@@ -140,7 +160,7 @@ export default function App() {
       {route.name === 'home' ? (
         <Home
           c={c}
-          onSend={(file, device) => navigate({ name: 'send', file, device })}
+          onSend={(item, device) => navigate({ name: 'send', item, device })}
           onReceive={(code) => navigate({ name: 'receive', code })}
           onReceiveFrom={(device) => navigate({ name: 'receive', device })}
           onPair={() => navigate({ name: 'pair' })}
@@ -150,7 +170,7 @@ export default function App() {
       ) : route.name === 'send' ? (
         <Send
           c={c}
-          file={route.file}
+          item={route.item}
           device={route.device}
           onHome={goBack}
           onServerSettings={() => navigate({ name: 'settings', scrollToServer: true })}
@@ -184,10 +204,7 @@ function Home({
   onExplain,
 }: {
   c: Palette;
-  onSend: (
-    file: { path: string; name: string; size: number },
-    device?: PairedDevice
-  ) => void;
+  onSend: (item: SendItem, device?: PairedDevice) => void;
   onReceive: (code: string) => void;
   onReceiveFrom: (device: PairedDevice) => void;
   onPair: () => void;
@@ -204,7 +221,12 @@ function Home({
 
   const pick = async (device?: PairedDevice) => {
     const file = await window.portalgems.pickFile();
-    if (file) onSend(file, device);
+    if (file) onSend({ kind: 'file', ...file }, device);
+  };
+
+  const pickFolder = async (device?: PairedDevice) => {
+    const folder = await window.portalgems.pickFolder();
+    if (folder) onSend({ kind: 'folder', ...folder }, device);
   };
 
   const remove = (device: PairedDevice) => {
@@ -270,6 +292,11 @@ function Home({
         <Subtitle c={c}>{t('home.sendTitle')}</Subtitle>
         <Muted c={c}>{t('home.sendHint')}</Muted>
         <PrimaryButton c={c} label={t('home.sendButton')} onClick={() => pick()} />
+        <GhostButton
+          c={c}
+          label={t('home.sendFolderButton')}
+          onClick={() => pickFolder()}
+        />
       </Card>
       <Card c={c}>
         <Subtitle c={c}>{t('home.receiveTitle')}</Subtitle>
@@ -302,13 +329,13 @@ type SendPhase =
 
 function Send({
   c,
-  file,
+  item,
   device,
   onHome,
   onServerSettings,
 }: {
   c: Palette;
-  file: { path: string; name: string; size: number };
+  item: SendItem;
   device?: PairedDevice;
   onHome: () => void;
   onServerSettings: () => void;
@@ -350,7 +377,9 @@ function Send({
           }
         }, PAIRED_SEND_TIMEOUT_MS)
       : null;
-    window.portalgems.send(id, file.path, pairedCode, currentServer()).then(
+    const start =
+      item.kind === 'folder' ? window.portalgems.sendFolder : window.portalgems.send;
+    start(id, item.path, pairedCode, currentServer()).then(
       () => setPhase('done'),
       (e) => {
         if (timedOut) setPhase('peerNotOpen');
@@ -381,13 +410,19 @@ function Send({
   };
 
   const busy = phase === 'starting' || phase === 'waiting' || phase === 'transferring';
+  const summary =
+    item.kind === 'folder'
+      ? t('folder.summary', {
+          name: item.name,
+          count: item.fileCount,
+          size: formatSize(item.totalBytes),
+        })
+      : `${item.name} · ${formatSize(item.size)}`;
 
   return (
     <>
       <Title c={c} onBack={onHome}>{t('send.title')}</Title>
-      <Muted c={c}>
-        {file.name} · {formatSize(file.size)}
-      </Muted>
+      <Muted c={c}>{summary}</Muted>
       <Card c={c}>
         {phase === 'starting' ? <Muted c={c}>{t('receive.connecting')}</Muted> : null}
         {phase === 'waiting' ? (
@@ -407,7 +442,11 @@ function Send({
         ) : null}
         {phase === 'transferring' ? (
           <>
-            <Subtitle c={c}>{t('send.sending', { name: file.name })}</Subtitle>
+            <Subtitle c={c}>
+              {item.kind === 'folder'
+                ? t('send.sendingFolder', { name: item.name })
+                : t('send.sending', { name: item.name })}
+            </Subtitle>
             <Muted c={c}>{direct ? t('transfer.direct') : t('transfer.relay')}</Muted>
             <ProgressBar c={c} pct={pct} />
             <Muted c={c}>{t('transfer.progress', { pct })}</Muted>
@@ -415,10 +454,10 @@ function Send({
         ) : null}
         {phase === 'done' ? (
           <>
-            <Subtitle c={c}>{t('send.success')}</Subtitle>
-            <p style={{ color: c.success, margin: 0 }}>
-              {t('send.successDetail', { name: file.name, size: formatSize(file.size) })}
-            </p>
+            <Subtitle c={c}>
+              {item.kind === 'folder' ? t('send.successFolder') : t('send.success')}
+            </Subtitle>
+            <p style={{ color: c.success, margin: 0 }}>{summary}</p>
           </>
         ) : null}
         {phase === 'error' ? (
@@ -475,7 +514,7 @@ function Receive({
 }) {
   const { t } = useTranslation();
   const [phase, setPhase] = useState<ReceivePhase>('connecting');
-  const [offer, setOffer] = useState<{ fileName: string; fileSize: number } | null>(null);
+  const [offer, setOffer] = useState<ReceiveOffer | null>(null);
   const [direct, setDirect] = useState<boolean | null>(null);
   const [pct, setPct] = useState(0);
   const [savedName, setSavedName] = useState('');
@@ -497,7 +536,7 @@ function Receive({
         setPct(ev.total ? Math.floor(((ev.done ?? 0) / ev.total) * 100) : 100);
       }
     });
-    const gotOffer = (o: { fileName: string; fileSize: number }) => {
+    const gotOffer = (o: ReceiveOffer) => {
       setOffer(o);
       setPhase('confirm');
     };
@@ -555,13 +594,17 @@ function Receive({
     );
   };
 
-  // A same-named file in the download folder gets a warning first; the
+  // The name this offer will occupy in the download folder: the folder name
+  // for directory offers, the file name otherwise (both engine-sanitized).
+  const targetName = offer ? offer.folder?.dirName ?? offer.fileName : '';
+
+  // A same-named entry in the download folder gets a warning first; the
   // engine sanitizes the offered name, so it is exactly the name saved.
   const accept = async () => {
     if (!offer) return;
     const target = await window.portalgems
-      .statTarget(downloadDirRef.current, offer.fileName)
-      .catch(() => ({ exists: false, size: 0 }));
+      .statTarget(downloadDirRef.current, targetName)
+      .catch(() => ({ exists: false, size: 0, isFolder: false }));
     if (target.exists) {
       setExistingSize(target.size);
       setPhase('conflict');
@@ -596,21 +639,35 @@ function Receive({
         ) : null}
         {phase === 'confirm' && offer ? (
           <>
-            <Subtitle c={c}>{t('receive.incoming')}</Subtitle>
+            <Subtitle c={c}>
+              {offer.folder ? t('receive.incomingFolder') : t('receive.incoming')}
+            </Subtitle>
             <p style={{ color: c.text, margin: 0 }}>
-              {offer.fileName} · {formatSize(offer.fileSize)}
+              {offer.folder
+                ? t('folder.summary', {
+                    name: offer.folder.dirName,
+                    count: offer.folder.numFiles,
+                    size: formatSize(offer.folder.numBytes),
+                  })
+                : `${offer.fileName} · ${formatSize(offer.fileSize)}`}
             </p>
-            <Muted c={c}>{t('receive.acceptQuestion')}</Muted>
+            <Muted c={c}>
+              {offer.folder
+                ? t('receive.acceptQuestionFolder')
+                : t('receive.acceptQuestion')}
+            </Muted>
             <PrimaryButton c={c} label={t('common.accept')} onClick={accept} />
             <GhostButton c={c} label={t('common.decline')} danger onClick={decline} />
           </>
         ) : null}
         {phase === 'conflict' && offer ? (
           <>
-            <Subtitle c={c}>{t('receive.existsTitle')}</Subtitle>
+            <Subtitle c={c}>
+              {offer.folder ? t('receive.existsTitleFolder') : t('receive.existsTitle')}
+            </Subtitle>
             <p style={{ color: c.text, margin: 0 }}>
-              {t('receive.existsBody', {
-                name: offer.fileName,
+              {t(offer.folder ? 'receive.existsBodyFolder' : 'receive.existsBody', {
+                name: targetName,
                 size: formatSize(existingSize),
               })}
             </p>
@@ -630,7 +687,9 @@ function Receive({
         ) : null}
         {phase === 'transferring' ? (
           <>
-            <Subtitle c={c}>{t('receive.receiving')}</Subtitle>
+            <Subtitle c={c}>
+              {offer?.folder ? t('receive.receivingFolder') : t('receive.receiving')}
+            </Subtitle>
             {direct !== null ? (
               <Muted c={c}>{direct ? t('transfer.direct') : t('transfer.relay')}</Muted>
             ) : null}
@@ -640,7 +699,9 @@ function Receive({
         ) : null}
         {phase === 'done' ? (
           <>
-            <Subtitle c={c}>{t('receive.success')}</Subtitle>
+            <Subtitle c={c}>
+              {offer?.folder ? t('receive.successFolder') : t('receive.success')}
+            </Subtitle>
             <p style={{ color: c.success, margin: 0 }}>
               {downloadDirRef.current
                 ? t('receive.savedAsIn', {

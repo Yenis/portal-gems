@@ -12,6 +12,7 @@
     "sendTitle": "Envoyer un fichier",
     "sendHint": "Choisissez un fichier et partagez le code à usage unique avec le destinataire.",
     "sendButton": "Choisir un fichier",
+    "sendFolderButton": "Choisir un dossier",
     "receiveTitle": "Recevoir un fichier",
     "receiveHint": "Saisissez le code que l'expéditeur vous a donné.",
     "receivePlaceholder": "p. ex. 7-crossover-clockwork",
@@ -23,21 +24,33 @@
     "copyCode": "Copier le code",
     "codeCopied": "Copié !",
     "sending": "Envoi de {{name}}…",
+    "preparingFolder": "Préparation du dossier…",
+    "sendingFolder": "Envoi du dossier {{name}}…",
     "success": "Fichier envoyé avec succès.",
-    "successDetail": "{{name}} · {{size}}"
+    "successDetail": "{{name}} · {{size}}",
+    "successFolder": "Dossier envoyé avec succès."
+  },
+  "folder": {
+    "summary": "{{name}} · {{count}} fichiers · {{size}}"
   },
   "receive": {
     "title": "Réception",
     "connecting": "Connexion…",
     "incoming": "Fichier entrant",
+    "incomingFolder": "Dossier entrant",
     "acceptQuestion": "Voulez-vous recevoir ce fichier ?",
+    "acceptQuestionFolder": "Voulez-vous recevoir ce dossier ?",
     "receiving": "Réception du fichier…",
+    "receivingFolder": "Réception du dossier…",
     "success": "Fichier enregistré.",
+    "successFolder": "Dossier enregistré.",
     "savedAs": "Enregistré dans Téléchargements sous {{name}}.",
     "savedAsIn": "Enregistré sous {{name}} dans {{folder}}.",
     "folderFallback": "Le dossier de téléchargement choisi n'était pas disponible, le fichier a donc été enregistré dans Téléchargements.",
     "existsTitle": "Le fichier existe déjà",
     "existsBody": "{{name}} existe déjà dans votre dossier de téléchargement ({{size}}). L'écraser ?",
+    "existsTitleFolder": "Le dossier existe déjà",
+    "existsBodyFolder": "Un dossier nommé {{name}} ({{size}}) existe déjà dans votre dossier de téléchargement. L'écraser le remplacera entièrement.",
     "overwrite": "Écraser",
     "keepBoth": "Garder les deux",
     "declined": "Vous avez refusé le transfert."

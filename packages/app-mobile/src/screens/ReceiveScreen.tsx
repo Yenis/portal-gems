@@ -24,6 +24,8 @@ import {
   formatSize,
   incomingDir,
   loadDownloadDir,
+  saveFolderToDownloadDir,
+  saveFolderToDownloads,
   saveToDownloadDir,
   saveToDownloads,
   statDownloadTarget,
@@ -58,6 +60,13 @@ export default function ReceiveScreen({
   const [phase, setPhase] = useState<Phase>('connecting');
   const [offerName, setOfferName] = useState('');
   const [offerSize, setOfferSize] = useState(0);
+  // Set when the sender offered a folder (protocol-v1 directory offer); the
+  // engine unpacks it and `accept` returns a directory instead of a file.
+  const [folderOffer, setFolderOffer] = useState<{
+    dirName: string;
+    numFiles: number;
+    numBytes: number;
+  } | null>(null);
   const [direct, setDirect] = useState<boolean | null>(null);
   const [pct, setPct] = useState(0);
   const [savedName, setSavedName] = useState('');
@@ -83,6 +92,16 @@ export default function ReceiveScreen({
       incomingRef.current = incoming;
       setOfferName(incoming.fileName());
       setOfferSize(Number(incoming.fileSize()));
+      const folder = incoming.folderOffer();
+      setFolderOffer(
+        folder
+          ? {
+              dirName: folder.dirName,
+              numFiles: Number(folder.numFiles),
+              numBytes: Number(folder.numBytes),
+            }
+          : null
+      );
       setPhase('confirm');
     };
     const failed = (e: unknown) => {
@@ -158,14 +177,28 @@ export default function ReceiveScreen({
         { signal: controller.signal }
       );
       setPhase('saving');
-      const fileName = savedPath.split('/').pop() ?? 'received.bin';
+      const savedName = savedPath.split('/').pop() ?? 'received.bin';
       const dir = downloadDirRef.current;
+      if (folderOffer) {
+        // `savedPath` is the unpacked folder staged in the app cache.
+        if (dir) {
+          const result = await saveFolderToDownloadDir(
+            savedPath,
+            dir.uri,
+            savedName,
+            overwrite
+          );
+          setUsedFallback(result.fallback);
+          return result.name;
+        }
+        return saveFolderToDownloads(savedPath, savedName);
+      }
       if (dir) {
-        const result = await saveToDownloadDir(savedPath, dir.uri, fileName, overwrite);
+        const result = await saveToDownloadDir(savedPath, dir.uri, savedName, overwrite);
         setUsedFallback(result.fallback);
         return result.name;
       }
-      return saveToDownloads(savedPath, fileName);
+      return saveToDownloads(savedPath, savedName);
     }).then(
       (finalName) => {
         setSavedName(finalName);
@@ -181,13 +214,17 @@ export default function ReceiveScreen({
     );
   };
 
+  // The name this offer will occupy in the download location: the folder
+  // name for directory offers, the file name otherwise.
+  const targetName = folderOffer ? folderOffer.dirName : offerName;
+
   // With a custom folder we can see other apps' files, so warn about a
   // same-name collision before accepting. (Default MediaStore Downloads keeps
   // the system's automatic renaming - other apps' files are not visible.)
   const accept = async () => {
     const dir = downloadDirRef.current;
-    if (dir && offerName) {
-      const target = await statDownloadTarget(dir.uri, offerName).catch(() => null);
+    if (dir && targetName) {
+      const target = await statDownloadTarget(dir.uri, targetName).catch(() => null);
       if (target?.exists) {
         setExistingSize(target.size);
         setPhase('conflict');
@@ -221,11 +258,23 @@ export default function ReceiveScreen({
 
         {phase === 'confirm' ? (
           <>
-            <Subtitle>{t('receive.incoming')}</Subtitle>
+            <Subtitle>
+              {folderOffer ? t('receive.incomingFolder') : t('receive.incoming')}
+            </Subtitle>
             <Text style={{ color: c.text, fontSize: fontSize.subtitle }}>
-              {offerName} · {formatSize(offerSize)}
+              {folderOffer
+                ? t('folder.summary', {
+                    name: folderOffer.dirName,
+                    count: folderOffer.numFiles,
+                    size: formatSize(folderOffer.numBytes),
+                  })
+                : `${offerName} · ${formatSize(offerSize)}`}
             </Text>
-            <Muted>{t('receive.acceptQuestion')}</Muted>
+            <Muted>
+              {folderOffer
+                ? t('receive.acceptQuestionFolder')
+                : t('receive.acceptQuestion')}
+            </Muted>
             <PrimaryButton label={t('common.accept')} onPress={accept} />
             <GhostButton label={t('common.decline')} danger onPress={decline} />
           </>
@@ -233,10 +282,12 @@ export default function ReceiveScreen({
 
         {phase === 'conflict' ? (
           <>
-            <Subtitle>{t('receive.existsTitle')}</Subtitle>
+            <Subtitle>
+              {folderOffer ? t('receive.existsTitleFolder') : t('receive.existsTitle')}
+            </Subtitle>
             <Text style={{ color: c.text, fontSize: fontSize.body }}>
-              {t('receive.existsBody', {
-                name: offerName,
+              {t(folderOffer ? 'receive.existsBodyFolder' : 'receive.existsBody', {
+                name: targetName,
                 size: formatSize(existingSize),
               })}
             </Text>
@@ -255,7 +306,9 @@ export default function ReceiveScreen({
 
         {phase === 'transferring' || phase === 'saving' ? (
           <>
-            <Subtitle>{t('receive.receiving')}</Subtitle>
+            <Subtitle>
+              {folderOffer ? t('receive.receivingFolder') : t('receive.receiving')}
+            </Subtitle>
             {direct !== null ? (
               <Muted>{direct ? t('transfer.direct') : t('transfer.relay')}</Muted>
             ) : null}
@@ -266,7 +319,9 @@ export default function ReceiveScreen({
 
         {phase === 'done' ? (
           <>
-            <Subtitle>{t('receive.success')}</Subtitle>
+            <Subtitle>
+              {folderOffer ? t('receive.successFolder') : t('receive.success')}
+            </Subtitle>
             <Text style={{ color: c.success, fontSize: fontSize.body }}>
               {downloadDirRef.current && !usedFallback
                 ? t('receive.savedAsIn', {

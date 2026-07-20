@@ -175,6 +175,10 @@ extern "C" {
         /*handle*/ uint64_t ptr, 
         RustCallStatus *uniffi_out_err
     );
+    RustBuffer uniffi_wormhole_core_fn_method_incomingfile_folder_offer(
+        /*handle*/ uint64_t ptr, 
+        RustCallStatus *uniffi_out_err
+    );
     /*handle*/ uint64_t uniffi_wormhole_core_fn_method_incomingfile_reject(
         /*handle*/ uint64_t ptr
     );
@@ -222,6 +226,21 @@ extern "C" {
     );
     /*handle*/ uint64_t uniffi_wormhole_core_fn_func_send_file(
         RustBuffer path, 
+        RustBuffer code, 
+        RustBuffer server, 
+        /*handle*/ uint64_t listener
+    );
+    /*handle*/ uint64_t uniffi_wormhole_core_fn_func_send_folder(
+        RustBuffer path, 
+        RustBuffer code, 
+        RustBuffer server, 
+        /*handle*/ uint64_t listener
+    );
+    /*handle*/ uint64_t uniffi_wormhole_core_fn_func_send_zip_as_folder(
+        RustBuffer zip_path, 
+        RustBuffer dir_name, 
+        uint64_t num_files, 
+        uint64_t num_bytes, 
         RustBuffer code, 
         RustBuffer server, 
         /*handle*/ uint64_t listener
@@ -431,11 +450,17 @@ extern "C" {
     );
     uint16_t uniffi_wormhole_core_checksum_func_send_file(
     );
+    uint16_t uniffi_wormhole_core_checksum_func_send_folder(
+    );
+    uint16_t uniffi_wormhole_core_checksum_func_send_zip_as_folder(
+    );
     uint16_t uniffi_wormhole_core_checksum_method_incomingfile_accept(
     );
     uint16_t uniffi_wormhole_core_checksum_method_incomingfile_file_name(
     );
     uint16_t uniffi_wormhole_core_checksum_method_incomingfile_file_size(
+    );
+    uint16_t uniffi_wormhole_core_checksum_method_incomingfile_folder_offer(
     );
     uint16_t uniffi_wormhole_core_checksum_method_incomingfile_reject(
     );
@@ -2626,6 +2651,14 @@ NativeWormholeCore::NativeWormholeCore(
             return this->cpp_uniffi_wormhole_core_fn_method_incomingfile_file_size(rt, thisVal, args, count);
         }
     );
+    props["ubrn_uniffi_wormhole_core_fn_method_incomingfile_folder_offer"] = jsi::Function::createFromHostFunction(
+        rt,
+        jsi::PropNameID::forAscii(rt, "ubrn_uniffi_wormhole_core_fn_method_incomingfile_folder_offer"),
+        1,
+        [this](jsi::Runtime &rt, const jsi::Value &thisVal, const jsi::Value *args, size_t count) -> jsi::Value {
+            return this->cpp_uniffi_wormhole_core_fn_method_incomingfile_folder_offer(rt, thisVal, args, count);
+        }
+    );
     props["ubrn_uniffi_wormhole_core_fn_method_incomingfile_reject"] = jsi::Function::createFromHostFunction(
         rt,
         jsi::PropNameID::forAscii(rt, "ubrn_uniffi_wormhole_core_fn_method_incomingfile_reject"),
@@ -2712,6 +2745,22 @@ NativeWormholeCore::NativeWormholeCore(
         4,
         [this](jsi::Runtime &rt, const jsi::Value &thisVal, const jsi::Value *args, size_t count) -> jsi::Value {
             return this->cpp_uniffi_wormhole_core_fn_func_send_file(rt, thisVal, args, count);
+        }
+    );
+    props["ubrn_uniffi_wormhole_core_fn_func_send_folder"] = jsi::Function::createFromHostFunction(
+        rt,
+        jsi::PropNameID::forAscii(rt, "ubrn_uniffi_wormhole_core_fn_func_send_folder"),
+        4,
+        [this](jsi::Runtime &rt, const jsi::Value &thisVal, const jsi::Value *args, size_t count) -> jsi::Value {
+            return this->cpp_uniffi_wormhole_core_fn_func_send_folder(rt, thisVal, args, count);
+        }
+    );
+    props["ubrn_uniffi_wormhole_core_fn_func_send_zip_as_folder"] = jsi::Function::createFromHostFunction(
+        rt,
+        jsi::PropNameID::forAscii(rt, "ubrn_uniffi_wormhole_core_fn_func_send_zip_as_folder"),
+        7,
+        [this](jsi::Runtime &rt, const jsi::Value &thisVal, const jsi::Value *args, size_t count) -> jsi::Value {
+            return this->cpp_uniffi_wormhole_core_fn_func_send_zip_as_folder(rt, thisVal, args, count);
         }
     );
     props["ubrn_ffi_wormhole_core_rust_future_poll_u8"] = jsi::Function::createFromHostFunction(
@@ -3130,6 +3179,22 @@ NativeWormholeCore::NativeWormholeCore(
             return this->cpp_uniffi_wormhole_core_checksum_func_send_file(rt, thisVal, args, count);
         }
     );
+    props["ubrn_uniffi_wormhole_core_checksum_func_send_folder"] = jsi::Function::createFromHostFunction(
+        rt,
+        jsi::PropNameID::forAscii(rt, "ubrn_uniffi_wormhole_core_checksum_func_send_folder"),
+        0,
+        [this](jsi::Runtime &rt, const jsi::Value &thisVal, const jsi::Value *args, size_t count) -> jsi::Value {
+            return this->cpp_uniffi_wormhole_core_checksum_func_send_folder(rt, thisVal, args, count);
+        }
+    );
+    props["ubrn_uniffi_wormhole_core_checksum_func_send_zip_as_folder"] = jsi::Function::createFromHostFunction(
+        rt,
+        jsi::PropNameID::forAscii(rt, "ubrn_uniffi_wormhole_core_checksum_func_send_zip_as_folder"),
+        0,
+        [this](jsi::Runtime &rt, const jsi::Value &thisVal, const jsi::Value *args, size_t count) -> jsi::Value {
+            return this->cpp_uniffi_wormhole_core_checksum_func_send_zip_as_folder(rt, thisVal, args, count);
+        }
+    );
     props["ubrn_uniffi_wormhole_core_checksum_method_incomingfile_accept"] = jsi::Function::createFromHostFunction(
         rt,
         jsi::PropNameID::forAscii(rt, "ubrn_uniffi_wormhole_core_checksum_method_incomingfile_accept"),
@@ -3152,6 +3217,14 @@ NativeWormholeCore::NativeWormholeCore(
         0,
         [this](jsi::Runtime &rt, const jsi::Value &thisVal, const jsi::Value *args, size_t count) -> jsi::Value {
             return this->cpp_uniffi_wormhole_core_checksum_method_incomingfile_file_size(rt, thisVal, args, count);
+        }
+    );
+    props["ubrn_uniffi_wormhole_core_checksum_method_incomingfile_folder_offer"] = jsi::Function::createFromHostFunction(
+        rt,
+        jsi::PropNameID::forAscii(rt, "ubrn_uniffi_wormhole_core_checksum_method_incomingfile_folder_offer"),
+        0,
+        [this](jsi::Runtime &rt, const jsi::Value &thisVal, const jsi::Value *args, size_t count) -> jsi::Value {
+            return this->cpp_uniffi_wormhole_core_checksum_method_incomingfile_folder_offer(rt, thisVal, args, count);
         }
     );
     props["ubrn_uniffi_wormhole_core_checksum_method_incomingfile_reject"] = jsi::Function::createFromHostFunction(
@@ -3419,6 +3492,16 @@ jsi::Value NativeWormholeCore::cpp_uniffi_wormhole_core_fn_method_incomingfile_f
         
         return uniffi_jsi::Bridging<uint64_t>::toJs(rt, callInvoker, value);
 }
+jsi::Value NativeWormholeCore::cpp_uniffi_wormhole_core_fn_method_incomingfile_folder_offer(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count) {
+        RustCallStatus status = uniffi::wormhole_core::Bridging<RustCallStatus>::rustSuccess(rt);
+        auto value = uniffi_wormhole_core_fn_method_incomingfile_folder_offer(uniffi_jsi::Bridging</*handle*/ uint64_t>::fromJs(rt, callInvoker, args[0]), 
+            &status
+        );
+        uniffi::wormhole_core::Bridging<RustCallStatus>::copyIntoJs(rt, callInvoker, status, args[count - 1]);
+
+        
+        return uniffi::wormhole_core::Bridging<RustBuffer>::toJs(rt, callInvoker, value);
+}
 jsi::Value NativeWormholeCore::cpp_uniffi_wormhole_core_fn_method_incomingfile_reject(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count) {
         auto value = uniffi_wormhole_core_fn_method_incomingfile_reject(uniffi_jsi::Bridging</*handle*/ uint64_t>::fromJs(rt, callInvoker, args[0])
         );
@@ -3519,6 +3602,20 @@ jsi::Value NativeWormholeCore::cpp_uniffi_wormhole_core_fn_func_request_receive(
 }
 jsi::Value NativeWormholeCore::cpp_uniffi_wormhole_core_fn_func_send_file(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count) {
         auto value = uniffi_wormhole_core_fn_func_send_file(uniffi::wormhole_core::Bridging<RustBuffer>::fromJs(rt, callInvoker, args[0]), uniffi::wormhole_core::Bridging<RustBuffer>::fromJs(rt, callInvoker, args[1]), uniffi::wormhole_core::Bridging<RustBuffer>::fromJs(rt, callInvoker, args[2]), uniffi_jsi::Bridging</*handle*/ uint64_t>::fromJs(rt, callInvoker, args[3])
+        );
+
+        
+        return uniffi_jsi::Bridging</*handle*/ uint64_t>::toJs(rt, callInvoker, value);
+}
+jsi::Value NativeWormholeCore::cpp_uniffi_wormhole_core_fn_func_send_folder(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count) {
+        auto value = uniffi_wormhole_core_fn_func_send_folder(uniffi::wormhole_core::Bridging<RustBuffer>::fromJs(rt, callInvoker, args[0]), uniffi::wormhole_core::Bridging<RustBuffer>::fromJs(rt, callInvoker, args[1]), uniffi::wormhole_core::Bridging<RustBuffer>::fromJs(rt, callInvoker, args[2]), uniffi_jsi::Bridging</*handle*/ uint64_t>::fromJs(rt, callInvoker, args[3])
+        );
+
+        
+        return uniffi_jsi::Bridging</*handle*/ uint64_t>::toJs(rt, callInvoker, value);
+}
+jsi::Value NativeWormholeCore::cpp_uniffi_wormhole_core_fn_func_send_zip_as_folder(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count) {
+        auto value = uniffi_wormhole_core_fn_func_send_zip_as_folder(uniffi::wormhole_core::Bridging<RustBuffer>::fromJs(rt, callInvoker, args[0]), uniffi::wormhole_core::Bridging<RustBuffer>::fromJs(rt, callInvoker, args[1]), uniffi_jsi::Bridging<uint64_t>::fromJs(rt, callInvoker, args[2]), uniffi_jsi::Bridging<uint64_t>::fromJs(rt, callInvoker, args[3]), uniffi::wormhole_core::Bridging<RustBuffer>::fromJs(rt, callInvoker, args[4]), uniffi::wormhole_core::Bridging<RustBuffer>::fromJs(rt, callInvoker, args[5]), uniffi_jsi::Bridging</*handle*/ uint64_t>::fromJs(rt, callInvoker, args[6])
         );
 
         
@@ -3924,6 +4021,20 @@ jsi::Value NativeWormholeCore::cpp_uniffi_wormhole_core_checksum_func_send_file(
         
         return uniffi_jsi::Bridging<uint16_t>::toJs(rt, callInvoker, value);
 }
+jsi::Value NativeWormholeCore::cpp_uniffi_wormhole_core_checksum_func_send_folder(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count) {
+        auto value = uniffi_wormhole_core_checksum_func_send_folder(
+        );
+
+        
+        return uniffi_jsi::Bridging<uint16_t>::toJs(rt, callInvoker, value);
+}
+jsi::Value NativeWormholeCore::cpp_uniffi_wormhole_core_checksum_func_send_zip_as_folder(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count) {
+        auto value = uniffi_wormhole_core_checksum_func_send_zip_as_folder(
+        );
+
+        
+        return uniffi_jsi::Bridging<uint16_t>::toJs(rt, callInvoker, value);
+}
 jsi::Value NativeWormholeCore::cpp_uniffi_wormhole_core_checksum_method_incomingfile_accept(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count) {
         auto value = uniffi_wormhole_core_checksum_method_incomingfile_accept(
         );
@@ -3940,6 +4051,13 @@ jsi::Value NativeWormholeCore::cpp_uniffi_wormhole_core_checksum_method_incoming
 }
 jsi::Value NativeWormholeCore::cpp_uniffi_wormhole_core_checksum_method_incomingfile_file_size(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count) {
         auto value = uniffi_wormhole_core_checksum_method_incomingfile_file_size(
+        );
+
+        
+        return uniffi_jsi::Bridging<uint16_t>::toJs(rt, callInvoker, value);
+}
+jsi::Value NativeWormholeCore::cpp_uniffi_wormhole_core_checksum_method_incomingfile_folder_offer(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count) {
+        auto value = uniffi_wormhole_core_checksum_method_incomingfile_folder_offer(
         );
 
         

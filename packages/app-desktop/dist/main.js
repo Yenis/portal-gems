@@ -5085,8 +5085,8 @@ function safeFileName(name) {
   return base === "" || base === "." || base === ".." ? "received.bin" : base;
 }
 var resolveDownloadDir = (dir2) => dir2 && dir2.trim() !== "" ? dir2 : import_electron.app.getPath("downloads");
-function dedupPath(dir2, name) {
-  const dot = name.lastIndexOf(".");
+function dedupPath(dir2, name, isFolder = false) {
+  const dot = isFolder ? -1 : name.lastIndexOf(".");
   const stem = dot > 0 ? name.slice(0, dot) : name;
   const ext = dot > 0 ? name.slice(dot) : "";
   let dest = path2.join(dir2, name);
@@ -5095,16 +5095,41 @@ function dedupPath(dir2, name) {
   }
   return dest;
 }
-async function moveFile(src, dest) {
+async function moveEntry(src, dest) {
   try {
     await fs.promises.rename(src, dest);
   } catch (e) {
     if (e.code !== "EXDEV") throw e;
     const part = `${dest}.pgpart`;
-    await fs.promises.copyFile(src, part);
+    const st = await fs.promises.stat(src);
+    if (st.isDirectory()) {
+      await fs.promises.cp(src, part, { recursive: true });
+    } else {
+      await fs.promises.copyFile(src, part);
+    }
     await fs.promises.rename(part, dest);
-    await fs.promises.unlink(src);
+    await fs.promises.rm(src, { recursive: true, force: true });
   }
+}
+async function walkStats(dir2) {
+  let fileCount = 0;
+  let totalBytes = 0;
+  const stack = [dir2];
+  while (stack.length > 0) {
+    const current = stack.pop();
+    const entries = await fs.promises.readdir(current, { withFileTypes: true });
+    for (const entry of entries) {
+      const p = path2.join(current, entry.name);
+      if (entry.isSymbolicLink()) continue;
+      if (entry.isDirectory()) {
+        stack.push(p);
+      } else if (entry.isFile()) {
+        fileCount += 1;
+        totalBytes += (await fs.promises.stat(p)).size;
+      }
+    }
+  }
+  return { fileCount, totalBytes };
 }
 import_electron.ipcMain.handle("pg:locale", () => import_electron.app.getLocale());
 import_electron.ipcMain.handle("pg:pickFile", async () => {
@@ -5115,9 +5140,26 @@ import_electron.ipcMain.handle("pg:pickFile", async () => {
   const stat = await fs.promises.stat(filePath);
   return { path: filePath, name: path2.basename(filePath), size: stat.size };
 });
+import_electron.ipcMain.handle("pg:pickFolder", async () => {
+  if (!win) return null;
+  const result = await import_electron.dialog.showOpenDialog(win, { properties: ["openDirectory"] });
+  if (result.canceled || result.filePaths.length === 0) return null;
+  const folderPath = result.filePaths[0];
+  const stats = await walkStats(folderPath);
+  return {
+    path: folderPath,
+    name: path2.basename(folderPath),
+    fileCount: stats.fileCount,
+    totalBytes: stats.totalBytes
+  };
+});
 import_electron.ipcMain.handle(
   "pg:send",
   (_e, id, filePath, code, server) => engine.sendFile(id, filePath, code ?? null, server ?? {}, forward(id))
+);
+import_electron.ipcMain.handle(
+  "pg:sendFolder",
+  (_e, id, folderPath, code, server) => engine.sendFolder(id, folderPath, code ?? null, server ?? {}, forward(id))
 );
 import_electron.ipcMain.handle(
   "pg:requestReceive",
@@ -5133,11 +5175,15 @@ import_electron.ipcMain.handle(
     await fs.promises.mkdir(staging, { recursive: true });
     try {
       const saved = await engine.acceptReceive(id, staging, forward(id));
+      const isFolder = (await fs.promises.stat(saved)).isDirectory();
       const destDir = resolveDownloadDir(dir2);
       await fs.promises.mkdir(destDir, { recursive: true });
       const name = path2.basename(saved);
-      const dest = overwrite ? path2.join(destDir, name) : dedupPath(destDir, name);
-      await moveFile(saved, dest);
+      const dest = overwrite ? path2.join(destDir, name) : dedupPath(destDir, name, isFolder);
+      if (overwrite) {
+        await fs.promises.rm(dest, { recursive: true, force: true });
+      }
+      await moveEntry(saved, dest);
       return path2.basename(dest);
     } finally {
       await fs.promises.rm(staging, { recursive: true, force: true }).catch(() => void 0);
@@ -5155,9 +5201,13 @@ import_electron.ipcMain.handle("pg:statTarget", async (_e, dir2, fileName) => {
   const target = path2.join(resolveDownloadDir(dir2), safeFileName(fileName));
   try {
     const st = await fs.promises.stat(target);
-    return { exists: st.isFile(), size: st.size };
+    if (st.isDirectory()) {
+      const stats = await walkStats(target);
+      return { exists: true, size: stats.totalBytes, isFolder: true };
+    }
+    return { exists: st.isFile(), size: st.size, isFolder: false };
   } catch {
-    return { exists: false, size: 0 };
+    return { exists: false, size: 0, isFolder: false };
   }
 });
 import_electron.ipcMain.handle("pg:deviceName", () => os.hostname());
@@ -5213,6 +5263,12 @@ import_electron.app.whenReady().then(async () => {
   }
   if (process.env.PG_SMOKE_PAIRED_SEND) {
     runSmokePairedSend(process.env.PG_SMOKE_PAIRED_SEND).catch((e) => {
+      console.log(`SMOKE:ERROR:${e}`);
+      import_electron.app.exit(1);
+    });
+  }
+  if (process.env.PG_SMOKE_SEND_FOLDER) {
+    runSmokeSendFolder(process.env.PG_SMOKE_SEND_FOLDER).catch((e) => {
       console.log(`SMOKE:ERROR:${e}`);
       import_electron.app.exit(1);
     });
@@ -5278,6 +5334,19 @@ async function runSmokePairedSend(filePath) {
   console.log("SMOKE:PAIRED-SEND-OK");
   import_electron.app.exit(0);
 }
+async function runSmokeSendFolder(folderPath) {
+  const code = process.env.PG_SMOKE_CODE;
+  if (!code) throw new Error("PG_SMOKE_SEND_FOLDER needs PG_SMOKE_CODE");
+  await engine.sendFolder(
+    991,
+    folderPath,
+    code,
+    smokeServer(),
+    (ev) => console.log(`SMOKE-EV:${ev.event}:${ev.info ?? ""}`)
+  );
+  console.log("SMOKE:SEND-FOLDER-OK");
+  import_electron.app.exit(0);
+}
 async function runSmoke(code, cancelInstead) {
   const exec = (js) => win.webContents.executeJavaScript(js);
   const bodyText = () => exec("document.body.innerText");
@@ -5313,12 +5382,12 @@ async function runSmoke(code, cancelInstead) {
     await waitFor("Transfer cancelled", 15e3);
     console.log("SMOKE:CANCELLED-OK");
   } else {
-    await waitFor("Do you want to receive this file?", 45e3);
+    await waitFor("Do you want to receive this", 45e3);
     console.log("SMOKE:CONFIRM-VISIBLE");
     await clickButton("Accept");
     const conflict = process.env.PG_SMOKE_CONFLICT;
     if (conflict) {
-      await waitFor("File already exists", 15e3);
+      await waitFor("already exists", 15e3);
       console.log("SMOKE:CONFLICT-VISIBLE");
       await clickButton(conflict === "overwrite" ? "Overwrite" : "Keep both");
     }

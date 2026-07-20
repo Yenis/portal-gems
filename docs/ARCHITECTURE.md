@@ -28,8 +28,19 @@ notes live in the other `docs/*.md` files; this is the consolidated map.
 
 ## 1. The engine - `native/wormhole-core`
 
-Rust crate over `magic-wormhole` 0.8 (EUPL-1.2; app is GPL-3.0-or-later via
-the compatibility clause). Public API (all take a `cancel` future that races
+Rust crate over `magic-wormhole` 0.8.1 (EUPL-1.2; app is GPL-3.0-or-later via
+the compatibility clause). The dependency is a **vendored copy** at
+`native/magic-wormhole` (path dep) carrying a small local patch that exposes
+protocol-v1 `directory` offers - the standard wormhole folder transfer the
+released crate supports on the wire but hides. See
+`native/magic-wormhole/PORTALGEMS-PATCH.md` for the exact diff and the
+upgrade recipe; the patch is upstreamable. Wire format: the offer message is
+`{"offer":{"directory":{dirname, mode:"zipfile/deflated", zipsize, numbytes,
+numfiles}}}` followed by zip bytes - `mode` MUST be `"zipfile/deflated"` (the
+only mode the Python reference accepts; upstream's own test fixture saying
+"zipped" is wrong).
+
+Public API (all take a `cancel` future that races
 the ENTIRE pipeline - a waiting sender blocks inside `Wormhole::connect`, so
 cancel must cover more than the transfer phase):
 
@@ -37,14 +48,32 @@ cancel must cover more than the transfer phase):
   - `code: None` allocates a fresh 2-word code; `Some(code)` claims that exact
   code (`MailboxConnection::connect(..., allocate=true)`) - the pairing
   primitive.
-- `request_receive(code, cancel) -> PendingReceive { file_name, file_size }`
+- `send_folder(path, ...)` - zips the tree into a temp workspace (deflate,
+  entries relative to the folder root, empty dirs kept, symlinks skipped,
+  cancellable via an abort flag) and sends it as a directory offer.
+- `send_zip_as_folder(zip_path, dir_name, num_files, num_bytes, ...)` - sends
+  an app-staged zip as a directory offer; the Android path (Kotlin zips the
+  SAF tree, Rust can't read `content://`).
+- `request_receive(code, cancel) -> PendingReceive { file_name, file_size,
+  folder: Option<FolderOffer{dir_name, num_files, num_bytes}> }`
   - connects and waits for the offer WITHOUT accepting: powers confirmation
-  UIs. `PendingReceive::accept(dest_dir, ...) -> PathBuf` (never clobbers:
-  `name (1).ext` suffixes) / `::reject()`.
+  UIs. For directory offers `file_name`/`file_size` describe the zip transfer
+  (`<dirname>.zip`) and `folder` carries what the UI should show.
+  `PendingReceive::accept(dest_dir, ...) -> PathBuf` (never clobbers:
+  `name (1).ext` for files, `name (1)` for folders - folder names are never
+  extension-split). For a folder offer, accept stages the zip inside
+  `dest_dir`, unpacks it into a folder named after the offer, deletes the
+  zip, and returns the folder path. Unpacking is zip-slip-safe
+  (`enclosed_name`) and capped at `unpack_cap(num_bytes)` (claim + 25% +
+  16 MiB) against zip bombs. `::reject()` unchanged.
 - `receive_file(...)` = request + auto-accept (used by pairing handshake).
 - `create_test_file(dir, size_kb)` - dev/test helper.
 - File names from the network are sanitized (`sanitize_file_name` strips path
-  components; empty/dot names → `received.bin`).
+  components; empty/dot names → `received.bin`; folder names via
+  `sanitize_dir_name` → `received`).
+- Zip via the `zip` crate (deflate only, pure Rust through miniz_oxide - keeps
+  the Android/F-Droid "no C deps" posture); blocking zip/unzip work runs on
+  the `blocking` crate's thread pool.
 - Errors: one flat `Error` enum (`InvalidCode`, `Cancelled`, `AlreadyConsumed`,
   wrapped wormhole/transfer/IO). Foreign sides receive the Display string;
   `packages/core/src/errors.ts::friendlyError` pattern-matches it to
@@ -77,8 +106,10 @@ Tests: `cargo test` (unit) · `cargo test -- --ignored` (network round-trip).
 ### Android - `packages/wormhole-rn` (uniffi-bindgen-react-native 0.31)
 
 - `native/wormhole-core/src/ffi.rs` holds the UniFFI surface: async
-  `send_file`/`receive_file`/`request_receive`, object `IncomingFile`
-  (`fileName()/fileSize()/accept()/reject()`), callback trait
+  `send_file`/`send_folder`/`send_zip_as_folder`/`receive_file`/
+  `request_receive`, object `IncomingFile` (`fileName()/fileSize()/
+  folderOffer()/accept()/reject()`; `folderOffer()` returns the
+  `FolderOfferInfo` record - `undefined` for plain files), callback trait
   `TransferListener { on_code, on_transit, on_progress }`.
 - TS signatures generated in `src/generated/wormhole_core.ts`: u64 → `bigint`,
   async fns take `{ signal: AbortSignal }` (abort = drop the Rust future =
@@ -97,9 +128,11 @@ Tests: `cargo test` (unit) · `cargo test -- --ignored` (network round-trip).
 - Electron's V8 memory cage forbids external ArrayBuffers → ubrn's `@ubjs/node`
   is unusable here; this addon crosses the FFI with strings/f64 only.
 - **Id-registry model** (avoids napi async-method-on-class lifetime issues):
-  renderer allocates an id; `sendFile(id, …)`, `requestReceive(id, code) →
-  {fileName, fileSize}`, `acceptReceive(id, destDir)`, `rejectReceive(id)`,
-  `cancelTransfer(id)` (tokio oneshot → engine cancel future).
+  renderer allocates an id; `sendFile(id, …)`, `sendFolder(id, …)`,
+  `requestReceive(id, code) → {fileName, fileSize, folder?: {dirName,
+  numFiles, numBytes}}`, `acceptReceive(id, destDir)` (returns a folder path
+  for directory offers), `rejectReceive(id)`, `cancelTransfer(id)` (tokio
+  oneshot → engine cancel future).
 - Loaded in the Electron **main** process (`src/engine.ts`); renderer talks
   via IPC (`pg:*` handlers in `src/main.ts`, exposed by `src/preload.ts`,
   events streamed on `pg:event {id, event, ...}`).
@@ -132,6 +165,20 @@ Both implement the same flows/routes: home (devices + send + receive), send
 (paired or code), receive (request → confirm → accept), pair (show QR /
 scan / paste), settings (language + theme, persisted), explainer.
 
+Folder flows (both apps): home has a "send folder" button next to the file
+one; the send route carries a `SendItem` union (`kind: 'file' | 'folder'`).
+Desktop picks via `pg:pickFolder` (openDirectory dialog + a JS tree walk for
+the count/size preview) and sends through `pg:sendFolder`; mobile picks via
+`pickSendFolder`, shows a "Preparing folder…" phase while `zipTreeToCache`
+runs, then calls `sendZipAsFolder` (the staged zip is deleted afterwards in
+all outcomes). Receive confirm shows "folder name · N files · size" from the
+offer metadata; the conflict prompt has folder-specific strings and warns
+that overwrite replaces the whole folder. Desktop `pg:acceptDownload` moves
+the unpacked directory (rename, EXDEV falls back to `fs.cp` recursive) and
+clears an overwritten target with `rm -rf` only after the transfer
+completed; `pg:statTarget` counts any occupant and returns `isFolder` +
+recursive size.
+
 ### Mobile - `packages/app-mobile` (`com.gemstech.portalgems`)
 
 - Kotlin support module `PortalGemsNative` (registered manually in
@@ -142,6 +189,20 @@ scan / paste), settings (language + theme, persisted), explainer.
   AppState active), EncryptedSharedPreferences pair store, zxing-embedded
   `scanQr()`, plain SharedPreferences `get/setSetting`, constants
   (`incomingDir`, `cacheDir`, `deviceName`, `locale`).
+- Folder support (all heavy methods run on their own `Thread`):
+  `pickSendFolder` (ACTION_OPEN_DOCUMENT_TREE, read-only grant, request code
+  49376), `zipTreeToCache(uri)` (walks the DocumentFile tree once, streams it
+  into `cache/outgoing/<name>.zip`, returns `{path, name, fileCount,
+  totalBytes}` - the stats the engine puts in the directory offer),
+  `saveFolderToDownloads` (Q+: one MediaStore insert per file with
+  `RELATIVE_PATH Download/<folder>/<subdirs>` - MediaStore has no directory
+  objects, so empty subfolders drop and same-named folders merge with
+  per-file dedupe; pre-Q: recursive copy with top-level `name (n)` dedupe),
+  `saveFolderToDownloadDir` (SAF tree: recursive createDirectory/createFile,
+  keep-both `name (n)`, overwrite deletes the existing tree only after the
+  transfer completed, deleted-tree fallback to Downloads with
+  `fallback: true`). `statDownloadTarget` is folder-aware: any occupant of
+  the name counts, `isFolder` flag, folder size = recursive walk.
 - Receive path: engine → app cache → publish. Default target is MediaStore
   Downloads (`saveToDownloads`); if the user picked a download folder in
   Settings (SAF `ACTION_OPEN_DOCUMENT_TREE`, persisted grant; settings
@@ -172,8 +233,16 @@ scan / paste), settings (language + theme, persisted), explainer.
   warning; `pg:accept` (explicit dir, pairing handshake) is unchanged.
 - Smoke harness (dev-only, env-guarded in main.ts): `PG_SMOKE_RECEIVE=<code>`,
   `PG_SMOKE_RECEIVE_CANCEL=<code>`, `PG_SMOKE_PAIR_SHOW=1`,
-  `PG_SMOKE_PAIRED_RECEIVE=1`, `PG_SMOKE_PAIRED_SEND=<file>` - drives the real
-  renderer via executeJavaScript; used for all E2E verification. Receive
+  `PG_SMOKE_PAIRED_RECEIVE=1`, `PG_SMOKE_PAIRED_SEND=<file>`,
+  `PG_SMOKE_SEND_FOLDER=<dir>` + `PG_SMOKE_CODE=<code>` (folder send on a
+  fixed code, bypassing the unscriptable picker dialog) - drives the real
+  renderer via executeJavaScript; used for all E2E verification. The receive
+  smoke handles file and folder offers (it waits on the shared "Do you want
+  to receive this" prefix). Counterpart CLI harnesses:
+  `cargo run --example send <path> [code]` sends a file OR folder
+  (`--example recv` prints `OFFER-FOLDER:name:files:bytes`); both take
+  `PG_RENDEZVOUS_URL`/`PG_TRANSIT_URL` - remember the app defaults to the
+  PortalGems server, so point the examples there or they meet nothing. Receive
   add-ons: `PG_SMOKE_DL_DIR=<dir>` (seed the download-folder setting; cleared
   when unset - the profile persists) and `PG_SMOKE_CONFLICT=overwrite|keepboth`
   (expect the same-name warning and resolve it). Isolate from the real profile
@@ -276,15 +345,36 @@ Packaging is done: all six binaries (APK, AppImage, deb, rpm, Windows .exe,
 macOS .dmg) build and publish from a single `v*` tag via CI (first shipped in
 v1.0.0/v1.0.1).
 
+Folder transfer (2026-07-19) - the engine sends/receives protocol-v1
+directory offers via the vendored magic-wormhole patch. Verified: engine unit
+tests (zip round-trip incl. empty dirs, symlink skip, zip-slip rejection,
+size-cap enforcement, folder-name dedupe) plus an ignored network folder
+round-trip; **interop with the Python reference CLI in BOTH directions** over
+the public server (Python's zip drops empty dirs, ours keeps them); desktop
+E2E over the live PortalGems server via the smoke harness (folder confirm UI
+with count/size, receive into custom download dir, keep-both → `name (1)`,
+overwrite replacing the old tree only after completion, desktop folder send →
+Python CLI unpack, single-file regression). **Android on-device (Pixel 6a,
+release APK, adb-driven UI, live PortalGems server)**: receive folder (confirm
+UI "name · N files · size", MediaStore publish into `Download/<folder>/` with
+subdirs, checksums matched) from both the Rust example sender AND the Python
+`wormhole send <dir>` CLI (real cross-client interop); send folder (SAF tree
+picker → `zipTreeToCache` counted 3 files/24.5 KB → `sendZipAsFolder` →
+laptop receiver, checksums matched incl. nested `sub/`).
+
 Server picker (rendezvous + transit override) verified E2E on the desktop
 engine against a locally-run mailbox + transit relay (64 KiB round-trip
 checksummed; bad-URL and unreachable-rendezvous error mappings confirmed). The
-mobile side needs the ubrn regen + on-device wiring, and `PORTALGEMS_*` in
-`servers.ts` are placeholders until the dedicated server is deployed.
+mobile side needs the ubrn regen + on-device wiring. The `PORTALGEMS_*`
+server (be-my-guest.io) is deployed and live - it served all the 2026-07-19
+folder E2E runs - and is the app's default choice; note the CLI examples and
+the reference CLI default to the PUBLIC server, so cross-testing needs
+explicit server flags on one side.
 
 Gaps: QR *camera* scan untested (needs real phone) - NOTE: "Show pairing code"
 currently crashes on device (react-native-svg suspected, unconfirmed);
 mobile server-picker UI + ubrn regen; 32-bit `armeabi-v7a` ABI (older phones
 get INSTALL_FAILED_NO_MATCHING_ABIS); paired-transfer UI buttons E2E (smoke
-modes exist); mid-transfer cancel; multi-file share; F-Droid recipe; store
-metadata.
+modes exist); mid-transfer cancel; share-sheet multi-file intake
+(ACTION_SEND_MULTIPLE - the folder picker path now covers bulk sends);
+F-Droid recipe; store metadata.

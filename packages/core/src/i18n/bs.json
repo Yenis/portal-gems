@@ -12,6 +12,7 @@
     "sendTitle": "Pošalji datoteku",
     "sendHint": "Odaberi datoteku i podijeli jednokratni kod s primaocem.",
     "sendButton": "Odaberi datoteku",
+    "sendFolderButton": "Odaberi folder",
     "receiveTitle": "Primi datoteku",
     "receiveHint": "Unesi kod koji ti je poslao pošiljalac.",
     "receivePlaceholder": "npr. 7-crossover-clockwork",
@@ -23,21 +24,33 @@
     "copyCode": "Kopiraj kod",
     "codeCopied": "Kopirano!",
     "sending": "Šaljem {{name}}…",
+    "preparingFolder": "Pripremam folder…",
+    "sendingFolder": "Šaljem folder {{name}}…",
     "success": "Datoteka uspješno poslana.",
-    "successDetail": "{{name}} · {{size}}"
+    "successDetail": "{{name}} · {{size}}",
+    "successFolder": "Folder uspješno poslan."
+  },
+  "folder": {
+    "summary": "{{name}} · {{count}} datoteka · {{size}}"
   },
   "receive": {
     "title": "Primanje",
     "connecting": "Povezivanje…",
     "incoming": "Dolazna datoteka",
+    "incomingFolder": "Dolazni folder",
     "acceptQuestion": "Želiš li primiti ovu datoteku?",
+    "acceptQuestionFolder": "Želiš li primiti ovaj folder?",
     "receiving": "Primanje datoteke…",
+    "receivingFolder": "Primanje foldera…",
     "success": "Datoteka sačuvana.",
+    "successFolder": "Folder sačuvan.",
     "savedAs": "Sačuvano u Downloads kao {{name}}.",
     "savedAsIn": "Sačuvano kao {{name}} u {{folder}}.",
     "folderFallback": "Odabrani folder za preuzimanja nije bio dostupan, pa je datoteka sačuvana u Downloads.",
     "existsTitle": "Datoteka već postoji",
     "existsBody": "{{name}} već postoji u tvom folderu za preuzimanja ({{size}}). Prepisati je?",
+    "existsTitleFolder": "Folder već postoji",
+    "existsBodyFolder": "Folder s imenom {{name}} ({{size}}) već postoji u tvom folderu za preuzimanja. Prepisivanje ga u potpunosti zamjenjuje.",
     "overwrite": "Prepiši",
     "keepBoth": "Zadrži obje",
     "declined": "Odbio/la si prijenos."
