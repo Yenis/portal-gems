@@ -55,6 +55,8 @@ contextBridge.exposeInMainWorld('portalgems', {
     overwrite: boolean
   ): Promise<string> => ipcRenderer.invoke('pg:acceptDownload', id, dir, overwrite),
   pickDirectory: (): Promise<string | null> => ipcRenderer.invoke('pg:pickDirectory'),
+  downloadDirValid: (dir: string | null): Promise<boolean> =>
+    ipcRenderer.invoke('pg:downloadDirValid', dir),
   statTarget: (
     dir: string | null,
     fileName: string

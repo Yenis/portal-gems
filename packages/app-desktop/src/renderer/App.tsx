@@ -88,6 +88,7 @@ declare global {
         overwrite: boolean
       ): Promise<string>;
       pickDirectory(): Promise<string | null>;
+      downloadDirValid(dir: string | null): Promise<boolean>;
       statTarget(
         dir: string | null,
         fileName: string
@@ -136,6 +137,17 @@ type Route =
 export default function App() {
   const [themeName, setThemeNameState] = useState<ThemeName>(loadThemeName());
   const c = usePalette(themeName);
+  // Self-heal a stale download-folder setting: a path that no longer makes
+  // sense as a download location (e.g. a temp/scratchpad dir left by an
+  // automated run) is cleared so receives fall back to the OS Downloads
+  // folder. Runs once at startup, before any receive screen mounts.
+  useEffect(() => {
+    const stored = loadDownloadDir();
+    if (!stored) return;
+    window.portalgems.downloadDirValid(stored).then((valid) => {
+      if (!valid) saveDownloadDir(null);
+    });
+  }, []);
   // History stack so the back arrow pops one page at a time.
   const [stack, setStack] = useState<Route[]>([{ name: 'home' }]);
   const route = stack[stack.length - 1];

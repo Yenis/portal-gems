@@ -231,11 +231,23 @@ recursive size.
   existing file only after the transfer completed, keep-both applies the
   `name (n).ext` convention. `pg:statTarget` powers the pre-accept same-name
   warning; `pg:accept` (explicit dir, pairing handshake) is unchanged.
+- A stored `pg-download-dir` that resolves under the OS temp dir
+  (`os.tmpdir()`/`app.getPath('temp')`/`/tmp`) is treated as unset: files land
+  in the real Downloads folder instead. Such a value only ever comes from an
+  automated run that persisted a scratchpad path into the profile - it is never
+  a legitimate user choice and would vanish on reboot. `isValidDownloadDir` in
+  main enforces this for `resolveDownloadDir`; the exported `pg:downloadDirValid`
+  IPC lets the renderer self-heal at startup (App-mount effect clears an invalid
+  stored value, so Settings and the receive screen show the default). The guard
+  does NOT touch a legitimate deleted folder under `$HOME` - that is still
+  recreated with `mkdir -p`.
 - Smoke harness (dev-only, env-guarded in main.ts): `PG_SMOKE_RECEIVE=<code>`,
   `PG_SMOKE_RECEIVE_CANCEL=<code>`, `PG_SMOKE_PAIR_SHOW=1`,
   `PG_SMOKE_PAIRED_RECEIVE=1`, `PG_SMOKE_PAIRED_SEND=<file>`,
   `PG_SMOKE_SEND_FOLDER=<dir>` + `PG_SMOKE_CODE=<code>` (folder send on a
-  fixed code, bypassing the unscriptable picker dialog) - drives the real
+  fixed code, bypassing the unscriptable picker dialog), `PG_SMOKE_DUMP_DLDIR=1`
+  (logs `SMOKE:DLDIR=<value>` after the startup download-dir self-heal, for
+  verifying stale-setting cleanup) - drives the real
   renderer via executeJavaScript; used for all E2E verification. The receive
   smoke handles file and folder offers (it waits on the shared "Do you want
   to receive this" prefix). Counterpart CLI harnesses:

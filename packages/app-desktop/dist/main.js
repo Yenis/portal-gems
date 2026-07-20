@@ -890,21 +890,21 @@ var require_react_development = __commonJS({
         );
         actScopeDepth = prevActScopeDepth;
       }
-      function recursivelyFlushAsyncActWork(returnValue, resolve, reject) {
+      function recursivelyFlushAsyncActWork(returnValue, resolve2, reject) {
         var queue = ReactSharedInternals.actQueue;
         if (null !== queue)
           if (0 !== queue.length)
             try {
               flushActQueue(queue);
               enqueueTask(function() {
-                return recursivelyFlushAsyncActWork(returnValue, resolve, reject);
+                return recursivelyFlushAsyncActWork(returnValue, resolve2, reject);
               });
               return;
             } catch (error) {
               ReactSharedInternals.thrownErrors.push(error);
             }
           else ReactSharedInternals.actQueue = null;
-        0 < ReactSharedInternals.thrownErrors.length ? (queue = aggregateErrors(ReactSharedInternals.thrownErrors), ReactSharedInternals.thrownErrors.length = 0, reject(queue)) : resolve(returnValue);
+        0 < ReactSharedInternals.thrownErrors.length ? (queue = aggregateErrors(ReactSharedInternals.thrownErrors), ReactSharedInternals.thrownErrors.length = 0, reject(queue)) : resolve2(returnValue);
       }
       function flushActQueue(queue) {
         if (!isFlushing) {
@@ -1091,7 +1091,7 @@ var require_react_development = __commonJS({
             ));
           });
           return {
-            then: function(resolve, reject) {
+            then: function(resolve2, reject) {
               didAwaitActCall = true;
               thenable.then(
                 function(returnValue) {
@@ -1101,7 +1101,7 @@ var require_react_development = __commonJS({
                       flushActQueue(queue), enqueueTask(function() {
                         return recursivelyFlushAsyncActWork(
                           returnValue,
-                          resolve,
+                          resolve2,
                           reject
                         );
                       });
@@ -1115,7 +1115,7 @@ var require_react_development = __commonJS({
                       ReactSharedInternals.thrownErrors.length = 0;
                       reject(_thrownError);
                     }
-                  } else resolve(returnValue);
+                  } else resolve2(returnValue);
                 },
                 function(error) {
                   popActScope(prevActQueue, prevActScopeDepth);
@@ -1137,15 +1137,15 @@ var require_react_development = __commonJS({
         if (0 < ReactSharedInternals.thrownErrors.length)
           throw callback = aggregateErrors(ReactSharedInternals.thrownErrors), ReactSharedInternals.thrownErrors.length = 0, callback;
         return {
-          then: function(resolve, reject) {
+          then: function(resolve2, reject) {
             didAwaitActCall = true;
             0 === prevActScopeDepth ? (ReactSharedInternals.actQueue = queue, enqueueTask(function() {
               return recursivelyFlushAsyncActWork(
                 returnValue$jscomp$0,
-                resolve,
+                resolve2,
                 reject
               );
-            })) : resolve(returnValue$jscomp$0);
+            })) : resolve2(returnValue$jscomp$0);
           }
         };
       };
@@ -2278,8 +2278,8 @@ var isString = (obj) => typeof obj === "string";
 var defer = () => {
   let res;
   let rej;
-  const promise = new Promise((resolve, reject) => {
-    res = resolve;
+  const promise = new Promise((resolve2, reject) => {
+    res = resolve2;
     rej = reject;
   });
   promise.resolve = res;
@@ -3512,9 +3512,9 @@ var Interpolator = class {
     let value;
     let clonedOptions;
     const handleHasOptions = (key, inheritedOptions) => {
-      const sep = this.nestingOptionsSeparator;
-      if (!key.includes(sep)) return key;
-      const c = key.split(new RegExp(`${regexEscape(sep)}[ ]*{`));
+      const sep2 = this.nestingOptionsSeparator;
+      if (!key.includes(sep2)) return key;
+      const c = key.split(new RegExp(`${regexEscape(sep2)}[ ]*{`));
       let optionsString = `{${c[1]}`;
       key = c[0];
       optionsString = this.interpolate(optionsString, clonedOptions);
@@ -3531,7 +3531,7 @@ var Interpolator = class {
         };
       } catch (e) {
         this.logger.warn(`failed parsing options string in nesting for key ${key}`, e);
-        return `${key}${sep}${optionsString}`;
+        return `${key}${sep2}${optionsString}`;
       }
       if (clonedOptions.defaultValue && clonedOptions.defaultValue.includes(this.prefix)) delete clonedOptions.defaultValue;
       return key;
@@ -5084,7 +5084,16 @@ function safeFileName(name) {
   const base = path2.basename(name.replace(/\\/g, "/"));
   return base === "" || base === "." || base === ".." ? "received.bin" : base;
 }
-var resolveDownloadDir = (dir2) => dir2 && dir2.trim() !== "" ? dir2 : import_electron.app.getPath("downloads");
+function isTempDownloadDir(dir2) {
+  const target = path2.resolve(dir2);
+  const bases = [os.tmpdir(), import_electron.app.getPath("temp"), "/tmp"];
+  return bases.some((base) => {
+    const b = path2.resolve(base);
+    return target === b || target.startsWith(b + path2.sep);
+  });
+}
+var isValidDownloadDir = (dir2) => !!dir2 && dir2.trim() !== "" && !isTempDownloadDir(dir2);
+var resolveDownloadDir = (dir2) => isValidDownloadDir(dir2) ? dir2 : import_electron.app.getPath("downloads");
 function dedupPath(dir2, name, isFolder = false) {
   const dot = isFolder ? -1 : name.lastIndexOf(".");
   const stem = dot > 0 ? name.slice(0, dot) : name;
@@ -5190,6 +5199,10 @@ import_electron.ipcMain.handle(
     }
   }
 );
+import_electron.ipcMain.handle(
+  "pg:downloadDirValid",
+  (_e, dir2) => isValidDownloadDir(dir2)
+);
 import_electron.ipcMain.handle("pg:pickDirectory", async () => {
   if (!win) return null;
   const result = await import_electron.dialog.showOpenDialog(win, {
@@ -5273,6 +5286,12 @@ import_electron.app.whenReady().then(async () => {
       import_electron.app.exit(1);
     });
   }
+  if (process.env.PG_SMOKE_DUMP_DLDIR) {
+    runSmokeDumpDlDir().catch((e) => {
+      console.log(`SMOKE:ERROR:${e}`);
+      import_electron.app.exit(1);
+    });
+  }
 });
 var smokeExec = (js) => win.webContents.executeJavaScript(js);
 var smokeClick = (label) => smokeExec(
@@ -5332,6 +5351,15 @@ async function runSmokePairedSend(filePath) {
     (ev) => console.log(`SMOKE-EV:${ev.event}:${ev.info ?? ""}`)
   );
   console.log("SMOKE:PAIRED-SEND-OK");
+  import_electron.app.exit(0);
+}
+async function runSmokeDumpDlDir() {
+  await smokeWaitFor("PortalGems", 1e4);
+  await new Promise((r) => setTimeout(r, 1500));
+  const v = await smokeExec(
+    "localStorage.getItem('pg-download-dir')"
+  );
+  console.log(`SMOKE:DLDIR=${v}`);
   import_electron.app.exit(0);
 }
 async function runSmokeSendFolder(folderPath) {

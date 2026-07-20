@@ -48,9 +48,27 @@ function safeFileName(name: string): string {
   return base === '' || base === '.' || base === '..' ? 'received.bin' : base;
 }
 
+/** True when `dir` lives inside an OS temp directory. A download folder under
+ * /tmp is never a legitimate user choice - it only ever comes from automated
+ * test/scratchpad runs that persisted a path into the profile - and it would
+ * vanish on reboot, so we treat it as unset. */
+function isTempDownloadDir(dir: string): boolean {
+  const target = path.resolve(dir);
+  const bases = [os.tmpdir(), app.getPath('temp'), '/tmp'];
+  return bases.some((base) => {
+    const b = path.resolve(base);
+    return target === b || target.startsWith(b + path.sep);
+  });
+}
+
+/** Whether a stored download-dir choice is usable (non-blank, not a temp
+ * path). The renderer calls this at startup to self-heal a stale setting. */
+const isValidDownloadDir = (dir?: string | null): boolean =>
+  !!dir && dir.trim() !== '' && !isTempDownloadDir(dir);
+
 /** The folder received files should land in: the user's choice, else Downloads. */
 const resolveDownloadDir = (dir?: string | null) =>
-  dir && dir.trim() !== '' ? dir : app.getPath('downloads');
+  isValidDownloadDir(dir) ? (dir as string) : app.getPath('downloads');
 
 /** First free `name`, `name (1)`, `name (2)`, … inside `dir` (engine
  * convention). Folder names never get extension-split (`my.stuff (1)`). */
@@ -192,6 +210,13 @@ ipcMain.handle(
   }
 );
 
+// The renderer calls this at startup with its stored download-dir choice; a
+// false result means the setting is stale (blank or a temp path) and should be
+// cleared so the app falls back to the OS Downloads folder.
+ipcMain.handle('pg:downloadDirValid', (_e, dir: string | null) =>
+  isValidDownloadDir(dir)
+);
+
 ipcMain.handle('pg:pickDirectory', async () => {
   if (!win) return null;
   const result = await dialog.showOpenDialog(win, {
@@ -289,6 +314,13 @@ app.whenReady().then(async () => {
       app.exit(1);
     });
   }
+  // Report the effective pg-download-dir after the startup self-heal has run.
+  if (process.env.PG_SMOKE_DUMP_DLDIR) {
+    runSmokeDumpDlDir().catch((e) => {
+      console.log(`SMOKE:ERROR:${e}`);
+      app.exit(1);
+    });
+  }
 });
 
 // ---- smoke helpers (dev only) ----
@@ -354,6 +386,17 @@ async function runSmokePairedSend(filePath: string) {
     console.log(`SMOKE-EV:${ev.event}:${ev.info ?? ''}`)
   );
   console.log('SMOKE:PAIRED-SEND-OK');
+  app.exit(0);
+}
+
+async function runSmokeDumpDlDir() {
+  await smokeWaitFor('PortalGems', 10000);
+  // Let the App-mount self-heal effect (validate + clear) settle.
+  await new Promise((r) => setTimeout(r, 1500));
+  const v = await smokeExec<string | null>(
+    "localStorage.getItem('pg-download-dir')"
+  );
+  console.log(`SMOKE:DLDIR=${v}`);
   app.exit(0);
 }
 

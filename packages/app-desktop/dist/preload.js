@@ -27,6 +27,7 @@ import_electron.contextBridge.exposeInMainWorld("portalgems", {
   accept: (id, destDir) => import_electron.ipcRenderer.invoke("pg:accept", id, destDir),
   acceptDownload: (id, dir, overwrite) => import_electron.ipcRenderer.invoke("pg:acceptDownload", id, dir, overwrite),
   pickDirectory: () => import_electron.ipcRenderer.invoke("pg:pickDirectory"),
+  downloadDirValid: (dir) => import_electron.ipcRenderer.invoke("pg:downloadDirValid", dir),
   statTarget: (dir, fileName) => import_electron.ipcRenderer.invoke("pg:statTarget", dir, fileName),
   reject: (id) => import_electron.ipcRenderer.invoke("pg:reject", id),
   cancel: (id) => import_electron.ipcRenderer.invoke("pg:cancel", id),

@@ -28930,6 +28930,13 @@
   function App() {
     const [themeName, setThemeNameState] = (0, import_react14.useState)(loadThemeName());
     const c = usePalette(themeName);
+    (0, import_react14.useEffect)(() => {
+      const stored = loadDownloadDir();
+      if (!stored) return;
+      window.portalgems.downloadDirValid(stored).then((valid) => {
+        if (!valid) saveDownloadDir(null);
+      });
+    }, []);
     const [stack, setStack] = (0, import_react14.useState)([{ name: "home" }]);
     const route = stack[stack.length - 1];
     const navigate = (r) => setStack((s) => [...s, r]);
