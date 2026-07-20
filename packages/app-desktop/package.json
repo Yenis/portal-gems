@@ -1,6 +1,6 @@
 {
   "name": "portalgems-desktop",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "private": true,
   "description": "PortalGems desktop app (Electron shell over wormhole-core)",
   "license": "GPL-3.0-or-later",

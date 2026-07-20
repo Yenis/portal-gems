@@ -5,6 +5,33 @@ All notable changes to PortalGems are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.6] - 2026-07-20
+
+Send whole folders, not just single files. Pick a folder and it arrives as a
+folder on the other side - subfolders and all.
+
+### Added
+
+- **Send a folder** on Android and desktop. Choosing a folder shows its file
+  count and total size before sending; the receiver sees the same and, on
+  accepting, gets the folder rebuilt in their download location (nested
+  subfolders included). It uses the standard magic-wormhole directory transfer,
+  so it interoperates both ways with the `wormhole` command-line client and
+  other compatible apps. Same-name folders warn first - overwrite or keep both,
+  just like files.
+- **Desktop remembers your last send folder**: the file and folder pickers
+  reopen wherever you last picked from. (Android already does this through the
+  system picker.)
+
+### Fixed
+
+- **Desktop download location could get stuck on a temporary path** left behind
+  by an earlier build, silently saving received files somewhere unexpected.
+  PortalGems now ignores such a path and falls back to your real Downloads
+  folder, correcting the setting automatically.
+
+[1.2.6]: https://github.com/Yenis/portal-gems/releases/tag/v1.2.6
+
 ## [1.2.5] - 2026-07-14
 
 Your files, your folder. Received files can now land in a folder you choose,
