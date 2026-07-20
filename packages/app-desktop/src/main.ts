@@ -127,9 +127,23 @@ async function walkStats(dir: string): Promise<{ fileCount: number; totalBytes: 
 
 ipcMain.handle('pg:locale', () => app.getLocale());
 
-ipcMain.handle('pg:pickFile', async () => {
+// The dialog opens in `dir` when it is an existing directory; otherwise it
+// falls back to the OS default (a stale/removed path is harmless).
+async function pickerDefault(dir?: string | null): Promise<string | undefined> {
+  if (!dir || dir.trim() === '') return undefined;
+  try {
+    return (await fs.promises.stat(dir)).isDirectory() ? dir : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+ipcMain.handle('pg:pickFile', async (_e, defaultDir?: string | null) => {
   if (!win) return null;
-  const result = await dialog.showOpenDialog(win, { properties: ['openFile'] });
+  const result = await dialog.showOpenDialog(win, {
+    properties: ['openFile'],
+    defaultPath: await pickerDefault(defaultDir),
+  });
   if (result.canceled || result.filePaths.length === 0) return null;
   const filePath = result.filePaths[0];
   const stat = await fs.promises.stat(filePath);
@@ -138,9 +152,12 @@ ipcMain.handle('pg:pickFile', async () => {
 
 // Pick a folder to send: returns its path plus the file count and total size
 // shown to the user before sending.
-ipcMain.handle('pg:pickFolder', async () => {
+ipcMain.handle('pg:pickFolder', async (_e, defaultDir?: string | null) => {
   if (!win) return null;
-  const result = await dialog.showOpenDialog(win, { properties: ['openDirectory'] });
+  const result = await dialog.showOpenDialog(win, {
+    properties: ['openDirectory'],
+    defaultPath: await pickerDefault(defaultDir),
+  });
   if (result.canceled || result.filePaths.length === 0) return null;
   const folderPath = result.filePaths[0];
   const stats = await walkStats(folderPath);
@@ -321,6 +338,17 @@ app.whenReady().then(async () => {
       app.exit(1);
     });
   }
+  // Verify the send-picker remembers its last directory: stub the native
+  // dialog to log the defaultPath it receives and return PG_SMOKE_PICK_FILE.
+  if (process.env.PG_SMOKE_PICK_DEFAULTPATH !== undefined) {
+    runSmokePickDefault(
+      process.env.PG_SMOKE_PICK_DEFAULTPATH,
+      process.env.PG_SMOKE_PICK_FILE ?? ''
+    ).catch((e) => {
+      console.log(`SMOKE:ERROR:${e}`);
+      app.exit(1);
+    });
+  }
 });
 
 // ---- smoke helpers (dev only) ----
@@ -386,6 +414,29 @@ async function runSmokePairedSend(filePath: string) {
     console.log(`SMOKE-EV:${ev.event}:${ev.info ?? ''}`)
   );
   console.log('SMOKE:PAIRED-SEND-OK');
+  app.exit(0);
+}
+
+async function runSmokePickDefault(seedDir: string, fakeFile: string) {
+  await smokeWaitFor('PortalGems', 10000);
+  // Stub the native picker: record the defaultPath it was opened with, and
+  // return the canned file so the renderer's remember-after-pick runs.
+  (dialog as unknown as { showOpenDialog: unknown }).showOpenDialog = async (
+    _w: unknown,
+    opts: { defaultPath?: string }
+  ) => {
+    console.log(`SMOKE:PICK-DEFAULTPATH=${opts.defaultPath ?? ''}`);
+    return { canceled: false, filePaths: [fakeFile] };
+  };
+  await smokeExec(
+    `localStorage.setItem('pg-last-send-dir', ${JSON.stringify(seedDir)})`
+  );
+  await smokeClick('Choose file to send');
+  await new Promise((r) => setTimeout(r, 600));
+  const remembered = await smokeExec<string | null>(
+    "localStorage.getItem('pg-last-send-dir')"
+  );
+  console.log(`SMOKE:REMEMBERED=${remembered}`);
   app.exit(0);
 }
 

@@ -19,8 +19,8 @@ module.exports = __toCommonJS(preload_exports);
 var import_electron = require("electron");
 import_electron.contextBridge.exposeInMainWorld("portalgems", {
   locale: () => import_electron.ipcRenderer.invoke("pg:locale"),
-  pickFile: () => import_electron.ipcRenderer.invoke("pg:pickFile"),
-  pickFolder: () => import_electron.ipcRenderer.invoke("pg:pickFolder"),
+  pickFile: (defaultDir) => import_electron.ipcRenderer.invoke("pg:pickFile", defaultDir),
+  pickFolder: (defaultDir) => import_electron.ipcRenderer.invoke("pg:pickFolder", defaultDir),
   send: (id, path, code, server) => import_electron.ipcRenderer.invoke("pg:send", id, path, code, server),
   sendFolder: (id, path, code, server) => import_electron.ipcRenderer.invoke("pg:sendFolder", id, path, code, server),
   requestReceive: (id, code, server) => import_electron.ipcRenderer.invoke("pg:requestReceive", id, code, server),

@@ -231,6 +231,12 @@ recursive size.
   existing file only after the transfer completed, keep-both applies the
   `name (n).ext` convention. `pg:statTarget` powers the pre-accept same-name
   warning; `pg:accept` (explicit dir, pairing handshake) is unchanged.
+- The send picker remembers its last-used folder: the renderer persists the
+  parent dir of a picked file/folder in localStorage `pg-last-send-dir`
+  (`sendlocation.ts`) and passes it to `pg:pickFile`/`pg:pickFolder`, which set
+  the dialog's `defaultPath` (via `pickerDefault`, which only passes it when it
+  is still an existing directory - a stale path falls back to the OS default).
+  Mobile gets this natively from the SAF document picker, so it needs nothing.
 - A stored `pg-download-dir` that resolves under the OS temp dir
   (`os.tmpdir()`/`app.getPath('temp')`/`/tmp`) is treated as unset: files land
   in the real Downloads folder instead. Such a value only ever comes from an
@@ -247,7 +253,10 @@ recursive size.
   `PG_SMOKE_SEND_FOLDER=<dir>` + `PG_SMOKE_CODE=<code>` (folder send on a
   fixed code, bypassing the unscriptable picker dialog), `PG_SMOKE_DUMP_DLDIR=1`
   (logs `SMOKE:DLDIR=<value>` after the startup download-dir self-heal, for
-  verifying stale-setting cleanup) - drives the real
+  verifying stale-setting cleanup), `PG_SMOKE_PICK_DEFAULTPATH=<dir>` +
+  `PG_SMOKE_PICK_FILE=<file>` (stubs the native file dialog to log
+  `SMOKE:PICK-DEFAULTPATH=` / `SMOKE:REMEMBERED=`, verifying the send picker
+  remembers its last dir) - drives the real
   renderer via executeJavaScript; used for all E2E verification. The receive
   smoke handles file and folder offers (it waits on the shared "Do you want
   to receive this" prefix). Counterpart CLI harnesses:

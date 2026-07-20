@@ -28619,6 +28619,21 @@
     else localStorage.removeItem(KEY2);
   }
 
+  // src/renderer/sendlocation.ts
+  var KEY3 = "pg-last-send-dir";
+  function loadLastSendDir() {
+    const v = localStorage.getItem(KEY3);
+    return v && v.trim() !== "" ? v : null;
+  }
+  function rememberSendLocation(pickedPath) {
+    const dir2 = parentDir(pickedPath);
+    if (dir2) localStorage.setItem(KEY3, dir2);
+  }
+  function parentDir(p) {
+    const i = Math.max(p.lastIndexOf("/"), p.lastIndexOf("\\"));
+    return i > 0 ? p.slice(0, i) : "";
+  }
+
   // src/renderer/components.tsx
   var import_react13 = __toESM(require_react());
   function Card({ c, children }) {
@@ -29006,12 +29021,18 @@
       loadDevices().then(setDevices);
     }, []);
     const pick = async (device) => {
-      const file = await window.portalgems.pickFile();
-      if (file) onSend({ kind: "file", ...file }, device);
+      const file = await window.portalgems.pickFile(loadLastSendDir());
+      if (file) {
+        rememberSendLocation(file.path);
+        onSend({ kind: "file", ...file }, device);
+      }
     };
     const pickFolder = async (device) => {
-      const folder = await window.portalgems.pickFolder();
-      if (folder) onSend({ kind: "folder", ...folder }, device);
+      const folder = await window.portalgems.pickFolder(loadLastSendDir());
+      if (folder) {
+        rememberSendLocation(folder.path);
+        onSend({ kind: "folder", ...folder }, device);
+      }
     };
     const remove = (device) => {
       if (window.confirm(`${t2("devices.remove")}: ${device.name}?`)) {

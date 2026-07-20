@@ -5141,17 +5141,31 @@ async function walkStats(dir2) {
   return { fileCount, totalBytes };
 }
 import_electron.ipcMain.handle("pg:locale", () => import_electron.app.getLocale());
-import_electron.ipcMain.handle("pg:pickFile", async () => {
+async function pickerDefault(dir2) {
+  if (!dir2 || dir2.trim() === "") return void 0;
+  try {
+    return (await fs.promises.stat(dir2)).isDirectory() ? dir2 : void 0;
+  } catch {
+    return void 0;
+  }
+}
+import_electron.ipcMain.handle("pg:pickFile", async (_e, defaultDir) => {
   if (!win) return null;
-  const result = await import_electron.dialog.showOpenDialog(win, { properties: ["openFile"] });
+  const result = await import_electron.dialog.showOpenDialog(win, {
+    properties: ["openFile"],
+    defaultPath: await pickerDefault(defaultDir)
+  });
   if (result.canceled || result.filePaths.length === 0) return null;
   const filePath = result.filePaths[0];
   const stat = await fs.promises.stat(filePath);
   return { path: filePath, name: path2.basename(filePath), size: stat.size };
 });
-import_electron.ipcMain.handle("pg:pickFolder", async () => {
+import_electron.ipcMain.handle("pg:pickFolder", async (_e, defaultDir) => {
   if (!win) return null;
-  const result = await import_electron.dialog.showOpenDialog(win, { properties: ["openDirectory"] });
+  const result = await import_electron.dialog.showOpenDialog(win, {
+    properties: ["openDirectory"],
+    defaultPath: await pickerDefault(defaultDir)
+  });
   if (result.canceled || result.filePaths.length === 0) return null;
   const folderPath = result.filePaths[0];
   const stats = await walkStats(folderPath);
@@ -5292,6 +5306,15 @@ import_electron.app.whenReady().then(async () => {
       import_electron.app.exit(1);
     });
   }
+  if (process.env.PG_SMOKE_PICK_DEFAULTPATH !== void 0) {
+    runSmokePickDefault(
+      process.env.PG_SMOKE_PICK_DEFAULTPATH,
+      process.env.PG_SMOKE_PICK_FILE ?? ""
+    ).catch((e) => {
+      console.log(`SMOKE:ERROR:${e}`);
+      import_electron.app.exit(1);
+    });
+  }
 });
 var smokeExec = (js) => win.webContents.executeJavaScript(js);
 var smokeClick = (label) => smokeExec(
@@ -5351,6 +5374,23 @@ async function runSmokePairedSend(filePath) {
     (ev) => console.log(`SMOKE-EV:${ev.event}:${ev.info ?? ""}`)
   );
   console.log("SMOKE:PAIRED-SEND-OK");
+  import_electron.app.exit(0);
+}
+async function runSmokePickDefault(seedDir, fakeFile) {
+  await smokeWaitFor("PortalGems", 1e4);
+  import_electron.dialog.showOpenDialog = async (_w, opts) => {
+    console.log(`SMOKE:PICK-DEFAULTPATH=${opts.defaultPath ?? ""}`);
+    return { canceled: false, filePaths: [fakeFile] };
+  };
+  await smokeExec(
+    `localStorage.setItem('pg-last-send-dir', ${JSON.stringify(seedDir)})`
+  );
+  await smokeClick("Choose file to send");
+  await new Promise((r) => setTimeout(r, 600));
+  const remembered = await smokeExec(
+    "localStorage.getItem('pg-last-send-dir')"
+  );
+  console.log(`SMOKE:REMEMBERED=${remembered}`);
   import_electron.app.exit(0);
 }
 async function runSmokeDumpDlDir() {

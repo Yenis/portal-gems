@@ -38,6 +38,7 @@ import {
 import { loadThemeName, saveThemeName } from './theme';
 import { currentServer, loadServerSettings, saveServerSettings } from './server';
 import { loadDownloadDir, saveDownloadDir } from './downloads';
+import { loadLastSendDir, rememberSendLocation } from './sendlocation';
 import {
   Card,
   CodeBox,
@@ -57,8 +58,10 @@ declare global {
   interface Window {
     portalgems: {
       locale(): Promise<string>;
-      pickFile(): Promise<{ path: string; name: string; size: number } | null>;
-      pickFolder(): Promise<{
+      pickFile(
+        defaultDir?: string | null
+      ): Promise<{ path: string; name: string; size: number } | null>;
+      pickFolder(defaultDir?: string | null): Promise<{
         path: string;
         name: string;
         fileCount: number;
@@ -232,13 +235,19 @@ function Home({
   }, []);
 
   const pick = async (device?: PairedDevice) => {
-    const file = await window.portalgems.pickFile();
-    if (file) onSend({ kind: 'file', ...file }, device);
+    const file = await window.portalgems.pickFile(loadLastSendDir());
+    if (file) {
+      rememberSendLocation(file.path);
+      onSend({ kind: 'file', ...file }, device);
+    }
   };
 
   const pickFolder = async (device?: PairedDevice) => {
-    const folder = await window.portalgems.pickFolder();
-    if (folder) onSend({ kind: 'folder', ...folder }, device);
+    const folder = await window.portalgems.pickFolder(loadLastSendDir());
+    if (folder) {
+      rememberSendLocation(folder.path);
+      onSend({ kind: 'folder', ...folder }, device);
+    }
   };
 
   const remove = (device: PairedDevice) => {

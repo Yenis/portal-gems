@@ -18,14 +18,18 @@ export interface ServerConfig {
 
 contextBridge.exposeInMainWorld('portalgems', {
   locale: (): Promise<string> => ipcRenderer.invoke('pg:locale'),
-  pickFile: (): Promise<{ path: string; name: string; size: number } | null> =>
-    ipcRenderer.invoke('pg:pickFile'),
-  pickFolder: (): Promise<{
+  pickFile: (
+    defaultDir?: string | null
+  ): Promise<{ path: string; name: string; size: number } | null> =>
+    ipcRenderer.invoke('pg:pickFile', defaultDir),
+  pickFolder: (
+    defaultDir?: string | null
+  ): Promise<{
     path: string;
     name: string;
     fileCount: number;
     totalBytes: number;
-  } | null> => ipcRenderer.invoke('pg:pickFolder'),
+  } | null> => ipcRenderer.invoke('pg:pickFolder', defaultDir),
   send: (
     id: number,
     path: string,
