@@ -65,10 +65,13 @@ Hard constraints from the platform:
 
 ```
 native/wormhole-mini/        portable C client core (new)
+  Makefile                     host build: `make test`
+  vendor/tweetnacl/            canonical TweetNaCl, unmodified, public domain
   include/wh.h                 the single public header
   src/                         platform-free protocol code
-    tweetnacl.c/.h               secretbox + ed25519 group ops
     sha256.c/.h                  SHA-256, HMAC, HKDF
+    kdf.c/.h                     the protocol's key derivations
+    box.c/.h                     secretbox in the nonce||ciphertext format
     spake2.c/.h                  SPAKE2-ed25519, symmetric mode
     json.c/.h                    minimal reader/writer, no allocation
     ws.c/.h                      RFC 6455 client framing
@@ -185,11 +188,23 @@ phase. Debugging SPAKE2 on a phone with no debugger would be miserable.
 
 ### S1 - Crypto core in C
 
-- [ ] TweetNaCl vendored, with the ed25519 group operations SPAKE2 needs
-      exposed from its internals.
-- [ ] SHA-256 + HMAC + HKDF.
+- [x] TweetNaCl vendored: the canonical 20140427 release from
+      `tweetnacl.cr.yp.to`, unmodified, public domain. It supplies
+      XSalsa20-Poly1305 and, as static internals, the ed25519 group
+      operations SPAKE2 needs (`add`, `scalarmult`, `scalarbase`, `pack`,
+      `unpackneg`).
+- [x] SHA-256, HMAC-SHA256 and HKDF-SHA256 (`src/sha256.c`). TweetNaCl only
+      ships SHA-512, and every wormhole key derivation is HKDF-SHA256, so
+      this is the one primitive we supply ourselves.
+- [x] Secretbox in the wormhole wire format, `nonce(24) || ciphertext`
+      (`src/box.c`). Both calls take a caller-supplied work buffer, so the
+      core allocates nothing after startup.
+- [x] The protocol key derivations (`src/kdf.c`): `derive_key`,
+      `derive_phase_key`, verifier, transit key and its subkeys.
+- [x] Host build and `make test`: 24 checks, all green, including
+      byte-identical secretbox output against the engine's crate.
+- [ ] Expose TweetNaCl's ed25519 group operations for SPAKE2.
 - [ ] SPAKE2-ed25519 symmetric mode.
-- [ ] `tests/vectors.c` passes against the S0 fixtures.
 
 SPAKE2 gets no known-answer vector: both sides pick a random scalar, and the
 `spake2` crate does not expose scalar injection, so there is nothing

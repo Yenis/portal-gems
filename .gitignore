@@ -21,3 +21,6 @@ packages/app-mobile/android/app/portalgems-release.keystore
 
 # Release packaging output
 release-artifacts/
+
+# C client build output (native/wormhole-mini)
+native/wormhole-mini/build/

@@ -53,3 +53,34 @@ python3 -m venv /tmp/mbvenv
 Note that the mailbox writes `relay.sqlite` into its working directory and
 crash-loops if that directory is not writable - the same trap documented for
 the production server in `docs/VPS-SETUP.md`.
+
+## Vendored TweetNaCl
+
+`vendor/tweetnacl/` is the canonical 20140427 release from
+`https://tweetnacl.cr.yp.to/20140427/`, unmodified and public domain.
+
+```
+02e65bc3013ff2168983365e55906bc783c4c7e0a60d8100f17bb303a17175c4  tweetnacl.c
+43f29ad721d9927b747b0100ab4160c119e7bb180c7c98a66e4bf79d31244287  tweetnacl.h
+```
+
+It supplies XSalsa20-Poly1305 for both phase messages and transit records.
+It also carries the ed25519 group arithmetic SPAKE2 needs, but as `static`
+internals; the plan is to reach them by compiling `tweetnacl.c` through a
+single extension translation unit rather than patching the vendored file, so
+it stays byte-identical to upstream and auditable.
+
+TweetNaCl does not implement SHA-256, only SHA-512. Since every wormhole key
+is derived with HKDF-SHA256, `src/sha256.c` supplies it.
+
+## Building and testing on the host
+
+```sh
+make test     # builds and runs the known-answer tests
+make vectors  # regenerates tests/vectors/vectors.h from the engine's crates
+make clean
+```
+
+`-std=c89` throughout, for the sake of the old Symbian toolchain, but not
+`-pedantic`: TweetNaCl and the secretbox wrapper use `long long`, which C89
+lacks and every compiler in play supports.
