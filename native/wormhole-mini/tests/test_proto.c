@@ -9,6 +9,7 @@
 #include "../src/base64.h"
 #include "../src/sha1.h"
 #include "../src/json.h"
+#include "../src/wordlist.h"
 
 static int failures = 0;
 static int checks = 0;
@@ -216,6 +217,54 @@ int main(void)
         wh_jw_obj_close(&w);
         check_true("escaping writer succeeds", wh_jw_done(&w) == 0);
         check_str("quote escaped", buf, "{\"k\":\"a\\\"b\"}");
+    }
+
+    /* --- wormhole codes ------------------------------------------------ */
+    {
+        int trial;
+        int all_ok = 1;
+        int format_ok = 1;
+
+        /* The word lists must be the engine's, in the engine's order: a
+         * two-word code takes its first word from the even list and its
+         * second from the odd list. "crossover-clockwork" is even-odd. */
+        check_str("even list starts at adroitness", wh_even_words[0], "adroitness");
+        check_str("odd list starts at aardvark", wh_odd_words[0], "aardvark");
+        check_true("even list is full", wh_even_words[255] != 0 &&
+                                        wh_even_words[255][0] != '\0');
+        check_true("odd list is full", wh_odd_words[255] != 0 &&
+                                       wh_odd_words[255][0] != '\0');
+
+        for (trial = 0; trial < 200; trial++) {
+            char code[WH_CODE_MAX];
+            char *first, *second;
+            int i, found_even = 0, found_odd = 0;
+
+            if (wh_make_code("42", code, sizeof(code)) != 0) { all_ok = 0; break; }
+
+            if (code[0] != '4' || code[1] != '2' || code[2] != '-') format_ok = 0;
+            first = strchr(code, '-');
+            if (!first) { format_ok = 0; break; }
+            second = strchr(first + 1, '-');
+            if (!second) { format_ok = 0; break; }
+            *first = '\0';
+            *second = '\0';
+
+            for (i = 0; i < WH_WORDLIST_SIZE; i++) {
+                if (strcmp(first + 1, wh_even_words[i]) == 0) found_even = 1;
+                if (strcmp(second + 1, wh_odd_words[i]) == 0) found_odd = 1;
+            }
+            if (!found_even || !found_odd) { all_ok = 0; break; }
+        }
+        check_true("generated codes are nameplate-even-odd", format_ok);
+        check_true("both words come from the right lists", all_ok);
+
+        /* A code must never be silently truncated into a wrong one. */
+        {
+            char tiny[8];
+            check_true("a short buffer is refused",
+                       wh_make_code("42", tiny, sizeof(tiny)) == -1);
+        }
     }
 
     printf("\n%d checks, %d failures\n", checks, failures);

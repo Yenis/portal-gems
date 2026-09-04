@@ -13,7 +13,9 @@
  *     verifiers mean both ends derived the same key.
  *   wh-mini [...] receive --code N-word-word [--relay-host H] [--relay-port P]
  *                         [--out DIR]
- *     The whole thing: handshake, offer, and the file itself. */
+ *     The whole thing: handshake, offer, and the file itself.
+ *   wh-mini [...] send --file PATH [--relay-host H] [--relay-port P]
+ *     Allocate a code, print it, and send the file once a peer arrives. */
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -24,6 +26,7 @@
 #include "../src/kdf.h"
 #include "../src/mailbox.h"
 #include "../src/xfer.h"
+#include "../src/wordlist.h"
 
 #define APPID "lothar.com/wormhole/text-or-file-xfer"
 #define RXCAP 65536
@@ -147,6 +150,112 @@ static void show_progress(void *ctx, unsigned long done, unsigned long total)
     }
 }
 
+static long file_source(void *ctx, unsigned char *buf, unsigned long cap)
+{
+    FILE *f = (FILE *)ctx;
+    size_t n = fread(buf, 1, (size_t)cap, f);
+    if (n == 0 && ferror(f)) return -1;
+    return (long)n;
+}
+
+/* Everything the mailbox and transfer layers need, shared by both
+ * directions. Static rather than stack: see wh_mailbox_bufs. */
+static int handshake(wh_mailbox *m, const char *host, unsigned int port,
+                     const char *path, const char *code)
+{
+    int rc;
+    if (wh_mailbox_pake(m, APPID, code) != 0) {
+        fprintf(stderr, "pake failed\n");
+        return -1;
+    }
+    rc = wh_mailbox_version(m);
+    if (rc == -2) {
+        fprintf(stderr, "WRONG CODE\n");
+        return -1;
+    }
+    if (rc != 0) {
+        fprintf(stderr, "version exchange failed\n");
+        return -1;
+    }
+    (void)host; (void)port; (void)path;
+    return 0;
+}
+
+static int cmd_send(const char *host, unsigned int port, const char *path,
+                    const char *filepath, const char *relay_host,
+                    unsigned int relay_port)
+{
+    wh_mailbox m;
+    char code[WH_CODE_MAX];
+    const char *base;
+    unsigned long size;
+    FILE *f;
+    int rc;
+
+    f = fopen(filepath, "rb");
+    if (!f) {
+        fprintf(stderr, "cannot open %s\n", filepath);
+        return 1;
+    }
+    if (fseek(f, 0, SEEK_END) != 0) { fclose(f); return 1; }
+    size = (unsigned long)ftell(f);
+    rewind(f);
+
+    /* Offer the bare name, never the path we happened to read it from. */
+    base = strrchr(filepath, '/');
+    base = base ? base + 1 : filepath;
+
+    wh_mailbox_init(&m, &g_mbufs);
+
+    printf("connecting to ws://%s:%u%s\n", host, port, path);
+    if (wh_mailbox_connect(&m, host, port, path, APPID) != 0) {
+        fprintf(stderr, "connect/bind failed\n");
+        fclose(f);
+        return 1;
+    }
+
+    if (wh_mailbox_allocate(&m, code, sizeof(code)) != 0) {
+        fprintf(stderr, "could not allocate a code\n");
+        fclose(f);
+        return 1;
+    }
+
+    printf("\nwormhole code: %s\n\n", code);
+    printf("waiting for the other side...\n");
+
+    if (handshake(&m, host, port, path, code) != 0) {
+        wh_mailbox_close(&m, "errory");
+        fclose(f);
+        return 1;
+    }
+    printf("key confirmed, offering %s (%lu bytes)\n", base, size);
+
+    rc = wh_xfer_send_file(&m, APPID, base, size, relay_host, relay_port,
+                           &g_xfer, file_source, f, show_progress, 0);
+    fclose(f);
+    printf("\n");
+
+    if (rc == -2) {
+        fprintf(stderr, "the other side declined\n");
+        wh_mailbox_close(&m, "errory");
+        return 1;
+    }
+    if (rc == -3) {
+        fprintf(stderr, "CHECKSUM MISMATCH: what they received is not what we sent\n");
+        wh_mailbox_close(&m, "errory");
+        return 1;
+    }
+    if (rc != 0) {
+        fprintf(stderr, "transfer failed\n");
+        wh_mailbox_close(&m, "errory");
+        return 1;
+    }
+
+    printf("sent, and the other side confirmed the checksum\n");
+    wh_mailbox_close(&m, "happy");
+    return 0;
+}
+
 static int cmd_receive(const char *host, unsigned int port, const char *path,
                        const char *code, const char *relay_host,
                        unsigned int relay_port, const char *outdir)
@@ -254,6 +363,7 @@ int main(int argc, char **argv)
     const char *cmd = "allocate";
     const char *relay_host = "127.0.0.1";
     const char *outdir = ".";
+    const char *filepath = 0;
     unsigned int relay_port = 4001;
     unsigned int port = 4000;
     char side[11];
@@ -263,6 +373,10 @@ int main(int argc, char **argv)
     char nameplate[64];
     int i;
 
+    /* Line-buffered so progress and the code appear immediately even when
+     * stdout is a pipe or a log file. */
+    setvbuf(stdout, (char *)0, _IOLBF, 0);
+
     for (i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--host") == 0 && i + 1 < argc) host = argv[++i];
         else if (strcmp(argv[i], "--port") == 0 && i + 1 < argc) port = (unsigned int)atoi(argv[++i]);
@@ -271,7 +385,16 @@ int main(int argc, char **argv)
         else if (strcmp(argv[i], "--relay-host") == 0 && i + 1 < argc) relay_host = argv[++i];
         else if (strcmp(argv[i], "--relay-port") == 0 && i + 1 < argc) relay_port = (unsigned int)atoi(argv[++i]);
         else if (strcmp(argv[i], "--out") == 0 && i + 1 < argc) outdir = argv[++i];
+        else if (strcmp(argv[i], "--file") == 0 && i + 1 < argc) filepath = argv[++i];
         else if (argv[i][0] != '-') cmd = argv[i];
+    }
+
+    if (strcmp(cmd, "send") == 0) {
+        if (!filepath) {
+            fprintf(stderr, "send needs --file PATH\n");
+            return 2;
+        }
+        return cmd_send(host, port, path, filepath, relay_host, relay_port);
     }
 
     if (strcmp(cmd, "receive") == 0) {

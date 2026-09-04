@@ -11,7 +11,8 @@ VENDOR_CFLAGS = -std=gnu89 -O2 -w
 
 SRC = src/sha256.c src/kdf.c src/box.c src/spake2.c \
       src/sha1.c src/base64.c src/json.c src/ws.c src/mailbox.c \
-      src/transit.c src/xfer.c
+      src/transit.c src/xfer.c \
+      src/wordlist.c src/code.c
 PORT = port/posix.c
 # src/ed25519.c compiles vendor/tweetnacl/tweetnacl.c inside itself to reach
 # its static ed25519 internals, so tweetnacl.c is never built separately -
@@ -21,7 +22,7 @@ ED25519 = src/ed25519.c
 
 BUILD = build
 
-.PHONY: all test clean vectors cli
+.PHONY: all test clean vectors wordlist cli
 
 all: test
 
@@ -46,6 +47,10 @@ test: $(BUILD)/test_vectors $(BUILD)/test_proto
 	./$(BUILD)/test_vectors
 	@echo
 	./$(BUILD)/test_proto
+
+# Regenerate the committed PGP wordlist from the engine's own JSON.
+wordlist:
+	python3 tools/genwordlist.py > src/wordlist.c
 
 # Regenerate the committed vectors from the engine's own crates.
 vectors:

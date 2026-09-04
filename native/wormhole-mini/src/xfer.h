@@ -40,6 +40,9 @@ typedef struct {
 
 /* Called with each decrypted chunk. Return 0 to continue, non-zero to abort. */
 typedef int (*wh_xfer_sink)(void *ctx, const unsigned char *data, unsigned long len);
+/* Fills `buf` with up to `cap` more bytes of the file being sent. Returns
+ * the count, 0 at end of file, or -1 on error. */
+typedef long (*wh_xfer_source)(void *ctx, unsigned char *buf, unsigned long cap);
 /* Called as bytes arrive; `done` and `total` are byte counts. */
 typedef void (*wh_xfer_progress)(void *ctx, unsigned long done, unsigned long total);
 
@@ -57,6 +60,18 @@ int wh_xfer_accept(wh_mailbox *m, const char *appid, const wh_offer *offer,
 
 /* Decline the offer with a reason the peer will display. */
 int wh_xfer_reject(wh_mailbox *m, const char *reason);
+
+/* Offer a file and, if the peer accepts, send it. We take the leader role in
+ * the transit handshake, which is what the sending side always does.
+ *
+ * Returns 0 on success, -2 if the peer declined the offer, -3 if the peer's
+ * checksum disagrees with ours. */
+int wh_xfer_send_file(wh_mailbox *m, const char *appid,
+                      const char *filename, unsigned long filesize,
+                      const char *relay_host, unsigned int relay_port,
+                      wh_xfer_bufs *bufs,
+                      wh_xfer_source source, void *source_ctx,
+                      wh_xfer_progress progress, void *progress_ctx);
 
 #ifdef __cplusplus
 }

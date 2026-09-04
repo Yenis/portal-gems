@@ -24,6 +24,10 @@ extern "C" {
 /* Wire size of that: 4-byte length prefix + nonce + tag + plaintext. */
 #define WH_RECORD_WIRE_MAX (WH_RECORD_MAX + 4 + 24 + 16)
 
+/* Which side of the asymmetric handshake we play. The sender leads. */
+#define WH_TRANSIT_LEADER 1
+#define WH_TRANSIT_FOLLOWER 0
+
 typedef struct {
     wh_conn *conn;
     unsigned char skey[32];
@@ -32,10 +36,11 @@ typedef struct {
     unsigned char rnonce[24];
 } wh_transit;
 
-/* Connect to the relay and complete both handshakes as the FOLLOWER, which
- * is the role the receiving side plays. Returns 0. */
+/* Connect to the relay and complete both handshakes. `role` is
+ * WH_TRANSIT_LEADER when sending and WH_TRANSIT_FOLLOWER when receiving.
+ * Returns 0. */
 int wh_transit_connect_relay(wh_transit *t, const char *host, unsigned int port,
-                             const unsigned char transit_key[32]);
+                             const unsigned char transit_key[32], int role);
 
 /* Send one encrypted record. `work` needs WH_BOX_WORK(len) bytes. */
 int wh_transit_send_record(wh_transit *t, const unsigned char *pt,

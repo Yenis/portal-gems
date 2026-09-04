@@ -43,7 +43,7 @@ static int append(char *dst, unsigned long cap, unsigned long *len, const char *
 }
 
 int wh_transit_connect_relay(wh_transit *t, const char *host, unsigned int port,
-                             const unsigned char transit_key[32])
+                             const unsigned char transit_key[32], int role)
 {
     unsigned char sub[32];
     unsigned char tside_raw[8];
@@ -76,35 +76,59 @@ int wh_transit_connect_relay(wh_transit *t, const char *host, unsigned int port,
     if (read_exact(t->conn, got, 3) != 0) return -1;
     if (got[0] != 'o' || got[1] != 'k' || got[2] != '\n') return -1;
 
-    /* 2. Transit handshake, follower role. Our line is 89 bytes; theirs is
-     * 87 plus "go\n" for 90 (transit/crypto.rs asserts both). */
-    wh_derive_key_str(transit_key, "transit_receiver", sub);
+    /* 2. Transit handshake. Asymmetric: the leader writes its line, reads
+     * the follower's, then writes "go\n". The two lines are different
+     * lengths - 87 for the sender, 89 for the receiver, because "receiver"
+     * is two characters longer - and transit/crypto.rs asserts both. */
+    wh_derive_key_str(transit_key, role == WH_TRANSIT_LEADER
+                                       ? "transit_sender" : "transit_receiver", sub);
     wh_hex(sub, 32, hex);
     len = 0;
-    if (append(line, sizeof(line), &len, "transit receiver ") != 0) return -1;
+    if (append(line, sizeof(line), &len,
+               role == WH_TRANSIT_LEADER ? "transit sender " : "transit receiver ") != 0) {
+        return -1;
+    }
     if (append(line, sizeof(line), &len, hex) != 0) return -1;
     if (append(line, sizeof(line), &len, " ready\n\n") != 0) return -1;
-    if (len != 89) return -1;
+    if (len != (role == WH_TRANSIT_LEADER ? 87UL : 89UL)) return -1;
     if (wh_net_write(t->conn, (const unsigned char *)line, len) != 0) return -1;
 
-    wh_derive_key_str(transit_key, "transit_sender", sub);
+    wh_derive_key_str(transit_key, role == WH_TRANSIT_LEADER
+                                       ? "transit_receiver" : "transit_sender", sub);
     wh_hex(sub, 32, hex);
     len = 0;
-    if (append((char *)expect, sizeof(expect), &len, "transit sender ") != 0) return -1;
+    if (append((char *)expect, sizeof(expect), &len,
+               role == WH_TRANSIT_LEADER ? "transit receiver " : "transit sender ") != 0) {
+        return -1;
+    }
     if (append((char *)expect, sizeof(expect), &len, hex) != 0) return -1;
-    if (append((char *)expect, sizeof(expect), &len, " ready\n\ngo\n") != 0) return -1;
-    if (len != 90) return -1;
+    if (append((char *)expect, sizeof(expect), &len, " ready\n\n") != 0) return -1;
+    /* The follower additionally waits for the leader's "go". */
+    if (role == WH_TRANSIT_FOLLOWER) {
+        if (append((char *)expect, sizeof(expect), &len, "go\n") != 0) return -1;
+    }
+    if (len != (role == WH_TRANSIT_LEADER ? 89UL : 90UL)) return -1;
 
     if (read_exact(t->conn, got, len) != 0) return -1;
     for (i = 0; i < (int)len; i++) {
         if (got[i] != expect[i]) return -1;
     }
 
+    /* The leader confirms the connection it has chosen. */
+    if (role == WH_TRANSIT_LEADER) {
+        if (wh_net_write(t->conn, (const unsigned char *)"go\n", 3) != 0) return -1;
+    }
+
     /* 3. Record keys. The names are a historical misnomer for leader and
-     * follower: as the follower we RECEIVE with the sender key and SEND
+     * follower. The leader sends with the sender key; the follower sends
      * with the receiver key. Getting this backwards is the classic bug. */
-    wh_derive_key_str(transit_key, "transit_record_sender_key", t->rkey);
-    wh_derive_key_str(transit_key, "transit_record_receiver_key", t->skey);
+    if (role == WH_TRANSIT_LEADER) {
+        wh_derive_key_str(transit_key, "transit_record_sender_key", t->skey);
+        wh_derive_key_str(transit_key, "transit_record_receiver_key", t->rkey);
+    } else {
+        wh_derive_key_str(transit_key, "transit_record_sender_key", t->rkey);
+        wh_derive_key_str(transit_key, "transit_record_receiver_key", t->skey);
+    }
     return 0;
 }
 

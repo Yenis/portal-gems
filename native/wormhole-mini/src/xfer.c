@@ -151,7 +151,10 @@ int wh_xfer_accept(wh_mailbox *m, const char *appid, const wh_offer *offer,
     if (wh_mailbox_send_phase(m, ANSWER, sizeof(ANSWER) - 1) != 0) return -1;
 
     if (wh_derive_transit_key(m->key, appid, transit_key) != 0) return -1;
-    if (wh_transit_connect_relay(&t, relay_host, relay_port, transit_key) != 0) return -1;
+    if (wh_transit_connect_relay(&t, relay_host, relay_port, transit_key,
+                                 WH_TRANSIT_FOLLOWER) != 0) {
+        return -1;
+    }
 
     wh_sha256_init(&hasher);
     if (progress) progress(progress_ctx, 0, offer->filesize);
@@ -189,6 +192,107 @@ int wh_xfer_accept(wh_mailbox *m, const char *appid, const wh_offer *offer,
                                bufs->wire, sizeof(bufs->wire)) != 0) {
         rc = -1;
     }
+
+done:
+    wh_transit_close(&t);
+    return rc;
+}
+
+int wh_xfer_send_file(wh_mailbox *m, const char *appid,
+                      const char *filename, unsigned long filesize,
+                      const char *relay_host, unsigned int relay_port,
+                      wh_xfer_bufs *bufs,
+                      wh_xfer_source source, void *source_ctx,
+                      wh_xfer_progress progress, void *progress_ctx)
+{
+    unsigned char transit_key[32];
+    wh_transit t;
+    wh_sha256_ctx hasher;
+    unsigned char digest[32];
+    char hex[65];
+    char buf[2048];
+    wh_json_val v, inner;
+    wh_jw w;
+    unsigned long sent = 0;
+    long n;
+    int rc = 0;
+
+    /* Our transit hints, then the offer. The engine sends them in this
+     * order and only afterwards waits for the peer (transfer/v1.rs::send). */
+    if (build_transit_msg(buf, sizeof(buf), relay_host, relay_port) != 0) return -1;
+    if (wh_mailbox_send_phase(m, buf, wh_strlen(buf)) != 0) return -1;
+
+    wh_jw_init(&w, buf, sizeof(buf));
+    wh_jw_obj_open(&w);
+    wh_jw_key(&w, "offer");
+    wh_jw_obj_open(&w);
+    wh_jw_key(&w, "file");
+    wh_jw_obj_open(&w);
+    wh_jw_str(&w, "filename", filename);
+    wh_jw_u32(&w, "filesize", filesize);
+    wh_jw_obj_close(&w);
+    wh_jw_obj_close(&w);
+    wh_jw_obj_close(&w);
+    if (wh_jw_done(&w) != 0) return -1;
+    if (wh_mailbox_send_phase(m, buf, wh_strlen(buf)) != 0) return -1;
+
+    /* Their transit hints. Ignored, as on the receive side: both peers are
+     * configured with the same relay. */
+    n = wh_mailbox_recv_phase(m, buf, sizeof(buf));
+    if (n < 0) return -1;
+    if (wh_json_get(buf, (unsigned long)n, "transit", &v) != 0) return -1;
+
+    /* Their answer. A refusal arrives as {"error": "..."} instead. */
+    n = wh_mailbox_recv_phase(m, buf, sizeof(buf));
+    if (n < 0) return -1;
+    if (wh_json_get(buf, (unsigned long)n, "error", &v) == 0) return -2;
+    if (wh_json_get(buf, (unsigned long)n, "answer", &v) != 0) return -1;
+    if (wh_json_get(v.p, v.len, "file_ack", &inner) != 0) return -2;
+    if (!wh_json_streq(&inner, "ok")) return -2;
+
+    if (wh_derive_transit_key(m->key, appid, transit_key) != 0) return -1;
+    if (wh_transit_connect_relay(&t, relay_host, relay_port, transit_key,
+                                 WH_TRANSIT_LEADER) != 0) {
+        return -1;
+    }
+
+    wh_sha256_init(&hasher);
+    if (progress) progress(progress_ctx, 0, filesize);
+
+    while (sent < filesize) {
+        unsigned long want = filesize - sent;
+        if (want > WH_RECORD_MAX) want = WH_RECORD_MAX;
+
+        n = source(source_ctx, bufs->record, want);
+        if (n <= 0) { rc = -1; goto done; }
+
+        wh_sha256_update(&hasher, bufs->record, (unsigned long)n);
+        if (wh_transit_send_record(&t, bufs->record, (unsigned long)n,
+                                   bufs->work, sizeof(bufs->work),
+                                   bufs->wire, sizeof(bufs->wire)) != 0) {
+            rc = -1;
+            goto done;
+        }
+        sent += (unsigned long)n;
+        if (progress) progress(progress_ctx, sent, filesize);
+    }
+
+    /* They hash what they received and send it back; a mismatch means the
+     * transfer was corrupted somewhere the encryption did not catch. */
+    wh_sha256_final(&hasher, digest);
+    wh_hex(digest, sizeof(digest), hex);
+
+    n = wh_transit_recv_record(&t, bufs->record, sizeof(bufs->record),
+                               bufs->work, sizeof(bufs->work),
+                               bufs->wire, sizeof(bufs->wire));
+    if (n <= 0) { rc = -1; goto done; }
+    bufs->record[n] = '\0';
+
+    if (wh_json_get((const char *)bufs->record, (unsigned long)n, "sha256", &v) != 0) {
+        rc = -1;
+        goto done;
+    }
+    if (!wh_json_streq(&v, hex)) rc = -3;
 
 done:
     wh_transit_close(&t);

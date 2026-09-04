@@ -3,6 +3,7 @@
 #include "kdf.h"
 #include "box.h"
 #include "net.h"
+#include "wordlist.h"
 
 static unsigned long wh_strlen(const char *s)
 {
@@ -68,19 +69,11 @@ int wh_mailbox_connect(wh_mailbox *m, const char *host, unsigned int port,
     return send_out(m);
 }
 
-int wh_mailbox_claim(wh_mailbox *m, const char *code)
+/* Claim m->nameplate and open the mailbox the server names for it. */
+static int claim_and_open(wh_mailbox *m)
 {
     wh_jw w;
     wh_json_val v;
-    unsigned long i = 0;
-
-    /* The nameplate is everything before the first '-'. */
-    while (code[i] && code[i] != '-' && i + 1 < sizeof(m->nameplate)) {
-        m->nameplate[i] = code[i];
-        i++;
-    }
-    m->nameplate[i] = '\0';
-    if (i == 0) return -1;
 
     wh_jw_init(&w, m->b->out, sizeof(m->b->out));
     wh_jw_obj_open(&w);
@@ -100,6 +93,40 @@ int wh_mailbox_claim(wh_mailbox *m, const char *code)
     wh_jw_obj_close(&w);
     if (wh_jw_done(&w) != 0) return -1;
     return send_out(m);
+}
+
+int wh_mailbox_claim(wh_mailbox *m, const char *code)
+{
+    unsigned long i = 0;
+
+    /* The nameplate is everything before the first '-'. */
+    while (code[i] && code[i] != '-' && i + 1 < sizeof(m->nameplate)) {
+        m->nameplate[i] = code[i];
+        i++;
+    }
+    m->nameplate[i] = '\0';
+    if (i == 0) return -1;
+
+    return claim_and_open(m);
+}
+
+int wh_mailbox_allocate(wh_mailbox *m, char *code_out, unsigned long cap)
+{
+    wh_jw w;
+    wh_json_val v;
+
+    wh_jw_init(&w, m->b->out, sizeof(m->b->out));
+    wh_jw_obj_open(&w);
+    wh_jw_str(&w, "type", "allocate");
+    wh_jw_obj_close(&w);
+    if (wh_jw_done(&w) != 0 || send_out(m) != 0) return -1;
+
+    if (wait_type(m, "allocated") < 0) return -1;
+    if (wh_json_get(m->b->msg, wh_strlen(m->b->msg), "nameplate", &v) != 0) return -1;
+    if (wh_json_str(&v, m->nameplate, sizeof(m->nameplate)) < 0) return -1;
+
+    if (wh_make_code(m->nameplate, code_out, cap) != 0) return -1;
+    return claim_and_open(m);
 }
 
 /* Post one phase body, already hex-encoded. */

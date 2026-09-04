@@ -63,6 +63,11 @@ int wh_mailbox_connect(wh_mailbox *m, const char *host, unsigned int port,
 /* Claim the nameplate at the front of `code` and open the mailbox it names. */
 int wh_mailbox_claim(wh_mailbox *m, const char *code);
 
+/* Ask the server for a fresh nameplate, build a full code from it with two
+ * words from the PGP list, claim it and open the mailbox. The code is what
+ * the user reads out or types into the other device. */
+int wh_mailbox_allocate(wh_mailbox *m, char *code_out, unsigned long cap);
+
 /* Run the PAKE: send our message, wait for theirs, derive the shared key.
  * A wrong code is not detected here - it produces a different key, which
  * only shows up when the version phase fails to decrypt. */
