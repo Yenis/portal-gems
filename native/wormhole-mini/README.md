@@ -90,3 +90,22 @@ make clean
 `-std=c89` throughout, for the sake of the old Symbian toolchain, but not
 `-pedantic`: TweetNaCl and the secretbox wrapper use `long long`, which C89
 lacks and every compiler in play supports.
+
+## Testing on 32-bit ARM
+
+The host is 64-bit; the phone is not. `arm-linux-gnueabi` is ARMv5
+soft-float with a 32-bit `long`, which is the data model Symbian uses on the
+E72's ARM11, so building there catches width and alignment mistakes that a
+host build cannot see.
+
+```sh
+sudo apt-get install gcc-arm-linux-gnueabi qemu-user-static
+make test-arm    # both suites, cross-compiled and run under qemu
+make cli-arm     # build/arm/wh-mini, runnable with qemu-arm-static
+```
+
+The ARM `wh-mini` really does transfer files - it has completed round trips
+with `native/wormhole-core` in both directions under emulation. What that
+proves is the data model and a second compiler's view of the code. It
+proves nothing about Symbian APIs, since qemu-arm runs Linux; that risk
+lives entirely in `port/symbian.cpp`.

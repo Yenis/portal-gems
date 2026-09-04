@@ -22,7 +22,15 @@ ED25519 = src/ed25519.c
 
 BUILD = build
 
-.PHONY: all test clean vectors wordlist cli
+# 32-bit ARM cross build, standing in for the phone until the Symbian SDK is
+# in place. arm-linux-gnueabi is ARMv5 soft-float with a 32-bit long, which
+# is the data model Symbian uses on the E72's ARM11 - so this catches width
+# and alignment mistakes that a 64-bit host build cannot. Static linking
+# keeps qemu from needing an ARM sysroot at run time.
+ARM_CC ?= arm-linux-gnueabi-gcc
+QEMU ?= qemu-arm-static
+
+.PHONY: all test test-arm clean vectors wordlist cli cli-arm
 
 all: test
 
@@ -47,6 +55,28 @@ test: $(BUILD)/test_vectors $(BUILD)/test_proto
 	./$(BUILD)/test_vectors
 	@echo
 	./$(BUILD)/test_proto
+
+$(BUILD)/arm:
+	mkdir -p $(BUILD)/arm
+
+$(BUILD)/arm/ed25519.o: $(ED25519) $(VENDOR) | $(BUILD)/arm
+	$(ARM_CC) $(VENDOR_CFLAGS) -c $(ED25519) -o $@
+
+$(BUILD)/arm/test_vectors: tests/test_vectors.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o | $(BUILD)/arm
+	$(ARM_CC) $(CFLAGS) -static -o $@ tests/test_vectors.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o
+
+$(BUILD)/arm/test_proto: tests/test_proto.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o | $(BUILD)/arm
+	$(ARM_CC) $(CFLAGS) -static -o $@ tests/test_proto.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o
+
+$(BUILD)/arm/wh-mini: cli/wh-mini.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o | $(BUILD)/arm
+	$(ARM_CC) $(CFLAGS) -static -o $@ cli/wh-mini.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o
+
+cli-arm: $(BUILD)/arm/wh-mini
+
+test-arm: $(BUILD)/arm/test_vectors $(BUILD)/arm/test_proto
+	$(QEMU) ./$(BUILD)/arm/test_vectors
+	@echo
+	$(QEMU) ./$(BUILD)/arm/test_proto
 
 # Regenerate the committed PGP wordlist from the engine's own JSON.
 wordlist:

@@ -316,6 +316,21 @@ to change to make it run on the phone, only `port/` and the app around it.
       message needed about 6 KB, against Symbian's 8 KB default thread
       stack), `EPOCSTACKSIZE` set explicitly, and `wh_json_u32` now rejects
       values a 32-bit build could not represent instead of wrapping.
+- [x] **32-bit ARM verified under emulation**, standing in for the phone
+      until the SDK arrives. `make test-arm` cross-compiles the whole core
+      with `arm-linux-gnueabi-gcc` (ARMv5 soft-float, 32-bit `long` - the
+      data model Symbian uses on the E72's ARM11) and runs both suites
+      under `qemu-arm-static`: 90 checks, all green, no warnings from our
+      own code. Better still, `make cli-arm` builds `wh-mini` for ARM and
+      it completed real transfers with `native/wormhole-core` in **both
+      directions** under qemu, byte-identical, with the engine confirming
+      the checksums. The ARM build allocated `2-waterloo-slingshot` on its
+      own wordlist.
+
+      What this proves is the data model: widths, alignment, and a
+      different compiler. What it does not prove is any Symbian API, since
+      qemu-arm runs Linux. The remaining risk is concentrated in
+      `port/symbian.cpp`, which is where it should be.
 - [ ] GnuPoc set up, S60 3rd FP2 SDK unpacked, `arm-none-symbianelf` GCC
       building. **Needs the SDK archive**, which is an old Nokia download no
       longer distributed officially.

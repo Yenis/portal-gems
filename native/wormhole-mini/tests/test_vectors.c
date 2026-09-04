@@ -85,6 +85,24 @@ int main(void)
         check_bytes("sha256 streaming matches one-shot", out, once, 32);
     }
 
+    /* The message length is counted in bits across two 32-bit halves,
+     * because C89 has no 64-bit integer we can rely on. The carry between
+     * them only happens past 512 MiB of input - well within reach for a
+     * video off the phone's memory card, and far too slow to reach by
+     * actually hashing that much here. So drive the counter to the boundary
+     * directly and check it crosses correctly. */
+    {
+        wh_sha256_ctx s;
+        unsigned char one = 'x';
+        wh_sha256_init(&s);
+        s.nbits_lo = 0xfffffff8u;   /* eight bits short of 2^32 */
+        s.nbits_hi = 0;
+        wh_sha256_update(&s, &one, 1);
+        check_eq("bit counter wraps its low half", (unsigned long)s.nbits_lo, 0);
+        check_eq("bit counter carries into its high half",
+                 (unsigned long)s.nbits_hi, 1);
+    }
+
     /* --- derive_key --------------------------------------------------- */
     wh_derive_key_str(WH_V_MAIN_KEY, "purpose1", out);
     check_hex("derive_key(main, \"purpose1\")", out, 32, WH_V_DERIVE_PURPOSE1);
