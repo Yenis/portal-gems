@@ -268,12 +268,37 @@ confirmation, but the offline test now covers the maths.
 
 ### S3 - Receive a file on the host
 
-- [ ] Relay connect, handshake, record decryption, SHA-256 ack.
-- [ ] Milestone: PortalGems desktop sends a file, `wh-mini` receives it
-      byte-identically.
+- [x] Relay connect, relay handshake, transit handshake in the follower
+      role, record framing and decryption (`src/transit.c`). The nonce is a
+      big-endian counter and records must arrive in order; a skipped or
+      replayed record is rejected rather than decrypted.
+- [x] Transfer v1 receive: transit message exchange, offer parsing, answer,
+      streaming records, SHA-256 ack (`src/xfer.c`). File bytes leave
+      through a caller-supplied sink, so this layer never touches a
+      filesystem API - which is what lets the same code serve stdio on the
+      host and RFile on Symbian.
+- [x] `wh-mini receive` with progress reporting.
+- [x] **Milestone met, twice.** A 2.1 MB file arrived byte-identically
+      (sha256 `82494fdc...eb16b2ac`) from both the reference Python
+      `wormhole send` and, more to the point, from
+      `native/wormhole-core`'s own send example - the actual PortalGems
+      engine, the same code the desktop and Android apps run. The engine
+      reported `SEND-OK`, meaning it accepted the checksum we computed and
+      sent back over the transit.
 
-At the end of S3 the protocol work is done and proven. Everything after this
-is platform work.
+Two limitations, deliberate and worth writing down:
+
+- We ignore the peer's transit hints and connect to our configured relay.
+  Both ends being pointed at the same server is exactly how PortalGems
+  deploys, so this costs nothing today; honouring their hints is a later
+  refinement.
+- A `directory` offer is declined with a message rather than unpacked. Zip
+  handling on the phone is a separate question and does not belong in the
+  first working client.
+
+The protocol work is now done and proven, entirely on the host, against the
+real engine. Everything after this is platform work: nothing in `src/` needs
+to change to make it run on the phone, only `port/` and the app around it.
 
 ### S4 - Symbian toolchain and a signed hello world
 

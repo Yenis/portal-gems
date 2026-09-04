@@ -1,0 +1,196 @@
+#include "xfer.h"
+#include "json.h"
+#include "kdf.h"
+#include "sha256.h"
+
+static unsigned long wh_strlen(const char *s)
+{
+    unsigned long n = 0;
+    while (s[n]) n++;
+    return n;
+}
+
+/* Our transit message. Relay only: we advertise no direct hints and never
+ * listen, so the peer has nothing to connect to except the relay we name.
+ *
+ * hints-v1 is a flat array mixing direct and relay hints (transit.rs's
+ * Serialize for Hints); a relay hint nests its endpoints under "hints". */
+static int build_transit_msg(char *out, unsigned long cap,
+                             const char *relay_host, unsigned int relay_port)
+{
+    char endpoint[256];
+    char relay[512];
+    char hints[600];
+    wh_jw w;
+
+    wh_jw_init(&w, endpoint, sizeof(endpoint));
+    wh_jw_obj_open(&w);
+    wh_jw_str(&w, "type", "direct-tcp-v1");
+    wh_jw_str(&w, "hostname", relay_host);
+    wh_jw_u32(&w, "port", relay_port);
+    wh_jw_obj_close(&w);
+    if (wh_jw_done(&w) != 0) return -1;
+
+    wh_jw_init(&w, relay, sizeof(relay));
+    wh_jw_obj_open(&w);
+    wh_jw_str(&w, "type", "relay-v1");
+    wh_jw_raw(&w, "name", "null");
+    wh_jw_key(&w, "hints");
+    {
+        unsigned long i, n = wh_strlen(endpoint);
+        if (w.len + n + 2 >= w.cap) return -1;
+        w.buf[w.len++] = '[';
+        for (i = 0; i < n; i++) w.buf[w.len++] = endpoint[i];
+        w.buf[w.len++] = ']';
+    }
+    wh_jw_obj_close(&w);
+    if (wh_jw_done(&w) != 0) return -1;
+
+    {
+        unsigned long n = wh_strlen(relay);
+        if (n + 3 > sizeof(hints)) return -1;
+        hints[0] = '[';
+        {
+            unsigned long i;
+            for (i = 0; i < n; i++) hints[1 + i] = relay[i];
+        }
+        hints[n + 1] = ']';
+        hints[n + 2] = '\0';
+    }
+
+    wh_jw_init(&w, out, cap);
+    wh_jw_obj_open(&w);
+    wh_jw_key(&w, "transit");
+    wh_jw_obj_open(&w);
+    wh_jw_raw(&w, "abilities-v1", "[{\"type\":\"relay-v1\"}]");
+    wh_jw_raw(&w, "hints-v1", hints);
+    wh_jw_obj_close(&w);
+    wh_jw_obj_close(&w);
+    return wh_jw_done(&w);
+}
+
+int wh_xfer_await_offer(wh_mailbox *m, const char *relay_host,
+                        unsigned int relay_port, wh_offer *offer)
+{
+    char buf[2048];
+    wh_json_val v, inner, field;
+    long n;
+
+    offer->filename[0] = '\0';
+    offer->dirname[0] = '\0';
+    offer->filesize = 0;
+    offer->is_directory = 0;
+
+    if (build_transit_msg(buf, sizeof(buf), relay_host, relay_port) != 0) return -1;
+    if (wh_mailbox_send_phase(m, buf, wh_strlen(buf)) != 0) return -1;
+
+    /* Their transit message. We do not use their hints - both peers are
+     * configured with the same relay, which is how PortalGems deploys.
+     * Honouring their hints is a later refinement. */
+    n = wh_mailbox_recv_phase(m, buf, sizeof(buf));
+    if (n < 0) return -1;
+    if (wh_json_get(buf, (unsigned long)n, "transit", &v) != 0) return -1;
+
+    /* Their offer. */
+    n = wh_mailbox_recv_phase(m, buf, sizeof(buf));
+    if (n < 0) return -1;
+    if (wh_json_get(buf, (unsigned long)n, "offer", &v) != 0) return -1;
+
+    if (wh_json_get(v.p, v.len, "file", &inner) == 0) {
+        unsigned long size = 0;
+        if (wh_json_get(inner.p, inner.len, "filename", &field) != 0) return -1;
+        if (wh_json_str(&field, offer->filename, sizeof(offer->filename)) < 0) return -1;
+        if (wh_json_get(inner.p, inner.len, "filesize", &field) != 0) return -1;
+        if (wh_json_u32(&field, &size) != 0) return -1;
+        offer->filesize = size;
+        return 0;
+    }
+
+    if (wh_json_get(v.p, v.len, "directory", &inner) == 0) {
+        offer->is_directory = 1;
+        if (wh_json_get(inner.p, inner.len, "dirname", &field) == 0) {
+            wh_json_str(&field, offer->dirname, sizeof(offer->dirname));
+        }
+        return 0;
+    }
+
+    return -1;
+}
+
+int wh_xfer_reject(wh_mailbox *m, const char *reason)
+{
+    char buf[512];
+    wh_jw w;
+    wh_jw_init(&w, buf, sizeof(buf));
+    wh_jw_obj_open(&w);
+    wh_jw_str(&w, "error", reason);
+    wh_jw_obj_close(&w);
+    if (wh_jw_done(&w) != 0) return -1;
+    return wh_mailbox_send_phase(m, buf, wh_strlen(buf));
+}
+
+int wh_xfer_accept(wh_mailbox *m, const char *appid, const wh_offer *offer,
+                   const char *relay_host, unsigned int relay_port,
+                   wh_xfer_bufs *bufs,
+                   wh_xfer_sink sink, void *sink_ctx,
+                   wh_xfer_progress progress, void *progress_ctx)
+{
+    static const char ANSWER[] = "{\"answer\":{\"file_ack\":\"ok\"}}";
+    unsigned char transit_key[32];
+    wh_transit t;
+    wh_sha256_ctx hasher;
+    unsigned char digest[32];
+    char hex[65];
+    char ack[128];
+    unsigned long received = 0;
+    wh_jw w;
+    int rc = 0;
+
+    if (offer->is_directory) return -1;
+
+    if (wh_mailbox_send_phase(m, ANSWER, sizeof(ANSWER) - 1) != 0) return -1;
+
+    if (wh_derive_transit_key(m->key, appid, transit_key) != 0) return -1;
+    if (wh_transit_connect_relay(&t, relay_host, relay_port, transit_key) != 0) return -1;
+
+    wh_sha256_init(&hasher);
+    if (progress) progress(progress_ctx, 0, offer->filesize);
+
+    while (received < offer->filesize) {
+        long n = wh_transit_recv_record(&t, bufs->record, sizeof(bufs->record),
+                                        bufs->work, sizeof(bufs->work),
+                                        bufs->wire, sizeof(bufs->wire));
+        if (n < 0) { rc = -1; goto done; }
+        if ((unsigned long)n > offer->filesize - received) {
+            /* The sender promised a size; more than that is a protocol
+             * violation, not something to write to the card. */
+            rc = -1;
+            goto done;
+        }
+        wh_sha256_update(&hasher, bufs->record, (unsigned long)n);
+        if (sink(sink_ctx, bufs->record, (unsigned long)n) != 0) { rc = -1; goto done; }
+        received += (unsigned long)n;
+        if (progress) progress(progress_ctx, received, offer->filesize);
+    }
+
+    /* The sender compares this against its own hash of what it sent. */
+    wh_sha256_final(&hasher, digest);
+    wh_hex(digest, sizeof(digest), hex);
+
+    wh_jw_init(&w, ack, sizeof(ack));
+    wh_jw_obj_open(&w);
+    wh_jw_str(&w, "ack", "ok");
+    wh_jw_str(&w, "sha256", hex);
+    wh_jw_obj_close(&w);
+    if (wh_jw_done(&w) != 0) { rc = -1; goto done; }
+
+    if (wh_transit_send_record(&t, (const unsigned char *)ack, wh_strlen(ack),
+                               bufs->work, sizeof(bufs->work),
+                               bufs->wire, sizeof(bufs->wire)) != 0) {
+        rc = -1;
+    }
+
+done:
+    wh_transit_close(&t);
+    return rc;
+}

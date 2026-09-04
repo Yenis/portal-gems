@@ -10,7 +10,8 @@ CFLAGS ?= -std=c89 -Wall -Wextra -O2
 VENDOR_CFLAGS = -std=gnu89 -O2 -w
 
 SRC = src/sha256.c src/kdf.c src/box.c src/spake2.c \
-      src/sha1.c src/base64.c src/json.c src/ws.c src/mailbox.c
+      src/sha1.c src/base64.c src/json.c src/ws.c src/mailbox.c \
+      src/transit.c src/xfer.c
 PORT = port/posix.c
 # src/ed25519.c compiles vendor/tweetnacl/tweetnacl.c inside itself to reach
 # its static ed25519 internals, so tweetnacl.c is never built separately -
