@@ -27533,6 +27533,7 @@
       send: "Po\u0161alji",
       receive: "Primi",
       remove: "Ukloni",
+      removeConfirm: "Ukloniti ovaj ure\u0111aj? Mo\u017Ee\u0161 ga ponovo upariti kad god \u017Eeli\u0161.",
       empty: "Jo\u0161 nema uparenih ure\u0111aja."
     },
     paired: {
@@ -27700,6 +27701,7 @@
       send: "Senden",
       receive: "Empfangen",
       remove: "Entfernen",
+      removeConfirm: "Dieses Ger\xE4t entfernen? Du kannst es sp\xE4ter wieder koppeln.",
       empty: "Noch keine gekoppelten Ger\xE4te."
     },
     paired: {
@@ -27867,6 +27869,7 @@
       send: "Send",
       receive: "Receive",
       remove: "Remove",
+      removeConfirm: "Unpair this device? You can pair with it again later.",
       empty: "No paired devices yet."
     },
     paired: {
@@ -28034,6 +28037,7 @@
       send: "Enviar",
       receive: "Recibir",
       remove: "Quitar",
+      removeConfirm: "\xBFQuitar este dispositivo? Puedes volver a emparejarlo m\xE1s tarde.",
       empty: "A\xFAn no hay dispositivos emparejados."
     },
     paired: {
@@ -28201,6 +28205,7 @@
       send: "Envoyer",
       receive: "Recevoir",
       remove: "Retirer",
+      removeConfirm: "Retirer cet appareil ? Vous pourrez l'associer \xE0 nouveau plus tard.",
       empty: "Aucun appareil associ\xE9 pour l'instant."
     },
     paired: {
@@ -28368,6 +28373,7 @@
       send: "\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C",
       receive: "\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C",
       remove: "\u0423\u0434\u0430\u043B\u0438\u0442\u044C",
+      removeConfirm: "\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u044D\u0442\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E? \u041F\u043E\u0437\u0436\u0435 \u0435\u0433\u043E \u043C\u043E\u0436\u043D\u043E \u0441\u0432\u044F\u0437\u0430\u0442\u044C \u0441\u043D\u043E\u0432\u0430.",
       empty: "\u0421\u0432\u044F\u0437\u0430\u043D\u043D\u044B\u0445 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432 \u043F\u043E\u043A\u0430 \u043D\u0435\u0442."
     },
     paired: {

@@ -74,6 +74,7 @@
     "send": "Send",
     "receive": "Receive",
     "remove": "Remove",
+    "removeConfirm": "Unpair this device? You can pair with it again later.",
     "empty": "No paired devices yet."
   },
   "paired": {

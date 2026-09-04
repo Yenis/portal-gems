@@ -74,6 +74,7 @@
     "send": "Enviar",
     "receive": "Recibir",
     "remove": "Quitar",
+    "removeConfirm": "¿Quitar este dispositivo? Puedes volver a emparejarlo más tarde.",
     "empty": "Aún no hay dispositivos emparejados."
   },
   "paired": {

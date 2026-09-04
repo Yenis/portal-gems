@@ -74,6 +74,7 @@
     "send": "Envoyer",
     "receive": "Recevoir",
     "remove": "Retirer",
+    "removeConfirm": "Retirer cet appareil ? Vous pourrez l'associer à nouveau plus tard.",
     "empty": "Aucun appareil associé pour l'instant."
   },
   "paired": {

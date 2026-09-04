@@ -74,6 +74,7 @@
     "send": "Pošalji",
     "receive": "Primi",
     "remove": "Ukloni",
+    "removeConfirm": "Ukloniti ovaj uređaj? Možeš ga ponovo upariti kad god želiš.",
     "empty": "Još nema uparenih uređaja."
   },
   "paired": {

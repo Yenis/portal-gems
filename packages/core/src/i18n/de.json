@@ -74,6 +74,7 @@
     "send": "Senden",
     "receive": "Empfangen",
     "remove": "Entfernen",
+    "removeConfirm": "Dieses Gerät entfernen? Du kannst es später wieder koppeln.",
     "empty": "Noch keine gekoppelten Geräte."
   },
   "paired": {

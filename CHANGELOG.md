@@ -5,6 +5,23 @@ All notable changes to PortalGems are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.8] - 2026-09-04
+
+Removing a paired device is now something you can actually find on Android.
+
+### Fixed
+
+- **No way to remove a paired device on Android.** Removing one was possible,
+  but only by long-pressing the device's name - an invisible gesture with
+  nothing on screen to suggest it, so in practice the option did not exist on
+  the phone while desktop had a plain Remove button. Each paired device now
+  shows Send, Receive and Remove buttons on Android too.
+- **The remove confirmation said nothing.** The dialog repeated the word
+  "Remove" as its only text. It now explains what happens: the device is
+  unpaired, and you can pair with it again later.
+
+[1.2.8]: https://github.com/Yenis/portal-gems/releases/tag/v1.2.8
+
 ## [1.2.7] - 2026-09-04
 
 Received files land where you chose, and the app tells you where they really
