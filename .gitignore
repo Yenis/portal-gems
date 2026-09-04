@@ -24,3 +24,10 @@ release-artifacts/
 
 # C client build output (native/wormhole-mini)
 native/wormhole-mini/build/
+
+# Symbian self-signed development certificate (never commit)
+packages/app-symbian/sis/portalgems-dev.key
+packages/app-symbian/sis/portalgems-dev.cer
+packages/app-symbian/sis/*.sis
+
+docs/feat.txt

@@ -10,10 +10,29 @@
 
 #include "ws.h"
 #include "spake2.h"
+#include "box.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* Largest phase plaintext this client handles. Transfer v1 phase messages -
+ * transit hints, offer, answer - run to a few hundred bytes; 2 KB is
+ * generous. */
+#define WH_PHASE_MAX 2048
+
+/* Every buffer the mailbox layer needs, in one block the caller declares
+ * statically. Nothing here goes on the stack: Symbian gives a thread 8 KB by
+ * default, and a single phase message with its hex encoding is most of that.
+ * Roughly 35 KB in total. */
+typedef struct {
+    unsigned char rx[8192];      /* websocket receive */
+    char msg[8192];              /* one inbound message */
+    char out[8192];              /* one outbound message */
+    unsigned char work[2 * (WH_PHASE_MAX + 32)];
+    unsigned char wire[WH_PHASE_MAX + WH_NONCE_LEN + WH_TAG_LEN];
+    char hex[2 * (WH_PHASE_MAX + WH_NONCE_LEN + WH_TAG_LEN) + 1];
+} wh_mailbox_bufs;
 
 typedef struct {
     wh_ws ws;
@@ -28,21 +47,14 @@ typedef struct {
     wh_spake2 pake;
 
     /* Caller-owned buffers. Nothing here allocates. */
-    unsigned char *rx;   unsigned long rx_cap;    /* websocket receive */
-    char *msg;           unsigned long msg_cap;   /* one inbound message */
-    char *out;           unsigned long out_cap;   /* one outbound message */
-    unsigned char *work; unsigned long work_cap;  /* crypto scratch */
+    wh_mailbox_bufs *b;
 
     /* Set when the server sends an error message; useful for diagnostics. */
     int server_error;
 } wh_mailbox;
 
 /* Wire up the buffers before anything else. */
-void wh_mailbox_init(wh_mailbox *m,
-                     unsigned char *rx, unsigned long rx_cap,
-                     char *msg, unsigned long msg_cap,
-                     char *out, unsigned long out_cap,
-                     unsigned char *work, unsigned long work_cap);
+void wh_mailbox_init(wh_mailbox *m, wh_mailbox_bufs *bufs);
 
 /* Connect, wait for the welcome, and bind to the app id. Returns 0. */
 int wh_mailbox_connect(wh_mailbox *m, const char *host, unsigned int port,

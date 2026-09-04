@@ -138,6 +138,24 @@ int main(void)
             check_true("number value", n == 1234);
         }
 
+        /* Sizes come off the network, so a value too large for a 32-bit
+         * build must be rejected on every build rather than wrapping. */
+        {
+            static const char big[] = "{\"filesize\": 4294967295}";
+            static const char over[] = "{\"filesize\": 4294967296}";
+            static const char huge[] = "{\"filesize\": 99999999999999999999}";
+            unsigned long n = 0;
+            check_true("4294967295 is accepted",
+                       wh_json_get(big, strlen(big), "filesize", &v) == 0 &&
+                       wh_json_u32(&v, &n) == 0 && n == 4294967295UL);
+            check_true("4294967296 is rejected",
+                       wh_json_get(over, strlen(over), "filesize", &v) == 0 &&
+                       wh_json_u32(&v, &n) == -1);
+            check_true("an absurd size is rejected",
+                       wh_json_get(huge, strlen(huge), "filesize", &v) == 0 &&
+                       wh_json_u32(&v, &n) == -1);
+        }
+
         /* The decoy "type" inside the nested object must not be found, and a
          * brace inside a nested string must not end the skip early. */
         check_true("find last after nesting",

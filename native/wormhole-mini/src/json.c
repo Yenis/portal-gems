@@ -110,7 +110,10 @@ int wh_json_get(const char *doc, unsigned long doclen, const char *key,
 
         kstart = i;
         kend = skip_string(doc, doclen, i);
-        if (kend >= doclen + 1 || kend == doclen) return -1;
+        /* skip_string returns doclen when the string never closes. A key
+         * that ends exactly at the end of the document is malformed here
+         * too, since a ':' must follow it. */
+        if (kend >= doclen) return -1;
         i = skip_ws(doc, doclen, kend);
         if (i >= doclen || doc[i] != ':') return -1;
         i++;
@@ -242,11 +245,21 @@ int wh_json_streq(const wh_json_val *v, const char *s)
 
 int wh_json_u32(const wh_json_val *v, unsigned long *out)
 {
+    /* Capped at 32 bits regardless of how wide unsigned long happens to be,
+     * so a value that a 32-bit build could not represent is rejected on
+     * every build rather than silently wrapping on the phone. A file size
+     * is the main thing read through here, and 4 GiB is also the FAT32
+     * per-file limit on the memory card. */
+    static const unsigned long LIMIT = 4294967295UL;
     unsigned long i, acc = 0;
+
     if (v->type != WH_JSON_NUMBER || v->len == 0) return -1;
     for (i = 0; i < v->len; i++) {
+        unsigned long digit;
         if (v->p[i] < '0' || v->p[i] > '9') return -1;
-        acc = acc * 10 + (unsigned long)(v->p[i] - '0');
+        digit = (unsigned long)(v->p[i] - '0');
+        if (acc > (LIMIT - digit) / 10) return -1;
+        acc = acc * 10 + digit;
     }
     *out = acc;
     return 0;

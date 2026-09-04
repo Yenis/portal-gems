@@ -1,0 +1,30 @@
+; Package definition for the headless client.
+;
+; UNVERIFIED: not yet run through makesis.
+;
+; Build and sign with scripts/symbian-sign.sh, which generates a self-signed
+; certificate on first use. Self-signing works because every capability in
+; whmini.mmp is user-grantable; the phone must have
+;   Menu > Settings > App. manager > Software installation = All
+;   Menu > Settings > App. manager > Online certif. check  = Off
+
+; name, package UID (matches whmini.mmp), major, minor, build, type
+#{"PortalGems Mini"}, (0xE1000001), 0, 1, 0, TYPE=SA
+
+; Supported languages
+&EN
+
+; Vendor, unique then localised
+:"PortalGems"
+%{"PortalGems"}
+
+; Platform dependency. S60 3rd Edition feature pack UIDs:
+;   0x101F7961  S60 3rd Edition
+;   0x102032BE  S60 3rd Edition FP1
+;   0x102752AE  S60 3rd Edition FP2   <- the E72
+; Left commented out on purpose: a self-signed development package installs
+; without it, and one wrong UID here turns a working build into an
+; unhelpful "not compatible with this phone".
+; [0x102752AE], 0, 0, 0, {"Series60ProductID"}
+
+"\epoc32\release\gcce\urel\whmini.exe" - "!:\sys\bin\whmini.exe"

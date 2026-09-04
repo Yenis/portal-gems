@@ -11,16 +11,9 @@ static unsigned long wh_strlen(const char *s)
     return n;
 }
 
-void wh_mailbox_init(wh_mailbox *m,
-                     unsigned char *rx, unsigned long rx_cap,
-                     char *msg, unsigned long msg_cap,
-                     char *out, unsigned long out_cap,
-                     unsigned char *work, unsigned long work_cap)
+void wh_mailbox_init(wh_mailbox *m, wh_mailbox_bufs *bufs)
 {
-    m->rx = rx; m->rx_cap = rx_cap;
-    m->msg = msg; m->msg_cap = msg_cap;
-    m->out = out; m->out_cap = out_cap;
-    m->work = work; m->work_cap = work_cap;
+    m->b = bufs;
     m->side[0] = '\0';
     m->their_side[0] = '\0';
     m->nameplate[0] = '\0';
@@ -33,7 +26,7 @@ void wh_mailbox_init(wh_mailbox *m,
 
 static int send_out(wh_mailbox *m)
 {
-    return wh_ws_send_text(&m->ws, m->out, wh_strlen(m->out));
+    return wh_ws_send_text(&m->ws, m->b->out, wh_strlen(m->b->out));
 }
 
 /* Read until a message of the wanted type arrives. `ack` and anything else
@@ -42,9 +35,9 @@ static long wait_type(wh_mailbox *m, const char *want)
 {
     for (;;) {
         wh_json_val v;
-        long n = wh_ws_recv_text(&m->ws, m->msg, m->msg_cap);
+        long n = wh_ws_recv_text(&m->ws, m->b->msg, sizeof(m->b->msg));
         if (n < 0) return -1;
-        if (wh_json_get(m->msg, (unsigned long)n, "type", &v) != 0) continue;
+        if (wh_json_get(m->b->msg, (unsigned long)n, "type", &v) != 0) continue;
         if (wh_json_streq(&v, "error")) {
             m->server_error = 1;
             return -1;
@@ -62,10 +55,10 @@ int wh_mailbox_connect(wh_mailbox *m, const char *host, unsigned int port,
     wh_net_random(b, sizeof(b));
     wh_hex(b, sizeof(b), m->side);
 
-    if (wh_ws_connect(&m->ws, host, port, path, m->rx, m->rx_cap) != 0) return -1;
+    if (wh_ws_connect(&m->ws, host, port, path, m->b->rx, sizeof(m->b->rx)) != 0) return -1;
     if (wait_type(m, "welcome") < 0) return -1;
 
-    wh_jw_init(&w, m->out, m->out_cap);
+    wh_jw_init(&w, m->b->out, sizeof(m->b->out));
     wh_jw_obj_open(&w);
     wh_jw_str(&w, "type", "bind");
     wh_jw_str(&w, "appid", appid);
@@ -89,7 +82,7 @@ int wh_mailbox_claim(wh_mailbox *m, const char *code)
     m->nameplate[i] = '\0';
     if (i == 0) return -1;
 
-    wh_jw_init(&w, m->out, m->out_cap);
+    wh_jw_init(&w, m->b->out, sizeof(m->b->out));
     wh_jw_obj_open(&w);
     wh_jw_str(&w, "type", "claim");
     wh_jw_str(&w, "nameplate", m->nameplate);
@@ -97,10 +90,10 @@ int wh_mailbox_claim(wh_mailbox *m, const char *code)
     if (wh_jw_done(&w) != 0 || send_out(m) != 0) return -1;
 
     if (wait_type(m, "claimed") < 0) return -1;
-    if (wh_json_get(m->msg, wh_strlen(m->msg), "mailbox", &v) != 0) return -1;
+    if (wh_json_get(m->b->msg, wh_strlen(m->b->msg), "mailbox", &v) != 0) return -1;
     if (wh_json_str(&v, m->mailbox, sizeof(m->mailbox)) < 0) return -1;
 
-    wh_jw_init(&w, m->out, m->out_cap);
+    wh_jw_init(&w, m->b->out, sizeof(m->b->out));
     wh_jw_obj_open(&w);
     wh_jw_str(&w, "type", "open");
     wh_jw_str(&w, "mailbox", m->mailbox);
@@ -113,7 +106,7 @@ int wh_mailbox_claim(wh_mailbox *m, const char *code)
 static int add_phase(wh_mailbox *m, const char *phase, const char *body_hex)
 {
     wh_jw w;
-    wh_jw_init(&w, m->out, m->out_cap);
+    wh_jw_init(&w, m->b->out, sizeof(m->b->out));
     wh_jw_obj_open(&w);
     wh_jw_str(&w, "type", "add");
     wh_jw_str(&w, "phase", phase);
@@ -133,17 +126,17 @@ static long recv_phase_body(wh_mailbox *m, const char *phase,
         long n = wait_type(m, "message");
         if (n < 0) return -1;
 
-        if (wh_json_get(m->msg, (unsigned long)n, "side", &v) != 0) continue;
+        if (wh_json_get(m->b->msg, (unsigned long)n, "side", &v) != 0) continue;
         if (wh_json_streq(&v, m->side)) continue;  /* our own, echoed back */
         if (!m->have_their_side) {
             if (wh_json_str(&v, m->their_side, sizeof(m->their_side)) < 0) return -1;
             m->have_their_side = 1;
         }
 
-        if (wh_json_get(m->msg, (unsigned long)n, "phase", &v) != 0) continue;
+        if (wh_json_get(m->b->msg, (unsigned long)n, "phase", &v) != 0) continue;
         if (!wh_json_streq(&v, phase)) continue;
 
-        if (wh_json_get(m->msg, (unsigned long)n, "body", &v) != 0) return -1;
+        if (wh_json_get(m->b->msg, (unsigned long)n, "body", &v) != 0) return -1;
         return wh_unhex(v.p, v.len, out, cap);
     }
 }
@@ -199,39 +192,37 @@ static int send_encrypted(wh_mailbox *m, const char *phase,
 {
     unsigned char pkey[32];
     unsigned char nonce[WH_NONCE_LEN];
-    unsigned char wire[2048];
-    char hex[4096 + 1];
     unsigned long wire_len = 0;
 
     if (!m->have_key) return -1;
-    if (WH_BOX_WIRE(len) > sizeof(wire)) return -1;
-    if (WH_BOX_WIRE(len) * 2 + 1 > sizeof(hex)) return -1;
+    if (len > WH_PHASE_MAX) return -1;
 
     wh_derive_phase_key(m->side, m->key, phase, pkey);
     wh_net_random(nonce, sizeof(nonce));
     if (wh_box_seal(pkey, nonce, (const unsigned char *)plaintext, len,
-                    m->work, m->work_cap, wire, sizeof(wire), &wire_len) != 0) {
+                    m->b->work, sizeof(m->b->work),
+                    m->b->wire, sizeof(m->b->wire), &wire_len) != 0) {
         return -1;
     }
-    wh_hex(wire, wire_len, hex);
-    return add_phase(m, phase, hex);
+    wh_hex(m->b->wire, wire_len, m->b->hex);
+    return add_phase(m, phase, m->b->hex);
 }
 
 /* Receive and decrypt a phase message from the peer. */
 static long recv_encrypted(wh_mailbox *m, const char *phase,
                            char *out, unsigned long cap)
 {
-    unsigned char wire[2048];
     unsigned char pkey[32];
     unsigned long plen = 0;
     long n;
     int rc;
 
-    n = recv_phase_body(m, phase, wire, sizeof(wire));
+    n = recv_phase_body(m, phase, m->b->wire, sizeof(m->b->wire));
     if (n < 0) return -1;
 
     wh_derive_phase_key(m->their_side, m->key, phase, pkey);
-    rc = wh_box_open(pkey, wire, (unsigned long)n, m->work, m->work_cap,
+    rc = wh_box_open(pkey, m->b->wire, (unsigned long)n,
+                     m->b->work, sizeof(m->b->work),
                      (unsigned char *)out, cap, &plen);
     if (rc == -2) return -2;   /* authentication failed: wrong code */
     if (rc != 0) return -1;
@@ -302,7 +293,7 @@ void wh_mailbox_close(wh_mailbox *m, const char *mood)
 {
     wh_jw w;
     if (m->mailbox[0]) {
-        wh_jw_init(&w, m->out, m->out_cap);
+        wh_jw_init(&w, m->b->out, sizeof(m->b->out));
         wh_jw_obj_open(&w);
         wh_jw_str(&w, "type", "close");
         wh_jw_str(&w, "mailbox", m->mailbox);

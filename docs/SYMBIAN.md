@@ -302,14 +302,30 @@ to change to make it run on the phone, only `port/` and the app around it.
 
 ### S4 - Symbian toolchain and a signed hello world
 
+- [x] Build scaffolding written: `packages/app-symbian/group/bld.inf`,
+      `group/whmini.mmp`, `sis/whmini.pkg`, `scripts/symbian-sign.sh`, and a
+      README covering the toolchain and the phone settings. **None of it has
+      been through a compiler** - that needs the SDK - so it is a starting
+      point, not a known-good build.
+- [x] Established that the core is **freestanding**: `grep -rn "#include <"`
+      over `native/wormhole-mini/src` and `vendor` finds nothing. No Open C /
+      PIPS runtime is needed on the device, which removes an entire
+      dependency and an extra SIS the user would have had to install.
+- [x] Pre-emptive fixes for things that only bite on the phone: the mailbox
+      layer's per-message buffers moved off the stack (a single phase
+      message needed about 6 KB, against Symbian's 8 KB default thread
+      stack), `EPOCSTACKSIZE` set explicitly, and `wh_json_u32` now rejects
+      values a 32-bit build could not represent instead of wrapping.
 - [ ] GnuPoc set up, S60 3rd FP2 SDK unpacked, `arm-none-symbianelf` GCC
-      building.
+      building. **Needs the SDK archive**, which is an old Nokia download no
+      longer distributed officially.
 - [ ] Self-signed certificate via `makekeys`, SIS built and signed.
 - [ ] Phone set to Software installation = All, online certificate check off.
 - [ ] Milestone: a hello-world app installs and runs on the E72.
 
 Deliberately independent of S0-S3, and the thing most likely to eat days.
-It can be attempted in parallel at any time.
+The remaining items need the phone and the SDK, so they are the natural
+place for work to happen in parallel.
 
 ### S5 - Port the core
 

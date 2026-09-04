@@ -1,0 +1,10 @@
+// Build description for the PortalGems Symbian client.
+//
+// S60 3rd Edition FP2 (Nokia E72, Symbian OS 9.3). Built on Linux with
+// GnuPoc; see packages/app-symbian/README.md.
+
+PRJ_PLATFORMS
+GCCE
+
+PRJ_MMPFILES
+whmini.mmp

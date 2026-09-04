@@ -32,8 +32,8 @@
 static unsigned char g_rx[RXCAP];
 static char g_msg[MSGCAP];
 static char g_out[4096];
-static unsigned char g_work[8192];
 static wh_xfer_bufs g_xfer;
+static wh_mailbox_bufs g_mbufs;
 static FILE *g_file;
 static unsigned long g_last_pct = 999;
 
@@ -86,8 +86,7 @@ static int cmd_verify(const char *host, unsigned int port, const char *path,
     char hex[65];
     int rc;
 
-    wh_mailbox_init(&m, g_rx, sizeof(g_rx), g_msg, sizeof(g_msg),
-                    g_out, sizeof(g_out), g_work, sizeof(g_work));
+    wh_mailbox_init(&m, &g_mbufs);
 
     printf("connecting to ws://%s:%u%s\n", host, port, path);
     if (wh_mailbox_connect(&m, host, port, path, APPID) != 0) {
@@ -157,8 +156,7 @@ static int cmd_receive(const char *host, unsigned int port, const char *path,
     char destpath[512];
     int rc;
 
-    wh_mailbox_init(&m, g_rx, sizeof(g_rx), g_msg, sizeof(g_msg),
-                    g_out, sizeof(g_out), g_work, sizeof(g_work));
+    wh_mailbox_init(&m, &g_mbufs);
 
     printf("connecting to ws://%s:%u%s\n", host, port, path);
     if (wh_mailbox_connect(&m, host, port, path, APPID) != 0) {
