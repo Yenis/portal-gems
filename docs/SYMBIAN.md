@@ -70,8 +70,15 @@ native/wormhole-mini/        portable C client core (new)
   include/wh.h                 the single public header
   src/                         platform-free protocol code
     sha256.c/.h                  SHA-256, HMAC, HKDF
-    kdf.c/.h                     the protocol's key derivations
+    kdf.c/.h                     the protocol's key derivations, hex
     box.c/.h                     secretbox in the nonce||ciphertext format
+    ed25519.c/.h                 group ops, exposed from TweetNaCl
+    spake2.c/.h                  SPAKE2-ed25519, symmetric mode
+    sha1.c/.h, base64.c/.h       for the WebSocket handshake only
+    json.c/.h                    minimal reader/writer, no allocation
+    ws.c/.h                      RFC 6455 client
+    mailbox.c/.h                 the rendezvous state machine
+    net.h                        the platform layer's interface
     spake2.c/.h                  SPAKE2-ed25519, symmetric mode
     json.c/.h                    minimal reader/writer, no allocation
     ws.c/.h                      RFC 6455 client framing
@@ -231,11 +238,33 @@ confirmation, but the offline test now covers the maths.
 
 ### S2 - Mailbox client on the host
 
-- [ ] Minimal JSON reader/writer, minimal WebSocket client.
-- [ ] Full rendezvous state machine: bind, allocate or claim, open, pake,
-      version, key confirmed.
-- [ ] Milestone: `wh-mini` and the `wormhole` CLI agree on the verifier hex
-      for the same code against the local mailbox server.
+- [x] Minimal JSON reader/writer (`src/json.c`): top-level key lookup
+      returning slices of the original text, no allocation and no recursion
+      - nesting is skipped with a depth counter, so a hostile document
+      cannot blow the phone's stack.
+- [x] WebSocket client (`src/ws.c`) with SHA-1 and base64 for the opening
+      handshake (`src/sha1.c`, `src/base64.c`). Masked frames out, ping
+      answered, close and fragmentation handled. SHA-1 is used only to
+      validate `Sec-WebSocket-Accept` and must never be used for anything
+      else here.
+- [x] Platform layer split out (`src/net.h`, `port/posix.c`): connect, read,
+      write, close, randomness. Deliberately blocking-shaped, because on
+      Symbian that becomes RSocket under a nested active scheduler wait and
+      presents the same synchronous face to the protocol code.
+- [x] Full rendezvous state machine (`src/mailbox.c`): bind, claim, open,
+      pake, version, key confirmed. The one asymmetry worth remembering is
+      that the `pake` body is plaintext JSON, while every later phase body is
+      secretbox-encrypted under a phase key.
+- [x] Host harness `cli/wh-mini` with `allocate` and `verify` commands.
+- [x] **Milestone met.** Against a local mailbox server, `wh-mini verify`
+      and `wormhole send --verify` on the same code both printed
+      `898057d65188520a104394a3f48b5dc06f6e9a124508f695f043a5cebe2aff27`.
+      The C client completed a real SPAKE2 handshake with the reference
+      Python implementation and derived an identical key.
+- [x] The wrong-code path was checked too: a mismatched code is not caught
+      by SPAKE2, which happily produces a different key, and surfaces
+      exactly where the protocol says it should - the peer's `version` phase
+      fails to decrypt.
 
 ### S3 - Receive a file on the host
 

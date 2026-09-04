@@ -40,6 +40,11 @@ int wh_derive_transit_key(const unsigned char key[WH_KEY_LEN], const char *appid
 /* Lowercase hex, writes 2*len + 1 bytes including the NUL. */
 void wh_hex(const unsigned char *in, unsigned long len, char *out);
 
+/* Decode hex. Returns the byte count, or -1 on a bad digit, an odd length,
+ * or a buffer that is too small. */
+long wh_unhex(const char *in, unsigned long len, unsigned char *out,
+              unsigned long cap);
+
 #ifdef __cplusplus
 }
 #endif

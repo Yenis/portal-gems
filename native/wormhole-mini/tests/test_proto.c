@@ -1,0 +1,205 @@
+/* Offline tests for the framing and encoding layers: base64, SHA-1, the
+ * WebSocket accept-key computation, and the JSON reader/writer.
+ *
+ * These need no network. The live check against a real mailbox server is
+ * cli/wh-mini. */
+#include <stdio.h>
+#include <string.h>
+
+#include "../src/base64.h"
+#include "../src/sha1.h"
+#include "../src/json.h"
+
+static int failures = 0;
+static int checks = 0;
+
+static void check_str(const char *what, const char *got, const char *expect)
+{
+    checks++;
+    if (strcmp(got, expect) != 0) {
+        printf("FAIL %s\n  got      %s\n  expected %s\n", what, got, expect);
+        failures++;
+    } else {
+        printf("ok   %s\n", what);
+    }
+}
+
+static void check_true(const char *what, int cond)
+{
+    checks++;
+    if (!cond) {
+        printf("FAIL %s\n", what);
+        failures++;
+    } else {
+        printf("ok   %s\n", what);
+    }
+}
+
+static void hexstr(const unsigned char *in, unsigned long n, char *out)
+{
+    static const char d[] = "0123456789abcdef";
+    unsigned long i;
+    for (i = 0; i < n; i++) {
+        out[i * 2] = d[(in[i] >> 4) & 0xf];
+        out[i * 2 + 1] = d[in[i] & 0xf];
+    }
+    out[n * 2] = '\0';
+}
+
+int main(void)
+{
+    char buf[512];
+
+    /* --- base64, RFC 4648 test vectors -------------------------------- */
+    wh_base64_encode((const unsigned char *)"", 0, buf, sizeof(buf));
+    check_str("base64(\"\")", buf, "");
+    wh_base64_encode((const unsigned char *)"f", 1, buf, sizeof(buf));
+    check_str("base64(\"f\")", buf, "Zg==");
+    wh_base64_encode((const unsigned char *)"fo", 2, buf, sizeof(buf));
+    check_str("base64(\"fo\")", buf, "Zm8=");
+    wh_base64_encode((const unsigned char *)"foo", 3, buf, sizeof(buf));
+    check_str("base64(\"foo\")", buf, "Zm9v");
+    wh_base64_encode((const unsigned char *)"foob", 4, buf, sizeof(buf));
+    check_str("base64(\"foob\")", buf, "Zm9vYg==");
+    wh_base64_encode((const unsigned char *)"fooba", 5, buf, sizeof(buf));
+    check_str("base64(\"fooba\")", buf, "Zm9vYmE=");
+    wh_base64_encode((const unsigned char *)"foobar", 6, buf, sizeof(buf));
+    check_str("base64(\"foobar\")", buf, "Zm9vYmFy");
+    check_true("base64 refuses a short buffer",
+               wh_base64_encode((const unsigned char *)"foobar", 6, buf, 4) == -1);
+
+    /* --- SHA-1 -------------------------------------------------------- */
+    {
+        unsigned char d[WH_SHA1_LEN];
+        char hex[64];
+        char longmsg[1000];
+        int i;
+
+        wh_sha1((const unsigned char *)"abc", 3, d);
+        hexstr(d, WH_SHA1_LEN, hex);
+        check_str("sha1(\"abc\")", hex, "a9993e364706816aba3e25717850c26c9cd0d89d");
+
+        wh_sha1((const unsigned char *)"", 0, d);
+        hexstr(d, WH_SHA1_LEN, hex);
+        check_str("sha1(\"\")", hex, "da39a3ee5e6b4b0d3255bfef95601890afd80709");
+
+        wh_sha1((const unsigned char *)
+                "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq", 56, d);
+        hexstr(d, WH_SHA1_LEN, hex);
+        check_str("sha1(two-block message)", hex,
+                  "84983e441c3bd26ebaae4aa1f95129e5e54670f1");
+
+        /* Exercises the extra-block padding path (length % 64 >= 56). */
+        for (i = 0; i < 1000; i++) longmsg[i] = 'a';
+        wh_sha1((const unsigned char *)longmsg, 1000, d);
+        hexstr(d, WH_SHA1_LEN, hex);
+        check_str("sha1(1000 x 'a')", hex,
+                  "291e9a6c66994949b57ba5e650361e98fc36b1ba");
+    }
+
+    /* --- the RFC 6455 handshake example ------------------------------- */
+    {
+        static const char key[] = "dGhlIHNhbXBsZSBub25jZQ==";
+        static const char guid[] = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+        unsigned char src[128];
+        unsigned char d[WH_SHA1_LEN];
+        unsigned long kl = strlen(key), gl = strlen(guid);
+
+        memcpy(src, key, kl);
+        memcpy(src + kl, guid, gl);
+        wh_sha1(src, kl + gl, d);
+        wh_base64_encode(d, WH_SHA1_LEN, buf, sizeof(buf));
+        check_str("RFC 6455 Sec-WebSocket-Accept", buf, "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=");
+    }
+
+    /* --- JSON reader -------------------------------------------------- */
+    {
+        static const char doc[] =
+            "{\"type\": \"message\", \"side\": \"3f0ab1c2d9\", \"phase\": \"pake\","
+            " \"body\": \"7b22\", \"server_tx\": 1234, \"nested\": {\"a\": [1, 2,"
+            " {\"type\": \"decoy\"}], \"b\": \"}\"}, \"last\": \"tail\"}";
+        wh_json_val v;
+        char s[64];
+
+        check_true("find type", wh_json_get(doc, strlen(doc), "type", &v) == 0);
+        check_true("type is a string", v.type == WH_JSON_STRING);
+        check_true("type == message", wh_json_streq(&v, "message"));
+        check_true("type != messag", !wh_json_streq(&v, "messag"));
+        check_true("type != messages", !wh_json_streq(&v, "messages"));
+
+        check_true("find phase", wh_json_get(doc, strlen(doc), "phase", &v) == 0);
+        wh_json_str(&v, s, sizeof(s));
+        check_str("phase value", s, "pake");
+
+        check_true("find number", wh_json_get(doc, strlen(doc), "server_tx", &v) == 0);
+        {
+            unsigned long n = 0;
+            check_true("number parses", wh_json_u32(&v, &n) == 0);
+            check_true("number value", n == 1234);
+        }
+
+        /* The decoy "type" inside the nested object must not be found, and a
+         * brace inside a nested string must not end the skip early. */
+        check_true("find last after nesting",
+                   wh_json_get(doc, strlen(doc), "last", &v) == 0);
+        check_true("last == tail", wh_json_streq(&v, "tail"));
+        check_true("nested key is not visible at top level",
+                   wh_json_get(doc, strlen(doc), "a", &v) == -1);
+        check_true("absent key reports absent",
+                   wh_json_get(doc, strlen(doc), "nope", &v) == -1);
+    }
+
+    /* --- JSON string decoding ----------------------------------------- */
+    {
+        static const char doc[] = "{\"m\": \"a\\\"b\\\\c\\nd\\u0041\\u00e9\"}";
+        wh_json_val v;
+        char s[64];
+        check_true("find escaped string", wh_json_get(doc, strlen(doc), "m", &v) == 0);
+        check_true("decodes", wh_json_str(&v, s, sizeof(s)) > 0);
+        check_str("escapes decoded", s, "a\"b\\c\ndA\xc3\xa9");
+        check_true("short buffer is refused", wh_json_str(&v, s, 3) == -1);
+    }
+
+    /* --- JSON writer -------------------------------------------------- */
+    {
+        wh_jw w;
+        wh_jw_init(&w, buf, sizeof(buf));
+        wh_jw_obj_open(&w);
+        wh_jw_str(&w, "type", "bind");
+        wh_jw_str(&w, "appid", "lothar.com/wormhole/text-or-file-xfer");
+        wh_jw_str(&w, "side", "3f0ab1c2d9");
+        wh_jw_obj_close(&w);
+        check_true("writer succeeds", wh_jw_done(&w) == 0);
+        check_str("bind message", buf,
+                  "{\"type\":\"bind\",\"appid\":"
+                  "\"lothar.com/wormhole/text-or-file-xfer\",\"side\":\"3f0ab1c2d9\"}");
+
+        wh_jw_init(&w, buf, sizeof(buf));
+        wh_jw_obj_open(&w);
+        wh_jw_str(&w, "type", "add");
+        wh_jw_str(&w, "phase", "pake");
+        wh_jw_u32(&w, "n", 0);
+        wh_jw_obj_close(&w);
+        check_true("writer with zero succeeds", wh_jw_done(&w) == 0);
+        check_str("zero is written", buf,
+                  "{\"type\":\"add\",\"phase\":\"pake\",\"n\":0}");
+
+        /* Overflow must be reported, not silently truncated. */
+        wh_jw_init(&w, buf, 8);
+        wh_jw_obj_open(&w);
+        wh_jw_str(&w, "type", "something far too long for the buffer");
+        wh_jw_obj_close(&w);
+        check_true("overflow is reported", wh_jw_done(&w) == -1);
+
+        /* A quote in a value must be escaped. */
+        wh_jw_init(&w, buf, sizeof(buf));
+        wh_jw_obj_open(&w);
+        wh_jw_str(&w, "k", "a\"b");
+        wh_jw_obj_close(&w);
+        check_true("escaping writer succeeds", wh_jw_done(&w) == 0);
+        check_str("quote escaped", buf, "{\"k\":\"a\\\"b\"}");
+    }
+
+    printf("\n%d checks, %d failures\n", checks, failures);
+    return failures == 0 ? 0 : 1;
+}

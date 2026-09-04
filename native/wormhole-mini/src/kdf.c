@@ -68,3 +68,26 @@ void wh_hex(const unsigned char *in, unsigned long len, char *out)
     }
     out[len * 2] = '\0';
 }
+
+long wh_unhex(const char *in, unsigned long len, unsigned char *out,
+              unsigned long cap)
+{
+    unsigned long i;
+
+    if ((len & 1) != 0) return -1;
+    if (len / 2 > cap) return -1;
+
+    for (i = 0; i < len; i += 2) {
+        int hi, lo;
+        char a = in[i], b = in[i + 1];
+        hi = (a >= '0' && a <= '9') ? a - '0'
+           : (a >= 'a' && a <= 'f') ? a - 'a' + 10
+           : (a >= 'A' && a <= 'F') ? a - 'A' + 10 : -1;
+        lo = (b >= '0' && b <= '9') ? b - '0'
+           : (b >= 'a' && b <= 'f') ? b - 'a' + 10
+           : (b >= 'A' && b <= 'F') ? b - 'A' + 10 : -1;
+        if (hi < 0 || lo < 0) return -1;
+        out[i / 2] = (unsigned char)((hi << 4) | lo);
+    }
+    return (long)(len / 2);
+}
