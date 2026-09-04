@@ -9,9 +9,13 @@ CC ?= gcc
 CFLAGS ?= -std=c89 -Wall -Wextra -O2
 VENDOR_CFLAGS = -std=gnu89 -O2 -w
 
-SRC = src/sha256.c src/kdf.c src/box.c
+SRC = src/sha256.c src/kdf.c src/box.c src/spake2.c
 PORT = port/posix.c
-VENDOR = vendor/tweetnacl/tweetnacl.c
+# src/ed25519.c compiles vendor/tweetnacl/tweetnacl.c inside itself to reach
+# its static ed25519 internals, so tweetnacl.c is never built separately -
+# doing both would be a duplicate-symbol link error. Built with the relaxed
+# vendor flags because it is mostly vendored code.
+ED25519 = src/ed25519.c
 
 BUILD = build
 
@@ -22,11 +26,11 @@ all: test
 $(BUILD):
 	mkdir -p $(BUILD)
 
-$(BUILD)/tweetnacl.o: $(VENDOR) | $(BUILD)
-	$(CC) $(VENDOR_CFLAGS) -c $< -o $@
+$(BUILD)/ed25519.o: $(ED25519) $(VENDOR) | $(BUILD)
+	$(CC) $(VENDOR_CFLAGS) -c $(ED25519) -o $@
 
-$(BUILD)/test_vectors: tests/test_vectors.c $(SRC) $(PORT) $(BUILD)/tweetnacl.o | $(BUILD)
-	$(CC) $(CFLAGS) -o $@ tests/test_vectors.c $(SRC) $(PORT) $(BUILD)/tweetnacl.o
+$(BUILD)/test_vectors: tests/test_vectors.c $(SRC) $(PORT) $(BUILD)/ed25519.o | $(BUILD)
+	$(CC) $(CFLAGS) -o $@ tests/test_vectors.c $(SRC) $(PORT) $(BUILD)/ed25519.o
 
 test: $(BUILD)/test_vectors
 	./$(BUILD)/test_vectors

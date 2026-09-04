@@ -12,8 +12,63 @@ use crypto_secretbox::{
     aead::{Aead, KeyInit, generic_array::GenericArray},
     XSalsa20Poly1305,
 };
+use curve25519_dalek::{
+    constants::ED25519_BASEPOINT_POINT, edwards::CompressedEdwardsY, scalar::Scalar,
+};
 use hkdf::Hkdf;
+use rand_core::{CryptoRng, RngCore};
 use sha2::{Digest, Sha256};
+use spake2::{Ed25519Group, Identity, Password, Spake2};
+
+/// An RNG that hands out a fixed byte string, so `start_symmetric_with_rng`
+/// picks a known scalar and the whole exchange becomes reproducible. Test
+/// scaffolding only - never a pattern for real code.
+struct FixedRng {
+    data: [u8; 64],
+    pos: usize,
+}
+
+impl RngCore for FixedRng {
+    fn next_u32(&mut self) -> u32 {
+        let mut b = [0u8; 4];
+        self.fill_bytes(&mut b);
+        u32::from_le_bytes(b)
+    }
+    fn next_u64(&mut self) -> u64 {
+        let mut b = [0u8; 8];
+        self.fill_bytes(&mut b);
+        u64::from_le_bytes(b)
+    }
+    fn fill_bytes(&mut self, dest: &mut [u8]) {
+        for b in dest.iter_mut() {
+            *b = self.data[self.pos % 64];
+            self.pos += 1;
+        }
+    }
+    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand_core::Error> {
+        self.fill_bytes(dest);
+        Ok(())
+    }
+}
+impl CryptoRng for FixedRng {}
+
+/// `spake2::ed25519::ed25519_hash_to_scalar`, replicated so the vector file
+/// can carry the intermediate value. Cross-checked below against the crate's
+/// own msg1, so a mistake here cannot slip through.
+fn spake2_pw_scalar(password: &[u8]) -> Scalar {
+    use hkdf012::Hkdf as Hkdf012;
+    use sha2_010::Sha256 as Sha256_010;
+
+    let mut okm = [0u8; 32 + 16];
+    Hkdf012::<Sha256_010>::new(Some(b""), password)
+        .expand(b"SPAKE2 pw", &mut okm)
+        .unwrap();
+    let mut reducible = [0u8; 64];
+    for (i, x) in okm.iter().enumerate() {
+        reducible[48 - 1 - i] = *x;
+    }
+    Scalar::from_bytes_mod_order_wide(&reducible)
+}
 
 /// `key.rs::sha256_digest`
 fn sha256(input: &[u8]) -> [u8; 32] {
@@ -160,6 +215,85 @@ fn main() {
     emit_bytes("WH_V_SB_NONCE", &nonce);
     emit_bytes("WH_V_SB_PLAINTEXT", plaintext);
     emit_bytes("WH_V_SB_WIRE", &wire);
+    println!();
+
+    // --- SPAKE2 (symmetric mode, ed25519) --------------------------------
+    // Deterministic because both sides get a FixedRng, so the C
+    // implementation has a real known-answer test rather than only the live
+    // interop check.
+    println!("/* SPAKE2-ed25519, symmetric mode. Both sides use a fixed RNG, so */");
+    println!("/* msg1, msg2 and the resulting key are reproducible. */");
+
+    // The S constant the symmetric mode blinds with (spake2/src/ed25519.rs).
+    const S_COMPRESSED: [u8; 32] = [
+        0x6f, 0x00, 0xda, 0xe8, 0x7c, 0x1b, 0xe1, 0xa7, 0x3b, 0x59, 0x22, 0xef, 0x43, 0x1c,
+        0xd8, 0xf5, 0x78, 0x79, 0x56, 0x9c, 0x22, 0x2d, 0x22, 0xb1, 0xcd, 0x71, 0xe8, 0x54,
+        0x6a, 0xb8, 0xe6, 0xf1,
+    ];
+    emit_bytes("WH_V_SPAKE2_S", &S_COMPRESSED);
+
+    let pw = "7-crossover-clockwork";
+    emit_str("WH_V_SPAKE2_PASSWORD", pw);
+
+    // Varied, asymmetric RNG output, so a byte-order mistake in the C cannot
+    // pass by accident.
+    let mut x_rng = [0u8; 64];
+    let mut y_rng = [0u8; 64];
+    for i in 0..64 {
+        x_rng[i] = i as u8;
+        y_rng[i] = 255 - i as u8;
+    }
+    emit_bytes("WH_V_SPAKE2_X_RNG", &x_rng);
+    emit_bytes("WH_V_SPAKE2_Y_RNG", &y_rng);
+
+    let pw_scalar = spake2_pw_scalar(pw.as_bytes());
+    let x_scalar = Scalar::from_bytes_mod_order_wide(&x_rng);
+    emit_bytes("WH_V_SPAKE2_PW_SCALAR", pw_scalar.as_bytes());
+    emit_bytes("WH_V_SPAKE2_X_SCALAR", x_scalar.as_bytes());
+
+    let (state_a, msg1) = Spake2::<Ed25519Group>::start_symmetric_with_rng(
+        &Password::new(pw.as_bytes()),
+        &Identity::new(APPID.as_bytes()),
+        FixedRng { data: x_rng, pos: 0 },
+    );
+    let (state_b, msg2) = Spake2::<Ed25519Group>::start_symmetric_with_rng(
+        &Password::new(pw.as_bytes()),
+        &Identity::new(APPID.as_bytes()),
+        FixedRng { data: y_rng, pos: 0 },
+    );
+
+    // Confirm the replicated pw_scalar above: msg1 = base*x + S*pw, with a
+    // leading 0x53 ('S') side byte.
+    let s_point = CompressedEdwardsY(S_COMPRESSED).decompress().unwrap();
+    let m1 = ED25519_BASEPOINT_POINT * x_scalar + s_point * pw_scalar;
+    assert_eq!(msg1[0], 0x53, "symmetric mode must tag messages with 'S'");
+    assert_eq!(
+        &msg1[1..],
+        m1.compress().as_bytes(),
+        "replicated pw_scalar disagrees with the spake2 crate"
+    );
+
+    let key_a = state_a.finish(&msg2).unwrap();
+    let key_b = state_b.finish(&msg1).unwrap();
+    assert_eq!(key_a, key_b, "the two sides must agree");
+
+    // A 32-byte string that is not a valid curve point, so the C side has a
+    // deterministic case for its rejection path. Roughly half of all y
+    // values are non-square and therefore undecompressable.
+    let mut invalid = [0u8; 32];
+    for i in 0u16..=255 {
+        let candidate = [i as u8; 32];
+        if CompressedEdwardsY(candidate).decompress().is_none() {
+            invalid = candidate;
+            break;
+        }
+    }
+    assert_ne!(invalid, [0u8; 32], "failed to find an invalid point encoding");
+    emit_bytes("WH_V_ED_INVALID_POINT", &invalid);
+
+    emit_bytes("WH_V_SPAKE2_MSG1", &msg1);
+    emit_bytes("WH_V_SPAKE2_MSG2", &msg2);
+    emit_bytes("WH_V_SPAKE2_KEY", &key_a);
     println!();
 
     println!("#endif /* WH_TEST_VECTORS_H */");

@@ -203,16 +203,31 @@ phase. Debugging SPAKE2 on a phone with no debugger would be miserable.
       `derive_phase_key`, verifier, transit key and its subkeys.
 - [x] Host build and `make test`: 24 checks, all green, including
       byte-identical secretbox output against the engine's crate.
-- [ ] Expose TweetNaCl's ed25519 group operations for SPAKE2.
-- [ ] SPAKE2-ed25519 symmetric mode.
+- [x] TweetNaCl's ed25519 group operations exposed (`src/ed25519.c`):
+      decompress, compress, add, scalar multiplication, scalar reduction and
+      negation mod L. `tweetnacl.c` is compiled inside that translation unit
+      rather than patched, so the vendored file stays byte-identical to
+      upstream. Note that TweetNaCl's `unpackneg` returns the **negated**
+      point - it negates x when the parity matches the sign bit, the
+      opposite of plain decompression - so the wrapper negates x back and
+      recomputes the T coordinate.
+- [x] SPAKE2-ed25519 symmetric mode (`src/spake2.c`): password mapped into
+      the scalar field, blinding by the constant S, the sorted-transcript
+      key, and the 33-byte `0x53 || element` wire message.
+- [x] `make test`: 40 checks, all green.
 
-SPAKE2 gets no known-answer vector: both sides pick a random scalar, and the
-`spake2` crate does not expose scalar injection, so there is nothing
-deterministic to compare against. Its correctness is proven instead by the
-live interop milestone in S2 - if the C side computes the same verifier as
-the reference client, the PAKE is right. The bug-prone ed25519 group
-arithmetic underneath it can still get deterministic tests if S1 turns up
-trouble.
+SPAKE2 does get a known-answer vector after all. Both sides normally pick a
+random scalar, but the crate exposes `start_symmetric_with_rng`, so feeding
+both sides a fixed RNG makes the whole exchange reproducible: the generator
+emits the entropy, both messages and the resulting key, and the C code has
+to match all three. `Scalar::random` is just a 64-byte fill reduced mod L,
+which `wh_sc_reduce_wide` reproduces exactly.
+
+The generator cross-checks itself here too. It recomputes the password
+scalar independently and asserts that `basepoint*x + S*pw` equals the msg1
+the crate produced, so an error in the replication cannot quietly become a
+wrong expected value. Live interop at the S2 milestone remains the real
+confirmation, but the offline test now covers the maths.
 
 ### S2 - Mailbox client on the host
 

@@ -66,9 +66,15 @@ the production server in `docs/VPS-SETUP.md`.
 
 It supplies XSalsa20-Poly1305 for both phase messages and transit records.
 It also carries the ed25519 group arithmetic SPAKE2 needs, but as `static`
-internals; the plan is to reach them by compiling `tweetnacl.c` through a
-single extension translation unit rather than patching the vendored file, so
-it stays byte-identical to upstream and auditable.
+internals. `src/ed25519.c` reaches them by compiling `tweetnacl.c` inside its
+own translation unit rather than patching the vendored file, so that file
+stays byte-identical to upstream and separately auditable. Nothing else
+links `tweetnacl.c` directly - doing both would be a duplicate-symbol error.
+
+One trap worth knowing: TweetNaCl's `unpackneg` returns the **negated**
+point. It negates x when the parity matches the sign bit, which is the
+opposite of plain decompression, so `wh_ed_decompress` negates x back and
+recomputes the T coordinate that `unpackneg` built from the negated x.
 
 TweetNaCl does not implement SHA-256, only SHA-512. Since every wormhole key
 is derived with HKDF-SHA256, `src/sha256.c` supplies it.

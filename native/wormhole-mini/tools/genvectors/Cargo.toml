@@ -12,3 +12,12 @@ hkdf = "0.13.0"
 sha2 = "0.11.0"
 crypto_secretbox = "0.1.1"
 hex = "0.4.3"
+
+# For the SPAKE2 vectors. These are the versions spake2 0.4 itself uses, and
+# they are a major version behind the two above, so they are renamed rather
+# than unified - cargo is happy to link both.
+spake2 = "0.4.0"
+curve25519-dalek = { version = "4", features = ["rand_core"] }
+rand_core = "0.6"
+hkdf012 = { package = "hkdf", version = "0.12" }
+sha2_010 = { package = "sha2", version = "0.10" }
