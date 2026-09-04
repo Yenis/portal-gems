@@ -1,0 +1,14 @@
+[package]
+name = "genvectors"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Generates known-answer test vectors for native/wormhole-mini from the same crates the PortalGems engine uses"
+
+# Versions pinned to what native/magic-wormhole depends on, so the vectors are
+# authoritative for the engine the phone has to interoperate with.
+[dependencies]
+hkdf = "0.13.0"
+sha2 = "0.11.0"
+crypto_secretbox = "0.1.1"
+hex = "0.4.3"
