@@ -89,7 +89,7 @@ declare global {
         id: number,
         dir: string | null,
         overwrite: boolean
-      ): Promise<string>;
+      ): Promise<{ name: string; dir: string; fallback: boolean }>;
       pickDirectory(): Promise<string | null>;
       downloadDirValid(dir: string | null): Promise<boolean>;
       statTarget(
@@ -539,6 +539,10 @@ function Receive({
   const [direct, setDirect] = useState<boolean | null>(null);
   const [pct, setPct] = useState(0);
   const [savedName, setSavedName] = useState('');
+  // Where the file really landed, reported by main - the chosen folder can be
+  // rejected (blank/temp path) or unavailable, in which case it is Downloads.
+  const [savedDir, setSavedDir] = useState('');
+  const [usedFallback, setUsedFallback] = useState(false);
   const [existingSize, setExistingSize] = useState(0);
   const [error, setError] = useState('');
   const idRef = useRef(0);
@@ -601,8 +605,10 @@ function Receive({
   const startTransfer = (overwrite: boolean) => {
     setPhase('transferring');
     window.portalgems.acceptDownload(idRef.current, downloadDirRef.current, overwrite).then(
-      (name) => {
+      ({ name, dir, fallback }) => {
         setSavedName(name);
+        setSavedDir(dir);
+        setUsedFallback(fallback);
         setPhase('done');
       },
       (e) => {
@@ -724,13 +730,11 @@ function Receive({
               {offer?.folder ? t('receive.successFolder') : t('receive.success')}
             </Subtitle>
             <p style={{ color: c.success, margin: 0 }}>
-              {downloadDirRef.current
-                ? t('receive.savedAsIn', {
-                    name: savedName,
-                    folder: downloadDirRef.current,
-                  })
+              {downloadDirRef.current && !usedFallback
+                ? t('receive.savedAsIn', { name: savedName, folder: savedDir })
                 : t('receive.savedAs', { name: savedName })}
             </p>
+            {usedFallback ? <Muted c={c}>{t('receive.folderFallback')}</Muted> : null}
           </>
         ) : null}
         {phase === 'declined' ? <Muted c={c}>{t('receive.declined')}</Muted> : null}

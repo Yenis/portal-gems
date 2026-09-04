@@ -5,6 +5,30 @@ All notable changes to PortalGems are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.7] - 2026-09-04
+
+Received files land where you chose, and the app tells you where they really
+went. A desktop fix for files turning up in a folder you never picked.
+
+### Fixed
+
+- **Received files could land in a folder you never chose.** On desktop, the
+  installed app shared one settings profile with builds run from source, so
+  anything run on the same machine could quietly repoint your download folder
+  and the installed app would obey it - saving your files somewhere you would
+  never think to look. The installed app now keeps its profile to itself. Your
+  existing settings and paired devices carry over untouched.
+- **The "file saved" screen could name the wrong folder.** When your chosen
+  download folder could not be used, PortalGems saved the file to Downloads
+  but still named the folder you had picked, so the file looked like it had
+  gone missing. It now names the folder the file is really in, and says when
+  it fell back to Downloads.
+- **A completed transfer no longer fails** when the chosen download folder has
+  become unwritable - the file is saved to Downloads instead, rather than the
+  transfer erroring out after the data has already arrived.
+
+[1.2.7]: https://github.com/Yenis/portal-gems/releases/tag/v1.2.7
+
 ## [1.2.6] - 2026-07-20
 
 Send whole folders, not just single files. Pick a folder and it arrives as a

@@ -25,6 +25,9 @@ import_electron.contextBridge.exposeInMainWorld("portalgems", {
   sendFolder: (id, path, code, server) => import_electron.ipcRenderer.invoke("pg:sendFolder", id, path, code, server),
   requestReceive: (id, code, server) => import_electron.ipcRenderer.invoke("pg:requestReceive", id, code, server),
   accept: (id, destDir) => import_electron.ipcRenderer.invoke("pg:accept", id, destDir),
+  // Resolves to where the file actually landed: `dir` is the real destination
+  // (not necessarily the requested one) and `fallback` is true when the
+  // chosen folder was unusable and Downloads was used instead.
   acceptDownload: (id, dir, overwrite) => import_electron.ipcRenderer.invoke("pg:acceptDownload", id, dir, overwrite),
   pickDirectory: () => import_electron.ipcRenderer.invoke("pg:pickDirectory"),
   downloadDirValid: (dir) => import_electron.ipcRenderer.invoke("pg:downloadDirValid", dir),

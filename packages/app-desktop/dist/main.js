@@ -5061,6 +5061,12 @@ var engine = native;
 
 // src/main.ts
 var win = null;
+if (!import_electron.app.isPackaged) {
+  const smoke = Object.keys(process.env).some((k) => k.startsWith("PG_SMOKE_"));
+  const dir2 = smoke ? process.env.PG_SMOKE_PROFILE ?? path2.join(os.tmpdir(), "portalgems-smoke") : path2.join(import_electron.app.getPath("appData"), "portalgems-desktop-dev");
+  fs.mkdirSync(dir2, { recursive: true });
+  import_electron.app.setPath("userData", dir2);
+}
 var pairsPath = () => path2.join(import_electron.app.getPath("userData"), "paired-devices.bin");
 function readPairs() {
   try {
@@ -5199,15 +5205,22 @@ import_electron.ipcMain.handle(
     try {
       const saved = await engine.acceptReceive(id, staging, forward(id));
       const isFolder = (await fs.promises.stat(saved)).isDirectory();
-      const destDir = resolveDownloadDir(dir2);
-      await fs.promises.mkdir(destDir, { recursive: true });
+      let destDir = resolveDownloadDir(dir2);
+      let fallback = !!dir2 && dir2.trim() !== "" && destDir !== dir2;
+      try {
+        await fs.promises.mkdir(destDir, { recursive: true });
+      } catch {
+        destDir = import_electron.app.getPath("downloads");
+        fallback = true;
+        await fs.promises.mkdir(destDir, { recursive: true });
+      }
       const name = path2.basename(saved);
       const dest = overwrite ? path2.join(destDir, name) : dedupPath(destDir, name, isFolder);
       if (overwrite) {
         await fs.promises.rm(dest, { recursive: true, force: true });
       }
       await moveEntry(saved, dest);
-      return path2.basename(dest);
+      return { name: path2.basename(dest), dir: destDir, fallback };
     } finally {
       await fs.promises.rm(staging, { recursive: true, force: true }).catch(() => void 0);
     }
@@ -5459,7 +5472,11 @@ async function runSmoke(code, cancelInstead) {
       console.log("SMOKE:CONFLICT-VISIBLE");
       await clickButton(conflict === "overwrite" ? "Overwrite" : "Keep both");
     }
-    await waitFor(dlDir ? "Saved as" : "Saved to Downloads", 9e4);
+    await waitFor("Saved", 9e4);
+    const saved = await exec(
+      "document.body.innerText.split('\\n').find((l) => l.startsWith('Saved')) ?? ''"
+    );
+    console.log(`SMOKE:SAVED=${saved}`);
     console.log("SMOKE:RECEIVE-OK");
   }
   import_electron.app.exit(0);

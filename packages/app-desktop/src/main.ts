@@ -11,6 +11,26 @@ import { engine, type NativeTransferEvent, type ServerConfig } from './engine';
 
 let win: BrowserWindow | null = null;
 
+// ---- Profile isolation ----
+
+// The packaged app keeps the default userData dir; unpackaged runs must not
+// share it. They used to: `app.getName()` is `portalgems-desktop` in both, so
+// a smoke run that persisted a scratchpad `pg-download-dir` into
+// ~/.config/portalgems-desktop became the *installed* app's download folder,
+// and received files really did land in a temp directory. Dev and smoke runs
+// now get their own profiles, so no automated run can reach the real one.
+// Packaged users are untouched - no settings or pairings migrate.
+if (!app.isPackaged) {
+  const smoke = Object.keys(process.env).some((k) => k.startsWith('PG_SMOKE_'));
+  // Stable across runs (not per-run): the harness pairs in one run and uses
+  // the pairing in the next, and verifies settings that persist.
+  const dir = smoke
+    ? process.env.PG_SMOKE_PROFILE ?? path.join(os.tmpdir(), 'portalgems-smoke')
+    : path.join(app.getPath('appData'), 'portalgems-desktop-dev');
+  fs.mkdirSync(dir, { recursive: true });
+  app.setPath('userData', dir);
+}
+
 // ---- Paired-device storage: encrypted with the OS keychain when available ----
 
 const pairsPath = () => path.join(app.getPath('userData'), 'paired-devices.bin');
@@ -204,9 +224,21 @@ ipcMain.handle(
     try {
       const saved = await engine.acceptReceive(id, staging, forward(id));
       const isFolder = (await fs.promises.stat(saved)).isDirectory();
-      const destDir = resolveDownloadDir(dir);
-      // Recreate the folder if the user deleted it since choosing it.
-      await fs.promises.mkdir(destDir, { recursive: true });
+      // The user's chosen folder, unless it is unusable (blank or a temp
+      // path) or cannot be (re)created - deleted since it was picked, or on
+      // a drive that is no longer mounted. Either way the file lands in
+      // Downloads and `fallback` says so, because the success screen must
+      // never name a folder the file is not actually in.
+      let destDir = resolveDownloadDir(dir);
+      let fallback = !!dir && dir.trim() !== '' && destDir !== dir;
+      try {
+        // Recreate the folder if the user deleted it since choosing it.
+        await fs.promises.mkdir(destDir, { recursive: true });
+      } catch {
+        destDir = app.getPath('downloads');
+        fallback = true;
+        await fs.promises.mkdir(destDir, { recursive: true });
+      }
       const name = path.basename(saved);
       const dest = overwrite
         ? path.join(destDir, name)
@@ -218,7 +250,7 @@ ipcMain.handle(
         await fs.promises.rm(dest, { recursive: true, force: true });
       }
       await moveEntry(saved, dest);
-      return path.basename(dest);
+      return { name: path.basename(dest), dir: destDir, fallback };
     } finally {
       await fs.promises
         .rm(staging, { recursive: true, force: true })
@@ -514,7 +546,15 @@ async function runSmoke(code: string, cancelInstead: boolean) {
       console.log('SMOKE:CONFLICT-VISIBLE');
       await clickButton(conflict === 'overwrite' ? 'Overwrite' : 'Keep both');
     }
-    await waitFor(dlDir ? 'Saved as' : 'Saved to Downloads', 90000);
+    await waitFor('Saved', 90000);
+    // Echo the destination line the user actually sees. A chosen folder the
+    // main process rejected (blank/temp) or could not use reports the
+    // Downloads fallback here, so callers can assert on the real outcome
+    // rather than on what was requested.
+    const saved = await exec<string>(
+      "document.body.innerText.split('\\n').find((l) => l.startsWith('Saved')) ?? ''"
+    );
+    console.log(`SMOKE:SAVED=${saved}`);
     console.log('SMOKE:RECEIVE-OK');
   }
   app.exit(0);

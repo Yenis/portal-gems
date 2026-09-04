@@ -29218,6 +29218,8 @@
     const [direct, setDirect] = (0, import_react14.useState)(null);
     const [pct, setPct] = (0, import_react14.useState)(0);
     const [savedName, setSavedName] = (0, import_react14.useState)("");
+    const [savedDir, setSavedDir] = (0, import_react14.useState)("");
+    const [usedFallback, setUsedFallback] = (0, import_react14.useState)(false);
     const [existingSize, setExistingSize] = (0, import_react14.useState)(0);
     const [error, setError] = (0, import_react14.useState)("");
     const idRef = (0, import_react14.useRef)(0);
@@ -29272,8 +29274,10 @@
     const startTransfer = (overwrite) => {
       setPhase("transferring");
       window.portalgems.acceptDownload(idRef.current, downloadDirRef.current, overwrite).then(
-        (name) => {
+        ({ name, dir: dir2, fallback }) => {
           setSavedName(name);
+          setSavedDir(dir2);
+          setUsedFallback(fallback);
           setPhase("done");
         },
         (e2) => {
@@ -29327,10 +29331,7 @@
         danger: true,
         onClick: () => startTransfer(true)
       }
-    ), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.decline"), onClick: decline })) : null, phase === "transferring" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, offer?.folder ? t2("receive.receivingFolder") : t2("receive.receiving")), direct !== null ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, direct ? t2("transfer.direct") : t2("transfer.relay")) : null, /* @__PURE__ */ import_react14.default.createElement(ProgressBar, { c, pct }), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("transfer.progress", { pct }))) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, offer?.folder ? t2("receive.successFolder") : t2("receive.success")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.success, margin: 0 } }, downloadDirRef.current ? t2("receive.savedAsIn", {
-      name: savedName,
-      folder: downloadDirRef.current
-    }) : t2("receive.savedAs", { name: savedName }))) : null, phase === "declined" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.declined")) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "cancelled" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("errors.cancelled")) : null), busy ? /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancel }) : phase === "confirm" || phase === "conflict" ? null : /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.done"), onClick: onHome }));
+    ), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.decline"), onClick: decline })) : null, phase === "transferring" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, offer?.folder ? t2("receive.receivingFolder") : t2("receive.receiving")), direct !== null ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, direct ? t2("transfer.direct") : t2("transfer.relay")) : null, /* @__PURE__ */ import_react14.default.createElement(ProgressBar, { c, pct }), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("transfer.progress", { pct }))) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, offer?.folder ? t2("receive.successFolder") : t2("receive.success")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.success, margin: 0 } }, downloadDirRef.current && !usedFallback ? t2("receive.savedAsIn", { name: savedName, folder: savedDir }) : t2("receive.savedAs", { name: savedName })), usedFallback ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.folderFallback")) : null) : null, phase === "declined" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.declined")) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "cancelled" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("errors.cancelled")) : null), busy ? /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancel }) : phase === "confirm" || phase === "conflict" ? null : /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.done"), onClick: onHome }));
   }
   function Pair({ c, onHome }) {
     const { t: t2 } = useTranslation();

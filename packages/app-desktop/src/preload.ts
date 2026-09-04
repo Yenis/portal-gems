@@ -53,11 +53,15 @@ contextBridge.exposeInMainWorld('portalgems', {
   }> => ipcRenderer.invoke('pg:requestReceive', id, code, server),
   accept: (id: number, destDir: string): Promise<string> =>
     ipcRenderer.invoke('pg:accept', id, destDir),
+  // Resolves to where the file actually landed: `dir` is the real destination
+  // (not necessarily the requested one) and `fallback` is true when the
+  // chosen folder was unusable and Downloads was used instead.
   acceptDownload: (
     id: number,
     dir: string | null,
     overwrite: boolean
-  ): Promise<string> => ipcRenderer.invoke('pg:acceptDownload', id, dir, overwrite),
+  ): Promise<{ name: string; dir: string; fallback: boolean }> =>
+    ipcRenderer.invoke('pg:acceptDownload', id, dir, overwrite),
   pickDirectory: (): Promise<string | null> => ipcRenderer.invoke('pg:pickDirectory'),
   downloadDirValid: (dir: string | null): Promise<boolean> =>
     ipcRenderer.invoke('pg:downloadDirValid', dir),

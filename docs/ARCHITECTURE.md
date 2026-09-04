@@ -224,13 +224,32 @@ recursive size.
   (`NODE_PATH=./node_modules` for the symlinked core's deps).
 - Pairing storage: `safeStorage`-encrypted file in userData. Settings:
   localStorage. Device name: hostname.
+- **Profile isolation (read before touching userData).** `app.getName()` is
+  `portalgems-desktop` for dev, smoke *and* the packaged app - electron-builder
+  writes no `productName` into the app's package.json, so all three resolved to
+  `~/.config/portalgems-desktop`. A smoke run that persisted a scratchpad
+  `pg-download-dir` therefore became the **installed** app's download folder,
+  and the shipped 1.2.5 AppImage (no temp-path guard) really did save received
+  files into a temp directory. `main.ts` now repoints `userData` when
+  `!app.isPackaged`: smoke runs (any `PG_SMOKE_*` var) get
+  `$PG_SMOKE_PROFILE` or `<tmpdir>/portalgems-smoke`, plain dev runs get
+  `<appData>/portalgems-desktop-dev`. Packaged builds keep the default path, so
+  no existing user's settings or pairings move. The smoke profile is stable, not
+  per-run: `PG_SMOKE_PAIRED_RECEIVE`/`_SEND` reuse a pairing made by an earlier
+  `PG_SMOKE_PAIR_SHOW` run.
 - Receives into `~/Downloads` or the folder picked in Settings (localStorage
   `pg-download-dir`). `pg:acceptDownload` stages the transfer in
   `userData/incoming/<id>` and only then moves it into the destination
   (recreating a deleted folder with `mkdir -p`); overwrite replaces the
   existing file only after the transfer completed, keep-both applies the
-  `name (n).ext` convention. `pg:statTarget` powers the pre-accept same-name
-  warning; `pg:accept` (explicit dir, pairing handshake) is unchanged.
+  `name (n).ext` convention. It resolves to `{ name, dir, fallback }` - `dir`
+  is where the file *actually* landed and `fallback` is set when the chosen
+  folder was not used, so the success screen reports the real destination
+  instead of the requested one (see the temp-path guard below). A chosen
+  folder that cannot be created - deleted, or on a drive no longer mounted -
+  also falls back to Downloads rather than failing an already-completed
+  transfer. `pg:statTarget` powers the pre-accept same-name warning;
+  `pg:accept` (explicit dir, pairing handshake) is unchanged.
 - The send picker remembers its last-used folder: the renderer persists the
   parent dir of a picked file/folder in localStorage `pg-last-send-dir`
   (`sendlocation.ts`) and passes it to `pg:pickFile`/`pg:pickFolder`, which set
@@ -246,7 +265,11 @@ recursive size.
   IPC lets the renderer self-heal at startup (App-mount effect clears an invalid
   stored value, so Settings and the receive screen show the default). The guard
   does NOT touch a legitimate deleted folder under `$HOME` - that is still
-  recreated with `mkdir -p`.
+  recreated with `mkdir -p`. Because the guard redirects silently, the receive
+  success screen must render the `dir` that `pg:acceptDownload` returns, never
+  the stored setting, and show `receive.folderFallback` when `fallback` is set
+  - mirroring mobile's `usedFallback`. Rendering the stored value instead is
+  how a redirected save came to *claim* it had gone to a scratchpad folder.
 - Smoke harness (dev-only, env-guarded in main.ts): `PG_SMOKE_RECEIVE=<code>`,
   `PG_SMOKE_RECEIVE_CANCEL=<code>`, `PG_SMOKE_PAIR_SHOW=1`,
   `PG_SMOKE_PAIRED_RECEIVE=1`, `PG_SMOKE_PAIRED_SEND=<file>`,
@@ -258,6 +281,10 @@ recursive size.
   `SMOKE:PICK-DEFAULTPATH=` / `SMOKE:REMEMBERED=`, verifying the send picker
   remembers its last dir) - drives the real
   renderer via executeJavaScript; used for all E2E verification. The receive
+  smoke echoes the success screen's destination line as `SMOKE:SAVED=<text>`,
+  so a run can assert where the file was reported to land - a temp
+  `PG_SMOKE_DL_DIR` is rejected by the guard and must report the Downloads
+  fallback, not the requested folder. The receive
   smoke handles file and folder offers (it waits on the shared "Do you want
   to receive this" prefix). Counterpart CLI harnesses:
   `cargo run --example send <path> [code]` sends a file OR folder
