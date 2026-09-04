@@ -88,7 +88,7 @@ export default function HomeScreen({
   };
 
   const confirmRemove = (device: PairedDevice) => {
-    Alert.alert(device.name, t('devices.remove'), [
+    Alert.alert(device.name, t('devices.removeConfirm'), [
       { text: t('common.cancel'), style: 'cancel' },
       {
         text: t('devices.remove'),
@@ -125,28 +125,33 @@ export default function HomeScreen({
         <Subtitle>{t('home.devicesTitle')}</Subtitle>
         {devices.length === 0 ? <Muted>{t('home.devicesEmpty')}</Muted> : null}
         {devices.map((device) => (
-          <View key={device.id} style={styles.deviceRow}>
-            <Pressable
-              style={styles.deviceName}
-              onLongPress={() => confirmRemove(device)}>
-              <Text
-                numberOfLines={1}
-                style={{ color: c.text, fontSize: fontSize.body, fontWeight: '600' }}>
-                {device.name}
-              </Text>
-            </Pressable>
-            <View style={styles.deviceButton}>
-              <PrimaryButton
-                label={t('devices.send')}
-                onPress={() => pickFile(device)}
-                disabled={picking}
-              />
-            </View>
-            <View style={styles.deviceButton}>
-              <GhostButton
-                label={t('devices.receive')}
-                onPress={() => onReceiveFrom(device)}
-              />
+          <View key={device.id} style={styles.device}>
+            <Text
+              numberOfLines={1}
+              style={{ color: c.text, fontSize: fontSize.body, fontWeight: '600' }}>
+              {device.name}
+            </Text>
+            <View style={styles.deviceRow}>
+              <View style={styles.deviceButton}>
+                <PrimaryButton
+                  label={t('devices.send')}
+                  onPress={() => pickFile(device)}
+                  disabled={picking}
+                />
+              </View>
+              <View style={styles.deviceButton}>
+                <GhostButton
+                  label={t('devices.receive')}
+                  onPress={() => onReceiveFrom(device)}
+                />
+              </View>
+              <View style={styles.deviceButton}>
+                <GhostButton
+                  label={t('devices.remove')}
+                  danger
+                  onPress={() => confirmRemove(device)}
+                />
+              </View>
             </View>
           </View>
         ))}
@@ -224,11 +229,13 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing(2),
   },
+  device: { gap: spacing(2) },
   deviceRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    // Stretch, not center: if a translated label wraps to two lines the three
+    // buttons still end up the same height.
+    alignItems: 'stretch',
     gap: spacing(2),
   },
-  deviceName: { flex: 1 },
-  deviceButton: { width: 100 },
+  deviceButton: { flex: 1 },
 });
