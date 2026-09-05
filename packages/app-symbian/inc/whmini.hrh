@@ -1,0 +1,12 @@
+// Command identifiers shared between the resource file and the code.
+#ifndef WHMINI_HRH
+#define WHMINI_HRH
+
+enum TWhminiCommands
+    {
+    EWhminiCmdReceive = 1,
+    EWhminiCmdServer,
+    EWhminiCmdAbout
+    };
+
+#endif

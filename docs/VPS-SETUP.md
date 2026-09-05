@@ -138,6 +138,8 @@ Your existing site on port 80 keeps working untouched.
 sudo ufw allow 22/tcp      # SSH (don't lock yourself out)
 sudo ufw allow 80,443/tcp  # Caddy / TLS
 sudo ufw allow 4001/tcp    # transit relay
+# sudo ufw allow 4000/tcp  # cleartext mailbox, only if you serve legacy
+                           # clients - see "Legacy clients" below
 sudo ufw enable
 ```
 
@@ -232,3 +234,47 @@ Symptoms we actually hit, and their fixes:
 - **Confirm the two services are actually listening where you expect:**
   `sudo ss -ltnp | grep -E ':4000|:4001'` - the mailbox on `127.0.0.1:4000`
   (behind Caddy) and the relay on `0.0.0.0:4001`.
+
+
+## Legacy clients (Symbian, and anything else without modern TLS)
+
+The Symbian client in `packages/app-symbian` cannot use `wss://` at all.
+Symbian OS 9.x speaks TLS 1.0 against a root store frozen in 2009; it will
+never negotiate with a current endpoint, and no amount of work on the client
+changes that. The transit relay is already plaintext on 4001 and needs
+nothing, but the mailbox sits behind Caddy on `127.0.0.1:4000` and is
+unreachable.
+
+The fix is to let the **same mailbox process** also listen in the clear.
+This matters: two mailbox processes would keep two separate channel
+databases, so a phone on the plaintext port and a desktop on the TLS port
+would never see each other's nameplates. One process, two ways in.
+
+Change the unit from step 2:
+
+```ini
+# was: --port tcp:4000:interface=127.0.0.1
+ExecStart=/home/wormhole/venv/bin/twist wormhole-mailbox --port tcp:4000
+```
+
+```sh
+sudo systemctl daemon-reload
+sudo systemctl restart wormhole-mailbox
+sudo ufw allow 4000/tcp
+```
+
+Caddy keeps working unchanged - it proxies to `127.0.0.1:4000`, which a
+wildcard bind still answers. So `wss://relay.example.com/v1` continues to
+serve the desktop and Android apps, and `ws://relay.example.com:4000/v1`
+serves the phone, both on the same channels.
+
+**What this costs.** Anyone watching the network sees which code slot a
+legacy client used and when. They do not see the key or the file: the
+SPAKE2 exchange is safe in the clear - that is the entire point of a PAKE -
+and the payload is end-to-end encrypted over a relay that was already
+plaintext by design. The exposure is metadata for clients that opt into the
+cleartext port, and nothing changes for clients using `wss://`.
+
+If you would rather not open it permanently, open it for a test and close it
+again; the phone reads its server from `E:\PortalGems\server.txt` and can be
+pointed elsewhere without a rebuild.

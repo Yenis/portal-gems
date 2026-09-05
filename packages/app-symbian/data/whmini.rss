@@ -1,0 +1,35 @@
+// Application resource: menu, softkeys, and the app's own name.
+
+NAME WHMI
+
+#include <eikon.rh>
+#include <avkon.rh>
+#include <avkon.rsg>
+#include <avkon.hrh>
+#include <appinfo.rh>
+#include "whmini.hrh"
+
+RESOURCE RSS_SIGNATURE { }
+
+RESOURCE TBUF r_default_document_name { buf = "WHMI"; }
+
+RESOURCE EIK_APP_INFO
+    {
+    menubar = r_whmini_menubar;
+    cba = R_AVKON_SOFTKEYS_OPTIONS_EXIT;
+    }
+
+RESOURCE MENU_BAR r_whmini_menubar
+    {
+    titles = { MENU_TITLE { menu_pane = r_whmini_menu; txt = "Options"; } };
+    }
+
+RESOURCE MENU_PANE r_whmini_menu
+    {
+    items =
+        {
+        MENU_ITEM { command = EWhminiCmdReceive; txt = "Receive file"; },
+        MENU_ITEM { command = EWhminiCmdServer;  txt = "Set server"; },
+        MENU_ITEM { command = EAknSoftkeyExit;   txt = "Exit"; }
+        };
+    }

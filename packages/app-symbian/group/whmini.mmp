@@ -7,11 +7,12 @@
 TARGET          whmini.exe
 TARGETTYPE      exe
 
-// Unprotected UID range (0xE0000000-0xEFFFFFFF) - the range reserved for
-// development and self-signed packages, which needs no allocation from
-// anybody. A published app would need a protected UID we can no longer be
-// issued, so this stays as it is.
-UID             0 0xE1000001
+// UID2 is KUidApp: it is what makes S60 list this in the applications menu
+// rather than installing it invisibly into \sys\bin. UID3 is ours, from the
+// unprotected range (0xE0000000-0xEFFFFFFF) reserved for development and
+// self-signed packages, which needs no allocation from anybody. A published
+// app would need a protected UID that can no longer be issued.
+UID             0x100039CE 0xE1000001
 
 // Every one of these is user-grantable, so a self-signed SIS can carry them.
 // Nothing here may ever need AllFiles, ReadDeviceData or TCB: those want a
@@ -32,12 +33,32 @@ EPOCHEAPSIZE    0x1000 0x400000
 SOURCEPATH      ../../../native/wormhole-mini/src
 SOURCE          sha256.c kdf.c box.c ed25519.c spake2.c
 SOURCE          sha1.c base64.c json.c ws.c mailbox.c transit.c xfer.c
+SOURCE          wordlist.c code.c
+
+// The application's own resource: menu, softkeys, document name.
+SOURCEPATH      ../data
+START RESOURCE  whmini.rss
+HEADER
+TARGETPATH      /resource/apps
+END
+
+// Application registration. whmini_loc must come first: whmini_reg.rss
+// includes the .rsg header it generates.
+START RESOURCE  whmini_loc.rss
+HEADER
+TARGETPATH      /resource/apps
+END
+
+START RESOURCE  whmini_reg.rss
+TARGETPATH      /private/10003a3f/import/apps
+END
 
 // The platform layer and the entry point.
 SOURCEPATH      ../../../native/wormhole-mini/port
 SOURCE          symbian.cpp
 SOURCEPATH      ../src
-SOURCE          main.cpp
+SOURCE          whminiapp.cpp
+SOURCE          whminiengine.cpp
 
 USERINCLUDE     ../inc
 USERINCLUDE     ../../../native/wormhole-mini/src
@@ -48,8 +69,27 @@ SYSTEMINCLUDE   \epoc32\include
 // plain Symbian libraries and needs no Open C / PIPS runtime on the device.
 // That is one less SIS for the user to install and one less thing to go
 // wrong on a fifteen-year-old phone.
-LIBRARY         euser.lib
-LIBRARY         efsrv.lib
-LIBRARY         esock.lib
-LIBRARY         insock.lib
-LIBRARY         commdb.lib
+LIBRARY         euser.lib     // base, and the text console
+LIBRARY         efsrv.lib     // RFs / RFile, for writing to the memory card
+LIBRARY         esock.lib     // RSocketServ, RSocket, RConnection, RHostResolver
+LIBRARY         insock.lib    // TInetAddr and the KAfInet constants
+LIBRARY         random.lib    // TRandom - the platform CSPRNG
+LIBRARY         commdb.lib    // TCommDbConnPref, to prompt for the access point
+
+// The Avkon UI. A text console has no FEP, so a wormhole code cannot be
+// typed on this keyboard at all - the keys carrying a printed number arrive
+// as digits. CAknTextQueryDialog is a real editor with real input handling.
+LIBRARY         apparc.lib
+LIBRARY         cone.lib
+LIBRARY         eikcore.lib
+LIBRARY         eikcoctl.lib
+LIBRARY         eikdlg.lib
+LIBRARY         avkon.lib
+LIBRARY         bafl.lib
+LIBRARY         egul.lib
+LIBRARY         gdi.lib
+LIBRARY         ws32.lib
+
+// On random.lib: every random byte in this program is security-critical -
+// the SPAKE2 scalar, secretbox nonces, the WebSocket masking key. Math::Random
+// is a plain PRNG and must never be substituted here.

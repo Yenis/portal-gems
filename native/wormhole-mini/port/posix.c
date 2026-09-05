@@ -116,6 +116,27 @@ long wh_net_read(wh_conn *c, unsigned char *buf, unsigned long cap)
     return (long)n;
 }
 
+int wh_net_have_connection(void)
+{
+    return 1;
+}
+
+int wh_net_last_stage(void)
+{
+    return WH_NET_STAGE_NONE;
+}
+
+long wh_net_last_error(void)
+{
+    return 0;
+}
+
+void wh_net_shutdown(void)
+{
+    /* Nothing to release: sockets here are plain file descriptors and each
+     * is closed by wh_net_close. */
+}
+
 void wh_net_close(wh_conn *c)
 {
     if (c && c->used) {

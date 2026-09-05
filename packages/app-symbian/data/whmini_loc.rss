@@ -1,0 +1,17 @@
+// Localisable application information: what the phone's menu shows.
+// Compiled to \resource\apps\whmini_loc.rsc on the device.
+
+#include <appinfo.rh>
+
+RESOURCE LOCALISABLE_APP_INFO r_whmini_localisable_app_info
+    {
+    short_caption = "PortalGems";
+    caption_and_icon =
+        CAPTION_AND_ICON_INFO
+            {
+            caption = "PortalGems";
+            // No icon yet - the phone shows a default. An MBM/MIF icon is
+            // an S6 concern, not a reason to hold up the first device test.
+            number_of_icons = 0;
+            };
+    }

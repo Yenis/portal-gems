@@ -1,0 +1,180 @@
+diff --git a/tools/bmconv-1.1.0-2/src/Makefile b/tools/bmconv-1.1.0-2/src/Makefile
+index c629b15..d46bced 100644
+--- a/tools/bmconv-1.1.0-2/src/Makefile
++++ b/tools/bmconv-1.1.0-2/src/Makefile
+@@ -10,7 +10,7 @@
+ #GCC_VERSION=2	# For Darwin use gcc 2.95.2 - gcc 3.1 is b0rken !
+ #CC=/usr/local/encap/gcc-3.1/bin/g++  # Solaris
+ CC=g++$(GCC_VERSION)
+-CFLAGS=-O2 -Wall -Wno-deprecated -I../include
++CFLAGS=-O2 -w -fpermissive -std=gnu++98 -I../include
+ LFLAGS=
+ DEPS=bmconv.h rgb.h
+ OBJS=\
+diff --git a/tools/bmconv-1.1.0-2/src/pbmcomp.cpp b/tools/bmconv-1.1.0-2/src/pbmcomp.cpp
+index 70314af..8440dc9 100644
+--- a/tools/bmconv-1.1.0-2/src/pbmcomp.cpp
++++ b/tools/bmconv-1.1.0-2/src/pbmcomp.cpp
+@@ -522,7 +522,7 @@ char* BitmapCompiler::UnadornedName(char* aName)
+ 	char* foundExt = strrchr(aName,'.');
+ 
+ 	char* foundPath = (foundDir > foundUrl) ? foundDir : foundUrl;
+-	char* firstchar = (foundPath > 0) ? foundPath + 1 : aName;
++	char* firstchar = (foundPath != 0) ? foundPath + 1 : aName;
+ 	char* lastchar = (foundExt > firstchar) ? foundExt : aName+len;
+ 
+ 	static char result[256];
+diff --git a/tools/install_eka2_tools b/tools/install_eka2_tools
+index 1193f4b..448f48f 100755
+--- a/tools/install_eka2_tools
++++ b/tools/install_eka2_tools
+@@ -32,7 +32,7 @@ cd petran-1.1.0 && $MAKE && cp e32uid/uidcrc $DEST/bin
+ cd bmconv-1.1.0-2 && $MAKE && cp src/bmconv $DEST/bin
+ cd rcomp-7.0.1 && $MAKE && cp src/rcomp $DEST/bin
+ cd makesis-4 && $MAKE && cp src/makesis src/signsis src/makekeys $DEST/bin
+-cd make-3.81 && ./configure && $MAKE -C glob && $MAKE make && cp make $DEST/bin/extmake
++cd make-3.81 && ./configure --disable-nls CFLAGS='-O2 -D__alloca=alloca -D__stat=stat -D__getcwd=getcwd -D__mempcpy=mempcpy -D__readdir=readdir -Wno-implicit-function-declaration' && $MAKE -C glob && $MAKE make && cp make $DEST/bin/extmake
+ cd elf2e32 && $MAKE -f Makefile.local-libelf libelf.a all && cp elf2e32 elftran gendirective genstubs getexports $DEST/bin
+ g++ mifconv.cpp -o $DEST/bin/mifconv
+ ln -sf $TRUE $DEST/bin/rem
+diff --git a/tools/makesis-4/src/signsis.cpp b/tools/makesis-4/src/signsis.cpp
+index e7e1a6a..27555ab 100644
+--- a/tools/makesis-4/src/signsis.cpp
++++ b/tools/makesis-4/src/signsis.cpp
+@@ -248,10 +248,7 @@ int main(int argc, char *argv[]) {
+ 				else
+ 					displayCert(cert);
+ 
+-				X509_OBJECT obj;
+-				obj.type = X509_LU_X509;
+-				obj.data.x509 = cert;
+-				X509_OBJECT_free_contents(&obj);
++				X509_free(cert);
+ 			}
+ 
+ 			if (out)
+diff --git a/tools/makesis-4/src/signutils.cpp b/tools/makesis-4/src/signutils.cpp
+index 68838c4..597c2ff 100644
+--- a/tools/makesis-4/src/signutils.cpp
++++ b/tools/makesis-4/src/signutils.cpp
+@@ -113,7 +113,7 @@ SISSignature* makeSignature(SISField* controller, const char* keyData, int keyLe
+ 	BIO_free_all(io);
+ 
+ 	if (type == SigAuto) {
+-		if (key->type == EVP_PKEY_DSA || key->type == EVP_PKEY_DSA1 || key->type == EVP_PKEY_DSA2 || key->type == EVP_PKEY_DSA3 || key->type == EVP_PKEY_DSA4)
++		if (EVP_PKEY_base_id(key) == EVP_PKEY_DSA)
+ 			type = SigDsa;
+ 		else
+ 			type = SigRsa;
+@@ -123,39 +123,39 @@ SISSignature* makeSignature(SISField* controller, const char* keyData, int keyLe
+ 	uint8_t* ptr = buffer;
+ 	controller->CopyFieldData(ptr);
+ 
+-	EVP_MD_CTX ctx, verify;
+-	EVP_MD_CTX_init(&ctx);
+-	EVP_MD_CTX_init(&verify);
+-	const EVP_MD* md = NULL;
+-	if (type == SigDsa)
+-		md = EVP_dss1();
+-	else
+-		md = EVP_sha1();
+-	if (EVP_SignInit_ex(&ctx, md, NULL) == 0) {
++	EVP_MD_CTX* ctx = EVP_MD_CTX_new();
++	EVP_MD_CTX* verify = EVP_MD_CTX_new();
++	if (!ctx || !verify) {
++		ERR_print_errors_fp(stderr);
++		throw SignOpenSSLErr;
++	}
++	/* EVP_dss1 was only ever SHA-1 tagged for DSA, and is gone in 1.1+. */
++	const EVP_MD* md = EVP_sha1();
++	if (EVP_SignInit_ex(ctx, md, NULL) == 0) {
+ 		ERR_print_errors_fp(stderr);
+ 		throw SignOpenSSLErr;
+ 	}
+-	if (EVP_VerifyInit(&verify, md) < 0) {
++	if (EVP_VerifyInit(verify, md) < 0) {
+ 		ERR_print_errors_fp(stderr);
+ 		throw SignOpenSSLErr;
+ 	}
+-	if (EVP_SignUpdate(&ctx, buffer, controller->Length()) == 0) {
++	if (EVP_SignUpdate(ctx, buffer, controller->Length()) == 0) {
+ 		ERR_print_errors_fp(stderr);
+ 		throw SignOpenSSLErr;
+ 	}
+-	if (EVP_VerifyUpdate(&verify, buffer, controller->Length()) == 0) {
++	if (EVP_VerifyUpdate(verify, buffer, controller->Length()) == 0) {
+ 		ERR_print_errors_fp(stderr);
+ 		throw SignOpenSSLErr;
+ 	}
+ 	delete [] buffer;
+ 	unsigned int siglen = EVP_PKEY_size(key);
+ 	uint8_t* signature = new uint8_t[siglen];
+-	if (EVP_SignFinal(&ctx, signature, &siglen, key) == 0) {
++	if (EVP_SignFinal(ctx, signature, &siglen, key) == 0) {
+ 		ERR_print_errors_fp(stderr);
+ 		throw SignOpenSSLErr;
+ 	}
+-	EVP_MD_CTX_cleanup(&ctx);
+-	int ret = EVP_VerifyFinal(&verify, signature, siglen, publicKey);
++	EVP_MD_CTX_free(ctx);
++	int ret = EVP_VerifyFinal(verify, signature, siglen, publicKey);
+ 	if (ret < 0) {
+ 		ERR_print_errors_fp(stderr);
+ 		throw SignOpenSSLErr;
+@@ -164,7 +164,7 @@ SISSignature* makeSignature(SISField* controller, const char* keyData, int keyLe
+ 		fprintf(stderr, "Could not verify signature with certificate\n");
+ 		throw SignBadKey;
+ 	}
+-	EVP_MD_CTX_cleanup(&verify);
++	EVP_MD_CTX_free(verify);
+ 	EVP_PKEY_free(key);
+ 
+ 
+@@ -263,9 +263,10 @@ SISCertificateChain* makeChain(const char* certData, int certLen, EVP_PKEY** pub
+ 		if (!cert) {
+ 			unsigned long err = ERR_peek_last_error();
+ 			int lib = ERR_GET_LIB(err);
+-			int func = ERR_GET_FUNC(err);
+ 			int reason = ERR_GET_REASON(err);
+-			if (lib == ERR_LIB_PEM && func == PEM_F_PEM_READ_BIO && reason == PEM_R_NO_START_LINE)
++			/* ERR_GET_FUNC and the PEM_F_* codes were removed in OpenSSL
++			 * 3; library plus reason still identifies "no more certs". */
++			if (lib == ERR_LIB_PEM && reason == PEM_R_NO_START_LINE)
+ 				break;
+ 			ERR_print_errors_fp(stderr);
+ 			throw SignBadCert;
+@@ -274,10 +275,7 @@ SISCertificateChain* makeChain(const char* certData, int certLen, EVP_PKEY** pub
+ 			*publicKey = X509_PUBKEY_get(X509_get_X509_PUBKEY(cert));
+ 		i2d_X509_bio(out, cert);
+ 
+-		X509_OBJECT obj;
+-		obj.type = X509_LU_X509;
+-		obj.data.x509 = cert;
+-		X509_OBJECT_free_contents(&obj);
++		X509_free(cert);
+ 	}
+ 	BIO_free_all(in);
+ 
+@@ -298,9 +296,8 @@ SISCertificateChain* makeChain(const char* certData, int certLen, EVP_PKEY** pub
+ 		if (!cert) {
+ 			unsigned long err = ERR_peek_last_error();
+ 			int lib = ERR_GET_LIB(err);
+-			int func = ERR_GET_FUNC(err);
+ 			int reason = ERR_GET_REASON(err);
+-			if (lib == ERR_LIB_ASN1 && func == ASN1_F_ASN1_GET_OBJECT && reason == ASN1_R_HEADER_TOO_LONG)
++			if (lib == ERR_LIB_ASN1 && reason == ASN1_R_HEADER_TOO_LONG)
+ 				break;
+ 			ERR_print_errors_fp(stderr);
+ 			throw SignBadCert;
+@@ -309,10 +306,7 @@ SISCertificateChain* makeChain(const char* certData, int certLen, EVP_PKEY** pub
+ 			*publicKey = X509_PUBKEY_get(X509_get_X509_PUBKEY(cert));
+ 		i2d_X509_bio(out, cert);
+ 
+-		X509_OBJECT obj;
+-		obj.type = X509_LU_X509;
+-		obj.data.x509 = cert;
+-		X509_OBJECT_free_contents(&obj);
++		X509_free(cert);
+ 	}
+ 	BIO_free_all(in);
+ 

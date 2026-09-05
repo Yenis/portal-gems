@@ -29,5 +29,11 @@ native/wormhole-mini/build/
 packages/app-symbian/sis/portalgems-dev.key
 packages/app-symbian/sis/portalgems-dev.cer
 packages/app-symbian/sis/*.sis
+packages/app-symbian/sis/whmini.exe
+packages/app-symbian/sis/*.rsc
 
 docs/feat.txt
+
+# Python bytecode
+__pycache__/
+*.pyc

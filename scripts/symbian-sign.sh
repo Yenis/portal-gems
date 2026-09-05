@@ -11,28 +11,50 @@
 # in place instead of colliding. Keep portalgems-dev.key out of the repo -
 # it is ignored, like the Android release keystore.
 #
-# UNVERIFIED: written against the documented behaviour of these tools, not
-# yet run - that needs the SDK from phase S4.
+# Requires EPOCROOT and the gnupoc wrappers on PATH; see
+# packages/app-symbian/toolchain/README.md.
 set -e
 
 HERE=$(dirname "$0")
 SIS_DIR="$HERE/../packages/app-symbian/sis"
+BINARY="${EPOCROOT}epoc32/release/gcce/urel/whmini.exe"
+APP_RSC="${EPOCROOT}epoc32/data/z/resource/apps/whmini.rsc"
+REG_RSC="${EPOCROOT}epoc32/data/z/private/10003a3f/import/apps/whmini_reg.rsc"
+LOC_RSC="${EPOCROOT}epoc32/data/z/resource/apps/whmini_loc.rsc"
 KEY="$SIS_DIR/portalgems-dev.key"
 CERT="$SIS_DIR/portalgems-dev.cer"
 PASS="${SYMBIAN_KEY_PASS:-portalgems}"
 
 if [ ! -f "$KEY" ]; then
     echo "generating a self-signed development certificate"
-    makekeys -cert -password "$PASS" -len 2048 \
-        -dname "CN=PortalGems Dev OR=PortalGems CO=XX" \
-        "$KEY" "$CERT"
+    # The SDK's own makekeys is not used: it shells out to
+    # `openssl dsaparam -genkey 2048 -out ...`, an argument order OpenSSL 3
+    # rejects outright. Generating the pair directly is simpler than
+    # patching it, and RSA is the better choice anyway - it is what
+    # signsis defaults to for a non-DSA key.
+    openssl req -x509 -newkey rsa:2048 -nodes -sha1 -days 7300 \
+        -keyout "$KEY" -out "$CERT" \
+        -subj "/CN=PortalGems Dev/O=PortalGems/C=XX" 2>/dev/null
 fi
 
+if [ ! -f "$BINARY" ]; then
+    echo "no built binary at $BINARY - run 'abld build gcce urel' first" >&2
+    exit 1
+fi
+for f in "$BINARY" "$APP_RSC" "$REG_RSC" "$LOC_RSC"; do
+    if [ ! -f "$f" ]; then
+        echo "missing build output: $f" >&2
+        exit 1
+    fi
+    cp "$f" "$SIS_DIR/"
+done
+
 echo "building the package"
-makesis "$SIS_DIR/whmini.pkg" "$SIS_DIR/whmini.sis"
+( cd "$SIS_DIR" && makesis whmini.pkg whmini.sis )
 
 echo "signing"
-signsis "$SIS_DIR/whmini.sis" "$SIS_DIR/whmini-signed.sis" "$CERT" "$KEY" "$PASS"
+( cd "$SIS_DIR" && signsis whmini.sis whmini-signed.sis \
+    "$(basename "$CERT")" "$(basename "$KEY")" "$PASS" )
 
 echo
 echo "signed package: $SIS_DIR/whmini-signed.sis"

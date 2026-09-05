@@ -331,12 +331,96 @@ to change to make it run on the phone, only `port/` and the app around it.
       different compiler. What it does not prove is any Symbian API, since
       qemu-arm runs Linux. The remaining risk is concentrated in
       `port/symbian.cpp`, which is where it should be.
-- [ ] GnuPoc set up, S60 3rd FP2 SDK unpacked, `arm-none-symbianelf` GCC
-      building. **Needs the SDK archive**, which is an old Nokia download no
-      longer distributed officially.
-- [ ] Self-signed certificate via `makekeys`, SIS built and signed.
-- [ ] Phone set to Software installation = All, online certificate check off.
-- [ ] Milestone: a hello-world app installs and runs on the E72.
+- [x] **The cross compiler works.** CodeSourcery's servers are gone, but
+      Martin Storsjö still mirrors the prebuilt `arm-none-symbianelf` GCC
+      3.4.3 that GnuPoc expects. It is an i686 binary and runs as-is here.
+      The entire portable core - all 14 files - compiles with it under
+      `-Wall -Wextra` and produces **no warnings**. Writing to C89 for a
+      2005 compiler turned out to cost nothing.
+- [x] **The native tools build**, after three fixes for a modern host,
+      captured in `packages/app-symbian/toolchain/gnupoc-modern-host.patch`
+      with the reasoning in that directory's README. `elf2e32`, `elftran`,
+      `makesis`, `signsis`, `makekeys`, `rcomp`, `bmconv`, `mifconv` and a
+      private GNU make 3.81 are all installed. The `signsis` port from
+      OpenSSL 1.0 to 3.x was the one that mattered - without it there is no
+      installable package at all.
+- [x] **S60 3rd FP2 SDK obtained and installed.** The Internet Archive has
+      it under exactly the filename GnuPoc expects
+      (`S60_SDK_3.2_v1.1.1_en.zip`, 466 MB, item `nokia_sdks_n_dev_tools`).
+      Unpacks to 1.1 GB with `install_gnupoc_s60_32`. Note that the
+      installer is **not idempotent** - re-running it over an existing
+      install aborts partway and leaves the tools unpatched and
+      non-executable; delete the target and install fresh instead.
+- [x] Three further host fixes, all documented in
+      `packages/app-symbian/toolchain/README.md`: the GnuPoc wrapper scripts
+      (without them `bldmake` cannot find its own Perl modules), the
+      `defined %hash` syntax Perl made a hard error in 5.22, and
+      `epoc32/tools/perl` being a *directory* that shadows the real
+      interpreter on PATH.
+- [x] **Self-signed SIS built.** Not via the SDK's `makekeys`, which shells
+      out to an `openssl dsaparam` argument order OpenSSL 3 rejects;
+      `scripts/symbian-sign.sh` generates an RSA key and certificate with
+      `openssl` directly. Output: `whmini-signed.sis`, 35,188 bytes, of
+      which 1,100 is signature and certificate chain.
+- [x] Phone set to Software installation = All, online certificate check off.
+- [x] **The app installs and runs on the E72.** It appears in the
+      applications menu as "PortalGems", launches, draws its console and
+      accepts typed input. That means the E32 image, the registration
+      resources, the signature and the console all work on real hardware.
+
+Three things had to be fixed after the first install, each obvious only on
+the device:
+
+- **UID2 must be 0x100039CE.** With UID2 zero the executable installs to
+  `\sys\bin` and is invisible: listed under App. manager as an installed
+  package, absent from the applications menu, impossible to launch. The
+  registration resources in `packages/app-symbian/data` are the other half
+  of this.
+- **A platform dependency is required**, not optional. Without one the
+  installer cannot confirm the package suits the device and warns "not
+  compatible with phone, install anyway?". The E72 wants
+  `[0x102752AE]` - S60 3rd Edition FP2.
+- **A text console gets raw key codes.** Only accepting `EKeyEnter` left the
+  first prompt with no way to submit anything: the natural OK on this phone
+  is the joystick centre or the left softkey, which arrive as `EKeyDevice3`
+  and `EKeyDevice0` with none of the softkey handling an Avkon application
+  would provide.
+
+- **`TInetAddr::Input` does not parse a literal address here.** Given
+  `192.168.1.79` it failed, the code fell through to DNS, and the resolver
+  tried to look the address up as a host name - returning
+  `KErrDndNameNotFound` (-5120). The port now parses dotted quads itself and
+  calls `SetAddress`, keeping numeric servers working with no resolver at
+  all. The parser's logic is unit-tested on the host, since it cannot be
+  tested in place.
+- **A named `RConnection` is a convenience, not a requirement.** Treating a
+  failed `RConnection::Start()` as fatal stopped the client dead on a phone
+  with no usable default connection - while the browser, which manages its
+  own access point, worked fine. The port now tries a prompted start, then a
+  default start, then falls back to opening sockets straight on the socket
+  server via the implicit connection.
+
+- **A text console has no FEP, so the keyboard lies.** On the E72 the keys
+  carrying a printed number - r, t, z, f, g, h, v, b, n on this layout -
+  arrive at `Getch()` as those digits rather than as letters. There is no
+  scan code available through `CConsoleBase` (only `KeyCode` and
+  `KeyModifiers`), so the intent cannot be recovered. This wasted most of a
+  debugging session: every mistyped code looked like a network fault, and
+  the console font is too small to notice the substitution.
+
+  The fix is to stop requiring letters. A code is
+  `<nameplate>-<even word>-<odd word>`, the nameplate is numeric, and the
+  client already carries both wordlists - so the number is typed and the two
+  words are chosen with the D-pad. It also removes a whole class of typo:
+  picking cannot produce a word that is not in the list.
+
+  A proper text field with correct input handling comes with the Avkon UI at
+  S6. This is the console making do.
+
+Settings also moved out of the binary. `E:\PortalGems\server.txt` holds the
+server address, and the app asks for it on first run - a rebuild here means
+SDK, repackage, resign and reinstall, which is far too long a loop for a
+mistyped address.
 
 Deliberately independent of S0-S3, and the thing most likely to eat days.
 The remaining items need the phone and the SDK, so they are the natural
@@ -344,16 +428,101 @@ place for work to happen in parallel.
 
 ### S5 - Port the core
 
-- [ ] `port/symbian.cpp`: RSocket connect/read/write, RFile, randomness.
+- [~] `port/symbian.cpp` written: `RSocketServ`/`RConnection`/`RSocket`,
+      `RHostResolver` with a literal-address fast path, and `TRandom` for
+      randomness. Synchronous style (`User::WaitForRequest`), which suits
+      the console build and matches the blocking interface the protocol
+      expects; a GUI build must run it off the UI thread.
+
+      One thing to keep an eye on: **`Math::Random` must never be used
+      here.** It is a plain PRNG, and every random byte in this program is
+      security-critical - the SPAKE2 scalar, secretbox nonces, the
+      WebSocket masking key. `TRandom` from `random.lib` is the platform
+      CSPRNG and the port panics rather than continue if it fails.
+- [~] `packages/app-symbian/src/main.cpp` written: a console app that asks
+      for a code and receives one file to `E:\PortalGems\`.
+- [x] **Both compile and link.** `abld build gcce urel` produces
+      `whmini.exe`, 33,804 bytes, a valid E32 image - `EPOC` magic at 0x10
+      and UID 0xE1000001 at offset 8, matching the mmp. The entire portable
+      core built for Symbian without a single change to `src/`, which is
+      what the platform-layer split was for.
+- [ ] Still UNVERIFIED at runtime: that the RSocket calls, the access point
+      handling and `TRandom` actually behave on the device. Compiling is not
+      running.
+
+Before the first device test, the server constants at the top of
+`packages/app-symbian/src/main.cpp` must be changed - they point at
+`127.0.0.1`, which on the phone means the phone. Point them at the LAN
+address of a machine running the mailbox and relay, or at a deployment.
 - [ ] Core builds as a static library in the Symbian toolchain.
 - [ ] Milestone: a headless console app on the phone receives a file to
       `E:\`.
 
 ### S6 - The application
 
-- [ ] Avkon UI: code entry, progress, result, cancel.
-- [ ] Server settings, icon, PKG, signed SIS.
-- [ ] Milestone: a normal user flow, desktop to phone, start to finish.
+Brought forward, because the console turned out to be unusable rather than
+merely ugly: with no FEP, a wormhole code cannot be typed on this keyboard
+at all.
+
+- [x] Avkon application (`packages/app-symbian/src/whminiapp.cpp`):
+      application, document, app UI and a drawn container, with an Options
+      menu and standard softkeys.
+- [x] **Real text input.** `CAknTextQueryDialog` is a native editor with a
+      real input method, so the keyboard behaves - and the Avkon font is
+      legible, which the console font was not.
+- [x] **The transfer runs on a worker thread**
+      (`packages/app-symbian/src/whminiengine.cpp`). This is a correctness
+      requirement, not tidiness: the portable core is synchronous and the
+      platform layer waits with `User::WaitForRequest`, which on a thread
+      running an active scheduler consumes completions belonging to active
+      objects. A plain thread has no scheduler, so the blocking style is
+      correct there. The two sides share a `TJob`; the UI polls it on a
+      250 ms timer.
+- [x] Live progress, and failures reported with stage and Symbian error.
+- [x] Settings via the same dialog, persisted to `server.txt`.
+- [ ] Icon (the phone shows a default for now).
+- [x] **MILESTONE MET.** A 2.1 MB file transferred from the reference
+      `wormhole` client to a Nokia E72, over Wi-Fi, code
+      `9-paperweight-bison`. The sender reported *"Confirmation received.
+      Transfer complete."* - meaning the phone computed a SHA-256 over what
+      it received, returned it over the transit, and the sender verified it
+      matched.
+
+      Every layer is now proven on real hardware: SPAKE2, HKDF, secretbox,
+      the WebSocket client, the mailbox state machine, the transit relay
+      handshake, record framing, and the v1 transfer protocol - all in
+      portable C89, on a fifteen-year-old phone, interoperating with a
+      client that knows nothing about it.
+
+## The bug that cost the most
+
+Worth writing down, because it was invisible from every angle.
+
+The console mapped the `.` key to `-`, so a server address typed as
+`192.168.1.79` was stored as `192-168-1-79`. That went into
+`E:\PortalGems\server.txt`, where it **outlived the console app itself**.
+Every later build dutifully asked the resolver for a host named
+`192-168-1-79` and got `KErrDndNameNotFound` (-5120) - a completely correct
+answer to a question nobody meant to ask.
+
+The error code was right from the first report. What was missing was any way
+to see the string being used: the display showed `Server: 192.168.1.79`
+because that is what a human reads when the characters are that small, and a
+hyphen and a dot are two pixels apart.
+
+Three lessons, all cheap in hindsight:
+
+- **Echo inputs back with delimiters.** `host [192-168-1-79] len 12` would
+  have ended this in one round trip. It was added at the very end.
+- **Persisted settings outlive the bug that created them.** The keyboard was
+  fixed two builds before the transfer worked; the corrupted file kept the
+  symptom alive.
+- **A keyboard with no input method is not a keyboard.** Everything
+  downstream is guesswork until text input is trustworthy, which is why the
+  Avkon UI stopped being a nicety and became the fix.
+
+The console build (`src/main.cpp`) is gone; the four days of Symbian
+behaviour it taught us are recorded above.
 
 ### S7 - Sending from the phone
 

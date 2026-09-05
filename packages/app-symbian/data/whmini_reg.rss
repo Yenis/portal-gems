@@ -1,0 +1,17 @@
+// Application registration. Without this the executable installs to
+// \sys\bin and is simply invisible: S60 3rd Edition only lists an EXE in
+// the applications menu if it declares UID2 KUidApp (0x100039CE) and ships
+// a registration resource in \private\10003a3f\import\apps.
+
+#include <appinfo.rh>
+#include <whmini_loc.rsg>
+
+UID2 KUidAppRegistrationResourceFile
+UID3 0xE1000001
+
+RESOURCE APP_REGISTRATION_INFO
+    {
+    app_file = "whmini";
+    localisable_resource_file = "\\resource\\apps\\whmini_loc";
+    localisable_resource_id = R_WHMINI_LOCALISABLE_APP_INFO;
+    }
