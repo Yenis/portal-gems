@@ -44,6 +44,7 @@ typedef struct {
     int have_key;
     int have_their_side;
     unsigned long tx_phase;    /* next numeric phase we will send */
+    unsigned long rx_phase;    /* next numeric phase we expect from them */
     wh_spake2 pake;
 
     /* Caller-owned buffers. Nothing here allocates. */

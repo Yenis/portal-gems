@@ -187,8 +187,18 @@ void CWhminiAppUi::Refresh()
             iContainer->SetLine(3, _L("Connecting..."));
             break;
         case EJobWaitingForPeer:
+            {
             iContainer->SetLine(3, _L("Waiting for sender..."));
+            TBuf<32> np;
+            TBuf<64> mb;
+            np.Copy(TPtrC8((const TUint8*)iJob.iNameplate));
+            mb.Copy(TPtrC8((const TUint8*)iJob.iMailbox));
+            line.Format(_L("nameplate %S"), &np);
+            iContainer->SetLine(4, line);
+            line.Format(_L("mailbox %S"), &mb);
+            iContainer->SetLine(5, line);
             break;
+            }
         case EJobReceiving:
             {
             TBuf<64> name;
@@ -308,6 +318,8 @@ void CWhminiAppUi::StartReceiveL()
     iJob.iTotal = 0;
     iJob.iMessage[0] = '\0';
     iJob.iFileName[0] = '\0';
+    iJob.iNameplate[0] = '\0';
+    iJob.iMailbox[0] = '\0';
 
     TInt err = iWorker.Create(_L("whmini_worker"), WhminiWorker,
                               KWorkerStackSize, NULL, &iJob);

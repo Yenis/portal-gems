@@ -253,6 +253,13 @@ extern "C" int wh_net_write(wh_conn *c, const unsigned char *buf, unsigned long 
     return status.Int() == KErrNone ? 0 : -1;
 }
 
+/* Long, because one of these reads is legitimately spent waiting for a
+ * person to type a code on the other side of the world. Its job is not to be
+ * responsive; it is to make sure a stall eventually becomes a reportable
+ * failure instead of an application that hangs until the phone is
+ * rebooted - which is exactly what happened before this existed. */
+#define WH_READ_TIMEOUT_US 180000000   /* three minutes */
+
 extern "C" long wh_net_read(wh_conn *c, unsigned char *buf, unsigned long cap)
 {
     /* RecvOneOrMore, not Read: Read waits for the buffer to fill, which
@@ -260,9 +267,37 @@ extern "C" long wh_net_read(wh_conn *c, unsigned char *buf, unsigned long cap)
     TPtr8 data(buf, 0, (TInt)cap);
     TSockXfrLength received;
     TRequestStatus status;
+    TRequestStatus timerStatus;
+    RTimer timer;
+
+    if (timer.CreateLocal() != KErrNone) {
+        /* Without a timer we would rather read with no timeout than not at
+         * all; an unbounded wait beats refusing to work. */
+        c->socket.RecvOneOrMore(data, 0, status, received);
+        User::WaitForRequest(status);
+        if (status.Int() == KErrEof) return 0;
+        if (status.Int() != KErrNone) return -1;
+        return (long)received();
+    }
 
     c->socket.RecvOneOrMore(data, 0, status, received);
-    User::WaitForRequest(status);
+    timer.After(timerStatus, WH_READ_TIMEOUT_US);
+
+    User::WaitForRequest(status, timerStatus);
+
+    if (status == KRequestPending) {
+        /* The timer won. Cancel the read and collect its completion, or the
+         * outstanding request would outlive this call. */
+        c->socket.CancelRecv();
+        User::WaitForRequest(status);
+        timer.Close();
+        Fail(WH_NET_STAGE_CONNECT, KErrTimedOut);
+        return -1;
+    }
+
+    timer.Cancel();
+    User::WaitForRequest(timerStatus);
+    timer.Close();
 
     if (status.Int() == KErrEof) return 0;      /* clean close */
     if (status.Int() != KErrNone) return -1;

@@ -228,12 +228,19 @@ Symptoms we actually hit, and their fixes:
 - **443 works but 4001 doesn't** (transfers connect but stall, or only work on
   the same Wi-Fi). The transit relay port is blocked upstream - open **4001** in
   your VPS provider's cloud firewall, not just `ufw`.
+- **443 works but 4000 doesn't**, after enabling the cleartext mailbox for
+  legacy clients: same cause, same fix, open **4000** upstream as well.
 - **Desktop connects but a phone won't.** The phone is refusing cleartext
   `ws://`. Serve the mailbox over `wss://` (steps 3-4); that is the whole reason
   TLS is recommended.
 - **Confirm the two services are actually listening where you expect:**
   `sudo ss -ltnp | grep -E ':4000|:4001'` - the mailbox on `127.0.0.1:4000`
-  (behind Caddy) and the relay on `0.0.0.0:4001`.
+  (behind Caddy, or `0.0.0.0:4000` if you serve legacy clients) and the relay
+  on `0.0.0.0:4001`.
+- **Everything works until the machine reboots.** `systemctl start` does not
+  survive a restart; only `systemctl enable` does. Check with
+  `systemctl is-enabled wormhole-mailbox wormhole-transit ufw` - all three
+  should say `enabled`.
 
 
 ## Legacy clients (Symbian, and anything else without modern TLS)
@@ -262,6 +269,18 @@ sudo systemctl daemon-reload
 sudo systemctl restart wormhole-mailbox
 sudo ufw allow 4000/tcp
 ```
+
+**Open 4000 in the provider's cloud firewall too.** `ufw` is not the only
+thing in the way, and this port hits the same trap 4001 does: `ss` shows the
+mailbox listening on `0.0.0.0:4000`, `ufw status` shows it allowed, and
+connections from outside still time out because the host's firewall drops
+them upstream. Verify from somewhere else entirely:
+
+```sh
+curl -sS -o /dev/null -w "%{http_code}\n" http://<your-server>:4000/
+```
+
+A timeout means the provider firewall; `200` means you are through.
 
 Caddy keeps working unchanged - it proxies to `127.0.0.1:4000`, which a
 wildcard bind still answers. So `wss://relay.example.com/v1` continues to

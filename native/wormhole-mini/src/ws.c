@@ -315,6 +315,13 @@ long wh_ws_recv_text(wh_ws *ws, char *out, unsigned long cap)
 void wh_ws_close(wh_ws *ws)
 {
     if (ws->conn) {
+        /* 1000 "normal closure", big-endian, as the frame payload. A failure
+         * here is not worth reporting: we are closing regardless. */
+        unsigned char reason[2];
+        reason[0] = 0x03;
+        reason[1] = 0xe8;
+        ws_send_frame(ws, OP_CLOSE, reason, sizeof(reason));
+
         wh_net_close(ws->conn);
         ws->conn = 0;
     }

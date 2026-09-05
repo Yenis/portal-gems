@@ -36,6 +36,10 @@ int wh_ws_send_text(wh_ws *ws, const char *text, unsigned long len);
  * WH_WS_ERROR / WH_WS_CLOSED. */
 long wh_ws_recv_text(wh_ws *ws, char *out, unsigned long cap);
 
+/* Send a Close frame, then drop the connection. RFC 6455 asks for this, and
+ * a peer that is waiting for the channel to end needs it: dropping the TCP
+ * socket without it leaves the other side waiting for a close that never
+ * arrives. */
 void wh_ws_close(wh_ws *ws);
 
 #ifdef __cplusplus

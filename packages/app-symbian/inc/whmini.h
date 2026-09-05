@@ -36,6 +36,8 @@ public:
     volatile TUint iDone;         /* bytes received */
     volatile TUint iTotal;        /* bytes expected */
     char iCode[64];               /* in: the wormhole code */
+    char iNameplate[32];          /* out: the nameplate actually claimed */
+    char iMailbox[64];            /* out: the mailbox the server named */
     char iMessage[KJobTextLen];   /* out: what happened */
     char iFileName[KJobTextLen];  /* out: what arrived */
     };

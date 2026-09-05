@@ -15,7 +15,12 @@
  *                         [--out DIR]
  *     The whole thing: handshake, offer, and the file itself.
  *   wh-mini [...] send --file PATH [--relay-host H] [--relay-port P]
- *     Allocate a code, print it, and send the file once a peer arrives. */
+ *     Allocate a code, print it, and send the file once a peer arrives.
+ *
+ * --code may be given more than once, in which case receive runs each
+ * transfer in turn WITHOUT restarting. That is what the phone does - the
+ * application stays open between transfers - and it is the only way to
+ * catch state that wrongly survives from one transfer to the next. */
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -359,6 +364,8 @@ int main(int argc, char **argv)
 {
     const char *host = "127.0.0.1";
     const char *path = "/v1";
+    const char *codes[8];
+    int code_count = 0;
     const char *code = 0;
     const char *cmd = "allocate";
     const char *relay_host = "127.0.0.1";
@@ -381,7 +388,12 @@ int main(int argc, char **argv)
         if (strcmp(argv[i], "--host") == 0 && i + 1 < argc) host = argv[++i];
         else if (strcmp(argv[i], "--port") == 0 && i + 1 < argc) port = (unsigned int)atoi(argv[++i]);
         else if (strcmp(argv[i], "--path") == 0 && i + 1 < argc) path = argv[++i];
-        else if (strcmp(argv[i], "--code") == 0 && i + 1 < argc) code = argv[++i];
+        else if (strcmp(argv[i], "--code") == 0 && i + 1 < argc) {
+            code = argv[++i];
+            if (code_count < (int)(sizeof(codes) / sizeof(codes[0]))) {
+                codes[code_count++] = code;
+            }
+        }
         else if (strcmp(argv[i], "--relay-host") == 0 && i + 1 < argc) relay_host = argv[++i];
         else if (strcmp(argv[i], "--relay-port") == 0 && i + 1 < argc) relay_port = (unsigned int)atoi(argv[++i]);
         else if (strcmp(argv[i], "--out") == 0 && i + 1 < argc) outdir = argv[++i];
@@ -398,11 +410,18 @@ int main(int argc, char **argv)
     }
 
     if (strcmp(cmd, "receive") == 0) {
-        if (!code) {
+        int n;
+        if (code_count == 0) {
             fprintf(stderr, "receive needs --code N-word-word\n");
             return 2;
         }
-        return cmd_receive(host, port, path, code, relay_host, relay_port, outdir);
+        for (n = 0; n < code_count; n++) {
+            int rc;
+            if (code_count > 1) printf("\n=== transfer %d of %d ===\n", n + 1, code_count);
+            rc = cmd_receive(host, port, path, codes[n], relay_host, relay_port, outdir);
+            if (rc != 0) return rc;
+        }
+        return 0;
     }
 
     if (strcmp(cmd, "verify") == 0) {

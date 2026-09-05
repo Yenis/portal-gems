@@ -494,6 +494,38 @@ at all.
       portable C89, on a fifteen-year-old phone, interoperating with a
       client that knows nothing about it.
 
+### Over the internet
+
+- [x] Cleartext `ws://` mailbox deployed on the PortalGems server (see
+      "Legacy clients" in `docs/VPS-SETUP.md`) - the same mailbox process
+      that serves `wss://`, so the phone and the desktop share channels.
+      Verified by a transfer between a sender on `wss://` and a receiver on
+      `ws://:4000`.
+- [x] **A 2.1 MB file transferred from a PC to the E72 through
+      `be-my-guest.io`**, code `7-pandemic-newborn`, 293 kB/s, checksum
+      confirmed. The phone is a full PortalGems peer over the internet.
+
+Two bugs surfaced only because the phone keeps the application open between
+transfers, where the command-line client exits:
+
+- **`rx_phase` was a file-scope static and never reset.** The second
+  transfer in a process waited for the phase number the first had reached
+  while the peer sent phase 0, and both sides waited for each other. It now
+  lives in the mailbox and resets per transfer. `wh-mini` grew a repeatable
+  `--code` argument so consecutive transfers in one process are a permanent
+  regression test - the only way to catch state that wrongly survives.
+- **The shutdown was abrupt**: a `close` message followed immediately by
+  dropping the TCP socket, with no WebSocket Close frame, no nameplate
+  release and no wait for the server's acknowledgement. The peer then sat
+  waiting for a channel that never ended - the sender hung after reporting
+  success. Measured: a reference receiver lets the sender exit in about a
+  second, ours left it running indefinitely, and it does the same as the
+  reference now.
+
+Symbian socket reads also had no timeout at all, so a stall was an
+unkillable application rather than an error. They now use an `RTimer`
+alongside the read.
+
 ## The bug that cost the most
 
 Worth writing down, because it was invisible from every angle.

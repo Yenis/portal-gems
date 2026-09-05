@@ -240,6 +240,12 @@ static void RunJob(TJob* aJob)
         return;
     }
 
+    /* Which mailbox we ended up in. Two peers that never meet are almost
+     * always in different mailboxes, and without this there is no way to
+     * see that from the phone. */
+    CopyCStr(aJob->iNameplate, sizeof(aJob->iNameplate), mailbox.nameplate);
+    CopyCStr(aJob->iMailbox, sizeof(aJob->iMailbox), mailbox.mailbox);
+
     aJob->iState = EJobWaitingForPeer;
 
     if (wh_mailbox_pake(&mailbox, KAppId, aJob->iCode) != 0) {

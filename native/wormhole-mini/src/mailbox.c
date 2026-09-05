@@ -22,6 +22,7 @@ void wh_mailbox_init(wh_mailbox *m, wh_mailbox_bufs *bufs)
     m->have_key = 0;
     m->have_their_side = 0;
     m->tx_phase = 0;
+    m->rx_phase = 0;
     m->server_error = 0;
 }
 
@@ -297,10 +298,16 @@ long wh_mailbox_recv_phase(wh_mailbox *m, char *out, unsigned long cap)
 {
     /* Numeric phases arrive in order from a given peer; the engine tracks
      * them by counting. We do the same, using a separate counter from the
-     * send side because the two directions are independent. */
-    static unsigned long rx_phase;  /* one connection at a time in this client */
+     * send side because the two directions are independent.
+     *
+     * This lives in the mailbox, not in a static. As a static it survived
+     * from one transfer to the next, which is invisible in a command-line
+     * tool that does one transfer per process and fatal in an application
+     * that stays open: the second transfer waited for the phase number the
+     * first had reached, while the peer dutifully sent phase 0, and both
+     * sides waited for each other until something timed out. */
     char phase[24];
-    unsigned long v = rx_phase;
+    unsigned long v = m->rx_phase;
     char tmp[24];
     int d = 0, i;
 
@@ -312,13 +319,25 @@ long wh_mailbox_recv_phase(wh_mailbox *m, char *out, unsigned long cap)
         for (i = 0; i < d; i++) phase[i] = tmp[d - 1 - i];
         phase[d] = '\0';
     }
-    rx_phase++;
+    m->rx_phase++;
     return recv_encrypted(m, phase, out, cap);
 }
 
 void wh_mailbox_close(wh_mailbox *m, const char *mood)
 {
     wh_jw w;
+
+    if (m->nameplate[0]) {
+        /* Give the nameplate back so the number can be reused, as the
+         * reference client does. */
+        wh_jw_init(&w, m->b->out, sizeof(m->b->out));
+        wh_jw_obj_open(&w);
+        wh_jw_str(&w, "type", "release");
+        wh_jw_str(&w, "nameplate", m->nameplate);
+        wh_jw_obj_close(&w);
+        if (wh_jw_done(&w) == 0) send_out(m);
+    }
+
     if (m->mailbox[0]) {
         wh_jw_init(&w, m->b->out, sizeof(m->b->out));
         wh_jw_obj_open(&w);
@@ -326,7 +345,15 @@ void wh_mailbox_close(wh_mailbox *m, const char *mood)
         wh_jw_str(&w, "mailbox", m->mailbox);
         wh_jw_str(&w, "mood", mood);
         wh_jw_obj_close(&w);
-        if (wh_jw_done(&w) == 0) send_out(m);
+        if (wh_jw_done(&w) == 0) {
+            send_out(m);
+            /* Wait for the server to confirm. Without this the socket can be
+             * dropped before the close is processed, and the peer sits
+             * waiting for a channel that never ends - which looks, from the
+             * other side, exactly like a transfer that did not finish. */
+            wait_type(m, "closed");
+        }
     }
+
     wh_ws_close(&m->ws);
 }
