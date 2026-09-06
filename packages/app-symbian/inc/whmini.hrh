@@ -5,6 +5,7 @@
 enum TWhminiCommands
     {
     EWhminiCmdReceive = 1,
+    EWhminiCmdSend,
     EWhminiCmdServer,
     EWhminiCmdAbout
     };

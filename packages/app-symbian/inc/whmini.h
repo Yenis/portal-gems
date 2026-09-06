@@ -19,10 +19,18 @@ enum TJobState
     {
     EJobIdle = 0,
     EJobConnecting,
+    EJobShowingCode,      /* sending: the code is up, waiting to be typed */
     EJobWaitingForPeer,
     EJobReceiving,
+    EJobSending,
     EJobDone,
     EJobFailed
+    };
+
+enum TJobKind
+    {
+    EJobKindReceive = 0,
+    EJobKindSend
     };
 
 const TInt KJobTextLen = 128;
@@ -30,12 +38,17 @@ const TInt KJobTextLen = 128;
 class TJob
     {
 public:
+    volatile TInt iKind;          /* in: TJobKind */
     volatile TInt iState;
+    /* Set only after iCode has been fully written, so the UI never shows a
+     * half-built code. */
+    volatile TInt iCodeReady;
     volatile TInt iStage;         /* WH_NET_STAGE_* on failure */
     volatile TInt iError;         /* Symbian error code on failure */
     volatile TUint iDone;         /* bytes received */
     volatile TUint iTotal;        /* bytes expected */
-    char iCode[64];               /* in: the wormhole code */
+    char iCode[64];               /* receive: in. send: out, once ready. */
+    char iPath[256];              /* send: in, the file to send */
     char iNameplate[32];          /* out: the nameplate actually claimed */
     char iMailbox[64];            /* out: the mailbox the server named */
     char iMessage[KJobTextLen];   /* out: what happened */

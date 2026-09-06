@@ -18,6 +18,7 @@
 #include <aknappui.h>
 #include <aknquerydialog.h>
 #include <aknnotewrappers.h>
+#include <AknCommonDialogsDynMem.h>
 #include <avkon.hrh>
 #include <avkon.rsg>
 #include <whmini.rsg>
@@ -107,6 +108,8 @@ public:
 private:
     void HandleCommandL(TInt aCommand);
     void StartReceiveL();
+    void StartSendL();
+    TBool PrepareJobL();
     void AskForServerL();
     void Refresh();
     static TInt Tick(TAny* aSelf);
@@ -182,10 +185,34 @@ void CWhminiAppUi::Refresh()
         {
         case EJobIdle:
             iContainer->SetLine(3, _L("Options > Receive file"));
+            iContainer->SetLine(4, _L("Options > Send file"));
             break;
         case EJobConnecting:
             iContainer->SetLine(3, _L("Connecting..."));
             break;
+        case EJobShowingCode:
+            {
+            iContainer->SetLine(2, _L("Give this code to the sender:"));
+            if (iJob.iCodeReady)
+                {
+                TBuf<64> code;
+                code.Copy(TPtrC8((const TUint8*)iJob.iCode));
+                iContainer->SetLine(3, code);
+                }
+            iContainer->SetLine(5, _L("Waiting for them..."));
+            break;
+            }
+        case EJobSending:
+            {
+            TBuf<64> name;
+            name.Copy(TPtrC8((const TUint8*)iJob.iFileName));
+            iContainer->SetLine(2, _L("Sending:"));
+            iContainer->SetLine(3, name);
+            TUint pct = iJob.iTotal ? (iJob.iDone * 100 / iJob.iTotal) : 0;
+            line.Format(_L("%u%%  (%u / %u bytes)"), pct, iJob.iDone, iJob.iTotal);
+            iContainer->SetLine(4, line);
+            break;
+            }
         case EJobWaitingForPeer:
             {
             iContainer->SetLine(3, _L("Waiting for sender..."));
@@ -213,9 +240,17 @@ void CWhminiAppUi::Refresh()
             {
             TBuf<64> name;
             name.Copy(TPtrC8((const TUint8*)iJob.iFileName));
-            iContainer->SetLine(3, _L("Received:"));
-            iContainer->SetLine(4, name);
-            iContainer->SetLine(5, _L("Saved to E:\\PortalGems\\"));
+            if (iJob.iKind == EJobKindSend)
+                {
+                iContainer->SetLine(3, _L("Sent, and confirmed:"));
+                iContainer->SetLine(4, name);
+                }
+            else
+                {
+                iContainer->SetLine(3, _L("Received:"));
+                iContainer->SetLine(4, name);
+                iContainer->SetLine(5, _L("Saved to E:\\PortalGems\\"));
+                }
             break;
             }
         case EJobFailed:
@@ -286,19 +321,75 @@ void CWhminiAppUi::AskForServerL()
     Refresh();
     }
 
-void CWhminiAppUi::StartReceiveL()
+TBool CWhminiAppUi::PrepareJobL()
     {
     if (iWorkerRunning)
         {
         CAknInformationNote* note = new (ELeave) CAknInformationNote(ETrue);
         note->ExecuteLD(_L("A transfer is already running"));
-        return;
+        return EFalse;
         }
     if (iSettings.iMailboxHost[0] == '\0')
         {
         AskForServerL();
-        if (iSettings.iMailboxHost[0] == '\0') return;
+        if (iSettings.iMailboxHost[0] == '\0') return EFalse;
         }
+
+    iJob.iState = EJobIdle;
+    iJob.iStage = 0;
+    iJob.iError = 0;
+    iJob.iDone = 0;
+    iJob.iTotal = 0;
+    iJob.iCodeReady = 0;
+    iJob.iCode[0] = '\0';
+    iJob.iPath[0] = '\0';
+    iJob.iMessage[0] = '\0';
+    iJob.iFileName[0] = '\0';
+    iJob.iNameplate[0] = '\0';
+    iJob.iMailbox[0] = '\0';
+    return ETrue;
+    }
+
+void CWhminiAppUi::StartSendL()
+    {
+    if (!PrepareJobL()) return;
+
+    TFileName path;
+    if (!AknCommonDialogsDynMem::RunSelectDlgLD(
+            AknCommonDialogsDynMem::EMemoryTypePhone |
+                AknCommonDialogsDynMem::EMemoryTypeMMC,
+            path, R_WHMINI_MEMORY_SELECTION))
+        {
+        return;
+        }
+    if (path.Length() == 0) return;
+
+    TInt i;
+    for (i = 0; i < path.Length() && i < (TInt)sizeof(iJob.iPath) - 1; i++)
+        iJob.iPath[i] = (char)path[i];
+    iJob.iPath[i] = '\0';
+
+    iJob.iKind = EJobKindSend;
+
+    TInt err = iWorker.Create(_L("whmini_worker"), WhminiWorker,
+                              KWorkerStackSize, NULL, &iJob);
+    if (err != KErrNone)
+        {
+        CAknErrorNote* note = new (ELeave) CAknErrorNote(ETrue);
+        note->ExecuteLD(_L("Could not start the transfer"));
+        return;
+        }
+    iWorkerRunning = ETrue;
+    iWorker.Resume();
+
+    iTimer->Cancel();
+    iTimer->Start(KPollInterval, KPollInterval, TCallBack(Tick, this));
+    Refresh();
+    }
+
+void CWhminiAppUi::StartReceiveL()
+    {
+    if (!PrepareJobL()) return;
 
     TBuf<64> code;
     CAknTextQueryDialog* dlg = CAknTextQueryDialog::NewL(code);
@@ -311,15 +402,7 @@ void CWhminiAppUi::StartReceiveL()
         iJob.iCode[i] = (char)code[i];
     iJob.iCode[i] = '\0';
 
-    iJob.iState = EJobIdle;
-    iJob.iStage = 0;
-    iJob.iError = 0;
-    iJob.iDone = 0;
-    iJob.iTotal = 0;
-    iJob.iMessage[0] = '\0';
-    iJob.iFileName[0] = '\0';
-    iJob.iNameplate[0] = '\0';
-    iJob.iMailbox[0] = '\0';
+    iJob.iKind = EJobKindReceive;
 
     TInt err = iWorker.Create(_L("whmini_worker"), WhminiWorker,
                               KWorkerStackSize, NULL, &iJob);
@@ -343,6 +426,9 @@ void CWhminiAppUi::HandleCommandL(TInt aCommand)
         {
         case EWhminiCmdReceive:
             StartReceiveL();
+            break;
+        case EWhminiCmdSend:
+            StartSendL();
             break;
         case EWhminiCmdServer:
             AskForServerL();

@@ -579,7 +579,14 @@ receive-only one.
 - [x] **Verified against the engine**: `wh-mini` allocated
       `6-pioneer-dreadful`, `native/wormhole-core`'s recv example reported
       `RECV-OK`, and the file arrived byte-identical.
-- [ ] The phone half: file picker and code display in the UI (needs S6).
+- [x] The phone half. `Options > Send file` opens the phone's own file
+      browser (`AknCommonDialogsDynMem::RunSelectDlgLD`, so it browses phone
+      memory and the card exactly as every other S60 application does),
+      then shows the allocated code for the other side to type, and reports
+      progress while sending.
+
+      Sending needs no text input at all, which makes it the easier
+      direction on this phone - the code is displayed, not typed.
 
 ### S8 - Ship it
 

@@ -7,6 +7,7 @@ NAME WHMI
 #include <avkon.rsg>
 #include <avkon.hrh>
 #include <appinfo.rh>
+#include <CommonDialogs.rh>
 #include "whmini.hrh"
 
 RESOURCE RSS_SIGNATURE { }
@@ -29,7 +30,17 @@ RESOURCE MENU_PANE r_whmini_menu
     items =
         {
         MENU_ITEM { command = EWhminiCmdReceive; txt = "Receive file"; },
+        MENU_ITEM { command = EWhminiCmdSend;    txt = "Send file"; },
         MENU_ITEM { command = EWhminiCmdServer;  txt = "Set server"; },
         MENU_ITEM { command = EAknSoftkeyExit;   txt = "Exit"; }
         };
+    }
+
+// Memory selection for the file browser: the file dialog needs one, and
+// this is the phone's own list of drives.
+RESOURCE MEMORYSELECTIONDIALOG r_whmini_memory_selection
+    {
+    title = "Select memory";
+    softkey_1 = "Select";
+    softkey_2 = "Cancel";
     }

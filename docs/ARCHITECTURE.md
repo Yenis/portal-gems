@@ -1,6 +1,8 @@
 # PortalGems - Architecture Reference
 
-The single document to read before building new features. Everything here was
+The single document to read before building new features. Deferred work with
+its reasoning lives in `docs/BACKLOG.md`; the Symbian client has its own map
+in `docs/SYMBIAN.md`. Everything here was
 verified working as of 2026-07-11 (phases 0–4 complete). Per-phase discovery
 notes live in the other `docs/*.md` files; this is the consolidated map.
 

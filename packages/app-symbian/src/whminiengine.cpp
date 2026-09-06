@@ -9,6 +9,7 @@
 #include "whmini.h"
 
 extern "C" {
+#include "../../../native/wormhole-mini/src/wordlist.h"
 #include "../../../native/wormhole-mini/src/mailbox.h"
 #include "../../../native/wormhole-mini/src/xfer.h"
 #include "../../../native/wormhole-mini/src/net.h"
@@ -211,6 +212,25 @@ extern "C" void WhminiProgress(void* aCtx, unsigned long aDone, unsigned long aT
     }
 }
 
+struct TFileSource
+    {
+    RFile iFile;
+    TInt iError;
+    };
+
+extern "C" long WhminiSourceRead(void* aCtx, unsigned char* aBuf,
+                                 unsigned long aCap)
+{
+    TFileSource* src = (TFileSource*)aCtx;
+    TPtr8 buf(aBuf, 0, (TInt)aCap);
+    TInt err = src->iFile.Read(buf);
+    if (err != KErrNone) {
+        src->iError = err;
+        return -1;
+    }
+    return (long)buf.Length();
+}
+
 static void Finish(TJob* aJob, TInt aState, const char* aMessage)
 {
     CopyCStr(aJob->iMessage, KJobTextLen, aMessage);
@@ -344,6 +364,130 @@ static void RunJob(TJob* aJob)
     wh_mailbox_close(&mailbox, "happy");
 }
 
+/* Send: allocate a code, publish it for the UI to display, then wait for
+ * whoever types it. The wait is inside wh_mailbox_pake and can be long -
+ * which is exactly why this runs on its own thread. */
+static void RunSendJob(TJob* aJob)
+{
+    wh_mailbox mailbox;
+    RFs fs;
+    TFileSource source;
+    TFileName path;
+    char code[WH_CODE_MAX];
+    char name[128];
+    TInt size = 0;
+    TInt rc;
+
+    aJob->iState = EJobConnecting;
+
+    path.Copy(TPtrC8((const TUint8*)aJob->iPath));
+
+    if (fs.Connect() != KErrNone) {
+        Finish(aJob, EJobFailed, "Cannot open the file system");
+        return;
+    }
+    source.iError = KErrNone;
+    if (source.iFile.Open(fs, path, EFileRead | EFileShareReadersOnly) != KErrNone) {
+        fs.Close();
+        Finish(aJob, EJobFailed, "Cannot open that file");
+        return;
+    }
+    if (source.iFile.Size(size) != KErrNone || size <= 0) {
+        source.iFile.Close();
+        fs.Close();
+        Finish(aJob, EJobFailed, "That file is empty or unreadable");
+        return;
+    }
+
+    /* Offer the bare name, never the path it happened to come from. */
+    {
+        TParsePtrC parse(path);
+        TPtrC leaf = parse.NameAndExt();
+        TInt i;
+        for (i = 0; i < leaf.Length() && i < (TInt)sizeof(name) - 1; i++) {
+            name[i] = (char)leaf[i];
+        }
+        name[i] = '\0';
+    }
+    CopyCStr(aJob->iFileName, KJobTextLen, name);
+    aJob->iTotal = (TUint)size;
+
+    wh_mailbox_init(&mailbox, &gMailboxBufs);
+
+    if (wh_mailbox_connect(&mailbox, gSettings.iMailboxHost, gSettings.iMailboxPort,
+                           gSettings.iMailboxPath, KAppId) != 0) {
+        source.iFile.Close();
+        fs.Close();
+        Finish(aJob, EJobFailed, "Could not reach the server");
+        return;
+    }
+
+    if (wh_mailbox_allocate(&mailbox, code, sizeof(code)) != 0) {
+        source.iFile.Close();
+        fs.Close();
+        Finish(aJob, EJobFailed, "Could not get a code");
+        wh_mailbox_close(&mailbox, "errory");
+        return;
+    }
+
+    CopyCStr(aJob->iCode, sizeof(aJob->iCode), code);
+    CopyCStr(aJob->iNameplate, sizeof(aJob->iNameplate), mailbox.nameplate);
+    aJob->iCodeReady = 1;
+    aJob->iState = EJobShowingCode;
+
+    if (wh_mailbox_pake(&mailbox, KAppId, code) != 0) {
+        source.iFile.Close();
+        fs.Close();
+        Finish(aJob, EJobFailed, "Handshake failed");
+        wh_mailbox_close(&mailbox, "errory");
+        return;
+    }
+
+    rc = wh_mailbox_version(&mailbox);
+    if (rc == -2) {
+        source.iFile.Close();
+        fs.Close();
+        Finish(aJob, EJobFailed, "The other side used a wrong code");
+        wh_mailbox_close(&mailbox, "scary");
+        return;
+    }
+    if (rc != 0) {
+        source.iFile.Close();
+        fs.Close();
+        Finish(aJob, EJobFailed, "Handshake failed");
+        wh_mailbox_close(&mailbox, "errory");
+        return;
+    }
+
+    aJob->iState = EJobSending;
+
+    rc = wh_xfer_send_file(&mailbox, KAppId, name, (unsigned long)size,
+                           gSettings.iRelayHost, gSettings.iRelayPort,
+                           &gXferBufs, WhminiSourceRead, &source,
+                           WhminiProgress, NULL);
+    source.iFile.Close();
+    fs.Close();
+
+    if (rc == -2) {
+        Finish(aJob, EJobFailed, "The other side declined");
+        wh_mailbox_close(&mailbox, "errory");
+        return;
+    }
+    if (rc == -3) {
+        Finish(aJob, EJobFailed, "Checksum mismatch");
+        wh_mailbox_close(&mailbox, "errory");
+        return;
+    }
+    if (rc != 0) {
+        Finish(aJob, EJobFailed, "Transfer failed");
+        wh_mailbox_close(&mailbox, "errory");
+        return;
+    }
+
+    Finish(aJob, EJobDone, "Sent, and confirmed by the other side");
+    wh_mailbox_close(&mailbox, "happy");
+}
+
 TInt WhminiWorker(TAny* aPtr)
 {
     TJob* job = (TJob*)aPtr;
@@ -353,7 +497,7 @@ TInt WhminiWorker(TAny* aPtr)
     WhminiLoadSettings(gSettings);
 
     if (cleanup) {
-        TRAPD(err, RunJob(job));
+        TRAPD(err, job->iKind == EJobKindSend ? RunSendJob(job) : RunJob(job));
         if (err != KErrNone && job->iState != EJobFailed) {
             Finish(job, EJobFailed, "Unexpected error");
             job->iError = err;

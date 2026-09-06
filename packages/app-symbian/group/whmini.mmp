@@ -89,6 +89,7 @@ LIBRARY         bafl.lib
 LIBRARY         egul.lib
 LIBRARY         gdi.lib
 LIBRARY         ws32.lib
+LIBRARY         commondialogs.lib   // the native file browser
 
 // On random.lib: every random byte in this program is security-critical -
 // the SPAKE2 scalar, secretbox nonces, the WebSocket masking key. Math::Random
