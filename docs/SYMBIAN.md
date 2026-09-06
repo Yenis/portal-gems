@@ -480,6 +480,26 @@ at all.
       250 ms timer.
 - [x] Live progress, and failures reported with stage and Symbian error.
 - [x] Settings via the same dialog, persisted to `server.txt`.
+- [x] **Cancel.** `Options > Cancel transfer` stops a transfer in progress,
+      including one waiting for a peer who never arrives.
+
+      This needed real machinery rather than a flag. The protocol code is
+      synchronous, so a transfer spends nearly all its time blocked inside a
+      read and cannot poll anything. The UI thread therefore raises a flag
+      *and* completes a request in the worker with
+      `RThread::RequestComplete`, and the read waits on the socket, the
+      timeout and that cancel signal together via `User::WaitForNRequest`.
+      Killing the thread would have been simpler and would have leaked the
+      socket server session along with everything else it owns.
+
+      The socket read is never abandoned speculatively - cancelling it on a
+      timer tick could discard bytes that had already arrived - so it is
+      only given up when we really are stopping. A cancelled job says
+      "Cancelled" rather than a generic failure, because the user stopping
+      something and something going wrong deserve different words.
+
+      Known limit: a cancel during a *write* waits for that write to finish.
+      Writes are a single record at most, so the delay is imperceptible.
 - [ ] Icon (the phone shows a default for now).
 - [x] **MILESTONE MET.** A 2.1 MB file transferred from the reference
       `wormhole` client to a Nokia E72, over Wi-Fi, code

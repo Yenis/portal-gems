@@ -233,6 +233,9 @@ extern "C" long WhminiSourceRead(void* aCtx, unsigned char* aBuf,
 
 static void Finish(TJob* aJob, TInt aState, const char* aMessage)
 {
+    /* "You stopped this" and "this went wrong" deserve different words, and
+     * only the platform layer knows which happened. */
+    if (aState == EJobFailed && wh_net_cancelled()) aMessage = "Cancelled";
     CopyCStr(aJob->iMessage, KJobTextLen, aMessage);
     aJob->iStage = wh_net_last_stage();
     aJob->iError = (TInt)wh_net_last_error();
@@ -494,6 +497,7 @@ TInt WhminiWorker(TAny* aPtr)
     CTrapCleanup* cleanup = CTrapCleanup::New();
 
     gJob = job;
+    wh_net_cancel_arm();
     WhminiLoadSettings(gSettings);
 
     if (cleanup) {

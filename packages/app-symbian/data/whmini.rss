@@ -31,6 +31,7 @@ RESOURCE MENU_PANE r_whmini_menu
         {
         MENU_ITEM { command = EWhminiCmdReceive; txt = "Receive file"; },
         MENU_ITEM { command = EWhminiCmdSend;    txt = "Send file"; },
+        MENU_ITEM { command = EWhminiCmdCancel;  txt = "Cancel transfer"; },
         MENU_ITEM { command = EWhminiCmdServer;  txt = "Set server"; },
         MENU_ITEM { command = EAknSoftkeyExit;   txt = "Exit"; }
         };

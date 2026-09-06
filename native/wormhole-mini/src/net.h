@@ -56,6 +56,20 @@ long wh_net_last_error(void);
  * connection. Diagnostic only. */
 int wh_net_have_connection(void);
 
+/* Cancellation.
+ *
+ * The protocol code is synchronous, so a transfer spends nearly all its time
+ * blocked inside a read - which cannot poll a flag. `arm` prepares the
+ * mechanism at the start of a job; the platform layer then waits on the
+ * cancel signal alongside the socket, and a cancelled read returns an error
+ * the way any other failure does. `wh_net_cancelled` distinguishes "the user
+ * stopped this" from "something went wrong", which the two deserve to be.
+ *
+ * How the signal is raised is platform business: on Symbian the UI thread
+ * completes a request in the worker; on the host it does not arise. */
+void wh_net_cancel_arm(void);
+int wh_net_cancelled(void);
+
 #ifdef __cplusplus
 }
 #endif

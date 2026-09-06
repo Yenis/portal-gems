@@ -121,6 +121,16 @@ int wh_net_have_connection(void)
     return 1;
 }
 
+void wh_net_cancel_arm(void)
+{
+    /* The host harness runs one transfer to completion; nothing cancels it. */
+}
+
+int wh_net_cancelled(void)
+{
+    return 0;
+}
+
 int wh_net_last_stage(void)
 {
     return WH_NET_STAGE_NONE;

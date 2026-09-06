@@ -46,6 +46,35 @@ static wh_conn gConns[WH_MAX_CONN];
 static TInt gLastStage = WH_NET_STAGE_NONE;
 static TInt gLastError = KErrNone;
 
+/* Cancellation. gCancelReq is owned by the worker thread; the UI thread
+ * completes it through RThread::RequestComplete, which is what makes a
+ * blocked read return. The flag is separate so the reason survives after
+ * RequestComplete has nulled the pointer. */
+static TRequestStatus gCancelReq;
+static TRequestStatus* gCancelPtr = NULL;
+static volatile TInt gCancelled = 0;
+
+extern "C" void wh_net_cancel_arm(void)
+{
+    gCancelReq = KRequestPending;
+    gCancelPtr = &gCancelReq;
+    gCancelled = 0;
+}
+
+extern "C" int wh_net_cancelled(void)
+{
+    return gCancelled;
+}
+
+/* Called from the UI thread with the worker's handle. Raising the flag and
+ * completing the request are both needed: the flag is what the protocol code
+ * sees, the completion is what wakes it up to look. */
+void WhminiCancelWorker(RThread& aWorker)
+{
+    gCancelled = 1;
+    if (gCancelPtr) aWorker.RequestComplete(gCancelPtr, KErrCancel);
+}
+
 static void Fail(TInt aStage, TInt aErr)
 {
     gLastStage = aStage;
@@ -280,18 +309,39 @@ extern "C" long wh_net_read(wh_conn *c, unsigned char *buf, unsigned long cap)
         return (long)received();
     }
 
+    if (gCancelled) {
+        timer.Close();
+        return -1;
+    }
+
     c->socket.RecvOneOrMore(data, 0, status, received);
     timer.After(timerStatus, WH_READ_TIMEOUT_US);
 
-    User::WaitForRequest(status, timerStatus);
+    /* Wait on the read, the timeout, and the cancel signal together. The
+     * socket read is never cancelled speculatively - doing that on a timer
+     * tick would risk losing bytes that had already arrived - so it is only
+     * abandoned when we really are giving up. */
+    {
+        TRequestStatus* waits[3];
+        TInt count = 2;
+        waits[0] = &status;
+        waits[1] = &timerStatus;
+        if (gCancelPtr) waits[count++] = gCancelPtr;
+        User::WaitForNRequest(waits, count);
+    }
 
     if (status == KRequestPending) {
-        /* The timer won. Cancel the read and collect its completion, or the
-         * outstanding request would outlive this call. */
+        /* Either the timeout or a cancel. Abandon the read and collect its
+         * completion, or the outstanding request would outlive this call. */
+        TBool cancelled = gCancelled ? ETrue : EFalse;
         c->socket.CancelRecv();
         User::WaitForRequest(status);
+        /* Cancel always completes the request, whether or not it had already
+         * fired, so the completion must always be collected. */
+        timer.Cancel();
+        User::WaitForRequest(timerStatus);
         timer.Close();
-        Fail(WH_NET_STAGE_CONNECT, KErrTimedOut);
+        if (!cancelled) Fail(WH_NET_STAGE_CONNECT, KErrTimedOut);
         return -1;
     }
 

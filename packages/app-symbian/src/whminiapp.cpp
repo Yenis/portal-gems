@@ -30,6 +30,11 @@ extern "C" {
 #include "../../../native/wormhole-mini/src/net.h"
 }
 
+/* Implemented in the Symbian platform layer: raises the cancel flag the
+ * protocol code checks, and completes a request in the worker so a blocked
+ * read wakes up to notice. */
+void WhminiCancelWorker(RThread& aWorker);
+
 const TUid KUidWhminiApp = { 0xE1000001 };
 const TInt KPollInterval = 250000;   /* microseconds */
 const TInt KMaxLines = 7;
@@ -109,6 +114,7 @@ private:
     void HandleCommandL(TInt aCommand);
     void StartReceiveL();
     void StartSendL();
+    void CancelTransferL();
     TBool PrepareJobL();
     void AskForServerL();
     void Refresh();
@@ -420,6 +426,19 @@ void CWhminiAppUi::StartReceiveL()
     Refresh();
     }
 
+void CWhminiAppUi::CancelTransferL()
+    {
+    if (!iWorkerRunning)
+        {
+        CAknInformationNote* note = new (ELeave) CAknInformationNote(ETrue);
+        note->ExecuteLD(_L("Nothing to cancel"));
+        return;
+        }
+    WhminiCancelWorker(iWorker);
+    /* The worker unwinds on its own and reports the outcome; the polling
+     * timer picks it up like any other ending. */
+    }
+
 void CWhminiAppUi::HandleCommandL(TInt aCommand)
     {
     switch (aCommand)
@@ -429,6 +448,9 @@ void CWhminiAppUi::HandleCommandL(TInt aCommand)
             break;
         case EWhminiCmdSend:
             StartSendL();
+            break;
+        case EWhminiCmdCancel:
+            CancelTransferL();
             break;
         case EWhminiCmdServer:
             AskForServerL();
