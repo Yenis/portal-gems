@@ -12,7 +12,7 @@ VENDOR_CFLAGS = -std=gnu89 -O2 -w
 SRC = src/sha256.c src/kdf.c src/box.c src/spake2.c \
       src/sha1.c src/base64.c src/json.c src/ws.c src/mailbox.c \
       src/transit.c src/xfer.c \
-      src/wordlist.c src/code.c src/crc32.c src/inflate.c
+      src/wordlist.c src/code.c src/crc32.c src/inflate.c src/zip.c
 PORT = port/posix.c
 # src/ed25519.c compiles vendor/tweetnacl/tweetnacl.c inside itself to reach
 # its static ed25519 internals, so tweetnacl.c is never built separately -
@@ -30,7 +30,7 @@ BUILD = build
 ARM_CC ?= arm-linux-gnueabi-gcc
 QEMU ?= qemu-arm-static
 
-.PHONY: all test test-arm clean vectors inflate-vectors wordlist cli cli-arm
+.PHONY: all test test-arm clean vectors inflate-vectors zip-vectors wordlist cli cli-arm
 
 all: test
 
@@ -46,6 +46,9 @@ $(BUILD)/test_vectors: tests/test_vectors.c $(SRC) $(PORT) $(BUILD)/ed25519.o | 
 $(BUILD)/test_inflate: tests/test_inflate.c $(SRC) $(PORT) $(BUILD)/ed25519.o | $(BUILD)
 	$(CC) $(CFLAGS) -o $@ tests/test_inflate.c $(SRC) $(PORT) $(BUILD)/ed25519.o
 
+$(BUILD)/test_zip: tests/test_zip.c $(SRC) $(PORT) $(BUILD)/ed25519.o | $(BUILD)
+	$(CC) $(CFLAGS) -o $@ tests/test_zip.c $(SRC) $(PORT) $(BUILD)/ed25519.o
+
 $(BUILD)/test_proto: tests/test_proto.c $(SRC) $(PORT) $(BUILD)/ed25519.o | $(BUILD)
 	$(CC) $(CFLAGS) -o $@ tests/test_proto.c $(SRC) $(PORT) $(BUILD)/ed25519.o
 
@@ -54,12 +57,14 @@ $(BUILD)/wh-mini: cli/wh-mini.c $(SRC) $(PORT) $(BUILD)/ed25519.o | $(BUILD)
 
 cli: $(BUILD)/wh-mini
 
-test: $(BUILD)/test_vectors $(BUILD)/test_proto $(BUILD)/test_inflate
+test: $(BUILD)/test_vectors $(BUILD)/test_proto $(BUILD)/test_inflate $(BUILD)/test_zip
 	./$(BUILD)/test_vectors
 	@echo
 	./$(BUILD)/test_proto
 	@echo
 	./$(BUILD)/test_inflate
+	@echo
+	./$(BUILD)/test_zip
 
 $(BUILD)/arm:
 	mkdir -p $(BUILD)/arm
@@ -73,6 +78,9 @@ $(BUILD)/arm/test_vectors: tests/test_vectors.c $(SRC) $(PORT) $(BUILD)/arm/ed25
 $(BUILD)/arm/test_inflate: tests/test_inflate.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o | $(BUILD)/arm
 	$(ARM_CC) $(CFLAGS) -static -o $@ tests/test_inflate.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o
 
+$(BUILD)/arm/test_zip: tests/test_zip.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o | $(BUILD)/arm
+	$(ARM_CC) $(CFLAGS) -static -o $@ tests/test_zip.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o
+
 $(BUILD)/arm/test_proto: tests/test_proto.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o | $(BUILD)/arm
 	$(ARM_CC) $(CFLAGS) -static -o $@ tests/test_proto.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o
 
@@ -81,12 +89,14 @@ $(BUILD)/arm/wh-mini: cli/wh-mini.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o | $(BU
 
 cli-arm: $(BUILD)/arm/wh-mini
 
-test-arm: $(BUILD)/arm/test_vectors $(BUILD)/arm/test_proto $(BUILD)/arm/test_inflate
+test-arm: $(BUILD)/arm/test_vectors $(BUILD)/arm/test_proto $(BUILD)/arm/test_inflate $(BUILD)/arm/test_zip
 	$(QEMU) ./$(BUILD)/arm/test_vectors
 	@echo
 	$(QEMU) ./$(BUILD)/arm/test_proto
 	@echo
 	$(QEMU) ./$(BUILD)/arm/test_inflate
+	@echo
+	$(QEMU) ./$(BUILD)/arm/test_zip
 
 # Regenerate the committed PGP wordlist from the engine's own JSON.
 wordlist:
@@ -96,6 +106,10 @@ wordlist:
 # Regenerate the deflate vectors from zlib.
 inflate-vectors:
 	python3 tools/geninflate.py > tests/vectors/inflate_vectors.h
+
+# Regenerate the zip vectors from Python's zipfile.
+zip-vectors:
+	python3 tools/genzip.py > tests/vectors/zip_vectors.h
 
 vectors:
 	cargo run --quiet --manifest-path tools/genvectors/Cargo.toml > tests/vectors/vectors.h
