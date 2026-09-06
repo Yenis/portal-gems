@@ -31,6 +31,7 @@ packages/app-symbian/sis/portalgems-dev.cer
 packages/app-symbian/sis/*.sis
 packages/app-symbian/sis/whmini.exe
 packages/app-symbian/sis/*.rsc
+packages/app-symbian/sis/*.mbm
 
 docs/feat.txt
 

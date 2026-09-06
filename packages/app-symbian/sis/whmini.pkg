@@ -13,7 +13,7 @@
 &EN
 
 ; Name, package UID (matches whmini.mmp), major, minor, build, type
-#{"PortalGems Mini"}, (0xE1000001), 0, 3, 1, TYPE=SA
+#{"PortalGems Mini"}, (0xE1000001), 0, 3, 2, TYPE=SA
 
 ; Vendor: unique name, then the localised one
 %{"PortalGems"}
@@ -37,5 +37,6 @@
 ; without them the executable installs to \sys\bin and is invisible, listed
 ; under App. manager as an installed package but impossible to launch.
 "whmini.rsc" - "!:\resource\apps\whmini.rsc"
+"whmini.mbm" - "!:\resource\apps\whmini.mbm"
 "whmini_reg.rsc" - "!:\private\10003a3f\import\apps\whmini_reg.rsc"
 "whmini_loc.rsc" - "!:\resource\apps\whmini_loc.rsc"

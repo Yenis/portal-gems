@@ -500,7 +500,15 @@ at all.
 
       Known limit: a cancel during a *write* waits for that write to finish.
       Writes are a single record at most, so the delay is imperceptible.
-- [ ] Icon (the phone shows a default for now).
+- [x] Icon. A cut gem, drawn by `packages/app-symbian/gfx/make-icon.py` and
+      built into an MBM bitmap/mask pair.
+
+      S60 3rd Edition prefers a scalable MIF icon, but producing one needs
+      `svgtbinencode.exe`, a Windows binary, while `bmconv` is native - so
+      MBM is the format this toolchain can actually build. The bitmaps are
+      generated in code rather than committed as opaque binaries: at 44x44
+      there is nothing an editor offers that arithmetic does not, and the
+      shape stays reviewable and reproducible.
 - [x] **MILESTONE MET.** A 2.1 MB file transferred from the reference
       `wormhole` client to a Nokia E72, over Wi-Fi, code
       `9-paperweight-bison`. The sender reported *"Confirmation received.

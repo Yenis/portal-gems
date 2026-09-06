@@ -19,6 +19,7 @@ HERE=$(dirname "$0")
 SIS_DIR="$HERE/../packages/app-symbian/sis"
 BINARY="${EPOCROOT}epoc32/release/gcce/urel/whmini.exe"
 APP_RSC="${EPOCROOT}epoc32/data/z/resource/apps/whmini.rsc"
+ICON="${EPOCROOT}epoc32/data/z/resource/apps/whmini.mbm"
 REG_RSC="${EPOCROOT}epoc32/data/z/private/10003a3f/import/apps/whmini_reg.rsc"
 LOC_RSC="${EPOCROOT}epoc32/data/z/resource/apps/whmini_loc.rsc"
 KEY="$SIS_DIR/portalgems-dev.key"
@@ -41,7 +42,7 @@ if [ ! -f "$BINARY" ]; then
     echo "no built binary at $BINARY - run 'abld build gcce urel' first" >&2
     exit 1
 fi
-for f in "$BINARY" "$APP_RSC" "$REG_RSC" "$LOC_RSC"; do
+for f in "$BINARY" "$APP_RSC" "$ICON" "$REG_RSC" "$LOC_RSC"; do
     if [ ! -f "$f" ]; then
         echo "missing build output: $f" >&2
         exit 1

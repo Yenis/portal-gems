@@ -10,8 +10,7 @@ RESOURCE LOCALISABLE_APP_INFO r_whmini_localisable_app_info
         CAPTION_AND_ICON_INFO
             {
             caption = "PortalGems";
-            // No icon yet - the phone shows a default. An MBM/MIF icon is
-            // an S6 concern, not a reason to hold up the first device test.
-            number_of_icons = 0;
+            number_of_icons = 1;
+            icon_file = "\\resource\\apps\\whmini.mbm";
             };
     }
