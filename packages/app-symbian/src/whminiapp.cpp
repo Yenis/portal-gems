@@ -117,6 +117,8 @@ private:
     void CancelTransferL();
     TBool PrepareJobL();
     void AskForServerL();
+    void EditHostL(char* aTarget, TInt aCap, const TDesC& aPrompt);
+    void EditPortL(TUint& aTarget, const TDesC& aPrompt);
     void Refresh();
     static TInt Tick(TAny* aSelf);
 
@@ -177,15 +179,24 @@ void CWhminiAppUi::Refresh()
     if (iSettings.iMailboxHost[0] == '\0')
         {
         iContainer->SetLine(2, _L("No server set."));
-        iContainer->SetLine(3, _L("Options > Set server"));
+        iContainer->SetLine(3, _L("Options > Settings"));
         iContainer->DrawNow();
         return;
         }
 
     TBuf<64> host;
     host.Copy(TPtrC8((const TUint8*)iSettings.iMailboxHost));
-    line.Format(_L("Server: %S"), &host);
+    line.Format(_L("Server: %S:%u"), &host, iSettings.iMailboxPort);
     iContainer->SetLine(1, line);
+
+    /* The relay only earns screen space when nothing else needs it. */
+    if (iJob.iState == EJobIdle)
+        {
+        TBuf<64> relay;
+        relay.Copy(TPtrC8((const TUint8*)iSettings.iRelayHost));
+        line.Format(_L("Relay:  %S:%u"), &relay, iSettings.iRelayPort);
+        iContainer->SetLine(2, line);
+        }
 
     switch (iJob.iState)
         {
@@ -301,30 +312,63 @@ TInt CWhminiAppUi::Tick(TAny* aSelf)
     return 0;
     }
 
-void CWhminiAppUi::AskForServerL()
+/* Hosts are trimmed on the way in. A stray space is invisible on screen and
+ * turns a literal address into a name lookup that fails - which cost a long
+ * evening once already. */
+void CWhminiAppUi::EditHostL(char* aTarget, TInt aCap, const TDesC& aPrompt)
     {
-    TBuf<64> host;
-    if (iSettings.iMailboxHost[0])
-        host.Copy(TPtrC8((const TUint8*)iSettings.iMailboxHost));
+    TBuf<64> value;
+    if (aTarget[0]) value.Copy(TPtrC8((const TUint8*)aTarget));
 
-    CAknTextQueryDialog* dlg = CAknTextQueryDialog::NewL(host);
-    dlg->SetPromptL(_L("Server address"));
+    CAknTextQueryDialog* dlg = CAknTextQueryDialog::NewL(value);
+    dlg->SetPromptL(aPrompt);
     if (!dlg->ExecuteLD(R_AVKON_DIALOG_QUERY_VALUE_TEXT)) return;
-    if (host.Length() == 0) return;
 
     TInt i;
-    for (i = 0; i < host.Length() && i < (TInt)sizeof(iSettings.iMailboxHost) - 1; i++)
-        iSettings.iMailboxHost[i] = (char)host[i];
-    iSettings.iMailboxHost[i] = '\0';
-    WhminiTrim(iSettings.iMailboxHost);
-
-    /* The relay is normally the same machine; server.txt can separate them. */
-    for (i = 0; iSettings.iMailboxHost[i]; i++)
-        iSettings.iRelayHost[i] = iSettings.iMailboxHost[i];
-    iSettings.iRelayHost[i] = '\0';
+    for (i = 0; i < value.Length() && i < aCap - 1; i++) aTarget[i] = (char)value[i];
+    aTarget[i] = '\0';
+    WhminiTrim(aTarget);
 
     WhminiSaveSettings(iSettings);
     Refresh();
+    }
+
+void CWhminiAppUi::EditPortL(TUint& aTarget, const TDesC& aPrompt)
+    {
+    TInt value = (TInt)aTarget;
+
+    CAknNumberQueryDialog* dlg = CAknNumberQueryDialog::NewL(value);
+    dlg->SetPromptL(aPrompt);
+    if (!dlg->ExecuteLD(R_AVKON_DIALOG_QUERY_VALUE_NUMBER)) return;
+    if (value < 1 || value > 65535)
+        {
+        CAknErrorNote* note = new (ELeave) CAknErrorNote(ETrue);
+        note->ExecuteLD(_L("Port must be 1-65535"));
+        return;
+        }
+
+    aTarget = (TUint)value;
+    WhminiSaveSettings(iSettings);
+    Refresh();
+    }
+
+void CWhminiAppUi::AskForServerL()
+    {
+    EditHostL(iSettings.iMailboxHost, (TInt)sizeof(iSettings.iMailboxHost),
+              _L("Server address"));
+
+    /* The relay usually lives on the same machine, so seed it - but only
+     * when it has never been set. Once it has its own value, changing the
+     * server must not silently overwrite it. */
+    if (iSettings.iMailboxHost[0] && iSettings.iRelayHost[0] == '\0')
+        {
+        TInt i;
+        for (i = 0; iSettings.iMailboxHost[i]; i++)
+            iSettings.iRelayHost[i] = iSettings.iMailboxHost[i];
+        iSettings.iRelayHost[i] = '\0';
+        WhminiSaveSettings(iSettings);
+        Refresh();
+        }
     }
 
 TBool CWhminiAppUi::PrepareJobL()
@@ -452,8 +496,18 @@ void CWhminiAppUi::HandleCommandL(TInt aCommand)
         case EWhminiCmdCancel:
             CancelTransferL();
             break;
-        case EWhminiCmdServer:
+        case EWhminiCmdSetMailboxHost:
             AskForServerL();
+            break;
+        case EWhminiCmdSetMailboxPort:
+            EditPortL(iSettings.iMailboxPort, _L("Server port"));
+            break;
+        case EWhminiCmdSetRelayHost:
+            EditHostL(iSettings.iRelayHost, (TInt)sizeof(iSettings.iRelayHost),
+                      _L("Relay address"));
+            break;
+        case EWhminiCmdSetRelayPort:
+            EditPortL(iSettings.iRelayPort, _L("Relay port"));
             break;
         case EAknSoftkeyExit:
         case EEikCmdExit:

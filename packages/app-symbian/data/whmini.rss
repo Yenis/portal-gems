@@ -32,8 +32,28 @@ RESOURCE MENU_PANE r_whmini_menu
         MENU_ITEM { command = EWhminiCmdReceive; txt = "Receive file"; },
         MENU_ITEM { command = EWhminiCmdSend;    txt = "Send file"; },
         MENU_ITEM { command = EWhminiCmdCancel;  txt = "Cancel transfer"; },
-        MENU_ITEM { command = EWhminiCmdServer;  txt = "Set server"; },
+        MENU_ITEM
+            {
+            command = EWhminiCmdSettings;
+            txt = "Settings";
+            cascade = r_whmini_settings_menu;
+            },
         MENU_ITEM { command = EAknSoftkeyExit;   txt = "Exit"; }
+        };
+    }
+
+// The relay is a separate server from the mailbox and does not have to live
+// on the same machine, so all four values are editable. Until now the relay
+// host was silently copied from the mailbox host, and the ports could only
+// be changed by editing server.txt on the memory card by hand.
+RESOURCE MENU_PANE r_whmini_settings_menu
+    {
+    items =
+        {
+        MENU_ITEM { command = EWhminiCmdSetMailboxHost; txt = "Server address"; },
+        MENU_ITEM { command = EWhminiCmdSetMailboxPort; txt = "Server port"; },
+        MENU_ITEM { command = EWhminiCmdSetRelayHost;   txt = "Relay address"; },
+        MENU_ITEM { command = EWhminiCmdSetRelayPort;   txt = "Relay port"; }
         };
     }
 

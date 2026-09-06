@@ -7,7 +7,11 @@ enum TWhminiCommands
     EWhminiCmdReceive = 1,
     EWhminiCmdSend,
     EWhminiCmdCancel,
-    EWhminiCmdServer,
+    EWhminiCmdSettings,
+    EWhminiCmdSetMailboxHost,
+    EWhminiCmdSetMailboxPort,
+    EWhminiCmdSetRelayHost,
+    EWhminiCmdSetRelayPort,
     EWhminiCmdAbout
     };
 

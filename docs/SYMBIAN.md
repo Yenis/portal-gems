@@ -446,17 +446,22 @@ place for work to happen in parallel.
       and UID 0xE1000001 at offset 8, matching the mmp. The entire portable
       core built for Symbian without a single change to `src/`, which is
       what the platform-layer split was for.
-- [ ] Still UNVERIFIED at runtime: that the RSocket calls, the access point
-      handling and `TRandom` actually behave on the device. Compiling is not
-      running.
+- [x] Verified at runtime. `RSocket`, the access point handling and
+      `TRandom` all behave on the device: transfers complete in both
+      directions, and a wrong key would fail the version phase or the
+      checksum rather than succeed quietly.
 
 Before the first device test, the server constants at the top of
 `packages/app-symbian/src/main.cpp` must be changed - they point at
 `127.0.0.1`, which on the phone means the phone. Point them at the LAN
 address of a machine running the mailbox and relay, or at a deployment.
-- [ ] Core builds as a static library in the Symbian toolchain.
-- [ ] Milestone: a headless console app on the phone receives a file to
-      `E:\`.
+- [x] The core builds in the Symbian toolchain - compiled straight into the
+      application rather than as a separate static library, which is one
+      fewer build product for no loss.
+- [x] Milestone reached, by a different route than planned: the console app
+      was abandoned mid-phase because its keyboard made a wormhole code
+      impossible to type, so receiving to `E:\` was first proved by the
+      Avkon application in S6 instead.
 
 ### S6 - The application
 
@@ -618,8 +623,8 @@ receive-only one.
 
 ### S8 - Ship it
 
-- [ ] Cleartext `ws://` listener documented and deployed
-      (`docs/VPS-SETUP.md`).
+- [x] Cleartext `ws://` listener documented and deployed
+      (`docs/VPS-SETUP.md`), and carrying real transfers.
 - [ ] SIS in the release artifacts, checksums in the README.
 - [ ] README Symbian section, CHANGELOG entry, ARCHITECTURE.md pointer.
 
