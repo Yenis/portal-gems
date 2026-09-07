@@ -80,6 +80,8 @@ int wh_xfer_await_offer(wh_mailbox *m, const char *relay_host,
     offer->dirname[0] = '\0';
     offer->filesize = 0;
     offer->is_directory = 0;
+    offer->num_files = 0;
+    offer->num_bytes = 0;
 
     if (build_transit_msg(buf, sizeof(buf), relay_host, relay_port) != 0) return -1;
     if (wh_mailbox_send_phase(m, buf, wh_strlen(buf)) != 0) return -1;
@@ -107,9 +109,23 @@ int wh_xfer_await_offer(wh_mailbox *m, const char *relay_host,
     }
 
     if (wh_json_get(v.p, v.len, "directory", &inner) == 0) {
+        unsigned long n = 0;
         offer->is_directory = 1;
-        if (wh_json_get(inner.p, inner.len, "dirname", &field) == 0) {
-            wh_json_str(&field, offer->dirname, sizeof(offer->dirname));
+        if (wh_json_get(inner.p, inner.len, "dirname", &field) != 0) return -1;
+        if (wh_json_str(&field, offer->dirname, sizeof(offer->dirname)) < 0) return -1;
+
+        /* zipsize is what arrives over the transit; numbytes is what it
+         * becomes once unpacked. Confusing the two would either truncate
+         * the transfer or wait forever for bytes that are not coming. */
+        if (wh_json_get(inner.p, inner.len, "zipsize", &field) != 0) return -1;
+        if (wh_json_u32(&field, &n) != 0) return -1;
+        offer->filesize = n;
+
+        if (wh_json_get(inner.p, inner.len, "numbytes", &field) == 0) {
+            if (wh_json_u32(&field, &n) == 0) offer->num_bytes = n;
+        }
+        if (wh_json_get(inner.p, inner.len, "numfiles", &field) == 0) {
+            if (wh_json_u32(&field, &n) == 0) offer->num_files = n;
         }
         return 0;
     }
@@ -146,8 +162,10 @@ int wh_xfer_accept(wh_mailbox *m, const char *appid, const wh_offer *offer,
     wh_jw w;
     int rc = 0;
 
-    if (offer->is_directory) return -1;
-
+    /* A directory offer is accepted exactly like a file: the zip arrives
+     * over the transit as a byte stream. Unpacking it afterwards is the
+     * caller's business, because it needs a filesystem and this layer has
+     * none. */
     if (wh_mailbox_send_phase(m, ANSWER, sizeof(ANSWER) - 1) != 0) return -1;
 
     if (wh_derive_transit_key(m->key, appid, transit_key) != 0) return -1;
@@ -198,6 +216,36 @@ done:
     return rc;
 }
 
+unsigned long wh_unpack_cap(unsigned long num_bytes)
+{
+    unsigned long cap = num_bytes + num_bytes / 4;
+    if (cap < num_bytes) return 0xffffffffUL;          /* overflowed */
+    if (cap + 16UL * 1024UL * 1024UL < cap) return 0xffffffffUL;
+    return cap + 16UL * 1024UL * 1024UL;
+}
+
+/* The two send paths differ only in the offer they publish; everything
+ * after it - transit, answer, records, checksum - is identical, so it lives
+ * in send_offer_and_stream below. */
+static int send_offer_and_stream(wh_mailbox *m, const char *appid,
+                                 const char *offer_json,
+                                 unsigned long total,
+                                 const char *relay_host,
+                                 unsigned int relay_port,
+                                 wh_xfer_bufs *bufs,
+                                 wh_xfer_source source, void *source_ctx,
+                                 wh_xfer_progress progress, void *progress_ctx);
+
+/* Our transit hints go first: the engine sends them before the offer and
+ * only afterwards waits for the peer (transfer/v1.rs::send). */
+static int send_transit_hints(wh_mailbox *m, const char *relay_host,
+                              unsigned int relay_port)
+{
+    char buf[1024];
+    if (build_transit_msg(buf, sizeof(buf), relay_host, relay_port) != 0) return -1;
+    return wh_mailbox_send_phase(m, buf, wh_strlen(buf));
+}
+
 int wh_xfer_send_file(wh_mailbox *m, const char *appid,
                       const char *filename, unsigned long filesize,
                       const char *relay_host, unsigned int relay_port,
@@ -205,22 +253,10 @@ int wh_xfer_send_file(wh_mailbox *m, const char *appid,
                       wh_xfer_source source, void *source_ctx,
                       wh_xfer_progress progress, void *progress_ctx)
 {
-    unsigned char transit_key[32];
-    wh_transit t;
-    wh_sha256_ctx hasher;
-    unsigned char digest[32];
-    char hex[65];
-    char buf[2048];
-    wh_json_val v, inner;
+    char buf[1024];
     wh_jw w;
-    unsigned long sent = 0;
-    long n;
-    int rc = 0;
 
-    /* Our transit hints, then the offer. The engine sends them in this
-     * order and only afterwards waits for the peer (transfer/v1.rs::send). */
-    if (build_transit_msg(buf, sizeof(buf), relay_host, relay_port) != 0) return -1;
-    if (wh_mailbox_send_phase(m, buf, wh_strlen(buf)) != 0) return -1;
+    if (send_transit_hints(m, relay_host, relay_port) != 0) return -1;
 
     wh_jw_init(&w, buf, sizeof(buf));
     wh_jw_obj_open(&w);
@@ -234,7 +270,70 @@ int wh_xfer_send_file(wh_mailbox *m, const char *appid,
     wh_jw_obj_close(&w);
     wh_jw_obj_close(&w);
     if (wh_jw_done(&w) != 0) return -1;
-    if (wh_mailbox_send_phase(m, buf, wh_strlen(buf)) != 0) return -1;
+
+    return send_offer_and_stream(m, appid, buf, filesize, relay_host,
+                                 relay_port, bufs, source, source_ctx,
+                                 progress, progress_ctx);
+}
+
+int wh_xfer_send_folder(wh_mailbox *m, const char *appid,
+                        const char *dirname, unsigned long zip_size,
+                        unsigned long num_files, unsigned long num_bytes,
+                        const char *relay_host, unsigned int relay_port,
+                        wh_xfer_bufs *bufs,
+                        wh_xfer_source source, void *source_ctx,
+                        wh_xfer_progress progress, void *progress_ctx)
+{
+    char buf[1024];
+    wh_jw w;
+
+    if (send_transit_hints(m, relay_host, relay_port) != 0) return -1;
+
+    wh_jw_init(&w, buf, sizeof(buf));
+    wh_jw_obj_open(&w);
+    wh_jw_key(&w, "offer");
+    wh_jw_obj_open(&w);
+    wh_jw_key(&w, "directory");
+    wh_jw_obj_open(&w);
+    wh_jw_str(&w, "dirname", dirname);
+    /* The only mode the reference client accepts. It names the container,
+     * not the entries, which may be stored. */
+    wh_jw_str(&w, "mode", "zipfile/deflated");
+    wh_jw_u32(&w, "zipsize", zip_size);
+    wh_jw_u32(&w, "numbytes", num_bytes);
+    wh_jw_u32(&w, "numfiles", num_files);
+    wh_jw_obj_close(&w);
+    wh_jw_obj_close(&w);
+    wh_jw_obj_close(&w);
+    if (wh_jw_done(&w) != 0) return -1;
+
+    return send_offer_and_stream(m, appid, buf, zip_size, relay_host,
+                                 relay_port, bufs, source, source_ctx,
+                                 progress, progress_ctx);
+}
+
+static int send_offer_and_stream(wh_mailbox *m, const char *appid,
+                                 const char *offer_json,
+                                 unsigned long total,
+                                 const char *relay_host,
+                                 unsigned int relay_port,
+                                 wh_xfer_bufs *bufs,
+                                 wh_xfer_source source, void *source_ctx,
+                                 wh_xfer_progress progress, void *progress_ctx)
+{
+    unsigned char transit_key[32];
+    wh_transit t;
+    wh_sha256_ctx hasher;
+    unsigned char digest[32];
+    char hex[65];
+    char buf[2048];
+    wh_json_val v, inner;
+    unsigned long sent = 0;
+    long n;
+    int rc = 0;
+    unsigned long filesize = total;
+
+    if (wh_mailbox_send_phase(m, offer_json, wh_strlen(offer_json)) != 0) return -1;
 
     /* Their transit hints. Ignored, as on the receive side: both peers are
      * configured with the same relay. */

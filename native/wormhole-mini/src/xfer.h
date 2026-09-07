@@ -23,13 +23,25 @@ extern "C" {
 
 typedef struct {
     char filename[256];
-    /* On a 32-bit target this caps a transfer at 4 GiB, which is also the
+    /* Bytes that will arrive over the transit. For a directory offer that
+     * is the size of the zip, not the size of its contents.
+     *
+     * On a 32-bit target this caps a transfer at 4 GiB, which is also the
      * FAT32 per-file limit on the phone's memory card, so it costs nothing
      * in practice. */
     unsigned long filesize;
+
     int is_directory;
     char dirname[256];
+    unsigned long num_files;   /* what the sender says the folder holds */
+    unsigned long num_bytes;   /* unpacked total, before compression */
 } wh_offer;
+
+/* How many unpacked bytes to tolerate for a folder claiming `num_bytes`:
+ * the claim, a quarter again, and a floor for small offers. Past that an
+ * archive is hostile rather than merely imprecise. Mirrors
+ * `unpack_cap` in native/wormhole-core. */
+unsigned long wh_unpack_cap(unsigned long num_bytes);
 
 /* Scratch for one record in flight. About 64 KB; declare one statically. */
 typedef struct {
@@ -72,6 +84,21 @@ int wh_xfer_send_file(wh_mailbox *m, const char *appid,
                       wh_xfer_bufs *bufs,
                       wh_xfer_source source, void *source_ctx,
                       wh_xfer_progress progress, void *progress_ctx);
+
+/* Offer an already-built zip as a folder. The caller zips the tree first -
+ * walking a directory is platform work - and passes the counts the peer
+ * shows before accepting.
+ *
+ * `mode` on the wire is always "zipfile/deflated" because it is the only
+ * value the reference client accepts; it describes the container, and
+ * stored entries inside are perfectly ordinary. */
+int wh_xfer_send_folder(wh_mailbox *m, const char *appid,
+                        const char *dirname, unsigned long zip_size,
+                        unsigned long num_files, unsigned long num_bytes,
+                        const char *relay_host, unsigned int relay_port,
+                        wh_xfer_bufs *bufs,
+                        wh_xfer_source source, void *source_ctx,
+                        wh_xfer_progress progress, void *progress_ctx);
 
 #ifdef __cplusplus
 }

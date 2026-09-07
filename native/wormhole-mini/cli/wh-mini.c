@@ -21,9 +21,16 @@
  * transfer in turn WITHOUT restarting. That is what the phone does - the
  * application stays open between transfers - and it is the only way to
  * catch state that wrongly survives from one transfer to the next. */
+/* Host harness: -std=c89 hides the POSIX declarations this needs. */
+#define _POSIX_C_SOURCE 200112L
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <errno.h>
 
 #include "../src/net.h"
 #include "../src/ws.h"
@@ -32,6 +39,8 @@
 #include "../src/mailbox.h"
 #include "../src/xfer.h"
 #include "../src/wordlist.h"
+#include "../src/zip.h"
+#include "../src/zipw.h"
 
 #define APPID "lothar.com/wormhole/text-or-file-xfer"
 #define RXCAP 65536
@@ -41,6 +50,8 @@ static unsigned char g_rx[RXCAP];
 static char g_msg[MSGCAP];
 static char g_out[4096];
 static wh_xfer_bufs g_xfer;
+static wh_inflate_state g_inflate;
+static unsigned char g_cd[256UL * 1024UL];
 static wh_mailbox_bufs g_mbufs;
 static FILE *g_file;
 static unsigned long g_last_pct = 999;
@@ -155,6 +166,92 @@ static void show_progress(void *ctx, unsigned long done, unsigned long total)
     }
 }
 
+typedef struct {
+    FILE *f;
+} TZipOut;
+
+static int zip_out(void *ctx, const unsigned char *buf, unsigned long len)
+{
+    TZipOut *z = (TZipOut *)ctx;
+    return fwrite(buf, 1, (size_t)len, z->f) == (size_t)len ? 0 : -1;
+}
+
+/* Join into `dst`, refusing rather than truncating. Checking the result is
+ * both the honest way to bound a path and the only way to convince the
+ * compiler, which cannot see a separate length guard. */
+static int join(char *dst, unsigned long cap, const char *a, const char *sep,
+                const char *b)
+{
+    int n = snprintf(dst, (size_t)cap, "%s%s%s", a, sep, b);
+    return (n < 0 || (unsigned long)n >= cap) ? -1 : 0;
+}
+
+/* Walk `dir` and add everything under it to the archive.
+ *
+ * Entry paths are relative to the root with no top-level component, which
+ * is what the engine produces and what the reference client expects.
+ * Directories are recorded so empty ones survive; symlinks are skipped
+ * because they cannot be represented portably and could point outside the
+ * tree entirely. */
+static int zip_tree(wh_zipw *w, const char *dir, const char *prefix,
+                    unsigned long *files, unsigned long *bytes)
+{
+    DIR *d = opendir(dir);
+    struct dirent *e;
+
+    if (!d) return -1;
+
+    while ((e = readdir(d)) != NULL) {
+        /* Roomy enough that the guards below, not the buffer, decide when a
+         * path is too long. */
+        char path[1600];
+        char rel[1600];
+        struct stat st;
+
+        if (strcmp(e->d_name, ".") == 0 || strcmp(e->d_name, "..") == 0) continue;
+        if (join(path, sizeof(path), dir, "/", e->d_name) != 0 ||
+            join(rel, sizeof(rel), prefix, "", e->d_name) != 0) {
+            closedir(d);
+            return -1;
+        }
+
+        if (lstat(path, &st) != 0) { closedir(d); return -1; }
+        if (S_ISLNK(st.st_mode)) continue;
+
+        if (S_ISDIR(st.st_mode)) {
+            char subprefix[1600];
+            char dirent_name[1600];
+            if (join(dirent_name, sizeof(dirent_name), rel, "/", "") != 0) {
+                closedir(d);
+                return -1;
+            }
+            if (wh_zipw_add_dir(w, dirent_name) != WH_ZIPW_OK) { closedir(d); return -1; }
+            if (join(subprefix, sizeof(subprefix), rel, "/", "") != 0) {
+                closedir(d);
+                return -1;
+            }
+            if (zip_tree(w, path, subprefix, files, bytes) != 0) { closedir(d); return -1; }
+        } else if (S_ISREG(st.st_mode)) {
+            FILE *f = fopen(path, "rb");
+            unsigned char buf[8192];
+            size_t n;
+            if (!f) { closedir(d); return -1; }
+            if (wh_zipw_begin_file(w, rel) != WH_ZIPW_OK) { fclose(f); closedir(d); return -1; }
+            while ((n = fread(buf, 1, sizeof(buf), f)) > 0) {
+                if (wh_zipw_write(w, buf, (unsigned long)n) != WH_ZIPW_OK) {
+                    fclose(f); closedir(d); return -1;
+                }
+                *bytes += (unsigned long)n;
+            }
+            fclose(f);
+            if (wh_zipw_end_file(w) != WH_ZIPW_OK) { closedir(d); return -1; }
+            (*files)++;
+        }
+    }
+    closedir(d);
+    return 0;
+}
+
 static long file_source(void *ctx, unsigned char *buf, unsigned long cap)
 {
     FILE *f = (FILE *)ctx;
@@ -192,10 +289,42 @@ static int cmd_send(const char *host, unsigned int port, const char *path,
 {
     wh_mailbox m;
     char code[WH_CODE_MAX];
+    char zippath[1024];
     const char *base;
     unsigned long size;
+    unsigned long num_files = 0, num_bytes = 0;
+    struct stat st;
+    int is_dir = 0;
     FILE *f;
     int rc;
+
+    if (stat(filepath, &st) == 0 && S_ISDIR(st.st_mode)) is_dir = 1;
+
+    if (is_dir) {
+        /* Zip the tree to a staging file first. The engine does the same:
+         * the offer has to state the archive's size before a byte of it
+         * goes out. */
+        wh_zipw w;
+        TZipOut out;
+
+        snprintf(zippath, sizeof(zippath), "%s.portalgems.zip", filepath);
+        out.f = fopen(zippath, "wb");
+        if (!out.f) {
+            fprintf(stderr, "cannot stage the archive at %s\n", zippath);
+            return 1;
+        }
+        wh_zipw_init(&w, zip_out, &out, g_cd, sizeof(g_cd));
+        if (zip_tree(&w, filepath, "", &num_files, &num_bytes) != 0 ||
+            wh_zipw_finish(&w) != WH_ZIPW_OK) {
+            fclose(out.f);
+            remove(zippath);
+            fprintf(stderr, "could not build the archive\n");
+            return 1;
+        }
+        fclose(out.f);
+        printf("zipped %lu files, %lu bytes\n", num_files, num_bytes);
+        filepath = zippath;
+    }
 
     f = fopen(filepath, "rb");
     if (!f) {
@@ -209,6 +338,19 @@ static int cmd_send(const char *host, unsigned int port, const char *path,
     /* Offer the bare name, never the path we happened to read it from. */
     base = strrchr(filepath, '/');
     base = base ? base + 1 : filepath;
+    if (is_dir) {
+        /* For a folder the offer carries the folder's own name, not the
+         * staging file's. */
+        static char dirbase[256];
+        const char *p = strrchr(zippath, '/');
+        unsigned long n;
+        p = p ? p + 1 : zippath;
+        n = (unsigned long)(strstr(p, ".portalgems.zip") - p);
+        if (n >= sizeof(dirbase)) n = sizeof(dirbase) - 1;
+        memcpy(dirbase, p, n);
+        dirbase[n] = '\0';
+        base = dirbase;
+    }
 
     wh_mailbox_init(&m, &g_mbufs);
 
@@ -233,11 +375,23 @@ static int cmd_send(const char *host, unsigned int port, const char *path,
         fclose(f);
         return 1;
     }
-    printf("key confirmed, offering %s (%lu bytes)\n", base, size);
+    if (is_dir) {
+        printf("key confirmed, offering folder %s (%lu files, %lu bytes)\n",
+               base, num_files, num_bytes);
+    } else {
+        printf("key confirmed, offering %s (%lu bytes)\n", base, size);
+    }
 
-    rc = wh_xfer_send_file(&m, APPID, base, size, relay_host, relay_port,
-                           &g_xfer, file_source, f, show_progress, 0);
+    if (is_dir) {
+        rc = wh_xfer_send_folder(&m, APPID, base, size, num_files, num_bytes,
+                                 relay_host, relay_port, &g_xfer,
+                                 file_source, f, show_progress, 0);
+    } else {
+        rc = wh_xfer_send_file(&m, APPID, base, size, relay_host, relay_port,
+                               &g_xfer, file_source, f, show_progress, 0);
+    }
     fclose(f);
+    if (is_dir) remove(zippath);
     printf("\n");
 
     if (rc == -2) {
@@ -258,6 +412,123 @@ static int cmd_send(const char *host, unsigned int port, const char *path,
 
     printf("sent, and the other side confirmed the checksum\n");
     wh_mailbox_close(&m, "happy");
+    return 0;
+}
+
+/* mkdir -p for the directory part of a path. */
+static int make_parents(const char *path)
+{
+    char buf[1024];
+    unsigned long i;
+
+    if (strlen(path) >= sizeof(buf)) return -1;
+    strcpy(buf, path);
+    for (i = 1; buf[i]; i++) {
+        if (buf[i] == '/') {
+            buf[i] = '\0';
+            if (mkdir(buf, 0755) != 0 && errno != EEXIST) return -1;
+            buf[i] = '/';
+        }
+    }
+    return 0;
+}
+
+typedef struct {
+    FILE *f;
+    unsigned long written;
+    unsigned long cap;
+} TUnpackSink;
+
+static int unpack_sink(void *ctx, const unsigned char *data, unsigned long len)
+{
+    TUnpackSink *u = (TUnpackSink *)ctx;
+    if (u->written + len > u->cap) return -1;   /* past the bomb cap */
+    u->written += len;
+    if (!u->f) return 0;
+    return fwrite(data, 1, (size_t)len, u->f) == (size_t)len ? 0 : -1;
+}
+
+static long zipfile_read(void *ctx, unsigned long offset, unsigned char *buf,
+                         unsigned long len)
+{
+    FILE *f = (FILE *)ctx;
+    if (fseek(f, (long)offset, SEEK_SET) != 0) return -1;
+    return (long)fread(buf, 1, (size_t)len, f);
+}
+
+/* Unpack a staged archive into `dest`, refusing unsafe names and stopping
+ * at the caller's cap. */
+static int unpack_zip(const char *zip_path, const char *dest,
+                      unsigned long cap)
+{
+    FILE *zf = fopen(zip_path, "rb");
+    wh_zip zip;
+    wh_zip_iter it;
+    wh_zip_entry entry;
+    unsigned long total = 0;
+    long size;
+    int rc, count = 0;
+
+    if (!zf) return -1;
+    fseek(zf, 0, SEEK_END);
+    size = ftell(zf);
+    rewind(zf);
+
+    if (wh_zip_open(&zip, zipfile_read, zf, (unsigned long)size) != WH_ZIP_OK) {
+        fclose(zf);
+        fprintf(stderr, "not a readable zip\n");
+        return -1;
+    }
+
+    if (mkdir(dest, 0755) != 0 && errno != EEXIST) {
+        fclose(zf);
+        return -1;
+    }
+
+    rc = wh_zip_first(&zip, &it, &entry);
+    while (rc == WH_ZIP_OK) {
+        char path[1024];
+        TUnpackSink sink;
+
+        if (!wh_zip_name_is_safe(entry.name)) {
+            fprintf(stderr, "refusing unsafe entry: %s\n", entry.name);
+            fclose(zf);
+            return -1;
+        }
+        if (join(path, sizeof(path), dest, "/", entry.name) != 0) {
+            fclose(zf);
+            return -1;
+        }
+
+        if (entry.is_dir) {
+            make_parents(path);
+            mkdir(path, 0755);
+            rc = wh_zip_next(&zip, &it, &entry);
+            continue;
+        }
+
+        if (make_parents(path) != 0) { fclose(zf); return -1; }
+        sink.f = fopen(path, "wb");
+        sink.written = 0;
+        sink.cap = cap > total ? cap - total : 0;
+        if (!sink.f) { fclose(zf); return -1; }
+
+        if (wh_zip_extract(&zip, &entry, &g_inflate, unpack_sink, &sink) != WH_ZIP_OK) {
+            fclose(sink.f);
+            fclose(zf);
+            fprintf(stderr, "entry failed: %s\n", entry.name);
+            return -1;
+        }
+        fclose(sink.f);
+        total += sink.written;
+        count++;
+
+        rc = wh_zip_next(&zip, &it, &entry);
+    }
+    fclose(zf);
+    if (rc < 0) return -1;
+
+    printf("unpacked %d files, %lu bytes\n", count, total);
     return 0;
 }
 
@@ -308,14 +579,12 @@ static int cmd_receive(const char *host, unsigned int port, const char *path,
     }
 
     if (offer.is_directory) {
-        fprintf(stderr, "offer is a folder (%s); this client only takes single files\n",
-                offer.dirname);
-        wh_xfer_reject(&m, "this client can only receive single files");
-        wh_mailbox_close(&m, "errory");
-        return 1;
+        printf("offer: folder %s (%lu files, %lu bytes, %lu zipped)\n",
+               offer.dirname, offer.num_files, offer.num_bytes, offer.filesize);
+        strcpy(offer.filename, offer.dirname);
+    } else {
+        printf("offer: %s (%lu bytes)\n", offer.filename, offer.filesize);
     }
-
-    printf("offer: %s (%lu bytes)\n", offer.filename, offer.filesize);
 
     /* The filename comes from the network. Anything with a path separator
      * is refused rather than sanitised, so nothing can be written outside
@@ -328,13 +597,15 @@ static int cmd_receive(const char *host, unsigned int port, const char *path,
         return 1;
     }
 
-    if (strlen(outdir) + strlen(offer.filename) + 2 > sizeof(destpath)) {
+    if (strlen(outdir) + strlen(offer.filename) + 8 > sizeof(destpath)) {
         fprintf(stderr, "destination path too long\n");
         return 1;
     }
     strcpy(destpath, outdir);
     strcat(destpath, "/");
     strcat(destpath, offer.filename);
+    /* A folder arrives as a zip, staged next to where it will be unpacked. */
+    if (offer.is_directory) strcat(destpath, ".zip");
 
     g_file = fopen(destpath, "wb");
     if (!g_file) {
@@ -355,7 +626,21 @@ static int cmd_receive(const char *host, unsigned int port, const char *path,
         return 1;
     }
 
-    printf("received %s\n", destpath);
+    if (offer.is_directory) {
+        char folder[512];
+        strcpy(folder, outdir);
+        strcat(folder, "/");
+        strcat(folder, offer.dirname);
+        if (unpack_zip(destpath, folder, wh_unpack_cap(offer.num_bytes)) != 0) {
+            fprintf(stderr, "could not unpack the folder\n");
+            wh_mailbox_close(&m, "errory");
+            return 1;
+        }
+        remove(destpath);
+        printf("received folder %s\n", folder);
+    } else {
+        printf("received %s\n", destpath);
+    }
     wh_mailbox_close(&m, "happy");
     return 0;
 }
