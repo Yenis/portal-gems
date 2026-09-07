@@ -46,6 +46,14 @@ def main():
             if info.compress_type != zipfile.ZIP_STORED:
                 problems.append("%s: compress_type %d, expected stored"
                                 % (name, info.compress_type))
+            # The reference client chmods to external_attr >> 16 on extract,
+            # so a zero mode makes a directory unwritable and the transfer
+            # fails part-way. Pin real permissions.
+            mode = info.external_attr >> 16
+            want = 0o040755 if name.endswith("/") else 0o100644
+            if mode != want:
+                problems.append("%s: unix mode 0o%o, expected 0o%o"
+                                % (name, mode, want))
 
     if problems:
         print("checkzip: FAILED")

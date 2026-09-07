@@ -40,7 +40,7 @@ old phone can manage comfortably.
 Worth checking before building: whether the existing pairing handshake can
 carry the payload as its first message, in which case this is mostly UI.
 
-## Using the reference CLI against the PortalGems server
+## ~~Using the reference CLI against the PortalGems server~~ - done
 
 `wormhole receive <code>` fails against a code issued by a PortalGems client
 with `ServerError: crowded`, or with a nameplate that does not exist. The
@@ -59,6 +59,16 @@ wormhole --relay-url ws://<server>:4000/v1 \
          --transit-helper tcp:<server>:4001 receive <code>
 ```
 
-This trips people up repeatedly and deserves better than a footnote - a
-small wrapper script in `scripts/`, or a documented alias, so the terminal
-path is as easy as the app.
+`scripts/pg-wormhole.sh` supplies them. Usage is exactly the CLI's:
+
+```sh
+scripts/pg-wormhole.sh send ./file
+scripts/pg-wormhole.sh send ./folder
+scripts/pg-wormhole.sh receive 7-crossover-clockwork
+```
+
+`PG_RENDEZVOUS_URL` and `PG_TRANSIT_URL` override the server, using the same
+names `native/wormhole-core`'s examples use. It also translates the transit
+relay from the URL form the apps carry (`tcp://host:port`) to the form the
+CLI wants (`tcp:host:port`), so a value can be copied out of the app's
+settings unedited.

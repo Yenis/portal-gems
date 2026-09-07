@@ -14,6 +14,18 @@
 #define DOS_DATE 0x0021
 #define DOS_TIME 0x0000
 
+/* Unix permissions live in the top sixteen bits of the external attributes,
+ * and they are not decorative: the reference client extracts with
+ * `os.chmod(path, external_attr >> 16)`, so leaving them zero creates a
+ * directory with mode 000 and the next file written into it fails with
+ * EACCES. Our own reader ignores the field entirely, which is why only a
+ * different implementation could find this.
+ *
+ * S_IFDIR | 0755 and S_IFREG | 0644, the modes every other writer uses. */
+#define UNIX_DIR_MODE  0040755UL
+#define UNIX_FILE_MODE 0100644UL
+#define DOS_ATTR_DIR   0x10UL
+
 static unsigned long wh_strlen(const char *s)
 {
     unsigned long n = 0;
@@ -76,9 +88,10 @@ static int record(wh_zipw *w, const char *name, unsigned long crc,
     put16(p + 32, 0);            /* comment */
     put16(p + 34, 0);            /* disk */
     put16(p + 36, 0);            /* internal attrs */
-    /* External attributes: mark directories, so a reader that only looks
-     * here still gets it right. */
-    put32(p + 38, is_dir ? 0x10UL : 0UL);
+    /* External attributes: Unix mode in the high half, DOS attribute bits
+     * in the low half. */
+    put32(p + 38, is_dir ? ((UNIX_DIR_MODE << 16) | DOS_ATTR_DIR)
+                         : (UNIX_FILE_MODE << 16));
     put32(p + 42, local_offset);
     for (i = 0; i < namelen; i++) p[46 + i] = (unsigned char)name[i];
 
