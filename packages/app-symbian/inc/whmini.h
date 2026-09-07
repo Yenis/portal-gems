@@ -22,6 +22,8 @@ enum TJobState
     EJobShowingCode,      /* sending: the code is up, waiting to be typed */
     EJobWaitingForPeer,
     EJobReceiving,
+    EJobUnpacking,        /* the archive is down; writing the files out */
+    EJobZipping,          /* building the archive before a folder send */
     EJobSending,
     EJobDone,
     EJobFailed
@@ -30,7 +32,8 @@ enum TJobState
 enum TJobKind
     {
     EJobKindReceive = 0,
-    EJobKindSend
+    EJobKindSend,
+    EJobKindSendFolder
     };
 
 const TInt KJobTextLen = 128;

@@ -38,7 +38,10 @@ void WhminiCancelWorker(RThread& aWorker);
 const TUid KUidWhminiApp = { 0xE1000001 };
 const TInt KPollInterval = 250000;   /* microseconds */
 const TInt KMaxLines = 7;
-const TInt KWorkerStackSize = 32768;
+/* Roomy, because zipping a folder recurses through the directory tree and
+ * each level holds a couple of path descriptors. Stack is address space
+ * rather than committed memory, so the margin is close to free. */
+const TInt KWorkerStackSize = 98304;
 
 /* --- the view ----------------------------------------------------------- */
 
@@ -114,6 +117,7 @@ private:
     void HandleCommandL(TInt aCommand);
     void StartReceiveL();
     void StartSendL();
+    void StartSendFolderL();
     void CancelTransferL();
     TBool PrepareJobL();
     void AskForServerL();
@@ -207,6 +211,12 @@ void CWhminiAppUi::Refresh()
         case EJobConnecting:
             iContainer->SetLine(3, _L("Connecting..."));
             break;
+        case EJobZipping:
+            iContainer->SetLine(3, _L("Building archive..."));
+            break;
+        case EJobUnpacking:
+            iContainer->SetLine(3, _L("Unpacking folder..."));
+            break;
         case EJobShowingCode:
             {
             iContainer->SetLine(2, _L("Give this code to the sender:"));
@@ -257,7 +267,7 @@ void CWhminiAppUi::Refresh()
             {
             TBuf<64> name;
             name.Copy(TPtrC8((const TUint8*)iJob.iFileName));
-            if (iJob.iKind == EJobKindSend)
+            if (iJob.iKind != EJobKindReceive)
                 {
                 iContainer->SetLine(3, _L("Sent, and confirmed:"));
                 iContainer->SetLine(4, name);
@@ -437,6 +447,44 @@ void CWhminiAppUi::StartSendL()
     Refresh();
     }
 
+void CWhminiAppUi::StartSendFolderL()
+    {
+    if (!PrepareJobL()) return;
+
+    TFileName path;
+    if (!AknCommonDialogsDynMem::RunFolderSelectDlgLD(
+            AknCommonDialogsDynMem::EMemoryTypePhone |
+                AknCommonDialogsDynMem::EMemoryTypeMMC,
+            path, KNullDesC, R_WHMINI_MEMORY_SELECTION,
+            R_WHMINI_FILE_SELECTION, _L("Select folder")))
+        {
+        return;
+        }
+    if (path.Length() == 0) return;
+
+    TInt i;
+    for (i = 0; i < path.Length() && i < (TInt)sizeof(iJob.iPath) - 1; i++)
+        iJob.iPath[i] = (char)path[i];
+    iJob.iPath[i] = '\0';
+
+    iJob.iKind = EJobKindSendFolder;
+
+    TInt err = iWorker.Create(_L("whmini_worker"), WhminiWorker,
+                              KWorkerStackSize, NULL, &iJob);
+    if (err != KErrNone)
+        {
+        CAknErrorNote* note = new (ELeave) CAknErrorNote(ETrue);
+        note->ExecuteLD(_L("Could not start the transfer"));
+        return;
+        }
+    iWorkerRunning = ETrue;
+    iWorker.Resume();
+
+    iTimer->Cancel();
+    iTimer->Start(KPollInterval, KPollInterval, TCallBack(Tick, this));
+    Refresh();
+    }
+
 void CWhminiAppUi::StartReceiveL()
     {
     if (!PrepareJobL()) return;
@@ -492,6 +540,9 @@ void CWhminiAppUi::HandleCommandL(TInt aCommand)
             break;
         case EWhminiCmdSend:
             StartSendL();
+            break;
+        case EWhminiCmdSendFolder:
+            StartSendFolderL();
             break;
         case EWhminiCmdCancel:
             CancelTransferL();

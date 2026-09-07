@@ -10,6 +10,8 @@
 
 extern "C" {
 #include "../../../native/wormhole-mini/src/wordlist.h"
+#include "../../../native/wormhole-mini/src/zip.h"
+#include "../../../native/wormhole-mini/src/zipw.h"
 #include "../../../native/wormhole-mini/src/mailbox.h"
 #include "../../../native/wormhole-mini/src/xfer.h"
 #include "../../../native/wormhole-mini/src/net.h"
@@ -19,11 +21,25 @@ static const char *const KAppId = "lothar.com/wormhole/text-or-file-xfer";
 
 _LIT(KSettingsFile, "E:\\PortalGems\\server.txt");
 _LIT(KDestDir, "E:\\PortalGems\\");
+/* A folder is staged as a single archive in both directions: the offer must
+ * state the archive's size before a byte goes out, and unpacking wants to
+ * read the central directory at the end. */
+_LIT(KStageZip, "E:\\PortalGems\\.stage.zip");
 
 /* About 100 KB of buffers, static because Symbian gives a thread 8 KB of
  * stack and the protocol needs far more than that in one place. */
 static wh_mailbox_bufs gMailboxBufs;
 static wh_xfer_bufs gXferBufs;
+/* Another ~100 KB of statics for folder work. Static because an 8 KB
+ * Symbian thread stack cannot hold any of it, and because the core
+ * allocates nothing after startup by design. */
+static wh_inflate_state gInflate;
+static unsigned char gZipDir[64UL * 1024UL];
+/* The file-copy buffer is static rather than local because ZipTree
+ * recurses: eight kilobytes per level would exhaust any thread stack worth
+ * having by the third subdirectory. Only one file is read at a time, so
+ * sharing it is safe. */
+static TBuf8<8192> gCopyBuf;
 static TWhminiSettings gSettings;
 static TJob* gJob;
 
@@ -231,6 +247,264 @@ extern "C" long WhminiSourceRead(void* aCtx, unsigned char* aBuf,
     return (long)buf.Length();
 }
 
+/* --- folders ------------------------------------------------------------ */
+
+/* Guards against a pathological tree, and against this recursion using more
+ * of an 8 KB stack than it should. */
+const TInt KMaxZipDepth = 16;
+
+struct TZipSink
+    {
+    RFile iFile;
+    TInt iError;
+    };
+
+extern "C" int WhminiZipOut(void* aCtx, const unsigned char* aBuf,
+                            unsigned long aLen)
+    {
+    TZipSink* z = (TZipSink*)aCtx;
+    TPtrC8 chunk(aBuf, (TInt)aLen);
+    TInt err = z->iFile.Write(chunk);
+    if (err != KErrNone)
+        {
+        z->iError = err;
+        return -1;
+        }
+    return 0;
+    }
+
+/* Walk `aDir`, adding everything beneath it. Entry paths are relative with
+ * no top-level component and directories are recorded so empty ones
+ * survive, matching what the engine produces. */
+static TInt ZipTree(wh_zipw& aW, RFs& aFs, const TDesC& aDir,
+                    const TDesC8& aPrefix, TInt aDepth,
+                    TUint& aFiles, TUint& aBytes)
+    {
+    CDir* dir = NULL;
+    TInt err;
+    TInt i;
+
+    if (aDepth > KMaxZipDepth) return KErrOverflow;
+
+    err = aFs.GetDir(aDir, KEntryAttNormal | KEntryAttDir, ESortByName, dir);
+    if (err != KErrNone) return err;
+
+    for (i = 0; i < dir->Count(); i++)
+        {
+        const TEntry& e = (*dir)[i];
+        TFileName path;
+        TBuf8<256> rel;
+
+        if (aDir.Length() + e.iName.Length() + 2 > path.MaxLength())
+            {
+            delete dir;
+            return KErrOverflow;
+            }
+        path.Copy(aDir);
+        path.Append(e.iName);
+
+        if (aPrefix.Length() + e.iName.Length() + 2 > rel.MaxLength())
+            {
+            delete dir;
+            return KErrOverflow;
+            }
+        rel.Copy(aPrefix);
+        rel.Append(e.iName);
+
+        if (e.IsDir())
+            {
+            TBuf8<258> dirEntry;
+            path.Append('\\');
+            dirEntry.Copy(rel);
+            dirEntry.Append('/');
+            dirEntry.Append(TChar(0));      /* NUL for the C API */
+
+            if (wh_zipw_add_dir(&aW, (const char*)dirEntry.Ptr()) != WH_ZIPW_OK)
+                {
+                delete dir;
+                return KErrGeneral;
+                }
+            {
+                TBuf8<258> subPrefix;
+                subPrefix.Copy(rel);
+                subPrefix.Append('/');
+                err = ZipTree(aW, aFs, path, subPrefix, aDepth + 1, aFiles, aBytes);
+            }
+            if (err != KErrNone)
+                {
+                delete dir;
+                return err;
+                }
+            }
+        else
+            {
+            RFile f;
+            TBuf8<257> name;
+
+            name.Copy(rel);
+            name.Append(TChar(0));
+
+            err = f.Open(aFs, path, EFileRead | EFileShareReadersOnly);
+            if (err != KErrNone) { delete dir; return err; }
+
+            if (wh_zipw_begin_file(&aW, (const char*)name.Ptr()) != WH_ZIPW_OK)
+                {
+                f.Close();
+                delete dir;
+                return KErrGeneral;
+                }
+            for (;;)
+                {
+                err = f.Read(gCopyBuf);
+                if (err != KErrNone) break;
+                if (gCopyBuf.Length() == 0) break;
+                if (wh_zipw_write(&aW, gCopyBuf.Ptr(),
+                                  (unsigned long)gCopyBuf.Length()) != WH_ZIPW_OK)
+                    {
+                    err = KErrGeneral;
+                    break;
+                    }
+                aBytes += (TUint)gCopyBuf.Length();
+                }
+            f.Close();
+            if (err != KErrNone) { delete dir; return err; }
+            if (wh_zipw_end_file(&aW) != WH_ZIPW_OK) { delete dir; return KErrGeneral; }
+            aFiles++;
+            }
+        }
+
+    delete dir;
+    return KErrNone;
+    }
+
+/* Zip entry names use '/' and are 8-bit; Symbian paths use '\\' and are
+ * 16-bit. Also refuses anything wh_zip_name_is_safe would not accept, so a
+ * hostile archive cannot write outside the destination. */
+static TInt EntryToPath(const char* aName, const TDesC& aDest, TFileName& aOut)
+    {
+    TPtrC8 name8((const TUint8*)aName);
+    TInt i;
+
+    if (!wh_zip_name_is_safe(aName)) return KErrBadName;
+    if (aDest.Length() + name8.Length() + 1 > aOut.MaxLength()) return KErrOverflow;
+
+    aOut.Copy(aDest);
+    for (i = 0; i < name8.Length(); i++)
+        {
+        TChar c = (TChar)name8[i];
+        aOut.Append(c == '/' ? TChar('\\') : c);
+        }
+    return KErrNone;
+    }
+
+struct TUnpackSink
+    {
+    RFile iFile;
+    TUint iWritten;
+    TUint iCap;
+    TInt iError;
+    };
+
+extern "C" int WhminiUnpackOut(void* aCtx, const unsigned char* aBuf,
+                               unsigned long aLen)
+    {
+    TUnpackSink* u = (TUnpackSink*)aCtx;
+    TPtrC8 chunk(aBuf, (TInt)aLen);
+    TInt err;
+
+    if (u->iWritten + aLen > u->iCap)
+        {
+        /* Past what the offer claimed, by a wide margin: a zip bomb, not
+         * rounding error. */
+        u->iError = KErrTooBig;
+        return -1;
+        }
+    err = u->iFile.Write(chunk);
+    if (err != KErrNone)
+        {
+        u->iError = err;
+        return -1;
+        }
+    u->iWritten += (TUint)aLen;
+    return 0;
+    }
+
+extern "C" long WhminiZipFileRead(void* aCtx, unsigned long aOffset,
+                                  unsigned char* aBuf, unsigned long aLen)
+    {
+    RFile* f = (RFile*)aCtx;
+    TPtr8 p(aBuf, 0, (TInt)aLen);
+    if (f->Read((TInt)aOffset, p, (TInt)aLen) != KErrNone) return -1;
+    return (long)p.Length();
+    }
+
+/* Unpack the staged archive into `aDest`. Returns the number of files. */
+static TInt UnpackStaged(RFs& aFs, const TDesC& aDest, TUint aCap, TInt& aFiles)
+    {
+    RFile zf;
+    wh_zip zip;
+    wh_zip_iter it;
+    wh_zip_entry entry;
+    TInt size = 0;
+    TInt rc;
+    TUint total = 0;
+
+    aFiles = 0;
+    if (zf.Open(aFs, KStageZip, EFileRead | EFileShareReadersOnly) != KErrNone)
+        {
+        return KErrNotFound;
+        }
+    if (zf.Size(size) != KErrNone) { zf.Close(); return KErrGeneral; }
+
+    if (wh_zip_open(&zip, WhminiZipFileRead, &zf, (unsigned long)size) != WH_ZIP_OK)
+        {
+        zf.Close();
+        return KErrCorrupt;
+        }
+
+    aFs.MkDirAll(aDest);
+
+    rc = wh_zip_first(&zip, &it, &entry);
+    while (rc == WH_ZIP_OK)
+        {
+        TFileName path;
+        TInt err = EntryToPath(entry.name, aDest, path);
+        if (err != KErrNone) { zf.Close(); return err; }
+
+        if (entry.is_dir)
+            {
+            aFs.MkDirAll(path);
+            }
+        else
+            {
+            TUnpackSink sink;
+            aFs.MkDirAll(path);          /* creates the parent chain */
+            sink.iWritten = 0;
+            sink.iCap = aCap > total ? aCap - total : 0;
+            sink.iError = KErrNone;
+            if (sink.iFile.Replace(aFs, path, EFileWrite) != KErrNone)
+                {
+                zf.Close();
+                return KErrWrite;
+                }
+            if (wh_zip_extract(&zip, &entry, &gInflate, WhminiUnpackOut, &sink)
+                    != WH_ZIP_OK)
+                {
+                sink.iFile.Close();
+                zf.Close();
+                return sink.iError != KErrNone ? sink.iError : KErrCorrupt;
+                }
+            sink.iFile.Close();
+            total += sink.iWritten;
+            aFiles++;
+            }
+        rc = wh_zip_next(&zip, &it, &entry);
+        }
+
+    zf.Close();
+    return rc < 0 ? KErrCorrupt : KErrNone;
+    }
+
 static void Finish(TJob* aJob, TInt aState, const char* aMessage)
 {
     /* "You stopped this" and "this went wrong" deserve different words, and
@@ -295,11 +569,11 @@ static void RunJob(TJob* aJob)
         wh_mailbox_close(&mailbox, "errory");
         return;
     }
+    /* A folder arrives as one archive, staged and then unpacked. Only the
+     * name check below differs: a folder's name is its own, a file's comes
+     * from the offer. */
     if (offer.is_directory) {
-        wh_xfer_reject(&mailbox, "this client can only receive single files");
-        Finish(aJob, EJobFailed, "Folders are not supported yet");
-        wh_mailbox_close(&mailbox, "errory");
-        return;
+        CopyCStr(offer.filename, sizeof(offer.filename), offer.dirname);
     }
 
     /* The name comes off the network. Refuse anything with a path separator
@@ -338,8 +612,13 @@ static void RunJob(TJob* aJob)
             return;
         }
         fs.MkDirAll(KDestDir);
-        nameBuf.Copy(TPtrC8((const TUint8*)offer.filename));
-        path.Append(nameBuf);
+
+        if (offer.is_directory) {
+            path.Copy(KStageZip);
+        } else {
+            nameBuf.Copy(TPtrC8((const TUint8*)offer.filename));
+            path.Append(nameBuf);
+        }
 
         sink.iError = KErrNone;
         if (sink.iFile.Replace(fs, path, EFileWrite) != KErrNone) {
@@ -354,6 +633,30 @@ static void RunJob(TJob* aJob)
                             &gXferBufs, WhminiSinkWrite, &sink,
                             WhminiProgress, NULL);
         sink.iFile.Close();
+
+        if (rc == 0 && offer.is_directory) {
+            TFileName dest(KDestDir);
+            TInt files = 0;
+            TInt err;
+
+            aJob->iState = EJobUnpacking;
+            nameBuf.Copy(TPtrC8((const TUint8*)offer.dirname));
+            dest.Append(nameBuf);
+            dest.Append('\\');
+
+            err = UnpackStaged(fs, dest, (TUint)wh_unpack_cap(offer.num_bytes),
+                               files);
+            fs.Delete(KStageZip);
+            if (err != KErrNone) {
+                fs.Close();
+                Finish(aJob, EJobFailed,
+                       err == KErrTooBig ? "Archive is larger than it claimed"
+                                         : "Could not unpack the folder");
+                wh_mailbox_close(&mailbox, "errory");
+                return;
+            }
+            aJob->iDone = (TUint)files;
+        }
         fs.Close();
     }
 
@@ -381,6 +684,10 @@ static void RunSendJob(TJob* aJob)
     TInt size = 0;
     TInt rc;
 
+    TBool folder = (aJob->iKind == EJobKindSendFolder);
+    TUint numFiles = 0;
+    TUint numBytes = 0;
+
     aJob->iState = EJobConnecting;
 
     path.Copy(TPtrC8((const TUint8*)aJob->iPath));
@@ -388,6 +695,61 @@ static void RunSendJob(TJob* aJob)
     if (fs.Connect() != KErrNone) {
         Finish(aJob, EJobFailed, "Cannot open the file system");
         return;
+    }
+
+    if (folder) {
+        /* Build the archive first: the offer has to state its size before a
+         * byte of it goes out. */
+        wh_zipw w;
+        TZipSink zsink;
+        TInt err;
+
+        aJob->iState = EJobZipping;
+
+        if (path.Length() && path[path.Length() - 1] != '\\') path.Append('\\');
+
+        fs.MkDirAll(KStageZip);
+        zsink.iError = KErrNone;
+        if (zsink.iFile.Replace(fs, KStageZip, EFileWrite) != KErrNone) {
+            fs.Close();
+            Finish(aJob, EJobFailed, "Cannot stage the archive");
+            return;
+        }
+        wh_zipw_init(&w, WhminiZipOut, &zsink, gZipDir, sizeof(gZipDir));
+        err = ZipTree(w, fs, path, KNullDesC8, 0, numFiles, numBytes);
+        if (err == KErrNone && wh_zipw_finish(&w) != WH_ZIPW_OK) err = KErrGeneral;
+        zsink.iFile.Close();
+
+        if (err != KErrNone) {
+            fs.Delete(KStageZip);
+            fs.Close();
+            Finish(aJob, EJobFailed,
+                   err == KErrOverflow ? "Folder is nested too deeply"
+                                       : "Could not build the archive");
+            return;
+        }
+        if (numFiles == 0) {
+            fs.Delete(KStageZip);
+            fs.Close();
+            Finish(aJob, EJobFailed, "That folder is empty");
+            return;
+        }
+
+        /* The offer carries the folder's own name, not the staging file's. */
+        {
+            TInt end = path.Length() - 1;          /* skip the trailing '\\' */
+            TInt start = end - 1;
+            TInt i;
+            while (start >= 0 && path[start] != '\\' && path[start] != ':') start--;
+            start++;
+            name[0] = '\0';
+            for (i = 0; start + i < end && i < (TInt)sizeof(name) - 1; i++) {
+                name[i] = (char)path[start + i];
+            }
+            name[i] = '\0';
+        }
+
+        path.Copy(KStageZip);
     }
     source.iError = KErrNone;
     if (source.iFile.Open(fs, path, EFileRead | EFileShareReadersOnly) != KErrNone) {
@@ -402,8 +764,9 @@ static void RunSendJob(TJob* aJob)
         return;
     }
 
-    /* Offer the bare name, never the path it happened to come from. */
-    {
+    /* Offer the bare name, never the path it happened to come from. A
+     * folder already named itself above. */
+    if (!folder) {
         TParsePtrC parse(path);
         TPtrC leaf = parse.NameAndExt();
         TInt i;
@@ -464,11 +827,20 @@ static void RunSendJob(TJob* aJob)
 
     aJob->iState = EJobSending;
 
-    rc = wh_xfer_send_file(&mailbox, KAppId, name, (unsigned long)size,
-                           gSettings.iRelayHost, gSettings.iRelayPort,
-                           &gXferBufs, WhminiSourceRead, &source,
-                           WhminiProgress, NULL);
+    if (folder) {
+        rc = wh_xfer_send_folder(&mailbox, KAppId, name, (unsigned long)size,
+                                 (unsigned long)numFiles, (unsigned long)numBytes,
+                                 gSettings.iRelayHost, gSettings.iRelayPort,
+                                 &gXferBufs, WhminiSourceRead, &source,
+                                 WhminiProgress, NULL);
+    } else {
+        rc = wh_xfer_send_file(&mailbox, KAppId, name, (unsigned long)size,
+                               gSettings.iRelayHost, gSettings.iRelayPort,
+                               &gXferBufs, WhminiSourceRead, &source,
+                               WhminiProgress, NULL);
+    }
     source.iFile.Close();
+    if (folder) fs.Delete(KStageZip);
     fs.Close();
 
     if (rc == -2) {
@@ -501,7 +873,8 @@ TInt WhminiWorker(TAny* aPtr)
     WhminiLoadSettings(gSettings);
 
     if (cleanup) {
-        TRAPD(err, job->iKind == EJobKindSend ? RunSendJob(job) : RunJob(job));
+        TRAPD(err, job->iKind == EJobKindReceive ? RunJob(job)
+                                                 : RunSendJob(job));
         if (err != KErrNone && job->iState != EJobFailed) {
             Finish(job, EJobFailed, "Unexpected error");
             job->iError = err;

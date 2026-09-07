@@ -30,7 +30,8 @@ RESOURCE MENU_PANE r_whmini_menu
     items =
         {
         MENU_ITEM { command = EWhminiCmdReceive; txt = "Receive file"; },
-        MENU_ITEM { command = EWhminiCmdSend;    txt = "Send file"; },
+        MENU_ITEM { command = EWhminiCmdSend;       txt = "Send file"; },
+        MENU_ITEM { command = EWhminiCmdSendFolder; txt = "Send folder"; },
         MENU_ITEM { command = EWhminiCmdCancel;  txt = "Cancel transfer"; },
         MENU_ITEM
             {
@@ -59,6 +60,17 @@ RESOURCE MENU_PANE r_whmini_settings_menu
 
 // Memory selection for the file browser: the file dialog needs one, and
 // this is the phone's own list of drives.
+// The folder picker needs a file-selection resource as well as a memory
+// one, because it browses into folders before settling on the one chosen.
+RESOURCE FILESELECTIONDIALOG r_whmini_file_selection
+    {
+    title = "Select folder";
+    softkey_1_file = "Select";
+    softkey_1_folder = "Open";
+    softkey_2_root_level = "Cancel";
+    softkey_2_subfolder = "Back";
+    }
+
 RESOURCE MEMORYSELECTIONDIALOG r_whmini_memory_selection
     {
     title = "Select memory";

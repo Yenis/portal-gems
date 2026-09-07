@@ -45,7 +45,7 @@ In scope for v1:
 
 Explicitly out of scope for v1, revisit later:
 
-- Directory offers (a `directory` offer is rejected cleanly with a message).
+- ~~Directory offers~~ - **done**, both directions. See "Folders" below.
 - Direct TCP transit hints (no listening socket, no NAT traversal).
 - Transfer protocol v2 / noise, text messages, device pairing.
 - `wss://`, and any modern web API without a proxy on the VPS.
@@ -558,6 +558,40 @@ transfers, where the command-line client exits:
 Symbian socket reads also had no timeout at all, so a stall was an
 unkillable application rather than an error. They now use an `RTimer`
 alongside the read.
+
+## Folders
+
+Feature parity with the desktop and Android apps, which both send folders as
+a zip with a `directory` offer. Verified against `native/wormhole-core`: a
+tree with nested paths and an empty directory round-trips byte-identically
+in both directions, empty directory included.
+
+The pieces, each tested before the next was built on it:
+
+- `src/crc32.c` - a nibble at a time, 64 bytes of table instead of 1 KB.
+- `src/inflate.c` - streaming DEFLATE. Input and output are callbacks, so a
+  folder of any size decompresses in a fixed 34 KB: the 32 KB window the
+  format requires, plus tables. Vectors come from zlib and run at chunk
+  sizes 1, 7, 1024 and 100000, because a bit reader refilling mid-code is
+  where a hand-written inflate goes wrong.
+- `src/zip.c` - reads through a pread-style callback rather than streaming,
+  because a zip's real index is the central directory at the end. Entry
+  names are checked before use: absolute paths, drive letters, backslashes
+  and any `.` or `..` component are refused outright rather than
+  normalised, since normalisation is where these bugs live.
+- `src/zipw.c` - writes **stored** entries, so sending needs no compressor
+  at all. The offer still says `zipfile/deflated` because that is the only
+  mode the reference client accepts, but that names the container, not the
+  entries. Cross-checked by handing the output to Python's `zipfile`.
+
+On the phone, `RDir` walking is bounded to 16 levels and its file buffer is
+static: eight kilobytes per level in a recursive function would exhaust any
+thread stack worth having by the third subdirectory. The worker stack was
+raised to 96 KB for the same reason.
+
+Both directions stage the archive as a single file. A send has to know its
+size before offering it, and a receive wants to read the central directory
+at the end - neither is possible while the bytes are still in flight.
 
 ## The bug that cost the most
 

@@ -34,6 +34,7 @@ SOURCEPATH      ../../../native/wormhole-mini/src
 SOURCE          sha256.c kdf.c box.c ed25519.c spake2.c
 SOURCE          sha1.c base64.c json.c ws.c mailbox.c transit.c xfer.c
 SOURCE          wordlist.c code.c
+SOURCE          crc32.c inflate.c zip.c zipw.c
 
 // The application icon, as a bitmap/mask pair. S60 3rd Edition prefers a
 // scalable MIF, but building one needs svgtbinencode.exe - a Windows binary -
