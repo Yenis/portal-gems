@@ -15,6 +15,63 @@ static unsigned long wh_strlen(const char *s)
  *
  * hints-v1 is a flat array mixing direct and relay hints (transit.rs's
  * Serialize for Hints); a relay hint nests its endpoints under "hints". */
+/* Collect the peer's direct addresses out of a transit message.
+ *
+ * hints-v1 is a flat array mixing direct hints with relay hints; only the
+ * direct ones are ours to dial. Anything unrecognised is ignored rather
+ * than treated as an error, because the format is explicitly extensible. */
+static void parse_direct_hints(const char *json, unsigned long len,
+                               wh_direct_hints *out)
+{
+    wh_json_val transit, hints, el, field;
+    wh_json_iter it;
+    int rc;
+
+    out->count = 0;
+
+    if (wh_json_get(json, len, "transit", &transit) != 0) return;
+    if (wh_json_get(transit.p, transit.len, "hints-v1", &hints) != 0) return;
+    if (hints.type != WH_JSON_ARRAY) return;
+
+    rc = wh_json_array_first(&hints, &it, &el);
+    while (rc == 0 && out->count < WH_MAX_DIRECT_HINTS) {
+        if (wh_json_get(el.p, el.len, "type", &field) == 0 &&
+            wh_json_streq(&field, "direct-tcp-v1")) {
+            wh_direct_hint *h = &out->hint[out->count];
+            unsigned long port = 0;
+
+            if (wh_json_get(el.p, el.len, "hostname", &field) == 0 &&
+                wh_json_str(&field, h->host, sizeof(h->host)) > 0 &&
+                wh_json_get(el.p, el.len, "port", &field) == 0 &&
+                wh_json_u32(&field, &port) == 0 &&
+                port > 0 && port < 65536) {
+                h->port = (unsigned int)port;
+                out->count++;
+            }
+        }
+        rc = wh_json_array_next(&hints, &it, &el);
+    }
+}
+
+/* Try the peer's addresses, then the relay. The relay always works and is
+ * always slower, so it earns its place as the fallback rather than the
+ * first choice. */
+static int connect_transit(wh_transit *t, const wh_direct_hints *peer,
+                           const char *relay_host, unsigned int relay_port,
+                           const unsigned char transit_key[32], int role)
+{
+    int i;
+
+    for (i = 0; i < peer->count; i++) {
+        if (wh_transit_connect_direct(t, peer->hint[i].host, peer->hint[i].port,
+                                      transit_key, role,
+                                      WH_DIRECT_TIMEOUT_MS) == 0) {
+            return 0;
+        }
+    }
+    return wh_transit_connect_relay(t, relay_host, relay_port, transit_key, role);
+}
+
 static int build_transit_msg(char *out, unsigned long cap,
                              const char *relay_host, unsigned int relay_port)
 {
@@ -62,7 +119,11 @@ static int build_transit_msg(char *out, unsigned long cap,
     wh_jw_obj_open(&w);
     wh_jw_key(&w, "transit");
     wh_jw_obj_open(&w);
-    wh_jw_raw(&w, "abilities-v1", "[{\"type\":\"relay-v1\"}]");
+    /* Advertising the direct ability is what makes a peer publish its own
+     * addresses. We offer none of our own: this side dials out and never
+     * listens. */
+    wh_jw_raw(&w, "abilities-v1",
+              "[{\"type\":\"direct-tcp-v1\"},{\"type\":\"relay-v1\"}]");
     wh_jw_raw(&w, "hints-v1", hints);
     wh_jw_obj_close(&w);
     wh_jw_obj_close(&w);
@@ -82,16 +143,17 @@ int wh_xfer_await_offer(wh_mailbox *m, const char *relay_host,
     offer->is_directory = 0;
     offer->num_files = 0;
     offer->num_bytes = 0;
+    offer->peer.count = 0;
 
     if (build_transit_msg(buf, sizeof(buf), relay_host, relay_port) != 0) return -1;
     if (wh_mailbox_send_phase(m, buf, wh_strlen(buf)) != 0) return -1;
 
-    /* Their transit message. We do not use their hints - both peers are
-     * configured with the same relay, which is how PortalGems deploys.
-     * Honouring their hints is a later refinement. */
+    /* Their transit message, which carries the addresses we may be able to
+     * reach them on directly. */
     n = wh_mailbox_recv_phase(m, buf, sizeof(buf));
     if (n < 0) return -1;
     if (wh_json_get(buf, (unsigned long)n, "transit", &v) != 0) return -1;
+    parse_direct_hints(buf, (unsigned long)n, &offer->peer);
 
     /* Their offer. */
     n = wh_mailbox_recv_phase(m, buf, sizeof(buf));
@@ -169,8 +231,8 @@ int wh_xfer_accept(wh_mailbox *m, const char *appid, const wh_offer *offer,
     if (wh_mailbox_send_phase(m, ANSWER, sizeof(ANSWER) - 1) != 0) return -1;
 
     if (wh_derive_transit_key(m->key, appid, transit_key) != 0) return -1;
-    if (wh_transit_connect_relay(&t, relay_host, relay_port, transit_key,
-                                 WH_TRANSIT_FOLLOWER) != 0) {
+    if (connect_transit(&t, &offer->peer, relay_host, relay_port, transit_key,
+                        WH_TRANSIT_FOLLOWER) != 0) {
         return -1;
     }
 
@@ -328,6 +390,7 @@ static int send_offer_and_stream(wh_mailbox *m, const char *appid,
     char hex[65];
     char buf[2048];
     wh_json_val v, inner;
+    wh_direct_hints peer;
     unsigned long sent = 0;
     long n;
     int rc = 0;
@@ -335,11 +398,11 @@ static int send_offer_and_stream(wh_mailbox *m, const char *appid,
 
     if (wh_mailbox_send_phase(m, offer_json, wh_strlen(offer_json)) != 0) return -1;
 
-    /* Their transit hints. Ignored, as on the receive side: both peers are
-     * configured with the same relay. */
+    /* Their transit message, and the addresses in it. */
     n = wh_mailbox_recv_phase(m, buf, sizeof(buf));
     if (n < 0) return -1;
     if (wh_json_get(buf, (unsigned long)n, "transit", &v) != 0) return -1;
+    parse_direct_hints(buf, (unsigned long)n, &peer);
 
     /* Their answer. A refusal arrives as {"error": "..."} instead. */
     n = wh_mailbox_recv_phase(m, buf, sizeof(buf));
@@ -350,8 +413,8 @@ static int send_offer_and_stream(wh_mailbox *m, const char *appid,
     if (!wh_json_streq(&inner, "ok")) return -2;
 
     if (wh_derive_transit_key(m->key, appid, transit_key) != 0) return -1;
-    if (wh_transit_connect_relay(&t, relay_host, relay_port, transit_key,
-                                 WH_TRANSIT_LEADER) != 0) {
+    if (connect_transit(&t, &peer, relay_host, relay_port, transit_key,
+                        WH_TRANSIT_LEADER) != 0) {
         return -1;
     }
 

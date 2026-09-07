@@ -46,7 +46,7 @@ In scope for v1:
 Explicitly out of scope for v1, revisit later:
 
 - ~~Directory offers~~ - **done**, both directions. See "Folders" below.
-- Direct TCP transit hints (no listening socket, no NAT traversal).
+- ~~Direct TCP transit~~ - **done**, outbound only. See "Direct transit".
 - Transfer protocol v2 / noise, text messages, device pairing.
 - `wss://`, and any modern web API without a proxy on the VPS.
 
@@ -592,6 +592,38 @@ raised to 96 KB for the same reason.
 Both directions stage the archive as a single file. A send has to know its
 size before offering it, and a receive wants to read the central directory
 at the end - neither is possible while the bytes are still in flight.
+
+## Direct transit
+
+The phone dials out but never listens. The full protocol has both peers
+listen and race connections; on a phone an inbound port is nearly always
+useless behind carrier NAT, and accepting connections on Symbian would mean
+more capability surface and a great deal more code. So the client advertises
+the `direct-tcp-v1` ability - which is what makes a peer publish *its*
+addresses - offers none of its own, tries the peer's in turn, and falls back
+to the relay.
+
+On a local network that is the whole win: the relay moves a couple of
+hundred kilobytes a second, a direct connection moves as fast as the wi-fi
+will carry. Verified against `native/wormhole-core`, which reports
+`TRANSIT:Direct` rather than `TRANSIT:Relay` for files and folders in both
+directions.
+
+Two things this needed:
+
+- **Array iteration in the JSON reader.** Hints arrive as a flat array
+  mixing direct and relay entries, which is the one place a top-level-key
+  reader is not enough. Unknown hint types are ignored rather than treated
+  as errors, because the format is explicitly extensible.
+- **A bounded connect in the platform layer.** A hint is a guess, and most
+  guesses are wrong - a peer advertises every interface it has, including
+  virtual bridges and an IPv6 address the phone may have no route to. A
+  default connect sits through the operating system's whole retry schedule,
+  measured in tens of seconds. `wh_net_connect_timeout` gives each address
+  1.5 seconds: non-blocking connect plus `select` on the host,
+  `RTimer` alongside `RSocket::Connect` on the phone. The peer waits sixty
+  seconds, so this is about not making someone watch a phone screen rather
+  than about correctness.
 
 ## The bug that cost the most
 

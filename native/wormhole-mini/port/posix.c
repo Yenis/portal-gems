@@ -15,6 +15,8 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <sys/select.h>
+#include <fcntl.h>
 
 #include "../src/net.h"
 
@@ -50,7 +52,42 @@ void randombytes(unsigned char *buf, unsigned long long n)
     wh_net_random(buf, (unsigned long)n);
 }
 
-int wh_net_connect(wh_conn **out, const char *host, unsigned int port)
+/* Non-blocking connect plus select, which is the portable way to bound a
+ * connect: SO_SNDTIMEO does not apply to it on every system. */
+static int connect_bounded(int fd, const struct sockaddr *addr,
+                           socklen_t addrlen, unsigned long ms)
+{
+    int flags = fcntl(fd, F_GETFL, 0);
+    fd_set wset;
+    struct timeval tv;
+    int err = 0;
+    socklen_t elen = sizeof(err);
+    int rc;
+
+    if (flags < 0) return -1;
+    if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0) return -1;
+
+    rc = connect(fd, addr, addrlen);
+    if (rc != 0 && errno != EINPROGRESS) return -1;
+
+    if (rc != 0) {
+        FD_ZERO(&wset);
+        FD_SET(fd, &wset);
+        tv.tv_sec = (long)(ms / 1000);
+        tv.tv_usec = (long)((ms % 1000) * 1000);
+        rc = select(fd + 1, NULL, &wset, NULL, &tv);
+        if (rc <= 0) return -1;                       /* timed out or failed */
+        if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &elen) != 0) return -1;
+        if (err != 0) return -1;
+    }
+
+    /* Back to blocking: everything above this layer is written that way. */
+    if (fcntl(fd, F_SETFL, flags) < 0) return -1;
+    return 0;
+}
+
+int wh_net_connect_timeout(wh_conn **out, const char *host, unsigned int port,
+                           unsigned long timeout_ms)
 {
     struct addrinfo hints, *res = NULL, *ai;
     char portstr[16];
@@ -73,7 +110,10 @@ int wh_net_connect(wh_conn **out, const char *host, unsigned int port)
     for (ai = res; ai; ai = ai->ai_next) {
         fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
         if (fd < 0) continue;
-        if (connect(fd, ai->ai_addr, ai->ai_addrlen) == 0) break;
+        if (connect_bounded(fd, ai->ai_addr, (socklen_t)ai->ai_addrlen,
+                            timeout_ms) == 0) {
+            break;
+        }
         close(fd);
         fd = -1;
     }
@@ -90,6 +130,11 @@ int wh_net_connect(wh_conn **out, const char *host, unsigned int port)
     g_conns[slot].used = 1;
     *out = &g_conns[slot];
     return 0;
+}
+
+int wh_net_connect(wh_conn **out, const char *host, unsigned int port)
+{
+    return wh_net_connect_timeout(out, host, port, 30000);
 }
 
 int wh_net_write(wh_conn *c, const unsigned char *buf, unsigned long len)

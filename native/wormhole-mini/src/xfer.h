@@ -21,6 +21,30 @@
 extern "C" {
 #endif
 
+/* Addresses a peer says it is listening on. Most will be unreachable from
+ * here - another network's private range, an interface that is down - so
+ * they are tried in turn with a short bound each, and the relay is always
+ * there behind them. */
+#define WH_MAX_DIRECT_HINTS 6
+/* Per address, not in total. A peer advertises every interface it has -
+ * virtual bridges, tunnels, an IPv6 address a phone may have no route to -
+ * and most of them are dead ends from here. A local machine answers a SYN
+ * in tens of milliseconds, so a second and a half is generous for the case
+ * that can succeed while keeping six dead ends under ten seconds. The peer
+ * waits sixty, so this is about not making someone watch a phone screen
+ * rather than about correctness. */
+#define WH_DIRECT_TIMEOUT_MS 1500
+
+typedef struct {
+    char host[64];
+    unsigned int port;
+} wh_direct_hint;
+
+typedef struct {
+    wh_direct_hint hint[WH_MAX_DIRECT_HINTS];
+    int count;
+} wh_direct_hints;
+
 typedef struct {
     char filename[256];
     /* Bytes that will arrive over the transit. For a directory offer that
@@ -35,6 +59,9 @@ typedef struct {
     char dirname[256];
     unsigned long num_files;   /* what the sender says the folder holds */
     unsigned long num_bytes;   /* unpacked total, before compression */
+
+    /* Where the peer says it can be reached directly. */
+    wh_direct_hints peer;
 } wh_offer;
 
 /* How many unpacked bytes to tolerate for a folder claiming `num_bytes`:

@@ -16,6 +16,17 @@ typedef struct wh_conn wh_conn;
 /* Connect to host:port. Returns 0, or -1. */
 int wh_net_connect(wh_conn **out, const char *host, unsigned int port);
 
+/* The same, but giving up after `timeout_ms`.
+ *
+ * Direct transit hints are guesses: a peer advertises every address it has,
+ * most of which are unreachable from here - a private range on another
+ * network, an interface that is down, a firewall. Each has to fail quickly
+ * so the next one, and ultimately the relay, gets its turn. A default
+ * connect would sit through the operating system's own retry schedule,
+ * which is measured in tens of seconds. */
+int wh_net_connect_timeout(wh_conn **out, const char *host, unsigned int port,
+                           unsigned long timeout_ms);
+
 /* Write everything or fail. Returns 0, or -1. */
 int wh_net_write(wh_conn *c, const unsigned char *buf, unsigned long len);
 

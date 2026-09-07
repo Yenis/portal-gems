@@ -179,6 +179,68 @@ int main(void)
         check_true("short buffer is refused", wh_json_str(&v, s, 3) == -1);
     }
 
+    /* --- JSON arrays, which is how transit hints arrive ---------------- */
+    {
+        static const char doc[] =
+            "{\"hints-v1\": ["
+            "{\"type\": \"direct-tcp-v1\", \"hostname\": \"192.168.1.79\", \"port\": 45871},"
+            "{\"type\": \"relay-v1\", \"name\": null, \"hints\": ["
+            "{\"type\": \"direct-tcp-v1\", \"hostname\": \"relay.example\", \"port\": 4001}]},"
+            "{\"type\": \"unknown-future-thing\"}"
+            "], \"after\": 7}";
+        wh_json_val arr, el, f;
+        wh_json_iter it;
+        int n = 0, rc;
+        char host[64];
+        unsigned long port = 0;
+        int saw_direct = 0, saw_relay = 0, saw_unknown = 0;
+
+        check_true("find the hints array",
+                   wh_json_get(doc, strlen(doc), "hints-v1", &arr) == 0);
+        check_true("it is an array", arr.type == WH_JSON_ARRAY);
+
+        rc = wh_json_array_first(&arr, &it, &el);
+        while (rc == 0) {
+            n++;
+            if (wh_json_get(el.p, el.len, "type", &f) == 0) {
+                if (wh_json_streq(&f, "direct-tcp-v1")) {
+                    saw_direct++;
+                    if (wh_json_get(el.p, el.len, "hostname", &f) == 0)
+                        wh_json_str(&f, host, sizeof(host));
+                    if (wh_json_get(el.p, el.len, "port", &f) == 0)
+                        wh_json_u32(&f, &port);
+                } else if (wh_json_streq(&f, "relay-v1")) {
+                    saw_relay++;
+                } else {
+                    saw_unknown++;
+                }
+            }
+            rc = wh_json_array_next(&arr, &it, &el);
+        }
+        check_true("iteration ends cleanly", rc == 1);
+        check_true("three elements seen", n == 3);
+        check_true("one direct hint", saw_direct == 1);
+        check_true("one relay hint", saw_relay == 1);
+        check_true("an unknown hint type is tolerated", saw_unknown == 1);
+        check_str("direct hint hostname", host, "192.168.1.79");
+        check_true("direct hint port", port == 45871);
+
+        /* A nested array must not confuse the outer walk. */
+        check_true("key after the array is still reachable",
+                   wh_json_get(doc, strlen(doc), "after", &f) == 0);
+
+        /* Degenerate arrays. */
+        {
+            static const char empty[] = "{\"a\": []}";
+            wh_json_val a2, e2;
+            wh_json_iter i2;
+            check_true("empty array is found",
+                       wh_json_get(empty, strlen(empty), "a", &a2) == 0);
+            check_true("empty array yields nothing",
+                       wh_json_array_first(&a2, &i2, &e2) == 1);
+        }
+    }
+
     /* --- JSON writer -------------------------------------------------- */
     {
         wh_jw w;

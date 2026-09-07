@@ -44,6 +44,18 @@ int wh_json_streq(const wh_json_val *v, const char *s);
 /* Read a non-negative integer value. Returns 0, or -1. */
 int wh_json_u32(const wh_json_val *v, unsigned long *out);
 
+/* Iterate an array value's elements. Transit hints arrive as an array of
+ * objects, which is the one place the top-level-key reader is not enough.
+ * Returns 0 with `out` filled, 1 at the end, or -1 if malformed. */
+typedef struct {
+    unsigned long pos;
+} wh_json_iter;
+
+int wh_json_array_first(const wh_json_val *arr, wh_json_iter *it,
+                        wh_json_val *out);
+int wh_json_array_next(const wh_json_val *arr, wh_json_iter *it,
+                       wh_json_val *out);
+
 /* --- writer ---------------------------------------------------------- */
 
 typedef struct {

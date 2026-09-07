@@ -265,6 +265,61 @@ int wh_json_u32(const wh_json_val *v, unsigned long *out)
     return 0;
 }
 
+static int array_step(const wh_json_val *arr, wh_json_iter *it,
+                      wh_json_val *out, int first)
+{
+    const char *d = arr->p;
+    unsigned long n = arr->len;
+    unsigned long i = it->pos;
+    unsigned long end;
+
+    if (arr->type != WH_JSON_ARRAY) return -1;
+
+    i = skip_ws(d, n, i);
+    if (i >= n) return -1;
+
+    if (first) {
+        if (d[i] != '[') return -1;
+        i++;
+    } else {
+        if (d[i] == ']') return 1;
+        if (d[i] != ',') return -1;
+        i++;
+    }
+
+    i = skip_ws(d, n, i);
+    if (i >= n) return -1;
+    if (d[i] == ']') return 1;          /* empty, or a trailing comma */
+
+    end = skip_value(d, n, i);
+    if (end > n || end == i) return -1;
+
+    out->type = classify(d, n, i);
+    if (out->type == WH_JSON_STRING) {
+        out->p = d + i + 1;
+        out->len = (end - 1) - (i + 1);
+    } else {
+        out->p = d + i;
+        out->len = end - i;
+    }
+
+    it->pos = skip_ws(d, n, end);
+    return 0;
+}
+
+int wh_json_array_first(const wh_json_val *arr, wh_json_iter *it,
+                        wh_json_val *out)
+{
+    it->pos = 0;
+    return array_step(arr, it, out, 1);
+}
+
+int wh_json_array_next(const wh_json_val *arr, wh_json_iter *it,
+                       wh_json_val *out)
+{
+    return array_step(arr, it, out, 0);
+}
+
 /* --- writer ---------------------------------------------------------- */
 
 static void jw_ch(wh_jw *w, char c)

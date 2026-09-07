@@ -578,6 +578,16 @@ static int cmd_receive(const char *host, unsigned int port, const char *path,
         return 1;
     }
 
+    {
+        int h;
+        printf("peer offers %d direct hint(s)", offer.peer.count);
+        for (h = 0; h < offer.peer.count; h++) {
+            printf("%s%s:%u", h == 0 ? ": " : ", ",
+                   offer.peer.hint[h].host, offer.peer.hint[h].port);
+        }
+        printf("\n");
+    }
+
     if (offer.is_directory) {
         printf("offer: folder %s (%lu files, %lu bytes, %lu zipped)\n",
                offer.dirname, offer.num_files, offer.num_bytes, offer.filesize);

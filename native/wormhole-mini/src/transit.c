@@ -42,6 +42,34 @@ static int append(char *dst, unsigned long cap, unsigned long *len, const char *
     return 0;
 }
 
+static int transit_handshake(wh_transit *t, const unsigned char transit_key[32],
+                             int role);
+
+/* Both entry points start here: fresh nonces, then whatever connection
+ * setup the path needs. */
+static void reset_nonces(wh_transit *t)
+{
+    int i;
+    for (i = 0; i < 24; i++) { t->snonce[i] = 0; t->rnonce[i] = 0; }
+}
+
+int wh_transit_connect_direct(wh_transit *t, const char *host,
+                              unsigned int port,
+                              const unsigned char transit_key[32], int role,
+                              unsigned long timeout_ms)
+{
+    reset_nonces(t);
+    if (wh_net_connect_timeout(&t->conn, host, port, timeout_ms) != 0) return -1;
+
+    if (transit_handshake(t, transit_key, role) != 0) {
+        /* Something answered but it was not our peer. Drop it and let the
+         * caller try the next address. */
+        wh_transit_close(t);
+        return -1;
+    }
+    return 0;
+}
+
 int wh_transit_connect_relay(wh_transit *t, const char *host, unsigned int port,
                              const unsigned char transit_key[32], int role)
 {
@@ -50,12 +78,10 @@ int wh_transit_connect_relay(wh_transit *t, const char *host, unsigned int port,
     char hex[65];
     char tside[17];
     char line[160];
-    unsigned char expect[96];
-    unsigned char got[96];
+    unsigned char got[8];
     unsigned long len = 0;
-    int i;
 
-    for (i = 0; i < 24; i++) { t->snonce[i] = 0; t->rnonce[i] = 0; }
+    reset_nonces(t);
 
     if (wh_net_connect(&t->conn, host, port) != 0) return -1;
 
@@ -76,10 +102,26 @@ int wh_transit_connect_relay(wh_transit *t, const char *host, unsigned int port,
     if (read_exact(t->conn, got, 3) != 0) return -1;
     if (got[0] != 'o' || got[1] != 'k' || got[2] != '\n') return -1;
 
-    /* 2. Transit handshake. Asymmetric: the leader writes its line, reads
-     * the follower's, then writes "go\n". The two lines are different
-     * lengths - 87 for the sender, 89 for the receiver, because "receiver"
-     * is two characters longer - and transit/crypto.rs asserts both. */
+    return transit_handshake(t, transit_key, role);
+}
+
+/* The handshake proper, shared by the relay and direct paths.
+ *
+ * Asymmetric: the leader writes its line, reads the follower's, then writes
+ * "go\n". The two lines are different lengths - 87 for the sender, 89 for
+ * the receiver, because "receiver" is two characters longer - and
+ * transit/crypto.rs asserts both. */
+static int transit_handshake(wh_transit *t, const unsigned char transit_key[32],
+                             int role)
+{
+    unsigned char sub[32];
+    char hex[65];
+    char line[160];
+    unsigned char expect[96];
+    unsigned char got[96];
+    unsigned long len = 0;
+    int i;
+
     wh_derive_key_str(transit_key, role == WH_TRANSIT_LEADER
                                        ? "transit_sender" : "transit_receiver", sub);
     wh_hex(sub, 32, hex);

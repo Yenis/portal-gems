@@ -214,7 +214,9 @@ static TInt ResolveHost(const TDesC& aHost, TInetAddr& aAddr)
     return KErrNone;
 }
 
-extern "C" int wh_net_connect(wh_conn **out, const char *host, unsigned int port)
+extern "C" int wh_net_connect_timeout(wh_conn **out, const char *host,
+                                      unsigned int port,
+                                      unsigned long timeout_ms)
 {
     TInt slot = -1;
     for (TInt i = 0; i < WH_MAX_CONN; i++) {
@@ -251,13 +253,44 @@ extern "C" int wh_net_connect(wh_conn **out, const char *host, unsigned int port
         return -1;
     }
 
-    TRequestStatus status;
-    sock.Connect(addr, status);
-    User::WaitForRequest(status);
-    if (status.Int() != KErrNone) {
-        Fail(WH_NET_STAGE_CONNECT, status.Int());
-        sock.Close();
-        return -1;
+    {
+        TRequestStatus status;
+        TRequestStatus timerStatus;
+        RTimer timer;
+        TBool timed = (timer.CreateLocal() == KErrNone);
+
+        sock.Connect(addr, status);
+        if (timed) {
+            timer.After(timerStatus, (TInt)(timeout_ms * 1000));
+            User::WaitForRequest(status, timerStatus);
+        } else {
+            User::WaitForRequest(status);
+        }
+
+        if (status == KRequestPending) {
+            /* The timer won. Abandon the attempt and collect its
+             * completion, or the outstanding request outlives this call. */
+            sock.CancelConnect();
+            User::WaitForRequest(status);
+            timer.Cancel();
+            User::WaitForRequest(timerStatus);
+            timer.Close();
+            Fail(WH_NET_STAGE_CONNECT, KErrTimedOut);
+            sock.Close();
+            return -1;
+        }
+
+        if (timed) {
+            timer.Cancel();
+            User::WaitForRequest(timerStatus);
+            timer.Close();
+        }
+
+        if (status.Int() != KErrNone) {
+            Fail(WH_NET_STAGE_CONNECT, status.Int());
+            sock.Close();
+            return -1;
+        }
     }
 
     /* Connected. Clear anything StartNetwork recorded on its way through the
@@ -269,6 +302,11 @@ extern "C" int wh_net_connect(wh_conn **out, const char *host, unsigned int port
     gConns[slot].used = ETrue;
     *out = &gConns[slot];
     return 0;
+}
+
+extern "C" int wh_net_connect(wh_conn **out, const char *host, unsigned int port)
+{
+    return wh_net_connect_timeout(out, host, port, 30000);
 }
 
 extern "C" int wh_net_write(wh_conn *c, const unsigned char *buf, unsigned long len)

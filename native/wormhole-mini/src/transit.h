@@ -42,6 +42,14 @@ typedef struct {
 int wh_transit_connect_relay(wh_transit *t, const char *host, unsigned int port,
                              const unsigned char transit_key[32], int role);
 
+/* Connect straight to a peer address and complete the transit handshake.
+ * No relay token - that line belongs to the relay protocol, not to transit.
+ * Bounded, because a hint is a guess and most guesses are wrong. */
+int wh_transit_connect_direct(wh_transit *t, const char *host,
+                              unsigned int port,
+                              const unsigned char transit_key[32], int role,
+                              unsigned long timeout_ms);
+
 /* Send one encrypted record. `work` needs WH_BOX_WORK(len) bytes. */
 int wh_transit_send_record(wh_transit *t, const unsigned char *pt,
                            unsigned long len,
