@@ -5,31 +5,31 @@ All notable changes to PortalGems are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.3.0] - 2026-09-08
 
 PortalGems runs on Symbian. A Nokia E72 from 2010 sends and receives files
 and folders with the Android app, the desktop app, and the `wormhole` CLI.
 
 ### Added
 
-- **Symbian support (S60 3rd edition).** A separate client for Symbian OS 9.x
-  phones - the E72, E71, E63, N95 and their contemporaries - written from the
-  protocol specification in freestanding C89, with a native Avkon interface.
-  It sends and receives single files and whole folders in both directions,
-  interoperating with every other PortalGems platform and with any
-  magic-wormhole client. The installable package is 52 KB. It needs a
-  self-hosted server with a cleartext `ws://` listener, because Symbian's TLS
-  cannot reach a modern `wss://` mailbox; the mailbox carries only PAKE
-  messages and ciphertext, so that costs the handshake nothing. See
+- **Symbian support (S60 3rd edition, Feature Pack 2).** A separate client
+  for Symbian OS 9.3 phones - the Nokia E72, E52, E55, E5, N86, X5 and their
+  contemporaries - written from the protocol specification in freestanding
+  C89, with a native Avkon interface. It sends and receives single files and
+  whole folders in both directions, interoperating with every other
+  PortalGems platform and with any magic-wormhole client. The installable
+  package is 52 KB. Developed and tested on an E72.
+
+  It needs a self-hosted server with a cleartext `ws://` listener, because
+  Symbian's TLS is TLS 1.0 with a 2009 root store and cannot reach a modern
+  `wss://` mailbox. That costs the handshake nothing: the mailbox carries
+  only PAKE messages and ciphertext, so an observer on that port learns which
+  code slot was used and when, never the key and never the file. See
   [PortalGems on Symbian](README.md#portalgems-on-symbian) and
   [docs/SYMBIAN.md](docs/SYMBIAN.md).
 - **Direct connections on Symbian**, off by default and switchable in
   Settings. On a local network the phone connects straight to the other
   device instead of relaying.
-
-## [1.2.8] - 2026-09-04
-
-Removing a paired device is now something you can actually find on Android.
 
 ### Fixed
 
@@ -42,7 +42,12 @@ Removing a paired device is now something you can actually find on Android.
   "Remove" as its only text. It now explains what happens: the device is
   unpaired, and you can pair with it again later.
 
-[1.2.8]: https://github.com/Yenis/portal-gems/releases/tag/v1.2.8
+### Note
+
+The 1.2.8 version number was prepared but never tagged or published, so its
+two Android pairing fixes above reach users for the first time here.
+
+[1.3.0]: https://github.com/Yenis/portal-gems/releases/tag/v1.3.0
 
 ## [1.2.7] - 2026-09-04
 
