@@ -777,8 +777,28 @@ receive-only one.
 
 - [x] Cleartext `ws://` listener documented and deployed
       (`docs/VPS-SETUP.md`), and carrying real transfers.
-- [ ] SIS in the release artifacts, checksums in the README.
-- [ ] README Symbian section, CHANGELOG entry, ARCHITECTURE.md pointer.
+- [x] README Symbian section, download-table row, architecture note, and
+      build instructions.
+- [x] Release artifact prepared by `scripts/symbian-sign.sh`, which now also
+      writes `sis/dist/PortalGems-Mini-<version>-symbian.sis` and its
+      `.sha256` next to the signed package.
+- [ ] CHANGELOG entry, ARCHITECTURE.md pointer.
+
+The Symbian artifact is uploaded by hand rather than built in CI, and that is
+deliberate. The job would need the S60 3rd edition FP2 SDK - a proprietary
+2008 download that cannot be fetched unattended - and the signing key, which
+is gitignored for the same reason as the Android keystore. The client itself
+is not left untested by that: `make test` and `make test-arm` run the whole
+suite with no SDK at all, on the host and under `qemu-arm`, so CI can prove
+the protocol code is correct even where it cannot produce the package.
+
+    scripts/symbian-sign.sh
+    gh release upload vX.Y.Z packages/app-symbian/sis/dist/* --clobber
+
+The version lives in `sis/whmini.pkg` and, as `WHMINI_VERSION`, in
+`inc/whmini.h`, where the main screen displays it. Keep them in step: the
+whole point of the on-screen version is that a photograph of the phone
+identifies the build.
 
 ## 6. Open questions
 

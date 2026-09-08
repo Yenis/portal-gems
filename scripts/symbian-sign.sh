@@ -74,6 +74,23 @@ echo "signing"
 ( cd "$SIS_DIR" && signsis whmini.sis whmini-signed.sis \
     "$(basename "$CERT")" "$(basename "$KEY")" "$PASS" )
 
+# A release-named copy with a checksum, so the Symbian artifact is prepared
+# the same way as every other platform's. It is uploaded by hand: the build
+# needs the S60 SDK and the signing key, and neither belongs in CI.
+VERSION=$(sed -n 's/^#{.*}, *(0x[0-9A-Fa-f]*), *\([0-9]*\), *\([0-9]*\), *\([0-9]*\).*/\1.\2.\3/p' \
+          "$SIS_DIR/whmini.pkg" | head -1)
+if [ -n "$VERSION" ]; then
+    mkdir -p "$SIS_DIR/dist"
+    RELEASE_NAME="PortalGems-Mini-$VERSION-symbian.sis"
+    cp "$SIS_DIR/whmini-signed.sis" "$SIS_DIR/dist/$RELEASE_NAME"
+    ( cd "$SIS_DIR/dist" && sha256sum "$RELEASE_NAME" > "$RELEASE_NAME.sha256" )
+fi
+
 echo
 echo "signed package: $SIS_DIR/whmini-signed.sis"
 echo "copy it to the phone and open it from the file manager."
+if [ -n "$VERSION" ]; then
+    echo
+    echo "release artifact: $SIS_DIR/dist/$RELEASE_NAME (+ .sha256)"
+    echo "upload with: gh release upload vX.Y.Z $SIS_DIR/dist/* --clobber"
+fi

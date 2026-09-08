@@ -12,6 +12,10 @@ middleman that ever sees your data. It runs on **Android** and on the **desktop*
 built with Electron), and it interoperates with **any** magic-wormhole client,
 including the original `wormhole` CLI on a server or laptop.
 
+It also runs on **Symbian** - a Nokia E72 from 2010 sends and receives files
+and folders to and from a modern phone and laptop. See
+[PortalGems on Symbian](#portalgems-on-symbian).
+
 ---
 
 ## Table of contents
@@ -22,6 +26,7 @@ including the original `wormhole` CLI on a server or laptop.
 - [How it works](#how-it-works)
 - [Security model](#security-model)
 - [Device pairing (no backend)](#device-pairing-no-backend)
+- [PortalGems on Symbian](#portalgems-on-symbian)
 - [Architecture](#architecture)
 - [Building from source](#building-from-source)
 - [Development](#development)
@@ -44,6 +49,7 @@ Grab the latest build for your platform from the
 | Fedora/RHEL | `PortalGems-<version>-linux-x86_64.rpm` | `sudo dnf install ./PortalGems-*.rpm` |
 | Windows | `PortalGems-<version>-windows-x64.exe` | Portable; just run it, no installer |
 | macOS (Apple Silicon) | `PortalGems-<version>-macos-arm64.dmg` | Unsigned; right-click → Open on first launch |
+| Symbian (S60 3rd ed. FP2) | `PortalGems-Mini-<version>-symbian.sis` | Self-signed; needs a self-hosted server. See [PortalGems on Symbian](#portalgems-on-symbian) |
 
 Building from source instead? See [Building from source](#building-from-source).
 
@@ -104,6 +110,7 @@ PortalGems takes a different approach, inherited from magic-wormhole:
 | 5 gem themes | Diamond, Sapphire, Emerald, Ruby, Amethyst - each in light & dark |
 | No accounts | No backend of ours, no cloud, everything stored locally |
 | Built-in explainer | The full "how it works & why it's safe" story, in-app |
+| Runs on Symbian | A separate 52 KB client for S60 3rd edition phones - files and folders, both directions |
 
 ## How it works
 
@@ -188,6 +195,59 @@ devices effortless - with no server involved:
 Paired devices can be removed at any time. Losing a phone? Remove it on the
 other device and the stored secret becomes useless.
 
+## PortalGems on Symbian
+
+PortalGems runs on **Symbian OS 9.3 / S60 3rd edition, Feature Pack 2** -
+the Nokia E72, E52, E55, E5, N86, X5 and their contemporaries. It sends and
+receives files and whole folders, in both directions, to and from PortalGems
+on Android and the desktop, and to and from the `wormhole` CLI. Same
+protocol, same codes, no bridge or gateway in between.
+
+Developed and tested on an E72. Other FP2 devices should work and have not
+been tried; earlier feature packs are not targeted by the package.
+
+It is a **separate implementation**, not a port. Nothing in the Rust engine
+can run on a 2010 ARMv5 phone with no modern toolchain, so the protocol was
+rewritten from the specification in about 5,000 lines of **C89** that assume
+no standard library, allocate no memory after startup, and keep every buffer
+static. `native/wormhole-mini` is the client; `packages/app-symbian` is the
+Avkon UI around it. The installable package is **52 KB**.
+
+**What it does**
+
+- Send and receive single files, to and from the memory card
+- Send and receive folders, using the standard wormhole directory transfer -
+  a folder sent from the phone arrives as a folder in the desktop app and
+  under `wormhole receive` alike
+- Enter a code on the keyboard, or generate one for the other side
+- Direct LAN connections, off by default and switchable in Settings
+
+**What it does not do**
+
+- No QR pairing (there is no camera API worth the name here, and pairing is
+  not implemented on this client yet), no themes, no translations
+- **It needs a self-hosted server.** Symbian's TLS is TLS 1.0 with a 2009
+  root store and cannot reach a modern `wss://` mailbox, so the phone talks
+  to a cleartext `ws://` listener - one extra port on your own server, see
+  [Self-hosting a server](#self-hosting-a-server). That costs less than it
+  sounds: the mailbox only ever carries PAKE messages and ciphertext, so an
+  observer on that port learns which code slot was used and when, never the
+  key and never the file. Cleartext is exactly the setting a PAKE is
+  designed for.
+
+**Installing**
+
+The `.sis` is **self-signed**, so the phone will warn that the supplier
+cannot be verified and, on some firmware, that the application is not
+compatible - both are expected; continue past them. It requests only
+user-grantable capabilities (`NetworkServices`, `ReadUserData`,
+`WriteUserData`). Copy the file to the phone and open it from the file
+manager, then set your server under **Options > Settings**.
+
+The build story - the toolchain on a modern Linux host, the protocol work,
+and a long list of things that were only findable on real hardware - is in
+[docs/SYMBIAN.md](docs/SYMBIAN.md).
+
 ## Architecture
 
 One protocol engine, written in Rust on top of
@@ -212,6 +272,14 @@ platform through thin bindings:
                         native/wormhole-core (Rust)
                     app-shaped API over magic-wormhole.rs
 ```
+
+Symbian sits outside this tree entirely. `native/wormhole-mini` is a second,
+independent implementation of the same protocol in freestanding C89, with
+`packages/app-symbian` as its UI - see
+[PortalGems on Symbian](#portalgems-on-symbian). It shares no code with the
+Rust engine and is tested against it, which is the point: two implementations
+written from the specification disagree loudly, and every disagreement so far
+has been a real bug in one of them.
 
 The full technical reference - engine API, binding layers, pairing protocol
 spec, build system, testing, and a hard-won list of gotchas - lives in
@@ -256,6 +324,30 @@ napi-rs engine addon can't be reliably cross-linked to Windows from a Linux
 host, so each desktop OS is built on its own runner. To build them by hand you
 need the matching operating system; pushing a version tag builds and publishes
 all platforms automatically.
+
+### Symbian (`.sis`)
+
+Needs the GnuPoc cross-toolchain and the S60 3rd edition FP2 SDK; setup for a
+modern Linux host, including the patches that make a 2008 SDK work with a
+current Perl, is in
+[packages/app-symbian/toolchain/README.md](packages/app-symbian/toolchain/README.md).
+
+```bash
+export EPOCROOT=$HOME/symbian-sdk/s60_32/
+export PATH=$HOME/symbian-sdk/gnupoc:$PATH
+cd packages/app-symbian/group && bldmake bldfiles && abld build gcce urel
+cd ../../.. && scripts/symbian-sign.sh
+# → packages/app-symbian/sis/whmini-signed.sis
+```
+
+The C client builds and tests on the host on its own, with no SDK at all:
+
+```bash
+cd native/wormhole-mini
+make test        # 191 checks against known-answer vectors
+make test-arm    # the same suite cross-compiled and run under qemu-arm
+make cli         # build/wh-mini, for interop testing against any client
+```
 
 ### Tests
 
@@ -363,6 +455,13 @@ relay.example.com {
 
 The transit relay is a raw TCP protocol - expose port 4001 directly (open it in
 your firewall); it does not need TLS because the payload is already encrypted.
+
+**If you want to use the Symbian client**, also expose the mailbox's own
+cleartext port 4000 (open it in your firewall, and in your provider's firewall
+if you have one). Symbian cannot negotiate modern TLS, so it connects at
+`ws://your-host:4000/v1`; the proxied `wss://` endpoint stays available for
+everything else, and both reach the same mailbox and the same channels. See
+[docs/VPS-SETUP.md](docs/VPS-SETUP.md) for the full setup.
 
 ### 4. Point the app at it
 

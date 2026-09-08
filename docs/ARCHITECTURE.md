@@ -319,6 +319,20 @@ recursive size.
 - Desktop: `packages/app-desktop/build/icon.png` (512px) - electron-builder
   auto-derives all platform formats; also the BrowserWindow icon in `main.ts`.
 
+### The third app - Symbian
+
+`packages/app-symbian` is an Avkon application over `native/wormhole-mini`, a
+second implementation of the wormhole protocol in freestanding C89. It shares
+nothing with this tree: no `packages/core`, no Rust engine, no bindings - the
+only thing in common is the wire format, which is the whole point of keeping
+it. Adding a protocol feature means implementing it twice, and the two
+implementations checking each other is what has caught the subtle bugs.
+
+If you are touching the protocol, read `docs/SYMBIAN.md` before assuming a
+change is confined to the Rust engine. Its tests run with no Symbian SDK
+(`cd native/wormhole-mini && make test && make test-arm`), so there is no
+excuse for letting it drift.
+
 ## 5. Build gotchas (cost hours; read before touching builds)
 
 1. npm `file:` symlinks: Metro needs `watchFolders` + `nodeModulesPaths` +

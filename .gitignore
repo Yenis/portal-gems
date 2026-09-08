@@ -32,6 +32,7 @@ packages/app-symbian/sis/*.sis
 packages/app-symbian/sis/whmini.exe
 packages/app-symbian/sis/*.rsc
 packages/app-symbian/sis/*.mbm
+packages/app-symbian/sis/dist/
 
 docs/feat.txt
 
