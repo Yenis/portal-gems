@@ -625,6 +625,36 @@ Two things this needed:
   seconds, so this is about not making someone watch a phone screen rather
   than about correctness.
 
+### Three failures between "it works" and it working
+
+Direct transit shipped and the phone stopped transferring at all. Untangling
+that took three separate fixes, and they are worth keeping apart because
+each had a different shape.
+
+**A thread that would not start.** The first build answered every attempt
+with "could not start the transfer" - `RThread::Create` failing, and the
+error was being thrown away. The worker had been given a 96 KB stack on the
+reasoning that a stack is address space rather than committed memory. That
+is true on Linux and false here: Symbian commits the whole thing up front,
+and on a phone with the UI already resident there was not 96 KB to be had.
+The fix is to ask for less and to keep asking: 64K, 32K, 16K, 8K, taking the
+first that is granted. The error code is now shown rather than swallowed,
+which is the only reason the next two bugs were findable at all.
+
+**A build script that lied.** `scripts/symbian-sign.sh` had happily
+packaged the previous binary after a failed compile, so a build that never
+succeeded was installed and tested. It now refuses to sign if any source
+file is newer than the binary:
+
+    NEWER=$(find ... -newer "$BINARY" ...)
+    if [ -n "$NEWER" ]; then
+        echo "refusing to sign: ... the last build did not succeed" >&2
+        exit 1
+    fi
+
+Cheap, and it removes an entire category of wasted afternoon - the one where
+the phone is being blamed for a fix that was never in the package.
+
 ### Every wait, bounded and cancellable
 
 The first build with direct transit hung on the phone at 0 percent, and
@@ -665,8 +695,21 @@ is. With it off the phone's wire behaviour is byte-identical to the builds
 that worked - the client advertises no addresses of its own, so the only
 thing the setting changes is whether it dials the peer's.
 
+The evidence for the default came from watching what a peer actually
+advertises. A desktop on the same wi-fi offered three addresses:
+
+    peer offers 3 direct hint(s): 192.168.1.79:35361,
+                                  192.168.122.1:35361, 10.0.2.2:35361
+
+One reachable, and two - a libvirt bridge and a QEMU NAT address - that the
+phone has no route to and never will. Dialling those is where it sat. A
+bounded connect makes that survivable; it does not make it a good default.
+
 The version is on the main screen for the same reason: when a build
 misbehaves, the report arrives as a photograph of a phone.
+
+v0.5.3 is confirmed working on the E72, sending and receiving over the
+internet through the PortalGems server.
 
 ## The bug that cost the most
 
