@@ -13,8 +13,10 @@ built with Electron), and it interoperates with **any** magic-wormhole client,
 including the original `wormhole` CLI on a server or laptop.
 
 It also runs on **Symbian** - a Nokia E72 from 2010 sends and receives files
-and folders to and from a modern phone and laptop. See
-[PortalGems on Symbian](#portalgems-on-symbian).
+and folders to and from a modern phone and laptop. As far as any public record
+shows, this is the first magic-wormhole client for the platform. See
+[PortalGems on Symbian](#portalgems-on-symbian) and
+[A first for the platform](#a-first-for-the-platform).
 
 ---
 
@@ -30,6 +32,7 @@ and folders to and from a modern phone and laptop. See
 - [Architecture](#architecture)
 - [Building from source](#building-from-source)
 - [Development](#development)
+- [A first for the platform](#a-first-for-the-platform)
 - [License](#license)
 - [Acknowledgments](#acknowledgments)
 - [Self-hosting a server](#self-hosting-a-server)
@@ -363,6 +366,37 @@ Start with [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - it contains the
 system map, feature recipes (how to add a string, a setting, a screen, or an
 engine capability), and the build gotchas. Historical design notes live in
 [PLAN.md](PLAN.md) and `docs/phase*.md`.
+
+## A first for the platform
+
+No magic-wormhole client for Symbian appears to have existed before this one.
+The protocol's own [ecosystem
+list](https://magic-wormhole.readthedocs.io/en/latest/ecosystem.html) records
+implementations in Python, Rust, Go, Haskell and Dart, and clients for desktop,
+web, Android and iOS - nothing for Symbian, and no implementation in C at all.
+The chronology is most of the explanation: magic-wormhole was first published
+around 2015, and Nokia had wound down Symbian by 2012-2013. The two never
+overlapped, so nobody had reason to write one.
+
+That claim is bounded by what can be found. Symbian had a large hobbyist scene,
+much of it never indexed and much of it not in English, and a client that was
+written but never published would leave no trace. What can be stated precisely
+is that no public implementation is known, and that this repository is the first
+to publish one.
+
+The audience deserves equal candor: Symbian is a dead platform, and this client
+realistically has one user. I still carry an E72 - for music and podcasts, for
+notes, and as a phone - and getting an MP3 onto it used to mean finding a USB
+cable. Now it takes a code. That is why this exists, and it does the job well
+enough that I use it.
+
+The engineering is the part that outlives the platform. The transfer core is
+portable C89 that assumes no standard library, allocates nothing after startup,
+and makes no platform calls at all; every device-specific line sits behind one
+small interface. It was written and proved against the real engine on a laptop,
+cross-checked on 32-bit ARM under emulation, and only then met the phone. The
+full account, including the failures that only appeared on real hardware, is in
+[docs/SYMBIAN.md](docs/SYMBIAN.md).
 
 ## License
 
