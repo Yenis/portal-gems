@@ -54,7 +54,8 @@ RESOURCE MENU_PANE r_whmini_settings_menu
         MENU_ITEM { command = EWhminiCmdSetMailboxHost; txt = "Server address"; },
         MENU_ITEM { command = EWhminiCmdSetMailboxPort; txt = "Server port"; },
         MENU_ITEM { command = EWhminiCmdSetRelayHost;   txt = "Relay address"; },
-        MENU_ITEM { command = EWhminiCmdSetRelayPort;   txt = "Relay port"; }
+        MENU_ITEM { command = EWhminiCmdSetRelayPort;   txt = "Relay port"; },
+        MENU_ITEM { command = EWhminiCmdToggleDirect;   txt = "Direct connections"; }
         };
     }
 

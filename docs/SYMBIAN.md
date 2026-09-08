@@ -625,6 +625,49 @@ Two things this needed:
   seconds, so this is about not making someone watch a phone screen rather
   than about correctness.
 
+### Every wait, bounded and cancellable
+
+The first build with direct transit hung on the phone at 0 percent, and
+Cancel did nothing. The dead Cancel was the useful half of that report: the
+worker was blocked somewhere the cancel signal could not reach, and there
+were exactly four places it could be.
+
+Each of the platform waits had grown its own timer handling, and each had a
+fallback for `RTimer::CreateLocal()` failing that read like this:
+
+    if (timer.CreateLocal() != KErrNone) {
+        c->socket.RecvOneOrMore(data, 0, status, received);
+        User::WaitForRequest(status);
+
+Unbounded, and - the part that matters - waiting on the socket alone, so the
+cancel request could complete all it liked and nothing would look at it.
+That is precisely "stuck forever, and Cancel does nothing". The comment
+above it argued that an unbounded read beat refusing to work, which is true
+right up until the read never returns.
+
+Connect, read, write and name resolution now share one helper:
+
+    static TInt WaitBounded(TRequestStatus& aStatus, TInt aTimeoutUs)
+
+It waits on the request, the timer if one could be made, and the cancel
+request if one is armed, and returns which of the three won. A caller that
+gets anything but `WH_WAIT_DONE` cancels its own operation and collects the
+status. There is no path left through the platform layer that can block
+without either a deadline or a way out.
+
+### Direct transit is opt-in on the phone
+
+The relay is proven on this hardware over both the local network and the
+internet; direct connections are not, and a fast path that hangs is worse
+than a slow path that works. So `direct=` in `server.txt` defaults to off,
+with a toggle under Options > Settings, and the idle screen says which it
+is. With it off the phone's wire behaviour is byte-identical to the builds
+that worked - the client advertises no addresses of its own, so the only
+thing the setting changes is whether it dials the peer's.
+
+The version is on the main screen for the same reason: when a build
+misbehaves, the report arrives as a photograph of a phone.
+
 ## The bug that cost the most
 
 Worth writing down, because it was invisible from every angle.

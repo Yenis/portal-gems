@@ -28,6 +28,7 @@
 
 extern "C" {
 #include "../../../native/wormhole-mini/src/net.h"
+#include "../../../native/wormhole-mini/src/xfer.h"
 }
 
 /* Implemented in the Symbian platform layer: raises the cancel flag the
@@ -38,10 +39,15 @@ void WhminiCancelWorker(RThread& aWorker);
 const TUid KUidWhminiApp = { 0xE1000001 };
 const TInt KPollInterval = 250000;   /* microseconds */
 const TInt KMaxLines = 7;
-/* Roomy, because zipping a folder recurses through the directory tree and
- * each level holds a couple of path descriptors. Stack is address space
- * rather than committed memory, so the margin is close to free. */
-const TInt KWorkerStackSize = 98304;
+/* Stack sizes to try, largest first.
+ *
+ * Zipping a folder recurses through the directory tree and each level holds
+ * a few path descriptors, so more is better - but a thread stack on Symbian
+ * is committed, not reserved, and the kernel is entitled to refuse a large
+ * one. Asking for less rather than failing outright is the difference
+ * between a slightly shallower folder limit and an application that cannot
+ * transfer anything at all. */
+static const TInt KWorkerStackSizes[] = { 65536, 32768, 16384, 8192 };
 
 /* --- the view ----------------------------------------------------------- */
 
@@ -119,16 +125,19 @@ private:
     void StartSendL();
     void StartSendFolderL();
     void CancelTransferL();
+    TInt StartWorker();
     TBool PrepareJobL();
     void AskForServerL();
     void EditHostL(char* aTarget, TInt aCap, const TDesC& aPrompt);
     void EditPortL(TUint& aTarget, const TDesC& aPrompt);
+    void ToggleDirectL();
     void Refresh();
     static TInt Tick(TAny* aSelf);
 
     CWhminiContainer* iContainer;
     CPeriodic* iTimer;
     RThread iWorker;
+    TInt iWorkerSeq;
     TBool iWorkerRunning;
     TJob iJob;
     TWhminiSettings iSettings;
@@ -151,6 +160,7 @@ void CWhminiAppUi::ConstructL()
     iJob.iMessage[0] = '\0';
     iJob.iFileName[0] = '\0';
     iWorkerRunning = EFalse;
+    iWorkerSeq = 0;
 
     WhminiLoadSettings(iSettings);
     Refresh();
@@ -178,7 +188,9 @@ void CWhminiAppUi::Refresh()
     TBuf<64> line;
 
     iContainer->ClearLines();
-    iContainer->SetLine(0, _L("PortalGems"));
+    /* The version is on screen because a build that misbehaves has to be
+     * identifiable from a photograph of the phone. */
+    iContainer->SetLine(0, _L("PortalGems  " WHMINI_VERSION));
 
     if (iSettings.iMailboxHost[0] == '\0')
         {
@@ -200,6 +212,8 @@ void CWhminiAppUi::Refresh()
         relay.Copy(TPtrC8((const TUint8*)iSettings.iRelayHost));
         line.Format(_L("Relay:  %S:%u"), &relay, iSettings.iRelayPort);
         iContainer->SetLine(2, line);
+        iContainer->SetLine(6, iSettings.iDirect ? _L("direct: on")
+                                                 : _L("direct: off"));
         }
 
     switch (iJob.iState)
@@ -238,6 +252,10 @@ void CWhminiAppUi::Refresh()
             TUint pct = iJob.iTotal ? (iJob.iDone * 100 / iJob.iTotal) : 0;
             line.Format(_L("%u%%  (%u / %u bytes)"), pct, iJob.iDone, iJob.iTotal);
             iContainer->SetLine(4, line);
+            if (iJob.iRoute == WH_ROUTE_DIRECT)
+                iContainer->SetLine(5, _L("direct connection"));
+            else if (iJob.iRoute == WH_ROUTE_RELAY)
+                iContainer->SetLine(5, _L("via relay"));
             break;
             }
         case EJobWaitingForPeer:
@@ -362,6 +380,19 @@ void CWhminiAppUi::EditPortL(TUint& aTarget, const TDesC& aPrompt)
     Refresh();
     }
 
+void CWhminiAppUi::ToggleDirectL()
+    {
+    iSettings.iDirect = iSettings.iDirect ? 0 : 1;
+    WhminiSaveSettings(iSettings);
+    {
+    CAknInformationNote* note = new (ELeave) CAknInformationNote(ETrue);
+    note->ExecuteLD(iSettings.iDirect
+                        ? _L("Direct connections ON (faster on a local network)")
+                        : _L("Direct connections OFF (always via the relay)"));
+    }
+    Refresh();
+    }
+
 void CWhminiAppUi::AskForServerL()
     {
     EditHostL(iSettings.iMailboxHost, (TInt)sizeof(iSettings.iMailboxHost),
@@ -431,19 +462,18 @@ void CWhminiAppUi::StartSendL()
 
     iJob.iKind = EJobKindSend;
 
-    TInt err = iWorker.Create(_L("whmini_worker"), WhminiWorker,
-                              KWorkerStackSize, NULL, &iJob);
+    TInt err = StartWorker();
     if (err != KErrNone)
         {
+        /* The code matters: -4 is out of memory, -11 means a worker is
+         * still alive from a previous transfer. A bare "could not start"
+         * says nothing anyone can act on. */
+        TBuf<64> msg;
+        msg.Format(_L("Could not start the transfer (%d)"), err);
         CAknErrorNote* note = new (ELeave) CAknErrorNote(ETrue);
-        note->ExecuteLD(_L("Could not start the transfer"));
+        note->ExecuteLD(msg);
         return;
         }
-    iWorkerRunning = ETrue;
-    iWorker.Resume();
-
-    iTimer->Cancel();
-    iTimer->Start(KPollInterval, KPollInterval, TCallBack(Tick, this));
     Refresh();
     }
 
@@ -469,19 +499,18 @@ void CWhminiAppUi::StartSendFolderL()
 
     iJob.iKind = EJobKindSendFolder;
 
-    TInt err = iWorker.Create(_L("whmini_worker"), WhminiWorker,
-                              KWorkerStackSize, NULL, &iJob);
+    TInt err = StartWorker();
     if (err != KErrNone)
         {
+        /* The code matters: -4 is out of memory, -11 means a worker is
+         * still alive from a previous transfer. A bare "could not start"
+         * says nothing anyone can act on. */
+        TBuf<64> msg;
+        msg.Format(_L("Could not start the transfer (%d)"), err);
         CAknErrorNote* note = new (ELeave) CAknErrorNote(ETrue);
-        note->ExecuteLD(_L("Could not start the transfer"));
+        note->ExecuteLD(msg);
         return;
         }
-    iWorkerRunning = ETrue;
-    iWorker.Resume();
-
-    iTimer->Cancel();
-    iTimer->Start(KPollInterval, KPollInterval, TCallBack(Tick, this));
     Refresh();
     }
 
@@ -502,20 +531,53 @@ void CWhminiAppUi::StartReceiveL()
 
     iJob.iKind = EJobKindReceive;
 
-    TInt err = iWorker.Create(_L("whmini_worker"), WhminiWorker,
-                              KWorkerStackSize, NULL, &iJob);
+    TInt err = StartWorker();
     if (err != KErrNone)
         {
+        /* The code matters: -4 is out of memory, -11 means a worker is
+         * still alive from a previous transfer. A bare "could not start"
+         * says nothing anyone can act on. */
+        TBuf<64> msg;
+        msg.Format(_L("Could not start the transfer (%d)"), err);
         CAknErrorNote* note = new (ELeave) CAknErrorNote(ETrue);
-        note->ExecuteLD(_L("Could not start the transfer"));
+        note->ExecuteLD(msg);
         return;
         }
-    iWorkerRunning = ETrue;
-    iWorker.Resume();
-
-    iTimer->Cancel();
-    iTimer->Start(KPollInterval, KPollInterval, TCallBack(Tick, this));
     Refresh();
+    }
+
+/* Returns KErrNone, or the last error the kernel gave us. */
+TInt CWhminiAppUi::StartWorker()
+    {
+    TInt i;
+    TInt err = KErrGeneral;
+    TName name;
+
+    /* A distinct name each time. Thread names are unique within a process,
+     * and a worker that has finished its work but not yet been reaped would
+     * otherwise make the next transfer fail with KErrAlreadyExists - a
+     * failure that would appear only on the second transfer, which is the
+     * worst kind to debug. */
+    iWorkerSeq++;
+    name.Format(_L("whmini_worker_%d"), iWorkerSeq);
+
+    for (i = 0; i < (TInt)(sizeof(KWorkerStackSizes) / sizeof(TInt)); i++)
+        {
+        err = iWorker.Create(name, WhminiWorker,
+                             KWorkerStackSizes[i], NULL, &iJob);
+        if (err == KErrNone)
+            {
+            iWorkerRunning = ETrue;
+            iWorker.Resume();
+            iTimer->Cancel();
+            iTimer->Start(KPollInterval, KPollInterval, TCallBack(Tick, this));
+            return KErrNone;
+            }
+        /* Only a memory refusal is worth retrying smaller; anything else
+         * would fail identically at every size. */
+        if (err != KErrNoMemory) break;
+        }
+    return err;
     }
 
 void CWhminiAppUi::CancelTransferL()
@@ -559,6 +621,9 @@ void CWhminiAppUi::HandleCommandL(TInt aCommand)
             break;
         case EWhminiCmdSetRelayPort:
             EditPortL(iSettings.iRelayPort, _L("Relay port"));
+            break;
+        case EWhminiCmdToggleDirect:
+            ToggleDirectL();
             break;
         case EAknSoftkeyExit:
         case EEikCmdExit:

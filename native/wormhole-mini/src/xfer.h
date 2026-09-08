@@ -40,6 +40,18 @@ typedef struct {
     unsigned int port;
 } wh_direct_hint;
 
+/* Which route the last transfer took. */
+#define WH_ROUTE_UNKNOWN 0
+#define WH_ROUTE_DIRECT  1
+#define WH_ROUTE_RELAY   2
+int wh_xfer_last_route(void);
+
+/* Direct connections can be turned off, leaving every transfer on the
+ * relay. Slower, but it is the path that works from anywhere, and having a
+ * switch means a direct-connection problem in the field is a setting rather
+ * than a new build. Enabled by default. */
+void wh_xfer_enable_direct(int enabled);
+
 typedef struct {
     wh_direct_hint hint[WH_MAX_DIRECT_HINTS];
     int count;

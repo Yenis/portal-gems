@@ -48,6 +48,7 @@ public:
     volatile TInt iCodeReady;
     volatile TInt iStage;         /* WH_NET_STAGE_* on failure */
     volatile TInt iError;         /* Symbian error code on failure */
+    volatile TInt iRoute;         /* WH_ROUTE_* once the transit is up */
     volatile TUint iDone;         /* bytes received */
     volatile TUint iTotal;        /* bytes expected */
     char iCode[64];               /* receive: in. send: out, once ready. */
@@ -70,6 +71,10 @@ public:
     char iMailboxPath[32];
     char iRelayHost[64];
     TUint iRelayPort;
+    /* Direct connections are off until they have been shown to work on this
+     * phone. The relay is slower and always works; a fast path that hangs
+     * is worse than a slow one that does not. */
+    TInt iDirect;
     };
 
 void WhminiDefaultSettings(TWhminiSettings& aSettings);
@@ -77,5 +82,8 @@ void WhminiDefaultSettings(TWhminiSettings& aSettings);
 void WhminiTrim(char* aText);
 TBool WhminiLoadSettings(TWhminiSettings& aSettings);
 void WhminiSaveSettings(const TWhminiSettings& aSettings);
+
+/* Shown in the app, and must match the version in sis/whmini.pkg. */
+#define WHMINI_VERSION "v0.5.3"
 
 #endif

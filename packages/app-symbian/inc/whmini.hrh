@@ -13,6 +13,7 @@ enum TWhminiCommands
     EWhminiCmdSetMailboxPort,
     EWhminiCmdSetRelayHost,
     EWhminiCmdSetRelayPort,
+    EWhminiCmdToggleDirect,
     EWhminiCmdAbout
     };
 

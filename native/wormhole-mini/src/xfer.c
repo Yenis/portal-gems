@@ -15,6 +15,54 @@ static unsigned long wh_strlen(const char *s)
  *
  * hints-v1 is a flat array mixing direct and relay hints (transit.rs's
  * Serialize for Hints); a relay hint nests its endpoints under "hints". */
+/* Is this a literal IPv4 address?
+ *
+ * Direct hints are addresses, never names, so a hint that does not parse as
+ * one must be skipped rather than looked up. That distinction is not
+ * pedantic: resolving a hint means a DNS query for a string like
+ * "2a02:27b0:4c01::1", which on a phone can hang for a very long time and
+ * did - the transfer sat at 0% while the resolver chewed on the first hint
+ * and never reached the reachable one behind it.
+ *
+ * Restricting to IPv4 also skips addresses the phone has no route to at
+ * all. The value of a direct connection is on a local network, and a local
+ * network is IPv4. */
+static int looks_like_ipv4(const char *host)
+{
+    int part, i = 0;
+
+    for (part = 0; part < 4; part++) {
+        int value = 0, digits = 0;
+        while (host[i] >= '0' && host[i] <= '9') {
+            value = value * 10 + (host[i] - '0');
+            if (value > 255) return 0;
+            digits++;
+            i++;
+        }
+        if (digits == 0 || digits > 3) return 0;
+        if (part < 3) {
+            if (host[i] != '.') return 0;
+            i++;
+        }
+    }
+    return host[i] == '\0';
+}
+
+/* Which way the last transfer's bytes went. Diagnostic only, but the
+ * difference between "slow" and "broken" is usually this. */
+static int g_last_route = WH_ROUTE_UNKNOWN;
+static int g_direct_enabled = 1;
+
+void wh_xfer_enable_direct(int enabled)
+{
+    g_direct_enabled = enabled ? 1 : 0;
+}
+
+int wh_xfer_last_route(void)
+{
+    return g_last_route;
+}
+
 /* Collect the peer's direct addresses out of a transit message.
  *
  * hints-v1 is a flat array mixing direct hints with relay hints; only the
@@ -42,6 +90,7 @@ static void parse_direct_hints(const char *json, unsigned long len,
 
             if (wh_json_get(el.p, el.len, "hostname", &field) == 0 &&
                 wh_json_str(&field, h->host, sizeof(h->host)) > 0 &&
+                looks_like_ipv4(h->host) &&
                 wh_json_get(el.p, el.len, "port", &field) == 0 &&
                 wh_json_u32(&field, &port) == 0 &&
                 port > 0 && port < 65536) {
@@ -62,14 +111,22 @@ static int connect_transit(wh_transit *t, const wh_direct_hints *peer,
 {
     int i;
 
-    for (i = 0; i < peer->count; i++) {
+    g_last_route = WH_ROUTE_UNKNOWN;
+
+    for (i = 0; g_direct_enabled && i < peer->count; i++) {
         if (wh_transit_connect_direct(t, peer->hint[i].host, peer->hint[i].port,
                                       transit_key, role,
                                       WH_DIRECT_TIMEOUT_MS) == 0) {
+            g_last_route = WH_ROUTE_DIRECT;
             return 0;
         }
     }
-    return wh_transit_connect_relay(t, relay_host, relay_port, transit_key, role);
+
+    if (wh_transit_connect_relay(t, relay_host, relay_port, transit_key, role) != 0) {
+        return -1;
+    }
+    g_last_route = WH_ROUTE_RELAY;
+    return 0;
 }
 
 static int build_transit_msg(char *out, unsigned long cap,

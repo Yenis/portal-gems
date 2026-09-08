@@ -50,6 +50,23 @@ for f in "$BINARY" "$APP_RSC" "$ICON" "$REG_RSC" "$LOC_RSC"; do
     cp "$f" "$SIS_DIR/"
 done
 
+# Refuse to package a binary older than the sources it came from. abld
+# prints its errors and carries on to the next target, so a failed build
+# leaves the previous binary in place - and signing that produces a package
+# that installs cleanly and is silently the wrong build.
+NEWER=$(find "$HERE/../native/wormhole-mini/src" "$HERE/../native/wormhole-mini/port" \
+             "$HERE/../packages/app-symbian/src" "$HERE/../packages/app-symbian/inc" \
+             "$HERE/../packages/app-symbian/data" \
+             -type f \( -name '*.c' -o -name '*.cpp' -o -name '*.h' \
+                      -o -name '*.hrh' -o -name '*.rss' \) \
+             -newer "$BINARY" 2>/dev/null | head -3)
+if [ -n "$NEWER" ]; then
+    echo "refusing to sign: these are newer than the built binary," >&2
+    echo "which means the last build did not succeed:" >&2
+    echo "$NEWER" | sed 's/^/  /' >&2
+    exit 1
+fi
+
 echo "building the package"
 ( cd "$SIS_DIR" && makesis whmini.pkg whmini.sis )
 

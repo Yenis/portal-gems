@@ -109,6 +109,7 @@ void WhminiDefaultSettings(TWhminiSettings& aSettings)
     CopyCStr(aSettings.iMailboxPath, sizeof(aSettings.iMailboxPath), "/v1");
     aSettings.iRelayHost[0] = '\0';
     aSettings.iRelayPort = 4001;
+    aSettings.iDirect = 0;
 }
 
 static void ApplySetting(TWhminiSettings& aS, const char* aKey, const char* aValue)
@@ -124,6 +125,7 @@ static void ApplySetting(TWhminiSettings& aS, const char* aKey, const char* aVal
         TrimInPlace(aS.iRelayHost);
     }
     else if (SameStr(aKey, "relay_port")) aS.iRelayPort = ParseUint(aValue, 4001);
+    else if (SameStr(aKey, "direct")) aS.iDirect = (TInt)ParseUint(aValue, 0);
 }
 
 TBool WhminiLoadSettings(TWhminiSettings& aSettings)
@@ -191,6 +193,8 @@ void WhminiSaveSettings(const TWhminiSettings& aSettings)
     out.Append(TPtrC8((const TUint8*)aSettings.iRelayHost));
     out.Append(_L8("\nrelay_port="));
     out.AppendNum((TInt)aSettings.iRelayPort);
+    out.Append(_L8("\ndirect="));
+    out.AppendNum(aSettings.iDirect);
     out.Append(_L8("\n"));
 
     file.Write(out);
@@ -223,6 +227,9 @@ extern "C" void WhminiProgress(void* aCtx, unsigned long aDone, unsigned long aT
 {
     (void)aCtx;
     if (gJob) {
+        /* The transit is up by the time progress starts, so this is the
+         * first moment the route is known. */
+        gJob->iRoute = wh_xfer_last_route();
         gJob->iDone = (TUint)aDone;
         gJob->iTotal = (TUint)aTotal;
     }
@@ -871,6 +878,7 @@ TInt WhminiWorker(TAny* aPtr)
     gJob = job;
     wh_net_cancel_arm();
     WhminiLoadSettings(gSettings);
+    wh_xfer_enable_direct(gSettings.iDirect);
 
     if (cleanup) {
         TRAPD(err, job->iKind == EJobKindReceive ? RunJob(job)

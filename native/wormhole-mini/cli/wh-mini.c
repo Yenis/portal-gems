@@ -693,6 +693,7 @@ int main(int argc, char **argv)
         else if (strcmp(argv[i], "--relay-port") == 0 && i + 1 < argc) relay_port = (unsigned int)atoi(argv[++i]);
         else if (strcmp(argv[i], "--out") == 0 && i + 1 < argc) outdir = argv[++i];
         else if (strcmp(argv[i], "--file") == 0 && i + 1 < argc) filepath = argv[++i];
+        else if (strcmp(argv[i], "--no-direct") == 0) wh_xfer_enable_direct(0);
         else if (argv[i][0] != '-') cmd = argv[i];
     }
 

@@ -140,6 +140,60 @@ static TInt StartNetwork()
     return KErrNone;
 }
 
+/* Ten seconds is generous for a name lookup and short enough that a broken
+ * resolver becomes an error message rather than a hang. */
+#define WH_RESOLVE_TIMEOUT_US 10000000
+
+/* How a bounded wait ended. */
+#define WH_WAIT_DONE      0
+#define WH_WAIT_TIMEOUT   1
+#define WH_WAIT_CANCELLED 2
+
+/* Wait for one asynchronous request, with a deadline and always with the
+ * cancel signal.
+ *
+ * Every wait in this file goes through here, and that is the point. The
+ * previous code created a timer per wait and, if the timer could not be
+ * created, fell back to an unbounded wait with no cancel - which is
+ * precisely how a transfer sits at 0% forever with a Cancel menu item that
+ * does nothing. There is no path here that can wait on the operation
+ * alone.
+ *
+ * The caller still owns cancelling the operation itself, because only it
+ * knows whether that means CancelRecv, CancelConnect or Cancel. */
+static TInt WaitBounded(TRequestStatus& aStatus, TInt aTimeoutUs)
+{
+    TRequestStatus timerStatus;
+    RTimer timer;
+    TBool timed = (aTimeoutUs > 0 && timer.CreateLocal() == KErrNone);
+    TRequestStatus* waits[3];
+    TInt count = 0;
+
+    waits[count++] = &aStatus;
+    if (timed) {
+        timer.After(timerStatus, aTimeoutUs);
+        waits[count++] = &timerStatus;
+    }
+    if (gCancelPtr) waits[count++] = gCancelPtr;
+
+    if (count == 1) {
+        /* No timer and no cancel armed. Nothing can rescue this wait, but
+         * it is also the only case where waiting is all we can do. */
+        User::WaitForRequest(aStatus);
+    } else {
+        User::WaitForNRequest(waits, count);
+    }
+
+    if (timed) {
+        timer.Cancel();
+        User::WaitForRequest(timerStatus);
+        timer.Close();
+    }
+
+    if (aStatus != KRequestPending) return WH_WAIT_DONE;
+    return gCancelled ? WH_WAIT_CANCELLED : WH_WAIT_TIMEOUT;
+}
+
 /* Parse "a.b.c.d" ourselves.
  *
  * TInetAddr::Input is supposed to do this, but on the device it did not: a
@@ -199,19 +253,35 @@ static TInt ResolveHost(const TDesC& aHost, TInetAddr& aAddr)
         return err;
     }
 
-    TNameEntry entry;
-    TRequestStatus status;
-    resolver.GetByName(aHost, entry, status);
-    User::WaitForRequest(status);
-    resolver.Close();
+    /* Bounded, like every other wait here. An unbounded name lookup is how
+     * a transfer sits at 0% forever: the resolver never answers, nothing
+     * times out, and there is nothing on screen to say why. */
+    {
+        TNameEntry entry;
+        TRequestStatus status;
+        TInt outcome;
 
-    if (status.Int() != KErrNone) {
-        Fail(WH_NET_STAGE_RESOLVE, status.Int());
-        return status.Int();
+        resolver.GetByName(aHost, entry, status);
+        outcome = WaitBounded(status, WH_RESOLVE_TIMEOUT_US);
+
+        if (outcome != WH_WAIT_DONE) {
+            resolver.Cancel();
+            User::WaitForRequest(status);
+            resolver.Close();
+            Fail(WH_NET_STAGE_RESOLVE,
+                 outcome == WH_WAIT_CANCELLED ? KErrCancel : KErrTimedOut);
+            return KErrTimedOut;
+        }
+        resolver.Close();
+
+        if (status.Int() != KErrNone) {
+            Fail(WH_NET_STAGE_RESOLVE, status.Int());
+            return status.Int();
+        }
+
+        aAddr = TInetAddr(entry().iAddr);
+        return KErrNone;
     }
-
-    aAddr = TInetAddr(entry().iAddr);
-    return KErrNone;
 }
 
 extern "C" int wh_net_connect_timeout(wh_conn **out, const char *host,
@@ -255,35 +325,18 @@ extern "C" int wh_net_connect_timeout(wh_conn **out, const char *host,
 
     {
         TRequestStatus status;
-        TRequestStatus timerStatus;
-        RTimer timer;
-        TBool timed = (timer.CreateLocal() == KErrNone);
+        TInt outcome;
 
         sock.Connect(addr, status);
-        if (timed) {
-            timer.After(timerStatus, (TInt)(timeout_ms * 1000));
-            User::WaitForRequest(status, timerStatus);
-        } else {
-            User::WaitForRequest(status);
-        }
+        outcome = WaitBounded(status, (TInt)(timeout_ms * 1000));
 
-        if (status == KRequestPending) {
-            /* The timer won. Abandon the attempt and collect its
-             * completion, or the outstanding request outlives this call. */
+        if (outcome != WH_WAIT_DONE) {
             sock.CancelConnect();
             User::WaitForRequest(status);
-            timer.Cancel();
-            User::WaitForRequest(timerStatus);
-            timer.Close();
-            Fail(WH_NET_STAGE_CONNECT, KErrTimedOut);
+            Fail(WH_NET_STAGE_CONNECT,
+                 outcome == WH_WAIT_CANCELLED ? KErrCancel : KErrTimedOut);
             sock.Close();
             return -1;
-        }
-
-        if (timed) {
-            timer.Cancel();
-            User::WaitForRequest(timerStatus);
-            timer.Close();
         }
 
         if (status.Int() != KErrNone) {
@@ -309,23 +362,35 @@ extern "C" int wh_net_connect(wh_conn **out, const char *host, unsigned int port
     return wh_net_connect_timeout(out, host, port, 30000);
 }
 
-extern "C" int wh_net_write(wh_conn *c, const unsigned char *buf, unsigned long len)
-{
-    /* RSocket::Write completes only when everything has been sent, so there
-     * is no partial-write loop to run here. */
-    TPtrC8 data(buf, (TInt)len);
-    TRequestStatus status;
-    c->socket.Write(data, status);
-    User::WaitForRequest(status);
-    return status.Int() == KErrNone ? 0 : -1;
-}
-
 /* Long, because one of these reads is legitimately spent waiting for a
  * person to type a code on the other side of the world. Its job is not to be
  * responsive; it is to make sure a stall eventually becomes a reportable
  * failure instead of an application that hangs until the phone is
  * rebooted - which is exactly what happened before this existed. */
 #define WH_READ_TIMEOUT_US 180000000   /* three minutes */
+
+extern "C" int wh_net_write(wh_conn *c, const unsigned char *buf, unsigned long len)
+{
+    /* RSocket::Write completes only when everything has been sent, so there
+     * is no partial-write loop to run here - but a peer that stops reading
+     * can stall it indefinitely, so it is bounded like everything else. */
+    TPtrC8 data(buf, (TInt)len);
+    TRequestStatus status;
+    TInt outcome;
+
+    if (gCancelled) return -1;
+
+    c->socket.Write(data, status);
+    outcome = WaitBounded(status, WH_READ_TIMEOUT_US);
+
+    if (outcome != WH_WAIT_DONE) {
+        c->socket.CancelWrite();
+        User::WaitForRequest(status);
+        if (outcome == WH_WAIT_TIMEOUT) Fail(WH_NET_STAGE_CONNECT, KErrTimedOut);
+        return -1;
+    }
+    return status.Int() == KErrNone ? 0 : -1;
+}
 
 extern "C" long wh_net_read(wh_conn *c, unsigned char *buf, unsigned long cap)
 {
@@ -334,58 +399,22 @@ extern "C" long wh_net_read(wh_conn *c, unsigned char *buf, unsigned long cap)
     TPtr8 data(buf, 0, (TInt)cap);
     TSockXfrLength received;
     TRequestStatus status;
-    TRequestStatus timerStatus;
-    RTimer timer;
+    TInt outcome;
 
-    if (timer.CreateLocal() != KErrNone) {
-        /* Without a timer we would rather read with no timeout than not at
-         * all; an unbounded wait beats refusing to work. */
-        c->socket.RecvOneOrMore(data, 0, status, received);
-        User::WaitForRequest(status);
-        if (status.Int() == KErrEof) return 0;
-        if (status.Int() != KErrNone) return -1;
-        return (long)received();
-    }
+    if (gCancelled) return -1;
 
-    if (gCancelled) {
-        timer.Close();
-        return -1;
-    }
-
+    /* The read is never abandoned speculatively - doing that on a timer tick
+     * would risk discarding bytes that had already arrived - so it is only
+     * given up when we really are stopping. */
     c->socket.RecvOneOrMore(data, 0, status, received);
-    timer.After(timerStatus, WH_READ_TIMEOUT_US);
+    outcome = WaitBounded(status, WH_READ_TIMEOUT_US);
 
-    /* Wait on the read, the timeout, and the cancel signal together. The
-     * socket read is never cancelled speculatively - doing that on a timer
-     * tick would risk losing bytes that had already arrived - so it is only
-     * abandoned when we really are giving up. */
-    {
-        TRequestStatus* waits[3];
-        TInt count = 2;
-        waits[0] = &status;
-        waits[1] = &timerStatus;
-        if (gCancelPtr) waits[count++] = gCancelPtr;
-        User::WaitForNRequest(waits, count);
-    }
-
-    if (status == KRequestPending) {
-        /* Either the timeout or a cancel. Abandon the read and collect its
-         * completion, or the outstanding request would outlive this call. */
-        TBool cancelled = gCancelled ? ETrue : EFalse;
+    if (outcome != WH_WAIT_DONE) {
         c->socket.CancelRecv();
         User::WaitForRequest(status);
-        /* Cancel always completes the request, whether or not it had already
-         * fired, so the completion must always be collected. */
-        timer.Cancel();
-        User::WaitForRequest(timerStatus);
-        timer.Close();
-        if (!cancelled) Fail(WH_NET_STAGE_CONNECT, KErrTimedOut);
+        if (outcome == WH_WAIT_TIMEOUT) Fail(WH_NET_STAGE_CONNECT, KErrTimedOut);
         return -1;
     }
-
-    timer.Cancel();
-    User::WaitForRequest(timerStatus);
-    timer.Close();
 
     if (status.Int() == KErrEof) return 0;      /* clean close */
     if (status.Int() != KErrNone) return -1;
