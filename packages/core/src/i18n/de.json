@@ -16,7 +16,8 @@
     "receiveTitle": "Datei empfangen",
     "receiveHint": "Gib den Code ein, den dir der Absender gegeben hat.",
     "receivePlaceholder": "z. B. 7-crossover-clockwork",
-    "receiveButton": "Empfangen"
+    "receiveButton": "Empfangen",
+    "sendTextButton": "Nachricht schreiben und senden"
   },
   "send": {
     "title": "Senden",
@@ -28,7 +29,9 @@
     "sendingFolder": "Ordner {{name}} wird gesendet…",
     "success": "Datei erfolgreich gesendet.",
     "successDetail": "{{name}} · {{size}}",
-    "successFolder": "Ordner erfolgreich gesendet."
+    "successFolder": "Ordner erfolgreich gesendet.",
+    "sendingText": "Nachricht wird gesendet…",
+    "successText": "Nachricht gesendet."
   },
   "folder": {
     "summary": "{{name}} · {{count}} Dateien · {{size}}"
@@ -162,5 +165,15 @@
     "cancelled": "Übertragung abgebrochen.",
     "serverUnreachable": "Der Verbindungsserver ist nicht erreichbar. Möglicherweise ist er vorübergehend nicht verfügbar. Öffne die Einstellungen und wechsle zum PortalGems-Server oder nutze deinen eigenen - siehe die Anleitung zum Selbsthosten.",
     "invalidServerUrl": "Die Serveradresse ist ungültig. Prüfe sie in den Einstellungen. Eine Rendezvous-URL sieht aus wie wss://host/v1 und ein Relay wie tcp://host:4001."
+  },
+  "text": {
+    "title": "Nachricht",
+    "compose": "Nachricht eingeben",
+    "placeholder": "Schreib etwas…",
+    "sendButton": "Nachricht senden",
+    "empty": "Schreibe zuerst eine Nachricht.",
+    "received": "Nachricht empfangen",
+    "copy": "Nachricht kopieren",
+    "copied": "Kopiert!"
   }
 }

@@ -26,6 +26,9 @@ export interface FileOffer {
   fileName: string;
   fileSize: number;
   folder?: FolderOffer | null;
+  /// Set when the sender offered text. It has already been acknowledged, so
+  /// there is nothing to accept or reject and fileName/fileSize mean nothing.
+  text?: string | null;
 }
 
 /// Which servers a transfer should use; empty/missing fields fall back to the
@@ -39,6 +42,13 @@ interface NativeAddon {
   sendFile(
     id: number,
     path: string,
+    code: string | null,
+    server: ServerConfig,
+    cb: (ev: NativeTransferEvent) => void
+  ): Promise<void>;
+  sendText(
+    id: number,
+    text: string,
     code: string | null,
     server: ServerConfig,
     cb: (ev: NativeTransferEvent) => void

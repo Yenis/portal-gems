@@ -30,6 +30,10 @@ fn main() -> anyhow::Result<()> {
             std::future::pending::<()>(),
         )
         .await?;
+        if let Some(text) = &pending.text {
+            out(format!("OFFER-TEXT:{text}"));
+            return Ok(std::path::PathBuf::new());
+        }
         match &pending.folder {
             Some(f) => out(format!(
                 "OFFER-FOLDER:{}:{}:{}",
@@ -53,6 +57,10 @@ fn main() -> anyhow::Result<()> {
             )
             .await
     })?;
-    out(format!("RECV-OK:{}", path.display()));
+    if path.as_os_str().is_empty() {
+        out("RECV-OK".to_string());
+    } else {
+        out(format!("RECV-OK:{}", path.display()));
+    }
     Ok(())
 }

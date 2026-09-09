@@ -46,6 +46,10 @@ pub struct FileOffer {
     pub file_name: String,
     pub file_size: f64,
     pub folder: Option<FolderOffer>,
+    /// Set when the sender offered text instead of a file. The message has
+    /// already been acknowledged, so there is nothing to accept or reject and
+    /// `file_name`/`file_size` are meaningless.
+    pub text: Option<String>,
 }
 
 /// Folder metadata of a directory offer (sender-claimed; the engine caps the
@@ -155,6 +159,29 @@ pub async fn send_file(
     result.map_err(to_napi_err)
 }
 
+/// Send a text message. Only the "code" event fires: text rides inside the
+/// offer, so there is no transit connection and no progress to report.
+#[napi]
+pub async fn send_text(
+    id: u32,
+    text: String,
+    code: Option<String>,
+    server: ServerConfig,
+    callback: Callback,
+) -> Result<()> {
+    let cancel = cancel_future(id);
+    let result = wormhole_core::send_text(
+        &text,
+        code.as_deref(),
+        &server.into(),
+        move |c| emit(&callback, code_event(c)),
+        cancel,
+    )
+    .await;
+    clear_cancel(id);
+    result.map_err(to_napi_err)
+}
+
 /// Send the folder at `path` as a protocol-v1 directory offer (zipped into a
 /// temp archive; the receiver unpacks it back into a folder).
 #[napi]
@@ -198,6 +225,7 @@ pub async fn request_receive(id: u32, code: String, server: ServerConfig) -> Res
             num_files: f.num_files as f64,
             num_bytes: f.num_bytes as f64,
         }),
+        text: pending.text.clone(),
     };
     RECEIVES.lock().unwrap().insert(id, pending);
     Ok(offer)

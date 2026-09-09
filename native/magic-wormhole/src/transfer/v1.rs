@@ -310,6 +310,52 @@ where
     cancel::handle_run_result(wormhole, result).await
 }
 
+/// Send a protocol-v1 `message` offer - the payload is the text itself, and it
+/// travels through the mailbox rather than over transit.
+///
+/// This is deliberately not a degenerate file transfer. The reference client
+/// negotiates no transit at all for `wormhole send --text`: it sends the offer
+/// and waits for `{"answer":{"message_ack":"ok"}}`. Sending a transit message
+/// here would reach a reference receiver that has no transit sender built and
+/// crash it, so the sequence is kept exactly as narrow as the protocol.
+pub(crate) async fn send_message(
+    mut wormhole: Wormhole,
+    message: String,
+    cancel: impl Future<Output = ()>,
+) -> Result<(), TransferError> {
+    let run = Box::pin(async {
+        tracing::debug!("Sending message offer");
+        wormhole
+            .send_json(&PeerMessage::offer_message_v1(message))
+            .await?;
+
+        /* A conforming peer answers with message_ack and nothing else, but the
+         * reference implementation's own loop tolerates messages arriving in
+         * any order, so a stray transit message from a stricter client is
+         * skipped rather than treated as a protocol violation. */
+        loop {
+            let reply = wormhole.receive_json::<PeerMessage>().await??;
+            match reply.check_err()? {
+                PeerMessage::Answer(AnswerMessage::MessageAck(msg)) => {
+                    ensure!(msg == "ok", TransferError::AckError);
+                    break;
+                },
+                PeerMessage::Transit(_) => continue,
+                other => {
+                    bail!(TransferError::unexpected_message("answer/message_ack", other));
+                },
+            }
+        }
+
+        tracing::debug!("Message delivered");
+        Ok(())
+    });
+
+    futures::pin_mut!(cancel);
+    let result = cancel::cancellable_2(run, cancel).await;
+    cancel::handle_run_result(wormhole, result).await
+}
+
 pub(crate) async fn send_folder(
     mut wormhole: Wormhole,
     relay_hints: Vec<transit::RelayHint>,
@@ -482,17 +528,87 @@ pub(crate) async fn send_folder(
  *
  * Returns `None` if the task got cancelled.
  */
+/// Metadata carried by a protocol-v1 `directory` offer
+/// (`mode: "zipfile/deflated"`).
+///
+/// The transferred payload is a zip archive of `zip size == file_size()`
+/// bytes; `num_files`/`num_bytes` describe the unpacked contents. All values
+/// are untrusted and unverified input.
+#[derive(Debug, Clone)]
+pub struct DirectoryOfferInfo {
+    /// The offered folder name (untrusted input, no sanitization applied)
+    pub dir_name: String,
+    /// Number of files inside the folder, as claimed by the sender
+    pub num_files: u64,
+    /// Total unpacked size in bytes, as claimed by the sender
+    pub num_bytes: u64,
+}
+
+/// What the peer offered.
+///
+/// A `message` offer is already complete when it is returned: there is nothing
+/// for the user to accept, no transit to build, and the acknowledgement has
+/// been sent. A file or folder offer still has to be accepted or rejected.
+#[must_use]
+pub enum IncomingOffer {
+    /// A file or zipped-folder offer, awaiting a decision
+    File(ReceiveRequest),
+    /// A text message, already acknowledged
+    Text(String),
+}
+
+/// Wait for the peer's offer, which may be a file, a folder, or a text message.
+///
+/// The peer's first message is read *before* ours is sent, which is what makes
+/// receiving text possible at all. A text sender negotiates no transit, so a
+/// receiver that announces its own transit up front is talking past a peer that
+/// will never answer - and worse, the reference sender would then dereference a
+/// transit sender it never built. Reading first also matches what the reference
+/// receiver does: it only sends transit in reply to transit.
 pub async fn request(
     mut wormhole: Wormhole,
     relay_hints: Vec<transit::RelayHint>,
     transit_abilities: transit::Abilities,
     cancel: impl Future<Output = ()>,
-) -> Result<Option<ReceiveRequest>, TransferError> {
-    // Error handling
-    let run = Box::pin(async {
-        let connector = transit::init(transit_abilities, None, relay_hints).await?;
+) -> Result<Option<IncomingOffer>, TransferError> {
+    enum Outcome {
+        Text(String),
+        File(
+            String,
+            u64,
+            Option<DirectoryOfferInfo>,
+            TransitConnector,
+            transit::Abilities,
+            transit::Hints,
+        ),
+    }
 
-        // send the transit message
+    let run = Box::pin(async {
+        // What comes first tells us which protocol we are in: a transit
+        // message means a file or folder is coming, an offer on its own means
+        // the whole payload is in that message.
+        let first = wormhole.receive_json::<PeerMessage>().await??.check_err()?;
+
+        let (their_abilities, their_hints) = match first {
+            PeerMessage::Offer(v1::OfferMessage::Message(text)) => {
+                tracing::debug!("Received message offer");
+                wormhole
+                    .send_json(&PeerMessage::message_ack_v1("ok"))
+                    .await?;
+                return Ok(Outcome::Text(text));
+            },
+            PeerMessage::Transit(transit) => {
+                tracing::debug!("received transit message: {:?}", transit);
+                (transit.abilities_v1, transit.hints_v1)
+            },
+            other => {
+                bail!(TransferError::unexpected_message("transit or offer", other));
+            },
+        };
+
+        // Only now is a transit connector worth building - and only now do we
+        // answer with our own hints.
+        let connector = transit::init(transit_abilities, None, relay_hints).await?;
         tracing::debug!("Sending transit message '{:?}", connector.our_hints());
         wormhole
             .send_json(&PeerMessage::transit_v1(
@@ -501,19 +617,7 @@ pub async fn request(
             ))
             .await?;
 
-        // receive transit message
-        let (their_abilities, their_hints): (transit::Abilities, transit::Hints) =
-            match wormhole.receive_json::<PeerMessage>().await??.check_err()? {
-                PeerMessage::Transit(transit) => {
-                    tracing::debug!("received transit message: {:?}", transit);
-                    (transit.abilities_v1, transit.hints_v1)
-                },
-                other => {
-                    bail!(TransferError::unexpected_message("transit", other));
-                },
-            };
-
-        // 3. receive file offer message from peer
+        // Then the offer itself.
         let (filename, filesize, directory) =
             match wormhole.receive_json::<PeerMessage>().await??.check_err()? {
                 PeerMessage::Offer(offer_type) => match offer_type {
@@ -543,7 +647,7 @@ pub async fn request(
                 },
             };
 
-        Ok((
+        Ok(Outcome::File(
             filename,
             filesize,
             directory,
@@ -555,43 +659,43 @@ pub async fn request(
 
     futures::pin_mut!(cancel);
     let result = cancel::cancellable_2(run, cancel).await;
-    cancel::handle_run_result_noclose(wormhole, result)
-        .await
-        .map(|inner: Option<_>| {
-            inner.map(
-                |(
-                    (filename, filesize, directory, connector, their_abilities, their_hints),
-                    wormhole,
-                    _,
-                )| {
-                    ReceiveRequest::new(
-                        filename,
-                        filesize,
-                        directory,
-                        connector,
-                        their_abilities,
-                        their_hints,
-                        wormhole,
-                    )
-                },
-            )
-        })
+    match cancel::handle_run_result_noclose(wormhole, result).await? {
+        None => Ok(None),
+        Some((Outcome::Text(text), wormhole, _cancel)) => {
+            // Nothing else will happen on this wormhole; the sender has its
+            // acknowledgement and is already finishing.
+            cancel::debug_err(wormhole.close().await, "close Wormhole");
+            Ok(Some(IncomingOffer::Text(text)))
+        },
+        Some((
+            Outcome::File(filename, filesize, directory, connector, their_abilities, their_hints),
+            wormhole,
+            _cancel,
+        )) => Ok(Some(IncomingOffer::File(ReceiveRequest::new(
+            filename,
+            filesize,
+            directory,
+            connector,
+            their_abilities,
+            their_hints,
+            wormhole,
+        )))),
+    }
 }
 
-/// Metadata carried by a protocol-v1 `directory` offer
-/// (`mode: "zipfile/deflated"`).
-///
-/// The transferred payload is a zip archive of `zip size == file_size()`
-/// bytes; `num_files`/`num_bytes` describe the unpacked contents. All values
-/// are untrusted and unverified input.
-#[derive(Debug, Clone)]
-pub struct DirectoryOfferInfo {
-    /// The offered folder name (untrusted input, no sanitization applied)
-    pub dir_name: String,
-    /// Number of files inside the folder, as claimed by the sender
-    pub num_files: u64,
-    /// Total unpacked size in bytes, as claimed by the sender
-    pub num_bytes: u64,
+/// The file-or-folder half of [`request`], for callers that cannot act on a
+/// text offer. A text message arrives as `UnsupportedOffer`.
+pub async fn request_file_only(
+    wormhole: Wormhole,
+    relay_hints: Vec<transit::RelayHint>,
+    transit_abilities: transit::Abilities,
+    cancel: impl Future<Output = ()>,
+) -> Result<Option<ReceiveRequest>, TransferError> {
+    match request(wormhole, relay_hints, transit_abilities, cancel).await? {
+        None => Ok(None),
+        Some(IncomingOffer::File(request)) => Ok(Some(request)),
+        Some(IncomingOffer::Text(_)) => Err(TransferError::UnsupportedOffer),
+    }
 }
 
 /**

@@ -44,10 +44,12 @@ import {
   CodeBox,
   Dropdown,
   GhostButton,
+  MessageBox,
   Muted,
   PrimaryButton,
   ProgressBar,
   Subtitle,
+  TextArea,
   TextInput,
   Title,
 } from './components';
@@ -76,6 +78,12 @@ declare global {
       sendFolder(
         id: number,
         path: string,
+        code?: string,
+        server?: ServerConfig
+      ): Promise<void>;
+      sendText(
+        id: number,
+        text: string,
         code?: string,
         server?: ServerConfig
       ): Promise<void>;
@@ -110,16 +118,20 @@ declare global {
   }
 }
 
-/** What the user picked to send: a single file, or a whole folder. */
+/** What the user chose to send: a file, a whole folder, or a typed message. */
 type SendItem =
   | { kind: 'file'; path: string; name: string; size: number }
-  | { kind: 'folder'; path: string; name: string; fileCount: number; totalBytes: number };
+  | { kind: 'folder'; path: string; name: string; fileCount: number; totalBytes: number }
+  | { kind: 'text'; text: string };
 
-/** The sender's offer; `folder` is set for folder (directory) offers. */
+/** The sender's offer: `folder` for directory offers, `text` for a message.
+ *  A text offer is already complete when it arrives - the engine has
+ *  acknowledged it - so there is nothing to accept or decline. */
 interface ReceiveOffer {
   fileName: string;
   fileSize: number;
   folder?: { dirName: string; numFiles: number; numBytes: number } | null;
+  text?: string | null;
 }
 
 const CODE_RE = /^\d+(-[a-zA-Z0-9]+)+$/;
@@ -132,6 +144,7 @@ window.portalgems.onEvent((ev) => handlers.get(ev.id)?.(ev));
 type Route =
   | { name: 'home' }
   | { name: 'send'; item: SendItem; device?: PairedDevice }
+  | { name: 'compose'; device?: PairedDevice }
   | { name: 'receive'; code?: string; device?: PairedDevice }
   | { name: 'pair' }
   | { name: 'settings'; scrollToServer?: boolean }
@@ -176,6 +189,7 @@ export default function App() {
         <Home
           c={c}
           onSend={(item, device) => navigate({ name: 'send', item, device })}
+          onCompose={(device) => navigate({ name: 'compose', device })}
           onReceive={(code) => navigate({ name: 'receive', code })}
           onReceiveFrom={(device) => navigate({ name: 'receive', device })}
           onPair={() => navigate({ name: 'pair' })}
@@ -189,6 +203,14 @@ export default function App() {
           device={route.device}
           onHome={goBack}
           onServerSettings={() => navigate({ name: 'settings', scrollToServer: true })}
+        />
+      ) : route.name === 'compose' ? (
+        <Compose
+          c={c}
+          onHome={goBack}
+          onSend={(text) =>
+            navigate({ name: 'send', item: { kind: 'text', text }, device: route.device })
+          }
         />
       ) : route.name === 'receive' ? (
         <Receive c={c} code={route.code} device={route.device} onHome={goBack} />
@@ -212,6 +234,7 @@ export default function App() {
 function Home({
   c,
   onSend,
+  onCompose,
   onReceive,
   onReceiveFrom,
   onPair,
@@ -220,6 +243,7 @@ function Home({
 }: {
   c: Palette;
   onSend: (item: SendItem, device?: PairedDevice) => void;
+  onCompose: (device?: PairedDevice) => void;
   onReceive: (code: string) => void;
   onReceiveFrom: (device: PairedDevice) => void;
   onPair: () => void;
@@ -318,6 +342,11 @@ function Home({
           label={t('home.sendFolderButton')}
           onClick={() => pickFolder()}
         />
+        <GhostButton
+          c={c}
+          label={t('home.sendTextButton')}
+          onClick={() => onCompose()}
+        />
       </Card>
       <Card c={c}>
         <Subtitle c={c}>{t('home.receiveTitle')}</Subtitle>
@@ -334,6 +363,46 @@ function Home({
           onClick={() => onReceive(code.trim())}
           disabled={!CODE_RE.test(code.trim())}
         />
+      </Card>
+    </>
+  );
+}
+
+/** Write a message, then hand it to the ordinary send flow. Nothing touches
+ *  the network here - the code is only allocated once there is something to
+ *  send, so an abandoned draft never claims a nameplate. */
+function Compose({
+  c,
+  onHome,
+  onSend,
+}: {
+  c: Palette;
+  onHome: () => void;
+  onSend: (text: string) => void;
+}) {
+  const { t } = useTranslation();
+  const [text, setText] = useState('');
+  const ready = text.trim().length > 0;
+
+  return (
+    <>
+      <Title c={c} onBack={onHome}>{t('text.title')}</Title>
+      <Card c={c}>
+        <Subtitle c={c}>{t('text.compose')}</Subtitle>
+        <TextArea
+          c={c}
+          value={text}
+          onChange={setText}
+          placeholder={t('text.placeholder')}
+          autoFocus
+        />
+        <PrimaryButton
+          c={c}
+          label={t('text.sendButton')}
+          onClick={() => onSend(text)}
+          disabled={!ready}
+        />
+        {!ready ? <Muted c={c}>{t('text.empty')}</Muted> : null}
       </Card>
     </>
   );
@@ -398,9 +467,15 @@ function Send({
           }
         }, PAIRED_SEND_TIMEOUT_MS)
       : null;
-    const start =
-      item.kind === 'folder' ? window.portalgems.sendFolder : window.portalgems.send;
-    start(id, item.path, pairedCode, currentServer()).then(
+    // A message has no path and no transit, so it gets its own call; the
+    // rest of the screen's lifecycle is identical.
+    const started =
+      item.kind === 'text'
+        ? window.portalgems.sendText(id, item.text, pairedCode, currentServer())
+        : (item.kind === 'folder'
+            ? window.portalgems.sendFolder
+            : window.portalgems.send)(id, item.path, pairedCode, currentServer());
+    started.then(
       () => setPhase('done'),
       (e) => {
         if (timedOut) setPhase('peerNotOpen');
@@ -432,13 +507,15 @@ function Send({
 
   const busy = phase === 'starting' || phase === 'waiting' || phase === 'transferring';
   const summary =
-    item.kind === 'folder'
-      ? t('folder.summary', {
-          name: item.name,
-          count: item.fileCount,
-          size: formatSize(item.totalBytes),
-        })
-      : `${item.name} · ${formatSize(item.size)}`;
+    item.kind === 'text'
+      ? t('text.title')
+      : item.kind === 'folder'
+        ? t('folder.summary', {
+            name: item.name,
+            count: item.fileCount,
+            size: formatSize(item.totalBytes),
+          })
+        : `${item.name} · ${formatSize(item.size)}`;
 
   return (
     <>
@@ -464,9 +541,11 @@ function Send({
         {phase === 'transferring' ? (
           <>
             <Subtitle c={c}>
-              {item.kind === 'folder'
-                ? t('send.sendingFolder', { name: item.name })
-                : t('send.sending', { name: item.name })}
+              {item.kind === 'text'
+                ? t('send.sendingText')
+                : item.kind === 'folder'
+                  ? t('send.sendingFolder', { name: item.name })
+                  : t('send.sending', { name: item.name })}
             </Subtitle>
             <Muted c={c}>{direct ? t('transfer.direct') : t('transfer.relay')}</Muted>
             <ProgressBar c={c} pct={pct} />
@@ -476,7 +555,11 @@ function Send({
         {phase === 'done' ? (
           <>
             <Subtitle c={c}>
-              {item.kind === 'folder' ? t('send.successFolder') : t('send.success')}
+              {item.kind === 'text'
+                ? t('send.successText')
+                : item.kind === 'folder'
+                  ? t('send.successFolder')
+                  : t('send.success')}
             </Subtitle>
             <p style={{ color: c.success, margin: 0 }}>{summary}</p>
           </>
@@ -515,6 +598,7 @@ function Send({
 type ReceivePhase =
   | 'connecting'
   | 'confirm'
+  | 'message'
   | 'conflict'
   | 'transferring'
   | 'done'
@@ -544,6 +628,7 @@ function Receive({
   const [savedDir, setSavedDir] = useState('');
   const [usedFallback, setUsedFallback] = useState(false);
   const [existingSize, setExistingSize] = useState(0);
+  const [copiedText, setCopiedText] = useState(false);
   const [error, setError] = useState('');
   const idRef = useRef(0);
   const cancelledRef = useRef(false);
@@ -563,7 +648,9 @@ function Receive({
     });
     const gotOffer = (o: ReceiveOffer) => {
       setOffer(o);
-      setPhase('confirm');
+      // Text is delivered by the time the offer reaches us - the engine
+      // acknowledged it - so there is nothing to accept and no reason to ask.
+      setPhase(o.text != null ? 'message' : 'confirm');
     };
     const failed = (e: unknown) => {
       if (cancelledRef.current) setPhase('cancelled');
@@ -663,6 +750,21 @@ function Receive({
               ? t('paired.receiveWaiting', { name: device.name })
               : t('receive.connecting')}
           </Muted>
+        ) : null}
+        {phase === 'message' && offer?.text != null ? (
+          <>
+            <Subtitle c={c}>{t('text.received')}</Subtitle>
+            <MessageBox c={c} text={offer.text} />
+            <PrimaryButton
+              c={c}
+              label={copiedText ? t('text.copied') : t('text.copy')}
+              onClick={() => {
+                navigator.clipboard.writeText(offer.text ?? '');
+                setCopiedText(true);
+                setTimeout(() => setCopiedText(false), 1500);
+              }}
+            />
+          </>
         ) : null}
         {phase === 'confirm' && offer ? (
           <>

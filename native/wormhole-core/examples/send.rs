@@ -1,5 +1,6 @@
-//! Phase 0 test harness: send a file or folder, printing machine-readable lines.
-//! Usage: send <path> [code]
+//! Phase 0 test harness: send a file, folder or text, printing machine-readable
+//! lines.
+//! Usage: send <path> [code] | send --text <message> [code]
 //! Optional env: PG_RENDEZVOUS_URL, PG_TRANSIT_URL to override servers.
 
 use std::io::Write;
@@ -19,7 +20,24 @@ fn server_from_env() -> wormhole_core::ServerConfig {
 
 fn main() -> anyhow::Result<()> {
     let mut args = std::env::args().skip(1);
-    let path = args.next().expect("usage: send <path> [code]");
+    let first = args.next().expect("usage: send <path|--text MESSAGE> [code]");
+    if first == "--text" {
+        let message = args.next().expect("usage: send --text MESSAGE [code]");
+        let code = args.next();
+        async_io::block_on(async move {
+            wormhole_core::send_text(
+                &message,
+                code.as_deref(),
+                &server_from_env(),
+                |code: String| out(format!("CODE:{code}")),
+                std::future::pending::<()>(),
+            )
+            .await
+        })?;
+        out("SEND-OK".to_string());
+        return Ok(());
+    }
+    let path = first;
     let code = args.next();
     let is_dir = std::fs::metadata(&path)?.is_dir();
 

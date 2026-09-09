@@ -16,7 +16,8 @@
     "receiveTitle": "Recibir un archivo",
     "receiveHint": "Introduce el código que te dio el remitente.",
     "receivePlaceholder": "p. ej. 7-crossover-clockwork",
-    "receiveButton": "Recibir"
+    "receiveButton": "Recibir",
+    "sendTextButton": "Escribir un mensaje para enviar"
   },
   "send": {
     "title": "Enviando",
@@ -28,7 +29,9 @@
     "sendingFolder": "Enviando carpeta {{name}}…",
     "success": "Archivo enviado correctamente.",
     "successDetail": "{{name}} · {{size}}",
-    "successFolder": "Carpeta enviada correctamente."
+    "successFolder": "Carpeta enviada correctamente.",
+    "sendingText": "Enviando mensaje…",
+    "successText": "Mensaje enviado."
   },
   "folder": {
     "summary": "{{name}} · {{count}} archivos · {{size}}"
@@ -162,5 +165,15 @@
     "cancelled": "Transferencia cancelada.",
     "serverUnreachable": "No se pudo contactar con el servidor de conexión. Puede que esté temporalmente caído. Abre Ajustes y cambia al servidor de PortalGems, o usa el tuyo - consulta la guía de autoalojamiento.",
     "invalidServerUrl": "La dirección del servidor no es válida. Compruébala en Ajustes. Una URL de encuentro es como wss://host/v1 y un relé como tcp://host:4001."
+  },
+  "text": {
+    "title": "Mensaje",
+    "compose": "Escribe tu mensaje",
+    "placeholder": "Escribe algo…",
+    "sendButton": "Enviar mensaje",
+    "empty": "Escribe un mensaje primero.",
+    "received": "Mensaje recibido",
+    "copy": "Copiar mensaje",
+    "copied": "¡Copiado!"
   }
 }

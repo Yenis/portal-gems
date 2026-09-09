@@ -27475,7 +27475,8 @@
       receiveTitle: "Primi datoteku",
       receiveHint: "Unesi kod koji ti je poslao po\u0161iljalac.",
       receivePlaceholder: "npr. 7-crossover-clockwork",
-      receiveButton: "Primi"
+      receiveButton: "Primi",
+      sendTextButton: "Napi\u0161i poruku za slanje"
     },
     send: {
       title: "Slanje",
@@ -27487,7 +27488,9 @@
       sendingFolder: "\u0160aljem folder {{name}}\u2026",
       success: "Datoteka uspje\u0161no poslana.",
       successDetail: "{{name}} \xB7 {{size}}",
-      successFolder: "Folder uspje\u0161no poslan."
+      successFolder: "Folder uspje\u0161no poslan.",
+      sendingText: "Slanje poruke\u2026",
+      successText: "Poruka poslana."
     },
     folder: {
       summary: "{{name}} \xB7 {{count}} datoteka \xB7 {{size}}"
@@ -27621,6 +27624,16 @@
       cancelled: "Prijenos otkazan.",
       serverUnreachable: "Nije mogu\u0107e dohvatiti server za povezivanje. Mo\u017Eda je privremeno nedostupan. Otvori Postavke i prebaci se na PortalGems server ili koristi vlastiti - pogledaj vodi\u010D za samostalno hostanje.",
       invalidServerUrl: "Adresa servera nije ispravna. Provjeri je u Postavkama. Rendezvous URL izgleda kao wss://host/v1, a relej kao tcp://host:4001."
+    },
+    text: {
+      title: "Poruka",
+      compose: "Upi\u0161i poruku",
+      placeholder: "Napi\u0161i ne\u0161to\u2026",
+      sendButton: "Po\u0161alji poruku",
+      empty: "Prvo napi\u0161i poruku.",
+      received: "Poruka primljena",
+      copy: "Kopiraj poruku",
+      copied: "Kopirano!"
     }
   };
 
@@ -27643,7 +27656,8 @@
       receiveTitle: "Datei empfangen",
       receiveHint: "Gib den Code ein, den dir der Absender gegeben hat.",
       receivePlaceholder: "z. B. 7-crossover-clockwork",
-      receiveButton: "Empfangen"
+      receiveButton: "Empfangen",
+      sendTextButton: "Nachricht schreiben und senden"
     },
     send: {
       title: "Senden",
@@ -27655,7 +27669,9 @@
       sendingFolder: "Ordner {{name}} wird gesendet\u2026",
       success: "Datei erfolgreich gesendet.",
       successDetail: "{{name}} \xB7 {{size}}",
-      successFolder: "Ordner erfolgreich gesendet."
+      successFolder: "Ordner erfolgreich gesendet.",
+      sendingText: "Nachricht wird gesendet\u2026",
+      successText: "Nachricht gesendet."
     },
     folder: {
       summary: "{{name}} \xB7 {{count}} Dateien \xB7 {{size}}"
@@ -27789,6 +27805,16 @@
       cancelled: "\xDCbertragung abgebrochen.",
       serverUnreachable: "Der Verbindungsserver ist nicht erreichbar. M\xF6glicherweise ist er vor\xFCbergehend nicht verf\xFCgbar. \xD6ffne die Einstellungen und wechsle zum PortalGems-Server oder nutze deinen eigenen - siehe die Anleitung zum Selbsthosten.",
       invalidServerUrl: "Die Serveradresse ist ung\xFCltig. Pr\xFCfe sie in den Einstellungen. Eine Rendezvous-URL sieht aus wie wss://host/v1 und ein Relay wie tcp://host:4001."
+    },
+    text: {
+      title: "Nachricht",
+      compose: "Nachricht eingeben",
+      placeholder: "Schreib etwas\u2026",
+      sendButton: "Nachricht senden",
+      empty: "Schreibe zuerst eine Nachricht.",
+      received: "Nachricht empfangen",
+      copy: "Nachricht kopieren",
+      copied: "Kopiert!"
     }
   };
 
@@ -27811,7 +27837,8 @@
       receiveTitle: "Receive a file",
       receiveHint: "Enter the code the sender gave you.",
       receivePlaceholder: "e.g. 7-crossover-clockwork",
-      receiveButton: "Receive"
+      receiveButton: "Receive",
+      sendTextButton: "Write a message to send"
     },
     send: {
       title: "Sending",
@@ -27823,7 +27850,9 @@
       sendingFolder: "Sending folder {{name}}\u2026",
       success: "File sent successfully.",
       successDetail: "{{name}} \xB7 {{size}}",
-      successFolder: "Folder sent successfully."
+      successFolder: "Folder sent successfully.",
+      sendingText: "Sending message\u2026",
+      successText: "Message sent."
     },
     folder: {
       summary: "{{name}} \xB7 {{count}} files \xB7 {{size}}"
@@ -27957,6 +27986,16 @@
       cancelled: "Transfer cancelled.",
       serverUnreachable: "Could not reach the connection server. It may be temporarily down. Open Settings and switch to the PortalGems server, or use your own - see the self-hosting guide.",
       invalidServerUrl: "The server address is not valid. Check it in Settings. A rendezvous URL looks like wss://host/v1 and a relay like tcp://host:4001."
+    },
+    text: {
+      title: "Message",
+      compose: "Type your message",
+      placeholder: "Write something\u2026",
+      sendButton: "Send message",
+      empty: "Write a message first.",
+      received: "Message received",
+      copy: "Copy message",
+      copied: "Copied!"
     }
   };
 
@@ -27979,7 +28018,8 @@
       receiveTitle: "Recibir un archivo",
       receiveHint: "Introduce el c\xF3digo que te dio el remitente.",
       receivePlaceholder: "p. ej. 7-crossover-clockwork",
-      receiveButton: "Recibir"
+      receiveButton: "Recibir",
+      sendTextButton: "Escribir un mensaje para enviar"
     },
     send: {
       title: "Enviando",
@@ -27991,7 +28031,9 @@
       sendingFolder: "Enviando carpeta {{name}}\u2026",
       success: "Archivo enviado correctamente.",
       successDetail: "{{name}} \xB7 {{size}}",
-      successFolder: "Carpeta enviada correctamente."
+      successFolder: "Carpeta enviada correctamente.",
+      sendingText: "Enviando mensaje\u2026",
+      successText: "Mensaje enviado."
     },
     folder: {
       summary: "{{name}} \xB7 {{count}} archivos \xB7 {{size}}"
@@ -28125,6 +28167,16 @@
       cancelled: "Transferencia cancelada.",
       serverUnreachable: "No se pudo contactar con el servidor de conexi\xF3n. Puede que est\xE9 temporalmente ca\xEDdo. Abre Ajustes y cambia al servidor de PortalGems, o usa el tuyo - consulta la gu\xEDa de autoalojamiento.",
       invalidServerUrl: "La direcci\xF3n del servidor no es v\xE1lida. Compru\xE9bala en Ajustes. Una URL de encuentro es como wss://host/v1 y un rel\xE9 como tcp://host:4001."
+    },
+    text: {
+      title: "Mensaje",
+      compose: "Escribe tu mensaje",
+      placeholder: "Escribe algo\u2026",
+      sendButton: "Enviar mensaje",
+      empty: "Escribe un mensaje primero.",
+      received: "Mensaje recibido",
+      copy: "Copiar mensaje",
+      copied: "\xA1Copiado!"
     }
   };
 
@@ -28147,7 +28199,8 @@
       receiveTitle: "Recevoir un fichier",
       receiveHint: "Saisissez le code que l'exp\xE9diteur vous a donn\xE9.",
       receivePlaceholder: "p. ex. 7-crossover-clockwork",
-      receiveButton: "Recevoir"
+      receiveButton: "Recevoir",
+      sendTextButton: "\xC9crire un message \xE0 envoyer"
     },
     send: {
       title: "Envoi",
@@ -28159,7 +28212,9 @@
       sendingFolder: "Envoi du dossier {{name}}\u2026",
       success: "Fichier envoy\xE9 avec succ\xE8s.",
       successDetail: "{{name}} \xB7 {{size}}",
-      successFolder: "Dossier envoy\xE9 avec succ\xE8s."
+      successFolder: "Dossier envoy\xE9 avec succ\xE8s.",
+      sendingText: "Envoi du message\u2026",
+      successText: "Message envoy\xE9."
     },
     folder: {
       summary: "{{name}} \xB7 {{count}} fichiers \xB7 {{size}}"
@@ -28293,6 +28348,16 @@
       cancelled: "Transfert annul\xE9.",
       serverUnreachable: "Impossible de joindre le serveur de connexion. Il est peut-\xEAtre temporairement hors service. Ouvrez les Param\xE8tres et passez au serveur PortalGems, ou utilisez le v\xF4tre - voir le guide d'auto-h\xE9bergement.",
       invalidServerUrl: "L'adresse du serveur n'est pas valide. V\xE9rifiez-la dans les Param\xE8tres. Une URL de rendez-vous ressemble \xE0 wss://host/v1 et un relais \xE0 tcp://host:4001."
+    },
+    text: {
+      title: "Message",
+      compose: "Saisissez votre message",
+      placeholder: "\xC9crivez quelque chose\u2026",
+      sendButton: "Envoyer le message",
+      empty: "\xC9crivez d'abord un message.",
+      received: "Message re\xE7u",
+      copy: "Copier le message",
+      copied: "Copi\xE9 !"
     }
   };
 
@@ -28315,7 +28380,8 @@
       receiveTitle: "\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C \u0444\u0430\u0439\u043B",
       receiveHint: "\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u043A\u043E\u0434, \u043A\u043E\u0442\u043E\u0440\u044B\u0439 \u0432\u0430\u043C \u0434\u0430\u043B \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u0435\u043B\u044C.",
       receivePlaceholder: "\u043D\u0430\u043F\u0440\u0438\u043C\u0435\u0440, 7-crossover-clockwork",
-      receiveButton: "\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C"
+      receiveButton: "\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C",
+      sendTextButton: "\u041D\u0430\u043F\u0438\u0441\u0430\u0442\u044C \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435"
     },
     send: {
       title: "\u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430",
@@ -28327,7 +28393,9 @@
       sendingFolder: "\u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 \u043F\u0430\u043F\u043A\u0438 {{name}}\u2026",
       success: "\u0424\u0430\u0439\u043B \u0443\u0441\u043F\u0435\u0448\u043D\u043E \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u0435\u043D.",
       successDetail: "{{name}} \xB7 {{size}}",
-      successFolder: "\u041F\u0430\u043F\u043A\u0430 \u0443\u0441\u043F\u0435\u0448\u043D\u043E \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u0430."
+      successFolder: "\u041F\u0430\u043F\u043A\u0430 \u0443\u0441\u043F\u0435\u0448\u043D\u043E \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u0430.",
+      sendingText: "\u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u044F\u2026",
+      successText: "\u0421\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435 \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u043E."
     },
     folder: {
       summary: "{{name}} \xB7 \u0444\u0430\u0439\u043B\u043E\u0432: {{count}} \xB7 {{size}}"
@@ -28461,6 +28529,16 @@
       cancelled: "\u041F\u0435\u0440\u0435\u0434\u0430\u0447\u0430 \u043E\u0442\u043C\u0435\u043D\u0435\u043D\u0430.",
       serverUnreachable: "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0438\u0442\u044C\u0441\u044F \u043A \u0441\u0435\u0440\u0432\u0435\u0440\u0443 \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u044F. \u0412\u043E\u0437\u043C\u043E\u0436\u043D\u043E, \u043E\u043D \u0432\u0440\u0435\u043C\u0435\u043D\u043D\u043E \u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u0435\u043D. \u041E\u0442\u043A\u0440\u043E\u0439\u0442\u0435 \u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u0438 \u043F\u0435\u0440\u0435\u043A\u043B\u044E\u0447\u0438\u0442\u0435\u0441\u044C \u043D\u0430 \u0441\u0435\u0440\u0432\u0435\u0440 PortalGems \u0438\u043B\u0438 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0439\u0442\u0435 \u0441\u043E\u0431\u0441\u0442\u0432\u0435\u043D\u043D\u044B\u0439 - \u0441\u043C. \u0440\u0443\u043A\u043E\u0432\u043E\u0434\u0441\u0442\u0432\u043E \u043F\u043E \u0441\u0430\u043C\u043E\u0441\u0442\u043E\u044F\u0442\u0435\u043B\u044C\u043D\u043E\u043C\u0443 \u0445\u043E\u0441\u0442\u0438\u043D\u0433\u0443.",
       invalidServerUrl: "\u0410\u0434\u0440\u0435\u0441 \u0441\u0435\u0440\u0432\u0435\u0440\u0430 \u043D\u0435\u0434\u0435\u0439\u0441\u0442\u0432\u0438\u0442\u0435\u043B\u0435\u043D. \u041F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u0435\u0433\u043E \u0432 \u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0430\u0445. URL \u0440\u0430\u043D\u0434\u0435\u0432\u0443 \u0432\u044B\u0433\u043B\u044F\u0434\u0438\u0442 \u043A\u0430\u043A wss://host/v1, \u0430 \u0440\u0435\u043B\u0435\u0439 - \u043A\u0430\u043A tcp://host:4001."
+    },
+    text: {
+      title: "\u0421\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435",
+      compose: "\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435",
+      placeholder: "\u041D\u0430\u043F\u0438\u0448\u0438\u0442\u0435 \u0447\u0442\u043E-\u043D\u0438\u0431\u0443\u0434\u044C\u2026",
+      sendButton: "\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435",
+      empty: "\u0421\u043D\u0430\u0447\u0430\u043B\u0430 \u043D\u0430\u043F\u0438\u0448\u0438\u0442\u0435 \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435.",
+      received: "\u0421\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435 \u043F\u043E\u043B\u0443\u0447\u0435\u043D\u043E",
+      copy: "\u041A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435",
+      copied: "\u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D\u043E!"
     }
   };
 
@@ -28915,6 +28993,56 @@
       })
     ) : null);
   }
+  function TextArea({
+    c,
+    value,
+    onChange,
+    placeholder,
+    autoFocus
+  }) {
+    return /* @__PURE__ */ import_react13.default.createElement(
+      "textarea",
+      {
+        value,
+        onChange: (e2) => onChange(e2.target.value),
+        placeholder,
+        autoFocus,
+        rows: 6,
+        style: {
+          border: `1px solid ${c.border}`,
+          borderRadius: radius.md,
+          padding: spacing(3),
+          fontSize: fontSize.body,
+          fontFamily: "inherit",
+          background: c.background,
+          color: c.text,
+          width: "100%",
+          boxSizing: "border-box",
+          resize: "vertical"
+        }
+      }
+    );
+  }
+  function MessageBox({ c, text }) {
+    return /* @__PURE__ */ import_react13.default.createElement(
+      "div",
+      {
+        style: {
+          background: c.codeBg,
+          borderRadius: radius.md,
+          padding: spacing(3),
+          color: c.text,
+          fontSize: fontSize.body,
+          whiteSpace: "pre-wrap",
+          overflowWrap: "anywhere",
+          userSelect: "text",
+          maxHeight: 320,
+          overflowY: "auto"
+        }
+      },
+      text
+    );
+  }
   function TextInput({
     c,
     value,
@@ -28984,6 +29112,7 @@
         {
           c,
           onSend: (item, device) => navigate({ name: "send", item, device }),
+          onCompose: (device) => navigate({ name: "compose", device }),
           onReceive: (code) => navigate({ name: "receive", code }),
           onReceiveFrom: (device) => navigate({ name: "receive", device }),
           onPair: () => navigate({ name: "pair" }),
@@ -28998,6 +29127,13 @@
           device: route.device,
           onHome: goBack,
           onServerSettings: () => navigate({ name: "settings", scrollToServer: true })
+        }
+      ) : route.name === "compose" ? /* @__PURE__ */ import_react14.default.createElement(
+        Compose,
+        {
+          c,
+          onHome: goBack,
+          onSend: (text) => navigate({ name: "send", item: { kind: "text", text }, device: route.device })
         }
       ) : route.name === "receive" ? /* @__PURE__ */ import_react14.default.createElement(Receive, { c, code: route.code, device: route.device, onHome: goBack }) : route.name === "settings" ? /* @__PURE__ */ import_react14.default.createElement(
         Settings,
@@ -29014,6 +29150,7 @@
   function Home({
     c,
     onSend,
+    onCompose,
     onReceive,
     onReceiveFrom,
     onPair,
@@ -29104,6 +29241,13 @@
         label: t2("home.sendFolderButton"),
         onClick: () => pickFolder()
       }
+    ), /* @__PURE__ */ import_react14.default.createElement(
+      GhostButton,
+      {
+        c,
+        label: t2("home.sendTextButton"),
+        onClick: () => onCompose()
+      }
     )), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("home.receiveTitle")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("home.receiveHint")), /* @__PURE__ */ import_react14.default.createElement(
       TextInput,
       {
@@ -29121,6 +29265,33 @@
         disabled: !CODE_RE.test(code.trim())
       }
     )));
+  }
+  function Compose({
+    c,
+    onHome,
+    onSend
+  }) {
+    const { t: t2 } = useTranslation();
+    const [text, setText] = (0, import_react14.useState)("");
+    const ready = text.trim().length > 0;
+    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("text.title")), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("text.compose")), /* @__PURE__ */ import_react14.default.createElement(
+      TextArea,
+      {
+        c,
+        value: text,
+        onChange: setText,
+        placeholder: t2("text.placeholder"),
+        autoFocus: true
+      }
+    ), /* @__PURE__ */ import_react14.default.createElement(
+      PrimaryButton,
+      {
+        c,
+        label: t2("text.sendButton"),
+        onClick: () => onSend(text),
+        disabled: !ready
+      }
+    ), !ready ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("text.empty")) : null));
   }
   function Send({
     c,
@@ -29163,8 +29334,8 @@
           window.portalgems.cancel(id);
         }
       }, PAIRED_SEND_TIMEOUT_MS) : null;
-      const start = item.kind === "folder" ? window.portalgems.sendFolder : window.portalgems.send;
-      start(id, item.path, pairedCode, currentServer()).then(
+      const started = item.kind === "text" ? window.portalgems.sendText(id, item.text, pairedCode, currentServer()) : (item.kind === "folder" ? window.portalgems.sendFolder : window.portalgems.send)(id, item.path, pairedCode, currentServer());
+      started.then(
         () => setPhase("done"),
         (e2) => {
           if (timedOut) setPhase("peerNotOpen");
@@ -29191,7 +29362,7 @@
       setTimeout(() => setCopied(false), 1500);
     };
     const busy = phase === "starting" || phase === "waiting" || phase === "transferring";
-    const summary = item.kind === "folder" ? t2("folder.summary", {
+    const summary = item.kind === "text" ? t2("text.title") : item.kind === "folder" ? t2("folder.summary", {
       name: item.name,
       count: item.fileCount,
       size: formatSize(item.totalBytes)
@@ -29203,7 +29374,7 @@
         label: copied ? t2("send.codeCopied") : t2("send.copyCode"),
         onClick: copy2
       }
-    )) : null, phase === "transferring" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, item.kind === "folder" ? t2("send.sendingFolder", { name: item.name }) : t2("send.sending", { name: item.name })), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, direct ? t2("transfer.direct") : t2("transfer.relay")), /* @__PURE__ */ import_react14.default.createElement(ProgressBar, { c, pct }), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("transfer.progress", { pct }))) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, item.kind === "folder" ? t2("send.successFolder") : t2("send.success")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.success, margin: 0 } }, summary)) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "cancelled" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("errors.cancelled")) : null, phase === "peerNotOpen" && device ? /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, t2("paired.notOpen", { name: device.name })) : null), busy ? /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancel }) : phase === "error" && serverErr ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(
+    )) : null, phase === "transferring" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, item.kind === "text" ? t2("send.sendingText") : item.kind === "folder" ? t2("send.sendingFolder", { name: item.name }) : t2("send.sending", { name: item.name })), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, direct ? t2("transfer.direct") : t2("transfer.relay")), /* @__PURE__ */ import_react14.default.createElement(ProgressBar, { c, pct }), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("transfer.progress", { pct }))) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, item.kind === "text" ? t2("send.successText") : item.kind === "folder" ? t2("send.successFolder") : t2("send.success")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.success, margin: 0 } }, summary)) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "cancelled" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("errors.cancelled")) : null, phase === "peerNotOpen" && device ? /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, t2("paired.notOpen", { name: device.name })) : null), busy ? /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancel }) : phase === "error" && serverErr ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(
       PrimaryButton,
       {
         c,
@@ -29227,6 +29398,7 @@
     const [savedDir, setSavedDir] = (0, import_react14.useState)("");
     const [usedFallback, setUsedFallback] = (0, import_react14.useState)(false);
     const [existingSize, setExistingSize] = (0, import_react14.useState)(0);
+    const [copiedText, setCopiedText] = (0, import_react14.useState)(false);
     const [error, setError] = (0, import_react14.useState)("");
     const idRef = (0, import_react14.useRef)(0);
     const cancelledRef = (0, import_react14.useRef)(false);
@@ -29243,7 +29415,7 @@
       });
       const gotOffer = (o) => {
         setOffer(o);
-        setPhase("confirm");
+        setPhase(o.text != null ? "message" : "confirm");
       };
       const failed = (e2) => {
         if (cancelledRef.current) setPhase("cancelled");
@@ -29315,7 +29487,18 @@
       window.portalgems.cancel(idRef.current);
     };
     const busy = phase === "connecting" || phase === "transferring";
-    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("receive.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, device ? device.name : code), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, phase === "connecting" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, device ? t2("paired.receiveWaiting", { name: device.name }) : t2("receive.connecting")) : null, phase === "confirm" && offer ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, offer.folder ? t2("receive.incomingFolder") : t2("receive.incoming")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.text, margin: 0 } }, offer.folder ? t2("folder.summary", {
+    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("receive.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, device ? device.name : code), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, phase === "connecting" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, device ? t2("paired.receiveWaiting", { name: device.name }) : t2("receive.connecting")) : null, phase === "message" && offer?.text != null ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("text.received")), /* @__PURE__ */ import_react14.default.createElement(MessageBox, { c, text: offer.text }), /* @__PURE__ */ import_react14.default.createElement(
+      PrimaryButton,
+      {
+        c,
+        label: copiedText ? t2("text.copied") : t2("text.copy"),
+        onClick: () => {
+          navigator.clipboard.writeText(offer.text ?? "");
+          setCopiedText(true);
+          setTimeout(() => setCopiedText(false), 1500);
+        }
+      }
+    )) : null, phase === "confirm" && offer ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, offer.folder ? t2("receive.incomingFolder") : t2("receive.incoming")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.text, margin: 0 } }, offer.folder ? t2("folder.summary", {
       name: offer.folder.dirName,
       count: offer.folder.numFiles,
       size: formatSize(offer.folder.numBytes)

@@ -92,7 +92,7 @@ async fn wrap_timeout(run: impl Future<Output = ()>, cancel: impl Future<Output 
 }
 
 /// Ignore an error but at least debug print it
-fn debug_err(result: Result<(), impl std::fmt::Display>, operation: &str) {
+pub(crate) fn debug_err(result: Result<(), impl std::fmt::Display>, operation: &str) {
     if let Err(error) = result {
         tracing::debug!("Failed to {} after transfer: {}", operation, error);
     }

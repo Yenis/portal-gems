@@ -16,7 +16,8 @@
     "receiveTitle": "Receive a file",
     "receiveHint": "Enter the code the sender gave you.",
     "receivePlaceholder": "e.g. 7-crossover-clockwork",
-    "receiveButton": "Receive"
+    "receiveButton": "Receive",
+    "sendTextButton": "Write a message to send"
   },
   "send": {
     "title": "Sending",
@@ -28,7 +29,9 @@
     "sendingFolder": "Sending folder {{name}}…",
     "success": "File sent successfully.",
     "successDetail": "{{name}} · {{size}}",
-    "successFolder": "Folder sent successfully."
+    "successFolder": "Folder sent successfully.",
+    "sendingText": "Sending message…",
+    "successText": "Message sent."
   },
   "folder": {
     "summary": "{{name}} · {{count}} files · {{size}}"
@@ -162,5 +165,15 @@
     "cancelled": "Transfer cancelled.",
     "serverUnreachable": "Could not reach the connection server. It may be temporarily down. Open Settings and switch to the PortalGems server, or use your own - see the self-hosting guide.",
     "invalidServerUrl": "The server address is not valid. Check it in Settings. A rendezvous URL looks like wss://host/v1 and a relay like tcp://host:4001."
+  },
+  "text": {
+    "title": "Message",
+    "compose": "Type your message",
+    "placeholder": "Write something…",
+    "sendButton": "Send message",
+    "empty": "Write a message first.",
+    "received": "Message received",
+    "copy": "Copy message",
+    "copied": "Copied!"
   }
 }

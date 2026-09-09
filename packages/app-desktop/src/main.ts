@@ -196,6 +196,12 @@ ipcMain.handle(
 );
 
 ipcMain.handle(
+  'pg:sendText',
+  (_e, id: number, text: string, code?: string, server?: ServerConfig) =>
+    engine.sendText(id, text, code ?? null, server ?? {}, forward(id))
+);
+
+ipcMain.handle(
   'pg:sendFolder',
   (_e, id: number, folderPath: string, code?: string, server?: ServerConfig) =>
     engine.sendFolder(id, folderPath, code ?? null, server ?? {}, forward(id))

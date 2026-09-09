@@ -101,6 +101,29 @@ pub async fn send_zip_as_folder(
     .await
 }
 
+/// Send a text message. `code: None` generates a fresh code (reported via
+/// `listener.on_code`); `code: Some(..)` opens the wormhole on that exact code
+/// (paired-device flow).
+///
+/// Text travels inside the offer itself, so `on_transit` and `on_progress`
+/// never fire - there is no transit connection and nothing to measure.
+#[uniffi::export]
+pub async fn send_text(
+    text: String,
+    code: Option<String>,
+    server: ServerConfig,
+    listener: Arc<dyn TransferListener>,
+) -> Result<(), Error> {
+    crate::send_text(
+        &text,
+        code.as_deref(),
+        &server,
+        move |code| listener.on_code(code),
+        pending::<()>(),
+    )
+    .await
+}
+
 /// Phase 0 test helper: write a `size_kb` KiB file into `dir` and return its
 /// path, so the spike app has something to send without a filesystem library.
 #[uniffi::export]
@@ -144,6 +167,7 @@ pub struct IncomingFile {
     name: String,
     size: u64,
     folder: Option<crate::FolderOffer>,
+    text: Option<String>,
     request: Mutex<Option<PendingReceive>>,
 }
 
@@ -159,6 +183,7 @@ pub async fn request_receive(
         name: pending_receive.file_name.clone(),
         size: pending_receive.file_size,
         folder: pending_receive.folder.clone(),
+        text: pending_receive.text.clone(),
         request: Mutex::new(Some(pending_receive)),
     }))
 }
@@ -171,6 +196,15 @@ impl IncomingFile {
 
     pub fn file_size(&self) -> u64 {
         self.size
+    }
+
+    /// The message when the sender offered text; `None` for files and folders.
+    ///
+    /// A text offer arrives complete - it is acknowledged by the engine, so the
+    /// sender is already finished and there is nothing to accept or reject.
+    /// `file_name` and `file_size` carry nothing meaningful in this case.
+    pub fn text(&self) -> Option<String> {
+        self.text.clone()
     }
 
     /// Folder metadata when this is a directory offer; `None` for plain files.

@@ -310,6 +310,64 @@ export function Dropdown({
   );
 }
 
+export function TextArea({
+  c,
+  value,
+  onChange,
+  placeholder,
+  autoFocus,
+}: {
+  c: Palette;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  autoFocus?: boolean;
+}) {
+  return (
+    <textarea
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      autoFocus={autoFocus}
+      rows={6}
+      style={{
+        border: `1px solid ${c.border}`,
+        borderRadius: radius.md,
+        padding: spacing(3),
+        fontSize: fontSize.body,
+        fontFamily: 'inherit',
+        background: c.background,
+        color: c.text,
+        width: '100%',
+        boxSizing: 'border-box',
+        resize: 'vertical',
+      }}
+    />
+  );
+}
+
+/** A received message. Selectable and wrapped, because the whole value of a
+ *  message is being able to read it and take it somewhere else. */
+export function MessageBox({ c, text }: { c: Palette; text: string }) {
+  return (
+    <div
+      style={{
+        background: c.codeBg,
+        borderRadius: radius.md,
+        padding: spacing(3),
+        color: c.text,
+        fontSize: fontSize.body,
+        whiteSpace: 'pre-wrap',
+        overflowWrap: 'anywhere',
+        userSelect: 'text',
+        maxHeight: 320,
+        overflowY: 'auto',
+      }}>
+      {text}
+    </div>
+  );
+}
+
 export function TextInput({
   c,
   value,

@@ -16,7 +16,8 @@
     "receiveTitle": "Primi datoteku",
     "receiveHint": "Unesi kod koji ti je poslao pošiljalac.",
     "receivePlaceholder": "npr. 7-crossover-clockwork",
-    "receiveButton": "Primi"
+    "receiveButton": "Primi",
+    "sendTextButton": "Napiši poruku za slanje"
   },
   "send": {
     "title": "Slanje",
@@ -28,7 +29,9 @@
     "sendingFolder": "Šaljem folder {{name}}…",
     "success": "Datoteka uspješno poslana.",
     "successDetail": "{{name}} · {{size}}",
-    "successFolder": "Folder uspješno poslan."
+    "successFolder": "Folder uspješno poslan.",
+    "sendingText": "Slanje poruke…",
+    "successText": "Poruka poslana."
   },
   "folder": {
     "summary": "{{name}} · {{count}} datoteka · {{size}}"
@@ -162,5 +165,15 @@
     "cancelled": "Prijenos otkazan.",
     "serverUnreachable": "Nije moguće dohvatiti server za povezivanje. Možda je privremeno nedostupan. Otvori Postavke i prebaci se na PortalGems server ili koristi vlastiti - pogledaj vodič za samostalno hostanje.",
     "invalidServerUrl": "Adresa servera nije ispravna. Provjeri je u Postavkama. Rendezvous URL izgleda kao wss://host/v1, a relej kao tcp://host:4001."
+  },
+  "text": {
+    "title": "Poruka",
+    "compose": "Upiši poruku",
+    "placeholder": "Napiši nešto…",
+    "sendButton": "Pošalji poruku",
+    "empty": "Prvo napiši poruku.",
+    "received": "Poruka primljena",
+    "copy": "Kopiraj poruku",
+    "copied": "Kopirano!"
   }
 }

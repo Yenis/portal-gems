@@ -48,6 +48,8 @@ pub enum Error {
     Cancelled,
     #[error("this transfer was already accepted or rejected")]
     AlreadyConsumed,
+    #[error("this offer is a text message, not a file")]
+    NotAFileOffer,
     #[error("invalid server URL: {0}")]
     InvalidServerUrl(String),
     #[error("invalid folder archive: {0}")]
@@ -155,6 +157,36 @@ where
             pending::<()>(),
         )
         .await?;
+        Ok(())
+    };
+    futures_lite::future::or(work, async {
+        cancel.await;
+        Err(Error::Cancelled)
+    })
+    .await
+}
+
+/// Send a text message.
+///
+/// The text is the payload of the offer itself, so it travels through the
+/// mailbox and no transit connection is ever built - there is no relay hop, no
+/// direct connection, and nothing to report progress on. That is the reference
+/// client's behaviour for `wormhole send --text`, and matching it is what makes
+/// a message from PortalGems readable by `wormhole receive`.
+pub async fn send_text<F>(
+    text: &str,
+    code: Option<&str>,
+    server: &ServerConfig,
+    on_code: F,
+    cancel: impl std::future::Future<Output = ()>,
+) -> Result<(), Error>
+where
+    F: FnOnce(String),
+{
+    ensure_crypto_provider();
+    let work = async {
+        let (wormhole, _relay_hints) = sender_connect(code, server, on_code).await?;
+        transfer::send_message(wormhole, text.to_owned(), pending::<()>()).await?;
         Ok(())
     };
     futures_lite::future::or(work, async {
@@ -378,7 +410,16 @@ pub struct PendingReceive {
     pub file_name: String,
     pub file_size: u64,
     pub folder: Option<FolderOffer>,
-    request: transfer::ReceiveRequest,
+    /// The message, when the sender offered text rather than a file. A text
+    /// offer is already complete: it was acknowledged during `request_receive`,
+    /// so there is nothing to accept and `file_name`/`file_size` mean nothing.
+    pub text: Option<String>,
+    offer: Offer,
+}
+
+enum Offer {
+    File(transfer::ReceiveRequest),
+    Text,
 }
 
 /// Connect to the wormhole under `code` and wait for the sender's offer,
@@ -394,7 +435,7 @@ pub async fn request_receive(
         let parsed = code.parse().map_err(|_| Error::InvalidCode(code.into()))?;
         let mailbox = MailboxConnection::connect(app_config(server), parsed, false).await?;
         let wormhole = Wormhole::connect(mailbox).await?;
-        let request = transfer::request_file(
+        let offer = transfer::request_offer(
             wormhole,
             relay_hints,
             Abilities::ALL,
@@ -402,6 +443,19 @@ pub async fn request_receive(
         )
         .await?
         .ok_or(Error::Cancelled)?;
+
+        let request = match offer {
+            transfer::IncomingOffer::Text(text) => {
+                return Ok(PendingReceive {
+                    file_name: String::new(),
+                    file_size: 0,
+                    folder: None,
+                    text: Some(text),
+                    offer: Offer::Text,
+                });
+            },
+            transfer::IncomingOffer::File(request) => request,
+        };
 
         let folder = request.directory_offer().map(|d| FolderOffer {
             dir_name: sanitize_dir_name(&d.dir_name),
@@ -412,7 +466,8 @@ pub async fn request_receive(
             file_name: sanitize_file_name(&request.file_name()),
             file_size: request.file_size(),
             folder,
-            request,
+            text: None,
+            offer: Offer::File(request),
         })
     };
     futures_lite::future::or(work, async {
@@ -441,10 +496,14 @@ impl PendingReceive {
         H: FnMut(u64, u64) + 'static,
     {
         let dest_dir = dest_dir.as_ref();
+        let request = match self.offer {
+            Offer::Text => return Err(Error::NotAFileOffer),
+            Offer::File(request) => request,
+        };
         match &self.folder {
             None => {
                 let (dest, mut file) = create_unique(dest_dir, &self.file_name).await?;
-                self.request
+                request
                     .accept(
                         |info| on_transit(describe_transit(&info)),
                         progress,
@@ -457,8 +516,7 @@ impl PendingReceive {
             Some(folder) => {
                 let folder = folder.clone();
                 let (zip_path, mut zip_file) = create_unique(dest_dir, &self.file_name).await?;
-                let received = self
-                    .request
+                let received = request
                     .accept(
                         |info| on_transit(describe_transit(&info)),
                         progress,
@@ -491,8 +549,15 @@ impl PendingReceive {
 
     /// Decline the offer; the sender sees the transfer fail cleanly.
     pub async fn reject(self) -> Result<(), Error> {
-        self.request.reject().await?;
-        Ok(())
+        match self.offer {
+            // A text offer was acknowledged the moment it arrived; there is no
+            // sender still waiting on a decision to decline.
+            Offer::Text => Ok(()),
+            Offer::File(request) => {
+                request.reject().await?;
+                Ok(())
+            },
+        }
     }
 }
 
@@ -926,6 +991,49 @@ mod tests {
             sender.join().unwrap().unwrap();
             assert_eq!(std::fs::read(&src).unwrap(), std::fs::read(&dest).unwrap());
             std::fs::remove_dir_all(&dir).ok();
+        });
+    }
+
+    /// Text round-trip against the public mailbox server; run with
+    /// `cargo test -- --ignored` when online.
+    ///
+    /// Worth having as a network test rather than a unit test: the whole point
+    /// of a message offer is that it negotiates no transit, and only a real
+    /// peer proves the sequence is right.
+    #[test]
+    #[ignore]
+    fn text_roundtrip_over_public_server() {
+        futures_lite::future::block_on(async {
+            let code = format!(
+                "9{}-text-test",
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .subsec_nanos()
+                    % 1_000_000
+            );
+            let message = "hello from the engine - \u{e4}\u{f6}\u{fc} \u{1f600} \n multi\nline";
+            let send_code = code.clone();
+            let sender = std::thread::spawn(move || {
+                futures_lite::future::block_on(send_text(
+                    message,
+                    Some(&send_code),
+                    &ServerConfig::default(),
+                    |_| {},
+                    futures_lite::future::pending::<()>(),
+                ))
+            });
+            std::thread::sleep(std::time::Duration::from_secs(2));
+            let pending = request_receive(
+                &code,
+                &ServerConfig::default(),
+                futures_lite::future::pending::<()>(),
+            )
+            .await
+            .unwrap();
+            sender.join().unwrap().unwrap();
+            assert_eq!(pending.text.as_deref(), Some(message));
+            assert!(pending.folder.is_none());
         });
     }
 

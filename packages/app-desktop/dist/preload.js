@@ -23,6 +23,7 @@ import_electron.contextBridge.exposeInMainWorld("portalgems", {
   pickFolder: (defaultDir) => import_electron.ipcRenderer.invoke("pg:pickFolder", defaultDir),
   send: (id, path, code, server) => import_electron.ipcRenderer.invoke("pg:send", id, path, code, server),
   sendFolder: (id, path, code, server) => import_electron.ipcRenderer.invoke("pg:sendFolder", id, path, code, server),
+  sendText: (id, text, code, server) => import_electron.ipcRenderer.invoke("pg:sendText", id, text, code, server),
   requestReceive: (id, code, server) => import_electron.ipcRenderer.invoke("pg:requestReceive", id, code, server),
   accept: (id, destDir) => import_electron.ipcRenderer.invoke("pg:accept", id, destDir),
   // Resolves to where the file actually landed: `dir` is the real destination

@@ -5187,6 +5187,10 @@ import_electron.ipcMain.handle(
   (_e, id, filePath, code, server) => engine.sendFile(id, filePath, code ?? null, server ?? {}, forward(id))
 );
 import_electron.ipcMain.handle(
+  "pg:sendText",
+  (_e, id, text, code, server) => engine.sendText(id, text, code ?? null, server ?? {}, forward(id))
+);
+import_electron.ipcMain.handle(
   "pg:sendFolder",
   (_e, id, folderPath, code, server) => engine.sendFolder(id, folderPath, code ?? null, server ?? {}, forward(id))
 );

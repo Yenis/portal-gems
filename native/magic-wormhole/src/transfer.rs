@@ -37,6 +37,7 @@ mod v2;
 pub use v1::ReceiveRequest as ReceiveRequestV1;
 
 pub use v1::DirectoryOfferInfo;
+pub use v1::IncomingOffer;
 
 #[cfg(not(feature = "experimental-transfer-v2"))]
 pub use v1::ReceiveRequest;
@@ -439,7 +440,30 @@ pub async fn request_file(
     transit_abilities: transit::Abilities,
     cancel: impl Future<Output = ()>,
 ) -> Result<Option<v1::ReceiveRequest>, TransferError> {
+    v1::request_file_only(wormhole, relay_hints, transit_abilities, cancel).await
+}
+
+/// Wait for an offer of any kind - a file, a folder, or a text message.
+///
+/// Unlike [`request_file`] this can return a text message, which by the time it
+/// arrives has already been acknowledged and needs no further action.
+pub async fn request_offer(
+    wormhole: Wormhole,
+    relay_hints: Vec<transit::RelayHint>,
+    transit_abilities: transit::Abilities,
+    cancel: impl Future<Output = ()>,
+) -> Result<Option<v1::IncomingOffer>, TransferError> {
     v1::request(wormhole, relay_hints, transit_abilities, cancel).await
+}
+
+/// Send a text message. The text travels through the mailbox, so no transit
+/// connection is built and the relay is never involved.
+pub async fn send_message(
+    wormhole: Wormhole,
+    message: String,
+    cancel: impl Future<Output = ()>,
+) -> Result<(), TransferError> {
+    v1::send_message(wormhole, message, cancel).await
 }
 
 /// Send a file to the other side

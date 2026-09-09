@@ -42,6 +42,12 @@ contextBridge.exposeInMainWorld('portalgems', {
     code?: string,
     server?: ServerConfig
   ): Promise<void> => ipcRenderer.invoke('pg:sendFolder', id, path, code, server),
+  sendText: (
+    id: number,
+    text: string,
+    code?: string,
+    server?: ServerConfig
+  ): Promise<void> => ipcRenderer.invoke('pg:sendText', id, text, code, server),
   requestReceive: (
     id: number,
     code: string,
@@ -50,6 +56,7 @@ contextBridge.exposeInMainWorld('portalgems', {
     fileName: string;
     fileSize: number;
     folder?: { dirName: string; numFiles: number; numBytes: number } | null;
+    text?: string | null;
   }> => ipcRenderer.invoke('pg:requestReceive', id, code, server),
   accept: (id: number, destDir: string): Promise<string> =>
     ipcRenderer.invoke('pg:accept', id, destDir),
