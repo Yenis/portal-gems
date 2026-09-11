@@ -10,11 +10,13 @@ import {
   newDeviceId,
   parseHandshake,
   PAIRING_HANDSHAKE_FILE,
+  PAIRED_ATTEMPT_TIMEOUT_MS,
   PAIRED_RECEIVE_TIMEOUT_MS,
+  parsePairingPayload,
   type PairedDevice,
   type PairingPayload,
 } from '@portalgems/core';
-import { receiveFile, sendFile } from 'wormhole-rn';
+import { receiveFile, requestReceive, sendFile } from 'wormhole-rn';
 import {
   cacheDir,
   deleteFile,
@@ -55,6 +57,57 @@ export async function addDevice(name: string, secret: string): Promise<PairedDev
 export async function removeDevice(id: string): Promise<void> {
   const devices = await loadDevices();
   await saveDevices(devices.filter((d) => d.id !== id));
+}
+
+/**
+ * Run one attempt on a derived code, abandoned after PAIRED_ATTEMPT_TIMEOUT_MS
+ * or when `outer` aborts, whichever comes first.
+ *
+ * A nameplate still held by a sender that died while waiting makes a receiver
+ * join and then wait forever for a handshake that never comes, and a polling
+ * loop's own deadline is only checked between attempts - so without this one
+ * stale code stalls the whole loop. Aborting rejects the attempt, and the
+ * caller moves on to the next candidate.
+ */
+export async function withAttemptBound<T>(
+  outer: AbortSignal,
+  run: (signal: AbortSignal) => Promise<T>
+): Promise<T> {
+  const attempt = new AbortController();
+  const forward = () => attempt.abort();
+  if (outer.aborted) attempt.abort();
+  outer.addEventListener('abort', forward);
+  const timer = setTimeout(() => attempt.abort(), PAIRED_ATTEMPT_TIMEOUT_MS);
+  try {
+    return await run(attempt.signal);
+  } finally {
+    clearTimeout(timer);
+    outer.removeEventListener('abort', forward);
+  }
+}
+
+/** The code carried something other than a pairing invitation. */
+export class NotAnInvitationError extends Error {}
+
+/**
+ * Joining side of pairing over a code: receive the invitation the other
+ * device sent as a text message. A file offered on the code is declined, so
+ * the sender fails cleanly instead of waiting.
+ */
+export async function receivePairingInvitation(
+  code: string,
+  signal: AbortSignal
+): Promise<PairingPayload> {
+  const server = await currentServer();
+  const incoming = await requestReceive(code, server, { signal });
+  const text = incoming.text();
+  if (text === undefined) {
+    incoming.reject().catch(() => undefined);
+    throw new NotAnInvitationError();
+  }
+  const payload = parsePairingPayload(text);
+  if (!payload) throw new NotAnInvitationError();
+  return payload;
 }
 
 const quietListener = {
@@ -103,9 +156,9 @@ export async function waitForPairingAsDisplayer(
       if (signal.aborted) break;
       try {
         const code = deriveCode(payload.secret, bucket);
-        const saved = await receiveFile(code, incomingDir, server, quietListener, {
-          signal,
-        });
+        const saved = await withAttemptBound(signal, (attempt) =>
+          receiveFile(code, incomingDir, server, quietListener, { signal: attempt })
+        );
         const message = parseHandshake(await readTextFile(saved));
         deleteFile(saved).catch(() => undefined);
         if (message) {

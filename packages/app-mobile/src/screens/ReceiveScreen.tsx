@@ -34,6 +34,7 @@ import {
   withTransferService,
   type PickedDirectory,
 } from '../native';
+import { withAttemptBound } from '../pairing';
 import { currentServer } from '../server';
 import { useTheme } from '../theme';
 
@@ -128,7 +129,9 @@ export default function ReceiveScreen({
 
     if (device) {
       // Paired receive: poll the derived candidate codes until the sender
-      // shows up or we give up. An unclaimed nameplate just means "not yet".
+      // shows up or we give up. An unclaimed nameplate just means "not yet";
+      // each attempt is bounded, because a nameplate held by a sender that
+      // died while waiting would otherwise stall the loop indefinitely.
       (async () => {
         const server = await currentServer();
         const deadline = Date.now() + PAIRED_RECEIVE_TIMEOUT_MS;
@@ -138,9 +141,9 @@ export default function ReceiveScreen({
             if (controller.signal.aborted) break;
             try {
               const derived = deriveCode(device.secret, bucket);
-              const incoming = await requestReceive(derived, server, {
-                signal: controller.signal,
-              });
+              const incoming = await withAttemptBound(controller.signal, (attempt) =>
+                requestReceive(derived, server, { signal: attempt })
+              );
               gotOffer(incoming);
               return;
             } catch (e) {

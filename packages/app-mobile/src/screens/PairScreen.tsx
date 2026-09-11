@@ -1,9 +1,11 @@
 import React, { useRef, useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Clipboard from '@react-native-clipboard/clipboard';
 import QRCode from 'react-native-qrcode-svg';
+import { sendText } from 'wormhole-rn';
 import {
+  classifyPairingInput,
   createPairingPayload,
   encodePairingPayload,
   fontSize,
@@ -14,6 +16,7 @@ import {
 } from '@portalgems/core';
 import {
   Card,
+  CodeBox,
   GhostButton,
   Muted,
   PrimaryButton,
@@ -24,12 +27,16 @@ import { friendlyError } from '../errors';
 import { deviceName, scanQr } from '../native';
 import {
   completePairingAsScanner,
+  NotAnInvitationError,
+  receivePairingInvitation,
   waitForPairingAsDisplayer,
 } from '../pairing';
+import { currentServer } from '../server';
 import { useTheme } from '../theme';
 
 type Phase =
   | 'menu'
+  | 'hosting'
   | 'showing'
   | 'scanning'
   | 'working'
@@ -41,7 +48,8 @@ export default function PairScreen({ onHome }: { onHome: () => void }) {
   const c = useTheme();
   const [phase, setPhase] = useState<Phase>('menu');
   const [payload, setPayload] = useState<PairingPayload | null>(null);
-  const [manual, setManual] = useState('');
+  const [entry, setEntry] = useState('');
+  const [pairCode, setPairCode] = useState('');
   const [peerName, setPeerName] = useState('');
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
@@ -56,18 +64,51 @@ export default function PairScreen({ onHome }: { onHome: () => void }) {
     setPhase('error');
   };
 
-  const show = () => {
-    const p = createPairingPayload(deviceName);
-    setPayload(p);
-    setPhase('showing');
-    const controller = new AbortController();
-    abortRef.current = controller;
+  // Once the other device holds the payload - scanned, pasted or received
+  // over a code - this side waits for its handshake on the derived codes.
+  const awaitHandshake = (p: PairingPayload, controller: AbortController) => {
     waitForPairingAsDisplayer(p, controller.signal).then(
       (device) => succeed(device.name),
       (e) => {
         if (!controller.signal.aborted) fail(e);
       }
     );
+  };
+
+  const show = () => {
+    const p = createPairingPayload(deviceName);
+    setPayload(p);
+    setPhase('showing');
+    const controller = new AbortController();
+    abortRef.current = controller;
+    awaitHandshake(p, controller);
+  };
+
+  // The alternative for a peer without a camera: allocate an ordinary
+  // wormhole code and send the encoded payload through it as a text message.
+  // When the send completes the other device has the payload, exactly as if
+  // it had scanned the QR code.
+  const hostWithCode = async () => {
+    const p = createPairingPayload(deviceName);
+    const controller = new AbortController();
+    abortRef.current = controller;
+    setPairCode('');
+    setPhase('hosting');
+    try {
+      const server = await currentServer();
+      await sendText(
+        encodePairingPayload(p),
+        undefined,
+        server,
+        { onCode: setPairCode, onTransit: () => {}, onProgress: () => {} },
+        { signal: controller.signal }
+      );
+    } catch (e) {
+      if (!controller.signal.aborted) fail(e);
+      return;
+    }
+    setPhase('working');
+    awaitHandshake(p, controller);
   };
 
   const pairFromPayload = (p: PairingPayload) => {
@@ -107,19 +148,37 @@ export default function PairScreen({ onHome }: { onHome: () => void }) {
     pairFromPayload(p);
   };
 
-  const manualPair = () => {
-    const p = parsePairingPayload(manual);
-    if (!p) {
+  // One field takes either the code from the other device or a pasted
+  // payload.
+  const join = async () => {
+    const input = classifyPairingInput(entry);
+    if (!input) {
       setError(t('pair.invalidPayload'));
       setPhase('error');
       return;
     }
-    pairFromPayload(p);
+    if (input.kind === 'payload') {
+      pairFromPayload(input.payload);
+      return;
+    }
+    setPhase('working');
+    const controller = new AbortController();
+    abortRef.current = controller;
+    try {
+      pairFromPayload(await receivePairingInvitation(input.code, controller.signal));
+    } catch (e) {
+      if (controller.signal.aborted) return;
+      if (e instanceof NotAnInvitationError) {
+        setError(t('pair.notAnInvitation'));
+        setPhase('error');
+      } else {
+        fail(e);
+      }
+    }
   };
 
-  const copyPayload = () => {
-    if (!payload) return;
-    Clipboard.setString(encodePairingPayload(payload));
+  const copy = (value: string) => {
+    Clipboard.setString(value);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
@@ -130,33 +189,61 @@ export default function PairScreen({ onHome }: { onHome: () => void }) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: c.background }]}>
+    <ScrollView
+      style={{ backgroundColor: c.background }}
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled">
       <Title onBack={onHome}>{t('pair.title')}</Title>
 
       {phase === 'menu' || phase === 'scanning' ? (
+        <>
+          <Card>
+            <PrimaryButton label={t('pair.showButton')} onPress={show} />
+            <PrimaryButton label={t('pair.scanButton')} onPress={scan} />
+          </Card>
+          <Card>
+            <Muted>{t('pair.codeSectionHint')}</Muted>
+            <GhostButton label={t('pair.codeButton')} onPress={hostWithCode} />
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  borderColor: c.border,
+                  color: c.text,
+                  backgroundColor: c.background,
+                },
+              ]}
+              value={entry}
+              onChangeText={setEntry}
+              placeholder={t('pair.entryPlaceholder')}
+              placeholderTextColor={c.textMuted}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <GhostButton
+              label={t('pair.entryButton')}
+              onPress={join}
+              disabled={classifyPairingInput(entry) === null}
+            />
+          </Card>
+        </>
+      ) : null}
+
+      {phase === 'hosting' ? (
         <Card>
-          <PrimaryButton label={t('pair.showButton')} onPress={show} />
-          <PrimaryButton label={t('pair.scanButton')} onPress={scan} />
-          <TextInput
-            style={[
-              styles.input,
-              {
-                borderColor: c.border,
-                color: c.text,
-                backgroundColor: c.background,
-              },
-            ]}
-            value={manual}
-            onChangeText={setManual}
-            placeholder={t('pair.manualPlaceholder')}
-            placeholderTextColor={c.textMuted}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          <GhostButton
-            label={t('pair.manualButton')}
-            onPress={manualPair}
-          />
+          {pairCode ? (
+            <>
+              <Muted>{t('pair.codeHint')}</Muted>
+              <CodeBox code={pairCode} />
+              <PrimaryButton
+                label={copied ? t('send.codeCopied') : t('send.copyCode')}
+                onPress={() => copy(pairCode)}
+              />
+              <Muted>{t('pair.hostWaiting')}</Muted>
+            </>
+          ) : (
+            <Muted>{t('receive.connecting')}</Muted>
+          )}
         </Card>
       ) : null}
 
@@ -170,7 +257,7 @@ export default function PairScreen({ onHome }: { onHome: () => void }) {
           </View>
           <PrimaryButton
             label={copied ? t('pair.copied') : t('pair.copyPayload')}
-            onPress={copyPayload}
+            onPress={() => copy(encodePairingPayload(payload))}
           />
           <Muted>{t('pair.waiting')}</Muted>
         </Card>
@@ -200,13 +287,12 @@ export default function PairScreen({ onHome }: { onHome: () => void }) {
       ) : (
         <GhostButton label={t('common.cancel')} danger onPress={cancelAndBack} />
       )}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     padding: spacing(5),
     paddingTop: spacing(14),
     gap: spacing(5),

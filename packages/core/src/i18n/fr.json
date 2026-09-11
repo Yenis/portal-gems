@@ -63,8 +63,6 @@
     "showButton": "Afficher un QR code",
     "showHint": "Scannez ce code QR avec l'autre appareil, ou copiez le code d'association et collez-le là-bas. Quiconque voit ce code peut s'associer à vous - partagez-le uniquement en privé.",
     "scanButton": "Scanner un code QR",
-    "manualPlaceholder": "…ou collez un code d'association ici",
-    "manualButton": "Associer avec le code collé",
     "copyPayload": "Copier le code d'association",
     "copied": "Copié !",
     "waiting": "En attente que l'autre appareil termine l'association…",
@@ -76,7 +74,8 @@
     "hostWaiting": "En attente de la saisie du code sur l'autre appareil…",
     "entryPlaceholder": "Saisissez le code de l'autre appareil",
     "entryButton": "Associer",
-    "notAnInvitation": "Ce code ne contenait pas d'invitation d'association. Sur l'autre appareil, choisissez Associer avec un code."
+    "notAnInvitation": "Ce code ne contenait pas d'invitation d'association. Sur l'autre appareil, choisissez Associer avec un code.",
+    "codeSectionHint": "L'autre appareil n'a pas de caméra - un ordinateur, par exemple ? Associez-vous plutôt avec un code."
   },
   "devices": {
     "title": "Appareils",

@@ -63,8 +63,6 @@
     "showButton": "Show a QR code",
     "showHint": "Scan this QR code with the other device, or copy the pairing code and paste it there. Anyone who sees this code can pair with you - share it privately.",
     "scanButton": "Scan QR code",
-    "manualPlaceholder": "…or paste a pairing code here",
-    "manualButton": "Pair with pasted code",
     "copyPayload": "Copy pairing code",
     "copied": "Copied!",
     "waiting": "Waiting for the other device to finish pairing…",
@@ -76,7 +74,8 @@
     "hostWaiting": "Waiting for the other device to enter the code…",
     "entryPlaceholder": "Enter the code from the other device",
     "entryButton": "Pair",
-    "notAnInvitation": "That code didn't carry a pairing invitation. On the other device, choose Pair using a code."
+    "notAnInvitation": "That code didn't carry a pairing invitation. On the other device, choose Pair using a code.",
+    "codeSectionHint": "No camera on the other device - a computer, say? Pair with a code instead."
   },
   "devices": {
     "title": "Devices",

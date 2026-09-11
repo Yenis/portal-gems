@@ -63,8 +63,6 @@
     "showButton": "Prikaži QR kod",
     "showHint": "Skeniraj ovaj QR kod drugim uređajem ili kopiraj kod za uparivanje i zalijepi ga tamo. Ko god vidi ovaj kod može se upariti s tobom - dijeli ga samo privatno.",
     "scanButton": "Skeniraj QR kod",
-    "manualPlaceholder": "…ili zalijepi kod za uparivanje ovdje",
-    "manualButton": "Upari zalijepljenim kodom",
     "copyPayload": "Kopiraj kod za uparivanje",
     "copied": "Kopirano!",
     "waiting": "Čekam da drugi uređaj završi uparivanje…",
@@ -76,7 +74,8 @@
     "hostWaiting": "Čekam da drugi uređaj unese kod…",
     "entryPlaceholder": "Unesi kod s drugog uređaja",
     "entryButton": "Upari",
-    "notAnInvitation": "Taj kod nije sadržavao pozivnicu za uparivanje. Na drugom uređaju odaberi Upari pomoću koda."
+    "notAnInvitation": "Taj kod nije sadržavao pozivnicu za uparivanje. Na drugom uređaju odaberi Upari pomoću koda.",
+    "codeSectionHint": "Drugi uređaj nema kameru, recimo računar? Onda uparite pomoću koda."
   },
   "devices": {
     "title": "Uređaji",

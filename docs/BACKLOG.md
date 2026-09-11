@@ -7,9 +7,38 @@ rediscover it.
 ## Pairing without a camera - in progress
 
 **Status:** pairing over a code is built and verified on the desktop (two
-desktops paired with each other, then transferred between the new pairing);
-Android and Symbian next. See "Getting the payload across" in
-`docs/ARCHITECTURE.md` for how it works.
+desktops paired with each other, then transferred between the new pairing)
+and on Android, where it sits below the QR buttons as the alternative for a
+peer without a camera (verified on an emulator against the desktop in both
+directions, plus a paired transfer). Symbian next. See "Getting the payload
+across" in `docs/ARCHITECTURE.md` for how it works.
+
+## Android: a cancelled receive leaks its partial file and renames the next
+
+Found while testing pairing, unrelated to it. The engine stages an incoming
+file in the app's private `incomingDir` under a never-overwrite name. A
+receive that is cancelled or fails leaves its partial file there, so the next
+transfer of the same name is staged as `name (1).ext` - and `ReceiveScreen`
+takes the final name from the staged path (`savedPath.split('/').pop()`), so
+the `(1)` reaches Downloads even when nothing there has that name. Two small
+fixes: save under the offer's own name, and delete the staged file when the
+transfer does not complete. Desktop is not affected; it stages each transfer
+in its own `incoming/<id>` directory.
+
+## Paired send: a dead sender blocks its own code for the rest of the bucket
+
+A paired sender must use the code derived for the current five-minute
+bucket - it cannot skip to another one the way a receiver can. If a sender
+dies while waiting, its claim on that nameplate stays on the server.
+
+Observed: a receiver that joins such a nameplate waits for a handshake that
+never comes (now bounded by `PAIRED_ATTEMPT_TIMEOUT_MS`), and once further
+claims pile up the server rejects the nameplate outright. Not yet observed
+directly, but implied by the same mechanism: a sender retrying within the
+same bucket lands on that stale nameplate too, since it has no other code to
+use. If that holds, a paired send interrupted by a crash cannot be retried
+until the bucket rolls over. Worth confirming first; the fix would be a
+retry that moves to a fresh code both sides can still find.
 
 Pairing currently assumes one device can photograph another's screen. That
 assumption fails in more cases than it holds:

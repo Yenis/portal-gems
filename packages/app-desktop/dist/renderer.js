@@ -27531,8 +27531,6 @@
       showButton: "Prika\u017Ei QR kod",
       showHint: "Skeniraj ovaj QR kod drugim ure\u0111ajem ili kopiraj kod za uparivanje i zalijepi ga tamo. Ko god vidi ovaj kod mo\u017Ee se upariti s tobom - dijeli ga samo privatno.",
       scanButton: "Skeniraj QR kod",
-      manualPlaceholder: "\u2026ili zalijepi kod za uparivanje ovdje",
-      manualButton: "Upari zalijepljenim kodom",
       copyPayload: "Kopiraj kod za uparivanje",
       copied: "Kopirano!",
       waiting: "\u010Cekam da drugi ure\u0111aj zavr\u0161i uparivanje\u2026",
@@ -27544,7 +27542,8 @@
       hostWaiting: "\u010Cekam da drugi ure\u0111aj unese kod\u2026",
       entryPlaceholder: "Unesi kod s drugog ure\u0111aja",
       entryButton: "Upari",
-      notAnInvitation: "Taj kod nije sadr\u017Eavao pozivnicu za uparivanje. Na drugom ure\u0111aju odaberi Upari pomo\u0107u koda."
+      notAnInvitation: "Taj kod nije sadr\u017Eavao pozivnicu za uparivanje. Na drugom ure\u0111aju odaberi Upari pomo\u0107u koda.",
+      codeSectionHint: "Drugi ure\u0111aj nema kameru, recimo ra\u010Dunar? Onda uparite pomo\u0107u koda."
     },
     devices: {
       title: "Ure\u0111aji",
@@ -27718,8 +27717,6 @@
       showButton: "QR-Code anzeigen",
       showHint: "Scanne diesen QR-Code mit dem anderen Ger\xE4t oder kopiere den Kopplungscode und f\xFCge ihn dort ein. Wer diesen Code sieht, kann sich mit dir koppeln - teile ihn nur privat.",
       scanButton: "QR-Code scannen",
-      manualPlaceholder: "\u2026oder Kopplungscode hier einf\xFCgen",
-      manualButton: "Mit eingef\xFCgtem Code koppeln",
       copyPayload: "Kopplungscode kopieren",
       copied: "Kopiert!",
       waiting: "Warte, bis das andere Ger\xE4t die Kopplung abschlie\xDFt\u2026",
@@ -27731,7 +27728,8 @@
       hostWaiting: "Warte darauf, dass das andere Ger\xE4t den Code eingibt\u2026",
       entryPlaceholder: "Code vom anderen Ger\xE4t eingeben",
       entryButton: "Koppeln",
-      notAnInvitation: "Dieser Code enthielt keine Kopplungseinladung. W\xE4hle auf dem anderen Ger\xE4t \u201EMit einem Code koppeln\u201C."
+      notAnInvitation: "Dieser Code enthielt keine Kopplungseinladung. W\xE4hle auf dem anderen Ger\xE4t \u201EMit einem Code koppeln\u201C.",
+      codeSectionHint: "Keine Kamera am anderen Ger\xE4t, etwa bei einem Computer? Dann koppelt ihr stattdessen mit einem Code."
     },
     devices: {
       title: "Ger\xE4te",
@@ -27905,8 +27903,6 @@
       showButton: "Show a QR code",
       showHint: "Scan this QR code with the other device, or copy the pairing code and paste it there. Anyone who sees this code can pair with you - share it privately.",
       scanButton: "Scan QR code",
-      manualPlaceholder: "\u2026or paste a pairing code here",
-      manualButton: "Pair with pasted code",
       copyPayload: "Copy pairing code",
       copied: "Copied!",
       waiting: "Waiting for the other device to finish pairing\u2026",
@@ -27918,7 +27914,8 @@
       hostWaiting: "Waiting for the other device to enter the code\u2026",
       entryPlaceholder: "Enter the code from the other device",
       entryButton: "Pair",
-      notAnInvitation: "That code didn't carry a pairing invitation. On the other device, choose Pair using a code."
+      notAnInvitation: "That code didn't carry a pairing invitation. On the other device, choose Pair using a code.",
+      codeSectionHint: "No camera on the other device - a computer, say? Pair with a code instead."
     },
     devices: {
       title: "Devices",
@@ -28092,8 +28089,6 @@
       showButton: "Mostrar un c\xF3digo QR",
       showHint: "Escanea este c\xF3digo QR con el otro dispositivo, o copia el c\xF3digo de emparejamiento y p\xE9galo all\xED. Cualquiera que vea este c\xF3digo puede emparejarse contigo - comp\xE1rtelo solo en privado.",
       scanButton: "Escanear c\xF3digo QR",
-      manualPlaceholder: "\u2026o pega aqu\xED un c\xF3digo de emparejamiento",
-      manualButton: "Emparejar con el c\xF3digo pegado",
       copyPayload: "Copiar c\xF3digo de emparejamiento",
       copied: "\xA1Copiado!",
       waiting: "Esperando a que el otro dispositivo termine el emparejamiento\u2026",
@@ -28105,7 +28100,8 @@
       hostWaiting: "Esperando a que el otro dispositivo introduzca el c\xF3digo\u2026",
       entryPlaceholder: "Introduce el c\xF3digo del otro dispositivo",
       entryButton: "Emparejar",
-      notAnInvitation: "Ese c\xF3digo no conten\xEDa una invitaci\xF3n de emparejamiento. En el otro dispositivo, elige Emparejar con un c\xF3digo."
+      notAnInvitation: "Ese c\xF3digo no conten\xEDa una invitaci\xF3n de emparejamiento. En el otro dispositivo, elige Emparejar con un c\xF3digo.",
+      codeSectionHint: "\xBFEl otro dispositivo no tiene c\xE1mara, como un ordenador? Empareja con un c\xF3digo en su lugar."
     },
     devices: {
       title: "Dispositivos",
@@ -28279,8 +28275,6 @@
       showButton: "Afficher un QR code",
       showHint: "Scannez ce code QR avec l'autre appareil, ou copiez le code d'association et collez-le l\xE0-bas. Quiconque voit ce code peut s'associer \xE0 vous - partagez-le uniquement en priv\xE9.",
       scanButton: "Scanner un code QR",
-      manualPlaceholder: "\u2026ou collez un code d'association ici",
-      manualButton: "Associer avec le code coll\xE9",
       copyPayload: "Copier le code d'association",
       copied: "Copi\xE9 !",
       waiting: "En attente que l'autre appareil termine l'association\u2026",
@@ -28292,7 +28286,8 @@
       hostWaiting: "En attente de la saisie du code sur l'autre appareil\u2026",
       entryPlaceholder: "Saisissez le code de l'autre appareil",
       entryButton: "Associer",
-      notAnInvitation: "Ce code ne contenait pas d'invitation d'association. Sur l'autre appareil, choisissez Associer avec un code."
+      notAnInvitation: "Ce code ne contenait pas d'invitation d'association. Sur l'autre appareil, choisissez Associer avec un code.",
+      codeSectionHint: "L'autre appareil n'a pas de cam\xE9ra - un ordinateur, par exemple ? Associez-vous plut\xF4t avec un code."
     },
     devices: {
       title: "Appareils",
@@ -28466,8 +28461,6 @@
       showButton: "\u041F\u043E\u043A\u0430\u0437\u0430\u0442\u044C QR-\u043A\u043E\u0434",
       showHint: "\u041E\u0442\u0441\u043A\u0430\u043D\u0438\u0440\u0443\u0439\u0442\u0435 \u044D\u0442\u043E\u0442 QR-\u043A\u043E\u0434 \u0434\u0440\u0443\u0433\u0438\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E\u043C \u0438\u043B\u0438 \u0441\u043A\u043E\u043F\u0438\u0440\u0443\u0439\u0442\u0435 \u043A\u043E\u0434 \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u044F \u0438 \u0432\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u0435\u0433\u043E \u0442\u0430\u043C. \u041B\u044E\u0431\u043E\u0439, \u043A\u0442\u043E \u0443\u0432\u0438\u0434\u0438\u0442 \u044D\u0442\u043E\u0442 \u043A\u043E\u0434, \u0441\u043C\u043E\u0436\u0435\u0442 \u0441\u0432\u044F\u0437\u0430\u0442\u044C\u0441\u044F \u0441 \u0432\u0430\u043C\u0438 - \u0434\u0435\u043B\u0438\u0442\u0435\u0441\u044C \u0438\u043C \u0442\u043E\u043B\u044C\u043A\u043E \u043F\u0440\u0438\u0432\u0430\u0442\u043D\u043E.",
       scanButton: "\u0421\u043A\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u0442\u044C QR-\u043A\u043E\u0434",
-      manualPlaceholder: "\u2026\u0438\u043B\u0438 \u0432\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u043A\u043E\u0434 \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u044F \u0441\u044E\u0434\u0430",
-      manualButton: "\u0421\u0432\u044F\u0437\u0430\u0442\u044C \u043F\u043E \u0432\u0441\u0442\u0430\u0432\u043B\u0435\u043D\u043D\u043E\u043C\u0443 \u043A\u043E\u0434\u0443",
       copyPayload: "\u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043A\u043E\u0434 \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u044F",
       copied: "\u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D\u043E!",
       waiting: "\u041E\u0436\u0438\u0434\u0430\u043D\u0438\u0435, \u043F\u043E\u043A\u0430 \u0434\u0440\u0443\u0433\u043E\u0435 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E \u0437\u0430\u0432\u0435\u0440\u0448\u0438\u0442 \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u0435\u2026",
@@ -28479,7 +28472,8 @@
       hostWaiting: "\u041E\u0436\u0438\u0434\u0430\u043D\u0438\u0435, \u043F\u043E\u043A\u0430 \u0434\u0440\u0443\u0433\u043E\u0435 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E \u0432\u0432\u0435\u0434\u0451\u0442 \u043A\u043E\u0434\u2026",
       entryPlaceholder: "\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u043A\u043E\u0434 \u0441 \u0434\u0440\u0443\u0433\u043E\u0433\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430",
       entryButton: "\u0421\u0432\u044F\u0437\u0430\u0442\u044C",
-      notAnInvitation: "\u042D\u0442\u043E\u0442 \u043A\u043E\u0434 \u043D\u0435 \u0441\u043E\u0434\u0435\u0440\u0436\u0430\u043B \u043F\u0440\u0438\u0433\u043B\u0430\u0448\u0435\u043D\u0438\u044F \u0434\u043B\u044F \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u044F. \u041D\u0430 \u0434\u0440\u0443\u0433\u043E\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0435 \u0432\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \xAB\u0421\u0432\u044F\u0437\u0430\u0442\u044C \u043F\u043E \u043A\u043E\u0434\u0443\xBB."
+      notAnInvitation: "\u042D\u0442\u043E\u0442 \u043A\u043E\u0434 \u043D\u0435 \u0441\u043E\u0434\u0435\u0440\u0436\u0430\u043B \u043F\u0440\u0438\u0433\u043B\u0430\u0448\u0435\u043D\u0438\u044F \u0434\u043B\u044F \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u044F. \u041D\u0430 \u0434\u0440\u0443\u0433\u043E\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0435 \u0432\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \xAB\u0421\u0432\u044F\u0437\u0430\u0442\u044C \u043F\u043E \u043A\u043E\u0434\u0443\xBB.",
+      codeSectionHint: "\u041D\u0430 \u0434\u0440\u0443\u0433\u043E\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0435 \u043D\u0435\u0442 \u043A\u0430\u043C\u0435\u0440\u044B - \u043D\u0430\u043F\u0440\u0438\u043C\u0435\u0440, \u044D\u0442\u043E \u043A\u043E\u043C\u043F\u044C\u044E\u0442\u0435\u0440? \u0422\u043E\u0433\u0434\u0430 \u0441\u0432\u044F\u0436\u0438\u0442\u0435\u0441\u044C \u043F\u043E \u043A\u043E\u0434\u0443."
     },
     devices: {
       title: "\u0423\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430",

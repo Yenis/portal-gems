@@ -166,7 +166,10 @@ Consumed by both apps as **npm `file:` symlinks** (see §5 build gotchas).
     handshake (joiner sends its name over the derived code, displayer polls for
     it). No new format and no new derivation, so existing pairings and the QR
     path are untouched. `classifyPairingInput` lets one field take either a
-    typed code or a pasted payload.
+    typed code or a pasted payload. Desktop leads with the code (it has no
+    camera); Android keeps its QR buttons first and offers the code below them
+    for a peer without a camera. Mobile's `receivePairingInvitation` declines a
+    file offered on the code, so its sender fails cleanly.
   - **Why each attempt is bounded.** A nameplate still claimed by a sender
     that died while waiting (killed, crashed, battery) makes a receiver join
     and then wait forever for a PAKE that never comes; the loop's own deadline
@@ -175,7 +178,9 @@ Consumed by both apps as **npm `file:` symlinks** (see §5 build gotchas).
     timed-out senders left exactly such claims. Reproduced on purpose (one
     SIGKILLed sender on `b+1`) and shown abandoned at 10001 ms before the real
     offer was found. An abandoned attempt leaves our own claim, so the stale
-    nameplate reports "crowded" and fails fast from then on.
+    nameplate reports "crowded" and fails fast from then on. Mobile does the
+    same through `withAttemptBound`, an AbortController per attempt that
+    follows the outer signal.
 - `errors.ts` - engine-string → i18n-key mapping.
 
 Tests: `cd packages/core && npm test` (vitest, 40 tests).

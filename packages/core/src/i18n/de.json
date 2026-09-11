@@ -63,8 +63,6 @@
     "showButton": "QR-Code anzeigen",
     "showHint": "Scanne diesen QR-Code mit dem anderen Gerät oder kopiere den Kopplungscode und füge ihn dort ein. Wer diesen Code sieht, kann sich mit dir koppeln - teile ihn nur privat.",
     "scanButton": "QR-Code scannen",
-    "manualPlaceholder": "…oder Kopplungscode hier einfügen",
-    "manualButton": "Mit eingefügtem Code koppeln",
     "copyPayload": "Kopplungscode kopieren",
     "copied": "Kopiert!",
     "waiting": "Warte, bis das andere Gerät die Kopplung abschließt…",
@@ -76,7 +74,8 @@
     "hostWaiting": "Warte darauf, dass das andere Gerät den Code eingibt…",
     "entryPlaceholder": "Code vom anderen Gerät eingeben",
     "entryButton": "Koppeln",
-    "notAnInvitation": "Dieser Code enthielt keine Kopplungseinladung. Wähle auf dem anderen Gerät „Mit einem Code koppeln“."
+    "notAnInvitation": "Dieser Code enthielt keine Kopplungseinladung. Wähle auf dem anderen Gerät „Mit einem Code koppeln“.",
+    "codeSectionHint": "Keine Kamera am anderen Gerät, etwa bei einem Computer? Dann koppelt ihr stattdessen mit einem Code."
   },
   "devices": {
     "title": "Geräte",
