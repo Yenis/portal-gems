@@ -11,6 +11,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <poll.h>
+#include <time.h>
 #include <netdb.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -151,9 +153,31 @@ int wh_net_write(wh_conn *c, const unsigned char *buf, unsigned long len)
     return 0;
 }
 
+static unsigned long g_read_timeout_ms = 0;   /* 0: the socket's own */
+
+void wh_net_set_read_timeout(unsigned long ms)
+{
+    g_read_timeout_ms = ms;
+}
+
+unsigned long wh_net_unix_time(void)
+{
+    return (unsigned long)time(NULL);
+}
+
 long wh_net_read(wh_conn *c, unsigned char *buf, unsigned long cap)
 {
     ssize_t n;
+    if (g_read_timeout_ms) {
+        struct pollfd pfd;
+        int rc;
+        pfd.fd = c->fd;
+        pfd.events = POLLIN;
+        do {
+            rc = poll(&pfd, 1, (int)g_read_timeout_ms);
+        } while (rc < 0 && errno == EINTR);
+        if (rc <= 0) return -1;
+    }
     do {
         n = recv(c->fd, buf, (size_t)cap, 0);
     } while (n < 0 && errno == EINTR);

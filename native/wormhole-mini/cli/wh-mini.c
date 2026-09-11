@@ -41,6 +41,9 @@
 #include "../src/wordlist.h"
 #include "../src/zip.h"
 #include "../src/zipw.h"
+#include "../src/pair.h"
+#include "../src/paired.h"
+#include "../src/base64.h"
 
 #define APPID "lothar.com/wormhole/text-or-file-xfer"
 #define RXCAP 65536
@@ -719,6 +722,375 @@ static int cmd_receive(const char *host, unsigned int port, const char *path,
     return 0;
 }
 
+/* ---- Pairing -------------------------------------------------------------
+ *
+ * The same flows the apps run, so the C side can be tested against a real
+ * desktop instance before any of it goes near a phone:
+ *
+ *   pair-host      allocate a code, send the invitation through it as a text
+ *                  message, then wait for the handshake on the derived code
+ *   pair-join      receive an invitation over a code, then send the handshake
+ *   pairs          list stored pairings with the code each derives right now -
+ *                  compare with the desktop's PG_SMOKE_DUMP_PAIRCODE
+ *   paired-send    send a file to a paired device
+ *   paired-receive receive a file from a paired device
+ *
+ * Pairings live in a plain file of "<secret base64url>\t<name>" lines. That
+ * is fine for a test tool and nothing more; the phone keeps its pairings in
+ * its private directory. */
+
+typedef struct {
+    const unsigned char *p;
+    unsigned long len, off;
+} TMemSource;
+
+static long mem_source(void *ctx, unsigned char *buf, unsigned long cap)
+{
+    TMemSource *m = (TMemSource *)ctx;
+    unsigned long n = m->len - m->off;
+    if (n > cap) n = cap;
+    memcpy(buf, m->p + m->off, n);
+    m->off += n;
+    return (long)n;
+}
+
+typedef struct {
+    unsigned char *p;
+    unsigned long cap, len;
+} TMemSink;
+
+static int mem_sink(void *ctx, const unsigned char *data, unsigned long len)
+{
+    TMemSink *m = (TMemSink *)ctx;
+    if (m->len + len > m->cap) return -1;   /* a handshake is tiny */
+    memcpy(m->p + m->len, data, len);
+    m->len += len;
+    return 0;
+}
+
+#define MAX_PAIRS 16
+static char g_pair_names[MAX_PAIRS][WH_PAIR_NAME_MAX];
+static unsigned char g_pair_secrets[MAX_PAIRS][WH_PAIR_SECRET_LEN];
+
+static int pairs_load(const char *file)
+{
+    FILE *f = fopen(file, "r");
+    char line[512];
+    int count = 0;
+    if (!f) return 0;
+    while (count < MAX_PAIRS && fgets(line, sizeof(line), f)) {
+        char *tab = strchr(line, '\t');
+        char *nl;
+        if (!tab) continue;
+        *tab = '\0';
+        nl = strchr(tab + 1, '\n');
+        if (nl) *nl = '\0';
+        if (wh_base64url_decode(line, strlen(line), g_pair_secrets[count],
+                                WH_PAIR_SECRET_LEN) != WH_PAIR_SECRET_LEN) continue;
+        strncpy(g_pair_names[count], tab + 1, WH_PAIR_NAME_MAX - 1);
+        g_pair_names[count][WH_PAIR_NAME_MAX - 1] = '\0';
+        count++;
+    }
+    fclose(f);
+    return count;
+}
+
+static int pairs_add(const char *file, const char *name,
+                     const unsigned char secret[WH_PAIR_SECRET_LEN])
+{
+    char b64[64];
+    char clean[WH_PAIR_NAME_MAX];
+    unsigned long i;
+    FILE *f;
+
+    /* One pairing per line, so neither a tab nor a newline may survive into
+     * the name the peer chose for itself. */
+    for (i = 0; name[i] && i + 1 < sizeof(clean); i++) {
+        clean[i] = (name[i] == '\t' || name[i] == '\n' || name[i] == '\r') ? ' ' : name[i];
+    }
+    clean[i] = '\0';
+
+    if (wh_base64url_encode(secret, WH_PAIR_SECRET_LEN, b64, sizeof(b64)) < 0) return -1;
+    f = fopen(file, "a");
+    if (!f) return -1;
+    fprintf(f, "%s\t%s\n", b64, clean);
+    fclose(f);
+    return 0;
+}
+
+static int cmd_pairs(const char *pairsfile)
+{
+    int n = pairs_load(pairsfile), i, k;
+    unsigned long b = wh_pair_bucket(wh_net_unix_time());
+    char code[WH_PAIR_CODE_MAX];
+    for (i = 0; i < n; i++) {
+        wh_pair_derive_code(g_pair_secrets[i], b, code);
+        printf("PAIR-DERIVED:%d:%s:%s\n", i, g_pair_names[i], code);
+        for (k = -1; k <= 1; k++) {
+            wh_pair_derive_code(g_pair_secrets[i], b + (unsigned long)k, code);
+            printf("PAIR-CANDIDATE:%d:%d:%s\n", i, k, code);
+        }
+    }
+    if (n == 0) printf("no pairings in %s\n", pairsfile);
+    return 0;
+}
+
+/* Wait for the joining device's handshake on the codes derived from
+ * `secret`, and return its name. */
+static int receive_handshake(const wh_paired_server *srv, const char *relay_host,
+                             unsigned int relay_port,
+                             const unsigned char secret[WH_PAIR_SECRET_LEN],
+                             char *name, unsigned long cap)
+{
+    wh_mailbox m;
+    wh_offer offer;
+    char code[WH_PAIR_CODE_MAX];
+    static unsigned char data[1024];
+    TMemSink sink;
+    int rc;
+
+    wh_mailbox_init(&m, &g_mbufs);
+    rc = wh_paired_open_receiver(&m, srv, secret, code);
+    if (rc == -3) { fprintf(stderr, "no handshake arrived in time\n"); return -1; }
+    if (rc != 0) { fprintf(stderr, "could not look for the handshake\n"); return -1; }
+    printf("handshake arriving on %s\n", code);
+
+    if (wh_xfer_await_offer(&m, relay_host, relay_port, &offer) != 0 ||
+        offer.is_text || offer.is_directory || offer.filesize > sizeof(data)) {
+        fprintf(stderr, "that was not a pairing handshake\n");
+        wh_mailbox_close(&m, "errory");
+        return -1;
+    }
+    sink.p = data;
+    sink.cap = sizeof(data);
+    sink.len = 0;
+    if (wh_xfer_accept(&m, APPID, &offer, relay_host, relay_port, &g_xfer,
+                       mem_sink, &sink, 0, 0) != 0) {
+        fprintf(stderr, "the handshake did not arrive intact\n");
+        wh_mailbox_close(&m, "errory");
+        return -1;
+    }
+    wh_mailbox_close(&m, "happy");
+    if (wh_pair_handshake_decode((const char *)data, sink.len, name, cap) != 0) {
+        fprintf(stderr, "malformed handshake\n");
+        return -1;
+    }
+    return 0;
+}
+
+static int cmd_pair_host(const wh_paired_server *srv, const char *relay_host,
+                         unsigned int relay_port, const char *myname,
+                         const char *pairsfile)
+{
+    wh_mailbox m;
+    wh_pair_payload p;
+    char invitation[WH_PAIR_PAYLOAD_MAX];
+    char code[WH_CODE_MAX];
+    char peer[WH_PAIR_NAME_MAX];
+    int rc;
+
+    strncpy(p.name, myname, sizeof(p.name) - 1);
+    p.name[sizeof(p.name) - 1] = '\0';
+    wh_net_random(p.secret, WH_PAIR_SECRET_LEN);
+    if (wh_pair_encode(&p, invitation, sizeof(invitation)) < 0) return 1;
+
+    wh_mailbox_init(&m, &g_mbufs);
+    if (wh_mailbox_connect(&m, srv->host, srv->port, srv->path, APPID) != 0 ||
+        wh_mailbox_allocate(&m, code, sizeof(code)) != 0) {
+        fprintf(stderr, "could not get a code\n");
+        return 1;
+    }
+    printf("PAIR-CODE:%s\n", code);
+    printf("enter this code on the other device\n");
+
+    if (handshake(&m, srv->host, srv->port, srv->path, code) != 0) {
+        wh_mailbox_close(&m, "errory");
+        return 1;
+    }
+    rc = wh_xfer_send_text(&m, invitation);
+    if (rc != 0) {
+        fprintf(stderr, "the invitation was not delivered\n");
+        wh_mailbox_close(&m, "errory");
+        return 1;
+    }
+    wh_mailbox_close(&m, "happy");
+    printf("invitation delivered, waiting for the other device's handshake\n");
+
+    if (receive_handshake(srv, relay_host, relay_port, p.secret, peer, sizeof(peer)) != 0) return 1;
+    if (pairs_add(pairsfile, peer, p.secret) != 0) {
+        fprintf(stderr, "could not store the pairing\n");
+        return 1;
+    }
+    printf("PAIRED-WITH:%s\n", peer);
+    return 0;
+}
+
+static int cmd_pair_join(const wh_paired_server *srv, const char *relay_host,
+                         unsigned int relay_port, const char *code,
+                         const char *myname, const char *pairsfile)
+{
+    wh_mailbox m;
+    wh_offer offer;
+    wh_pair_payload p;
+    char dcode[WH_PAIR_CODE_MAX];
+    char hs[256];
+    TMemSource src;
+    long hslen;
+    int rc;
+
+    wh_mailbox_init(&m, &g_mbufs);
+    if (wh_mailbox_connect(&m, srv->host, srv->port, srv->path, APPID) != 0 ||
+        wh_mailbox_claim(&m, code) != 0) {
+        fprintf(stderr, "could not reach that code\n");
+        return 1;
+    }
+    if (handshake(&m, srv->host, srv->port, srv->path, code) != 0) {
+        wh_mailbox_close(&m, "errory");
+        return 1;
+    }
+    if (wh_xfer_await_offer(&m, relay_host, relay_port, &offer) != 0) {
+        wh_mailbox_close(&m, "errory");
+        return 1;
+    }
+    if (!offer.is_text || wh_pair_decode(offer.text, strlen(offer.text), &p) != 0) {
+        /* A file offered on the code is declined, so its sender fails
+         * cleanly instead of waiting. */
+        if (!offer.is_text) wh_xfer_reject(&m, "not a pairing invitation");
+        fprintf(stderr, "that code did not carry a pairing invitation\n");
+        wh_mailbox_close(&m, "errory");
+        return 1;
+    }
+    wh_mailbox_close(&m, "happy");
+    printf("invitation from %s; sending our handshake\n", p.name);
+
+    wh_mailbox_init(&m, &g_mbufs);
+    rc = wh_paired_open_sender(&m, srv, p.secret, dcode);
+    if (rc == -3) { fprintf(stderr, "the other device stopped listening\n"); return 1; }
+    if (rc != 0) { fprintf(stderr, "could not reach the other device\n"); return 1; }
+
+    hslen = wh_pair_handshake_encode(myname, hs, sizeof(hs));
+    if (hslen < 0) { wh_mailbox_close(&m, "errory"); return 1; }
+    src.p = (const unsigned char *)hs;
+    src.len = (unsigned long)hslen;
+    src.off = 0;
+    rc = wh_xfer_send_file(&m, APPID, WH_PAIR_HANDSHAKE_FILE, (unsigned long)hslen,
+                           relay_host, relay_port, &g_xfer, mem_source, &src, 0, 0);
+    if (rc != 0) {
+        fprintf(stderr, "the handshake was not delivered\n");
+        wh_mailbox_close(&m, "errory");
+        return 1;
+    }
+    wh_mailbox_close(&m, "happy");
+    if (pairs_add(pairsfile, p.name, p.secret) != 0) {
+        fprintf(stderr, "could not store the pairing\n");
+        return 1;
+    }
+    printf("PAIRED-WITH:%s\n", p.name);
+    return 0;
+}
+
+static int cmd_paired_send(const wh_paired_server *srv, const char *relay_host,
+                           unsigned int relay_port, const char *pairsfile,
+                           int device, const char *filepath)
+{
+    wh_mailbox m;
+    char code[WH_PAIR_CODE_MAX];
+    const char *base;
+    unsigned long size;
+    FILE *f;
+    int rc;
+
+    if (device < 0 || device >= pairs_load(pairsfile)) {
+        fprintf(stderr, "no pairing number %d\n", device);
+        return 1;
+    }
+    f = fopen(filepath, "rb");
+    if (!f) { fprintf(stderr, "cannot open %s\n", filepath); return 1; }
+    fseek(f, 0, SEEK_END);
+    size = (unsigned long)ftell(f);
+    rewind(f);
+    base = strrchr(filepath, '/');
+    base = base ? base + 1 : filepath;
+
+    wh_mailbox_init(&m, &g_mbufs);
+    printf("waiting for %s\n", g_pair_names[device]);
+    rc = wh_paired_open_sender(&m, srv, g_pair_secrets[device], code);
+    if (rc != 0) {
+        fprintf(stderr, rc == -3 ? "%s did not pick it up\n" : "could not reach %s\n",
+                g_pair_names[device]);
+        fclose(f);
+        return 1;
+    }
+    printf("connected on %s\n", code);
+    rc = wh_xfer_send_file(&m, APPID, base, size, relay_host, relay_port,
+                           &g_xfer, file_source, f, show_progress, 0);
+    fclose(f);
+    printf("\n");
+    if (rc != 0) {
+        fprintf(stderr, rc == -2 ? "declined\n" : "transfer failed\n");
+        wh_mailbox_close(&m, "errory");
+        return 1;
+    }
+    wh_mailbox_close(&m, "happy");
+    printf("PAIRED-SEND-OK\n");
+    return 0;
+}
+
+static int cmd_paired_receive(const wh_paired_server *srv, const char *relay_host,
+                              unsigned int relay_port, const char *pairsfile,
+                              int device, const char *outdir)
+{
+    wh_mailbox m;
+    wh_offer offer;
+    char code[WH_PAIR_CODE_MAX];
+    char destpath[1024];
+    FILE *f;
+    int rc;
+
+    if (device < 0 || device >= pairs_load(pairsfile)) {
+        fprintf(stderr, "no pairing number %d\n", device);
+        return 1;
+    }
+    wh_mailbox_init(&m, &g_mbufs);
+    printf("looking for a transfer from %s\n", g_pair_names[device]);
+    rc = wh_paired_open_receiver(&m, srv, g_pair_secrets[device], code);
+    if (rc != 0) {
+        fprintf(stderr, rc == -3 ? "nothing arrived from %s\n" : "could not look for %s\n",
+                g_pair_names[device]);
+        return 1;
+    }
+    printf("found it on %s\n", code);
+    if (wh_xfer_await_offer(&m, relay_host, relay_port, &offer) != 0 ||
+        offer.is_text || offer.is_directory) {
+        fprintf(stderr, "no usable file offer\n");
+        wh_mailbox_close(&m, "errory");
+        return 1;
+    }
+    if (strchr(offer.filename, '/') || strchr(offer.filename, '\\') ||
+        offer.filename[0] == '\0' || strcmp(offer.filename, "..") == 0 ||
+        snprintf(destpath, sizeof(destpath), "%s/%s", outdir, offer.filename) >=
+            (int)sizeof(destpath)) {
+        wh_xfer_reject(&m, "bad filename");
+        wh_mailbox_close(&m, "errory");
+        return 1;
+    }
+    f = fopen(destpath, "wb");
+    if (!f) { wh_mailbox_close(&m, "errory"); return 1; }
+    rc = wh_xfer_accept(&m, APPID, &offer, relay_host, relay_port, &g_xfer,
+                        file_sink, f, show_progress, 0);
+    fclose(f);
+    printf("\n");
+    if (rc != 0) {
+        remove(destpath);
+        fprintf(stderr, "transfer failed\n");
+        wh_mailbox_close(&m, "errory");
+        return 1;
+    }
+    wh_mailbox_close(&m, "happy");
+    printf("PAIRED-RECEIVE-OK:%s\n", destpath);
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
     const char *host = "127.0.0.1";
@@ -731,6 +1103,10 @@ int main(int argc, char **argv)
     const char *outdir = ".";
     const char *filepath = 0;
     const char *text = 0;
+    const char *myname = "wh-mini";
+    const char *pairsfile = "wh-pairs.txt";
+    int device = 0;
+    wh_paired_server srv;
     unsigned int relay_port = 4001;
     unsigned int port = 4000;
     char side[11];
@@ -760,8 +1136,29 @@ int main(int argc, char **argv)
         else if (strcmp(argv[i], "--file") == 0 && i + 1 < argc) filepath = argv[++i];
         else if (strcmp(argv[i], "--no-direct") == 0) wh_xfer_enable_direct(0);
         else if (strcmp(argv[i], "--text") == 0 && i + 1 < argc) text = argv[++i];
+        else if (strcmp(argv[i], "--name") == 0 && i + 1 < argc) myname = argv[++i];
+        else if (strcmp(argv[i], "--pairs") == 0 && i + 1 < argc) pairsfile = argv[++i];
+        else if (strcmp(argv[i], "--device") == 0 && i + 1 < argc) device = atoi(argv[++i]);
         else if (argv[i][0] != '-') cmd = argv[i];
     }
+
+    srv.host = host;
+    srv.port = port;
+    srv.path = path;
+    srv.appid = APPID;
+    if (strcmp(cmd, "pairs") == 0) return cmd_pairs(pairsfile);
+    if (strcmp(cmd, "pair-host") == 0)
+        return cmd_pair_host(&srv, relay_host, relay_port, myname, pairsfile);
+    if (strcmp(cmd, "pair-join") == 0) {
+        if (!code) { fprintf(stderr, "pair-join needs --code\n"); return 2; }
+        return cmd_pair_join(&srv, relay_host, relay_port, code, myname, pairsfile);
+    }
+    if (strcmp(cmd, "paired-send") == 0) {
+        if (!filepath) { fprintf(stderr, "paired-send needs --file\n"); return 2; }
+        return cmd_paired_send(&srv, relay_host, relay_port, pairsfile, device, filepath);
+    }
+    if (strcmp(cmd, "paired-receive") == 0)
+        return cmd_paired_receive(&srv, relay_host, relay_port, pairsfile, device, outdir);
 
     if (strcmp(cmd, "send") == 0) {
         if (text) return cmd_send_text(host, port, path, text, code);

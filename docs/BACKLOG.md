@@ -10,8 +10,10 @@ rediscover it.
 desktops paired with each other, then transferred between the new pairing)
 and on Android, where it sits below the QR buttons as the alternative for a
 peer without a camera (verified on an emulator against the desktop in both
-directions, plus a paired transfer). Symbian next. See "Getting the payload
-across" in `docs/ARCHITECTURE.md` for how it works.
+directions, plus a paired transfer). On Symbian the C side is proven on the
+host against the desktop and the phone build is ready; it has not yet been
+run on the E72 itself. See "Getting the payload across" in
+`docs/ARCHITECTURE.md`, and "Pairing" in `docs/SYMBIAN.md`.
 
 ## Android: a cancelled receive leaks its partial file and renames the next
 

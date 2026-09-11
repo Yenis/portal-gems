@@ -129,6 +129,15 @@ private:
     void CancelTransferL();
     void StartSendTextL();
     void ShowMessageL();
+    void DynInitMenuPaneL(TInt aResourceId, CEikMenuPane* aMenuPane);
+    void LaunchJobL();
+    void StartPairHostL();
+    void StartPairJoinL();
+    void StartPairedSendL(TInt aIndex);
+    void StartPairedReceiveL(TInt aIndex);
+    void RemovePairL(TInt aIndex);
+    void EditDeviceNameL();
+    TBool UsePairL(TInt aIndex);
     TInt StartWorker();
     TBool PrepareJobL();
     void AskForServerL();
@@ -145,6 +154,10 @@ private:
     TBool iWorkerRunning;
     TJob iJob;
     TBool iMessageShown;
+    /* Reloaded whenever a paired-device menu opens, so a pairing made a
+     * moment ago is there without restarting the app. */
+    TWhminiPair iPairs[KMaxPairs];
+    TInt iPairCount;
     TWhminiSettings iSettings;
     };
 
@@ -188,6 +201,26 @@ CWhminiAppUi::~CWhminiAppUi()
 
 /* Redraw the whole status area from the job. Cheap enough to do wholesale
  * rather than track what changed. */
+/* UTF-8 from the wire or the pairings file, for the screen. A byte-wise
+ * widening would split every accented character in a device name. */
+static void Utf8ToDes(const char* aUtf8, TDes& aOut)
+    {
+    TPtrC8 in((const TUint8*)aUtf8);
+    if (CnvUtfConverter::ConvertToUnicodeFromUtf8(aOut, in) < 0)
+        aOut.Copy(in.Left(aOut.MaxLength()));
+    }
+
+/* Paired devices meet on codes derived from the time, so a wrong clock -
+ * or a right local time in the wrong time zone - silently breaks pairing.
+ * Show the UTC the phone believes in, so a mismatch is visible. */
+static void ClockLine(TDes& aOut)
+    {
+    TTime now;
+    now.UniversalTime();
+    TDateTime dt = now.DateTime();
+    aOut.Format(_L("Phone clock: %02d:%02d UTC"), dt.Hour(), dt.Minute());
+    }
+
 void CWhminiAppUi::Refresh()
     {
     TBuf<64> line;
@@ -238,14 +271,26 @@ void CWhminiAppUi::Refresh()
             break;
         case EJobShowingCode:
             {
-            iContainer->SetLine(2, _L("Give this code to the sender:"));
+            iContainer->SetLine(2, iJob.iKind == EJobKindPairHost
+                                       ? _L("Enter this code on the other device:")
+                                       : _L("Give this code to the receiver:"));
             if (iJob.iCodeReady)
                 {
                 TBuf<64> code;
                 code.Copy(TPtrC8((const TUint8*)iJob.iCode));
                 iContainer->SetLine(3, code);
                 }
-            iContainer->SetLine(5, _L("Waiting for them..."));
+            iContainer->SetLine(5, iJob.iKind == EJobKindPairHost
+                                       ? _L("(Pair a device > Enter a pairing code)")
+                                       : _L("Waiting for them..."));
+            break;
+            }
+        case EJobPairing:
+            {
+            TBuf<64> clock;
+            iContainer->SetLine(3, _L("Finishing pairing..."));
+            ClockLine(clock);
+            iContainer->SetLine(5, clock);
             break;
             }
         case EJobSending:
@@ -270,6 +315,31 @@ void CWhminiAppUi::Refresh()
             }
         case EJobWaitingForPeer:
             {
+            if (iJob.iPaired || iJob.iKind == EJobKindPairJoin)
+                {
+                /* A derived code means nothing to a person, so show who
+                 * we are waiting for - and the clock that code came from. */
+                TBuf<40> peer;
+                TBuf<64> clock;
+                Utf8ToDes(iJob.iPeerName, peer);
+                if (iJob.iKind == EJobKindPairJoin)
+                    iContainer->SetLine(3, _L("Joining..."));
+                else if (iJob.iKind == EJobKindReceive)
+                    {
+                    line.Format(_L("Looking for %S..."), &peer);
+                    iContainer->SetLine(3, line);
+                    iContainer->SetLine(4, _L("(they choose Send to you)"));
+                    }
+                else
+                    {
+                    line.Format(_L("Waiting for %S..."), &peer);
+                    iContainer->SetLine(3, line);
+                    iContainer->SetLine(4, _L("(they choose Receive from you)"));
+                    }
+                ClockLine(clock);
+                iContainer->SetLine(5, clock);
+                break;
+                }
             iContainer->SetLine(3, _L("Waiting for sender..."));
             TBuf<32> np;
             TBuf<64> mb;
@@ -295,7 +365,15 @@ void CWhminiAppUi::Refresh()
             {
             TBuf<64> name;
             name.Copy(TPtrC8((const TUint8*)iJob.iFileName));
-            if (iJob.iKind == EJobKindSendText)
+            if (iJob.iKind == EJobKindPairHost || iJob.iKind == EJobKindPairJoin)
+                {
+                TBuf<40> peer;
+                Utf8ToDes(iJob.iPeerName, peer);
+                line.Format(_L("Paired with %S."), &peer);
+                iContainer->SetLine(3, line);
+                iContainer->SetLine(4, _L("Options > Send to paired device"));
+                }
+            else if (iJob.iKind == EJobKindSendText)
                 {
                 iContainer->SetLine(3, _L("Message sent, and confirmed."));
                 }
@@ -491,6 +569,11 @@ TBool CWhminiAppUi::PrepareJobL()
     iJob.iText[0] = '\0';
     iJob.iIsText = 0;
     iMessageShown = EFalse;
+    /* Reset every time: a transfer that inherited the last one's secret
+     * would quietly go to the wrong device. */
+    iJob.iPaired = 0;
+    iJob.iPeerName[0] = '\0';
+    Mem::FillZ(iJob.iSecret, sizeof(iJob.iSecret));
     return ETrue;
     }
 
@@ -691,6 +774,169 @@ void CWhminiAppUi::CancelTransferL()
      * timer picks it up like any other ending. */
     }
 
+/* Start the worker on the job already filled in, and say why if it cannot. */
+void CWhminiAppUi::LaunchJobL()
+    {
+    TInt err = StartWorker();
+    if (err != KErrNone)
+        {
+        TBuf<64> msg;
+        msg.Format(_L("Could not start the transfer (%d)"), err);
+        CAknErrorNote* note = new (ELeave) CAknErrorNote(ETrue);
+        note->ExecuteLD(msg);
+        return;
+        }
+    Refresh();
+    }
+
+/* Fill the paired-device menus with one item per pairing, as they open. */
+void CWhminiAppUi::DynInitMenuPaneL(TInt aResourceId, CEikMenuPane* aMenuPane)
+    {
+    TInt base;
+    if (aResourceId == R_WHMINI_PAIRED_SEND_MENU) base = EWhminiCmdPairedSendBase;
+    else if (aResourceId == R_WHMINI_PAIRED_RECEIVE_MENU) base = EWhminiCmdPairedReceiveBase;
+    else if (aResourceId == R_WHMINI_PAIRED_REMOVE_MENU) base = EWhminiCmdPairedRemoveBase;
+    else return;
+
+    iPairCount = WhminiLoadPairs(iPairs, KMaxPairs);
+    if (iPairCount == 0) return;   /* the "No paired devices" placeholder stays */
+
+    aMenuPane->DeleteMenuItem(EWhminiCmdNoDevices);
+    for (TInt i = 0; i < iPairCount; i++)
+        {
+        CEikMenuPaneItem::SData item;
+        item.iCommandId = base + i;
+        item.iCascadeId = 0;
+        item.iFlags = 0;
+        item.iExtraText = KNullDesC;
+        Utf8ToDes(iPairs[i].iName, item.iText);
+        aMenuPane->AddMenuItemL(item);
+        }
+    }
+
+/* Copy pairing `aIndex` into the job. EFalse if it has gone away since the
+ * menu was built. */
+TBool CWhminiAppUi::UsePairL(TInt aIndex)
+    {
+    iPairCount = WhminiLoadPairs(iPairs, KMaxPairs);
+    if (aIndex < 0 || aIndex >= iPairCount) return EFalse;
+    iJob.iPaired = 1;
+    Mem::Copy(iJob.iSecret, iPairs[aIndex].iSecret, sizeof(iJob.iSecret));
+    Mem::Copy(iJob.iPeerName, iPairs[aIndex].iName, sizeof(iJob.iPeerName));
+    return ETrue;
+    }
+
+void CWhminiAppUi::StartPairHostL()
+    {
+    if (!PrepareJobL()) return;
+    iJob.iKind = EJobKindPairHost;
+    LaunchJobL();
+    }
+
+void CWhminiAppUi::StartPairJoinL()
+    {
+    if (!PrepareJobL()) return;
+
+    TBuf<64> code;
+    CAknTextQueryDialog* dlg = CAknTextQueryDialog::NewL(code);
+    dlg->SetPromptL(_L("Code from the other device"));
+    if (!dlg->ExecuteLD(R_AVKON_DIALOG_QUERY_VALUE_TEXT)) return;
+    if (code.Length() == 0) return;
+
+    TInt i;
+    for (i = 0; i < code.Length() && i < (TInt)sizeof(iJob.iCode) - 1; i++)
+        iJob.iCode[i] = (char)code[i];
+    iJob.iCode[i] = '\0';
+    WhminiTrim(iJob.iCode);
+
+    iJob.iKind = EJobKindPairJoin;
+    LaunchJobL();
+    }
+
+/* The same file picker as a normal send; only the way the wormhole is
+ * opened differs, and the engine handles that. */
+void CWhminiAppUi::StartPairedSendL(TInt aIndex)
+    {
+    if (!PrepareJobL()) return;
+    if (!UsePairL(aIndex)) return;
+
+    TFileName path;
+    if (!AknCommonDialogsDynMem::RunSelectDlgLD(
+            AknCommonDialogsDynMem::EMemoryTypePhone |
+                AknCommonDialogsDynMem::EMemoryTypeMMC,
+            path, R_WHMINI_MEMORY_SELECTION))
+        {
+        return;
+        }
+    if (path.Length() == 0) return;
+
+    TInt i;
+    for (i = 0; i < path.Length() && i < (TInt)sizeof(iJob.iPath) - 1; i++)
+        iJob.iPath[i] = (char)path[i];
+    iJob.iPath[i] = '\0';
+
+    iJob.iKind = EJobKindSend;
+    LaunchJobL();
+    }
+
+void CWhminiAppUi::StartPairedReceiveL(TInt aIndex)
+    {
+    if (!PrepareJobL()) return;
+    if (!UsePairL(aIndex)) return;
+    iJob.iKind = EJobKindReceive;
+    LaunchJobL();
+    }
+
+void CWhminiAppUi::RemovePairL(TInt aIndex)
+    {
+    iPairCount = WhminiLoadPairs(iPairs, KMaxPairs);
+    if (aIndex < 0 || aIndex >= iPairCount) return;
+
+    TBuf<40> name;
+    TBuf<96> prompt;
+    Utf8ToDes(iPairs[aIndex].iName, name);
+    prompt.Format(_L("Remove %S? You can pair again later."), &name);
+    CAknQueryDialog* dlg = CAknQueryDialog::NewL();
+    dlg->SetPromptL(prompt);
+    if (!dlg->ExecuteLD(R_WHMINI_CONFIRM_QUERY)) return;
+
+    TInt err = WhminiRemovePair(aIndex);
+    if (err == KErrNone)
+        {
+        CAknConfirmationNote* note = new (ELeave) CAknConfirmationNote(ETrue);
+        note->ExecuteLD(_L("Removed"));
+        }
+    else
+        {
+        CAknErrorNote* note = new (ELeave) CAknErrorNote(ETrue);
+        note->ExecuteLD(_L("Could not remove it"));
+        }
+    }
+
+/* What paired devices see this phone as. UTF-8 on disk, so the name can be
+ * anything the keyboard can type. */
+void CWhminiAppUi::EditDeviceNameL()
+    {
+    TBuf<40> value;
+    Utf8ToDes(iSettings.iDeviceName, value);
+
+    CAknTextQueryDialog* dlg = CAknTextQueryDialog::NewL(value);
+    dlg->SetPromptL(_L("Device name"));
+    if (!dlg->ExecuteLD(R_AVKON_DIALOG_QUERY_VALUE_TEXT)) return;
+
+    TBuf8<64> utf8;
+    if (value.Length() == 0 ||
+        CnvUtfConverter::ConvertFromUnicodeToUtf8(utf8, value) != 0 ||
+        utf8.Length() >= (TInt)sizeof(iSettings.iDeviceName))
+        {
+        return;
+        }
+    Mem::Copy(iSettings.iDeviceName, utf8.Ptr(), utf8.Length());
+    iSettings.iDeviceName[utf8.Length()] = '\0';
+    WhminiTrim(iSettings.iDeviceName);
+    WhminiSaveSettings(iSettings);
+    }
+
 void CWhminiAppUi::HandleCommandL(TInt aCommand)
     {
     switch (aCommand)
@@ -729,11 +975,29 @@ void CWhminiAppUi::HandleCommandL(TInt aCommand)
         case EWhminiCmdShowMessage:
             ShowMessageL();
             break;
+        case EWhminiCmdPairHost:
+            StartPairHostL();
+            break;
+        case EWhminiCmdPairJoin:
+            StartPairJoinL();
+            break;
+        case EWhminiCmdSetDeviceName:
+            EditDeviceNameL();
+            break;
         case EAknSoftkeyExit:
         case EEikCmdExit:
             Exit();
             break;
         default:
+            if (aCommand >= EWhminiCmdPairedSendBase &&
+                aCommand < EWhminiCmdPairedSendBase + KMaxPairs)
+                StartPairedSendL(aCommand - EWhminiCmdPairedSendBase);
+            else if (aCommand >= EWhminiCmdPairedReceiveBase &&
+                     aCommand < EWhminiCmdPairedReceiveBase + KMaxPairs)
+                StartPairedReceiveL(aCommand - EWhminiCmdPairedReceiveBase);
+            else if (aCommand >= EWhminiCmdPairedRemoveBase &&
+                     aCommand < EWhminiCmdPairedRemoveBase + KMaxPairs)
+                RemovePairL(aCommand - EWhminiCmdPairedRemoveBase);
             break;
         }
     }

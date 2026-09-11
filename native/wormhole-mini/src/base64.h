@@ -11,6 +11,15 @@ extern "C" {
 long wh_base64_encode(const unsigned char *in, unsigned long len,
                       char *out, unsigned long cap);
 
+/* base64url without padding. Encode returns the length written (excluding
+ * the NUL) or -1 if `cap` is too small; decode returns the byte count, or -1
+ * on a character outside the alphabet, an impossible length, or a buffer
+ * that is too small. */
+long wh_base64url_encode(const unsigned char *in, unsigned long len,
+                         char *out, unsigned long cap);
+long wh_base64url_decode(const char *in, unsigned long len,
+                         unsigned char *out, unsigned long cap);
+
 #ifdef __cplusplus
 }
 #endif

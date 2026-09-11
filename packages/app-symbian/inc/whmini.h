@@ -25,6 +25,7 @@ enum TJobState
     EJobUnpacking,        /* the archive is down; writing the files out */
     EJobZipping,          /* building the archive before a folder send */
     EJobSending,
+    EJobPairing,          /* invitation delivered; exchanging names */
     EJobDone,
     EJobFailed
     };
@@ -34,8 +35,28 @@ enum TJobKind
     EJobKindReceive = 0,
     EJobKindSend,
     EJobKindSendFolder,
-    EJobKindSendText
+    EJobKindSendText,
+    EJobKindPairHost,     /* show a code and send the invitation through it */
+    EJobKindPairJoin      /* receive an invitation over a typed code */
     };
+
+/* Stored pairings. One file in the application's private directory
+ * (C:\private\e1000001\), which platform security keeps every other
+ * application out of - the nearest thing S60 3rd edition has to the Android
+ * Keystore or the desktop's safeStorage. */
+const TInt KMaxPairs = 16;
+
+class TWhminiPair
+    {
+public:
+    char iName[128];
+    unsigned char iSecret[32];
+    };
+
+/* Returns how many were loaded, 0 if there is no file yet. */
+TInt WhminiLoadPairs(TWhminiPair* aPairs, TInt aMax);
+TInt WhminiAddPair(const char* aName, const unsigned char aSecret[32]);
+TInt WhminiRemovePair(TInt aIndex);
 
 /* Longest message, in UTF-16 characters as typed. The wire limit is
  * WH_TEXT_MAX bytes of UTF-8 for the whole offer, and a character outside
@@ -69,6 +90,12 @@ public:
      * here never touches the 8 KB worker stack. */
     char iText[1024];
     volatile TInt iIsText;        /* out: the offer was a message */
+    /* A paired transfer: the wormhole is opened on the code derived from
+     * this secret and the clock, instead of one typed or allocated. */
+    volatile TInt iPaired;
+    unsigned char iSecret[32];
+    /* Paired transfers: who, in. Pairing: who we paired with, out. */
+    char iPeerName[128];
     };
 
 /* Worker thread entry point. aPtr is a TJob*. */
@@ -87,6 +114,8 @@ public:
      * phone. The relay is slower and always works; a fast path that hangs
      * is worse than a slow one that does not. */
     TInt iDirect;
+    /* What paired devices see this phone as. */
+    char iDeviceName[64];
     };
 
 void WhminiDefaultSettings(TWhminiSettings& aSettings);
@@ -96,6 +125,6 @@ TBool WhminiLoadSettings(TWhminiSettings& aSettings);
 void WhminiSaveSettings(const TWhminiSettings& aSettings);
 
 /* Shown in the app, and must match the version in sis/whmini.pkg. */
-#define WHMINI_VERSION "v0.6.0"
+#define WHMINI_VERSION "v0.7.0"
 
 #endif

@@ -111,6 +111,42 @@ int wh_mailbox_claim(wh_mailbox *m, const char *code)
     return claim_and_open(m);
 }
 
+int wh_mailbox_nameplate_listed(wh_mailbox *m, const char *code)
+{
+    char want[32];
+    unsigned long i = 0;
+    wh_jw w;
+    wh_json_val list, el, id;
+    wh_json_iter it;
+    long n;
+    int rc;
+
+    while (code[i] && code[i] != '-' && i + 1 < sizeof(want)) {
+        want[i] = code[i];
+        i++;
+    }
+    want[i] = '\0';
+    if (i == 0) return -1;
+
+    wh_jw_init(&w, m->b->out, sizeof(m->b->out));
+    wh_jw_obj_open(&w);
+    wh_jw_str(&w, "type", "list");
+    wh_jw_obj_close(&w);
+    if (wh_jw_done(&w) != 0 || send_out(m) != 0) return -1;
+
+    n = wait_type(m, "nameplates");
+    if (n < 0) return -1;
+    if (wh_json_get(m->b->msg, (unsigned long)n, "nameplates", &list) != 0) return -1;
+    if (list.type != WH_JSON_ARRAY) return -1;
+
+    rc = wh_json_array_first(&list, &it, &el);
+    while (rc == 0) {
+        if (wh_json_get(el.p, el.len, "id", &id) == 0 && wh_json_streq(&id, want)) return 1;
+        rc = wh_json_array_next(&list, &it, &el);
+    }
+    return 0;
+}
+
 int wh_mailbox_allocate(wh_mailbox *m, char *code_out, unsigned long cap)
 {
     wh_jw w;

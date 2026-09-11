@@ -748,6 +748,59 @@ The dialog resource has no heading pane. `AVKON_HEADING` defaults its
 reports that as a bare `Link name not found` with no line number - worth
 knowing before losing an hour to it.
 
+## Pairing
+
+A phone that cannot show or scan a QR code pairs over an ordinary wormhole
+code instead - the same "pairing over a code" the desktop and Android use.
+One device shows a code, the other types it, and the invitation (the
+`PGPAIR1:` payload a QR code would carry) travels through it as a text
+message. From there it is the apps' own handshake: the joining device sends
+its name back as a tiny file, over the code both sides derive from the
+secret and the clock.
+
+The portable half is `src/pair.c` (code derivation, payload, handshake) and
+`src/paired.c` (meeting on a derived code, as sender or polling receiver).
+Both were proven on the host against a real desktop instance before any of
+it was built for the phone, through `wh-mini`'s `pair-host`, `pair-join`,
+`paired-send`, `paired-receive` and `pairs`:
+
+- desktop hosts, C joins; C hosts, desktop joins - both report the pairing,
+  and `wh-mini pairs` prints the same derived code as the desktop's
+  `PG_SMOKE_DUMP_PAIRCODE`;
+- paired transfers both ways over that pairing, SHA-256 matching, the
+  desktop receiving through its real UI;
+- a device name with accented letters (`Nokia E72 čćž`) arrives intact.
+
+Things worth knowing:
+
+- **The derivation is pinned three ways.** `tests/test_pair.c` pins the same
+  literals as core's `pairing.test.ts`, and both were checked against a
+  third implementation in Python's `hmac`. Core's test used to compare
+  `deriveCode` with itself - a "frozen vector" that could never fail - and
+  that was only noticed because a second implementation needed a real
+  answer to match.
+- **The clock matters.** Codes are derived per five-minute window and a
+  receiver tries one either side, so two clocks may disagree by a few
+  minutes - not more. A phone with no SIM has no network time, and a phone
+  whose local time is right but whose time zone is wrong reports a UTC that
+  is hours out. Every paired screen therefore shows the UTC the phone
+  believes in; if pairing stalls at "Finishing pairing", compare it with
+  the other device first.
+- **Polling never creates a nameplate.** A paired receiver asks the server
+  for its nameplate list (`wh_mailbox_nameplate_listed`) and only claims one
+  that exists - claiming creates, and a poller would otherwise sit in empty
+  mailboxes of its own making. This mirrors the Rust client's
+  `allocate = false`.
+- **Each poll attempt is bounded** at ten seconds with
+  `wh_net_set_read_timeout`, the same fix as desktop and Android: a sender
+  that died while waiting leaves its nameplate listed, and a receiver that
+  joins it would otherwise wait out the full read timeout - three minutes
+  on this phone.
+- **Pairings live in `C:\private\e1000001\pairs.txt`.** Platform security
+  keeps every other application out of an app's private directory, which
+  is the closest S60 3rd edition comes to a keystore. The device name the
+  phone presents is a setting (default "Symbian phone").
+
 ## The bug that cost the most
 
 Worth writing down, because it was invisible from every angle.

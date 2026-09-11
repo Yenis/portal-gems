@@ -34,6 +34,30 @@ RESOURCE MENU_PANE r_whmini_menu
         MENU_ITEM { command = EWhminiCmdSendFolder; txt = "Send folder"; },
         MENU_ITEM { command = EWhminiCmdSendText;   txt = "Send message"; },
         MENU_ITEM { command = EWhminiCmdShowMessage; txt = "Show message"; },
+        MENU_ITEM
+            {
+            command = EWhminiCmdPairedSend;
+            txt = "Send to paired device";
+            cascade = r_whmini_paired_send_menu;
+            },
+        MENU_ITEM
+            {
+            command = EWhminiCmdPairedReceive;
+            txt = "Receive from paired";
+            cascade = r_whmini_paired_receive_menu;
+            },
+        MENU_ITEM
+            {
+            command = EWhminiCmdPair;
+            txt = "Pair a device";
+            cascade = r_whmini_pair_menu;
+            },
+        MENU_ITEM
+            {
+            command = EWhminiCmdPairedRemove;
+            txt = "Remove paired device";
+            cascade = r_whmini_paired_remove_menu;
+            },
         MENU_ITEM { command = EWhminiCmdCancel;  txt = "Cancel transfer"; },
         MENU_ITEM
             {
@@ -57,8 +81,37 @@ RESOURCE MENU_PANE r_whmini_settings_menu
         MENU_ITEM { command = EWhminiCmdSetMailboxPort; txt = "Server port"; },
         MENU_ITEM { command = EWhminiCmdSetRelayHost;   txt = "Relay address"; },
         MENU_ITEM { command = EWhminiCmdSetRelayPort;   txt = "Relay port"; },
-        MENU_ITEM { command = EWhminiCmdToggleDirect;   txt = "Direct connections"; }
+        MENU_ITEM { command = EWhminiCmdToggleDirect;   txt = "Direct connections"; },
+        MENU_ITEM { command = EWhminiCmdSetDeviceName;  txt = "Device name"; }
         };
+    }
+
+// Pairing needs no camera on either side: one device shows an ordinary
+// wormhole code, the other types it, and the invitation travels through it.
+RESOURCE MENU_PANE r_whmini_pair_menu
+    {
+    items =
+        {
+        MENU_ITEM { command = EWhminiCmdPairHost; txt = "Show a pairing code"; },
+        MENU_ITEM { command = EWhminiCmdPairJoin; txt = "Enter a pairing code"; }
+        };
+    }
+
+// Filled in at run time with one item per paired device (DynInitMenuPaneL).
+// The placeholder is what shows when nothing is paired yet.
+RESOURCE MENU_PANE r_whmini_paired_send_menu
+    {
+    items = { MENU_ITEM { command = EWhminiCmdNoDevices; txt = "No paired devices"; } };
+    }
+
+RESOURCE MENU_PANE r_whmini_paired_receive_menu
+    {
+    items = { MENU_ITEM { command = EWhminiCmdNoDevices; txt = "No paired devices"; } };
+    }
+
+RESOURCE MENU_PANE r_whmini_paired_remove_menu
+    {
+    items = { MENU_ITEM { command = EWhminiCmdNoDevices; txt = "No paired devices"; } };
     }
 
 // Memory selection for the file browser: the file dialog needs one, and
@@ -128,6 +181,25 @@ RESOURCE DIALOG r_whmini_message_query
             type = EAknCtMessageQuery;
             id = EAknMessageQueryContentId;
             control = AVKON_MESSAGE_QUERY { };
+            }
+        };
+    }
+
+// Yes / No, for removing a paired device.
+RESOURCE DIALOG r_whmini_confirm_query
+    {
+    flags = EGeneralQueryFlags;
+    buttons = R_AVKON_SOFTKEYS_YES_NO;
+    items =
+        {
+        DLG_LINE
+            {
+            type = EAknCtQuery;
+            id = EGeneralQuery;
+            control = AVKON_CONFIRMATION_QUERY
+                {
+                layout = EConfirmationQueryLayout;
+                };
             }
         };
     }

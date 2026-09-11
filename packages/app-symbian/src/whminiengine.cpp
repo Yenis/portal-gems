@@ -15,6 +15,9 @@ extern "C" {
 #include "../../../native/wormhole-mini/src/mailbox.h"
 #include "../../../native/wormhole-mini/src/xfer.h"
 #include "../../../native/wormhole-mini/src/net.h"
+#include "../../../native/wormhole-mini/src/pair.h"
+#include "../../../native/wormhole-mini/src/paired.h"
+#include "../../../native/wormhole-mini/src/base64.h"
 }
 
 static const char *const KAppId = "lothar.com/wormhole/text-or-file-xfer";
@@ -110,6 +113,9 @@ void WhminiDefaultSettings(TWhminiSettings& aSettings)
     aSettings.iRelayHost[0] = '\0';
     aSettings.iRelayPort = 4001;
     aSettings.iDirect = 0;
+    /* Honest rather than specific: the app runs on any FP2 phone, and the
+     * name is one menu item away from being whatever the owner prefers. */
+    CopyCStr(aSettings.iDeviceName, sizeof(aSettings.iDeviceName), "Symbian phone");
 }
 
 static void ApplySetting(TWhminiSettings& aS, const char* aKey, const char* aValue)
@@ -126,6 +132,12 @@ static void ApplySetting(TWhminiSettings& aS, const char* aKey, const char* aVal
     }
     else if (SameStr(aKey, "relay_port")) aS.iRelayPort = ParseUint(aValue, 4001);
     else if (SameStr(aKey, "direct")) aS.iDirect = (TInt)ParseUint(aValue, 0);
+    else if (SameStr(aKey, "device_name")) {
+        CopyCStr(aS.iDeviceName, sizeof(aS.iDeviceName), aValue);
+        TrimInPlace(aS.iDeviceName);
+        if (aS.iDeviceName[0] == '\0')
+            CopyCStr(aS.iDeviceName, sizeof(aS.iDeviceName), "Symbian phone");
+    }
 }
 
 TBool WhminiLoadSettings(TWhminiSettings& aSettings)
@@ -195,11 +207,131 @@ void WhminiSaveSettings(const TWhminiSettings& aSettings)
     out.AppendNum((TInt)aSettings.iRelayPort);
     out.Append(_L8("\ndirect="));
     out.AppendNum(aSettings.iDirect);
+    out.Append(_L8("\ndevice_name="));
+    out.Append(TPtrC8((const TUint8*)aSettings.iDeviceName));
     out.Append(_L8("\n"));
 
     file.Write(out);
     file.Close();
     fs.Close();
+}
+
+/* --- pairings ----------------------------------------------------------- */
+
+/* "<secret base64url>\t<name>\n" per pairing - the same shape wh-mini uses,
+ * in the one directory no other application can read. */
+static TInt PairsPath(RFs& aFs, TFileName& aPath)
+{
+    TInt err = aFs.CreatePrivatePath(EDriveC);
+    if (err != KErrNone && err != KErrAlreadyExists) return err;
+    err = aFs.PrivatePath(aPath);
+    if (err != KErrNone) return err;
+    aPath.Insert(0, _L("C:"));
+    aPath.Append(_L("pairs.txt"));
+    return KErrNone;
+}
+
+TInt WhminiLoadPairs(TWhminiPair* aPairs, TInt aMax)
+{
+    RFs fs;
+    RFile file;
+    TFileName path;
+    TBuf8<4096> raw;
+    TInt count = 0, i = 0;
+
+    if (fs.Connect() != KErrNone) return 0;
+    if (PairsPath(fs, path) != KErrNone ||
+        file.Open(fs, path, EFileRead) != KErrNone) {
+        fs.Close();
+        return 0;
+    }
+    file.Read(raw);
+    file.Close();
+    fs.Close();
+
+    while (i < raw.Length() && count < aMax) {
+        char secret[64];
+        TInt s = 0, n = 0;
+        while (i < raw.Length() && raw[i] != '\t' && raw[i] != '\n') {
+            if (s < (TInt)sizeof(secret) - 1) secret[s++] = (char)raw[i];
+            i++;
+        }
+        secret[s] = '\0';
+        if (i < raw.Length() && raw[i] == '\t') {
+            i++;
+            while (i < raw.Length() && raw[i] != '\n') {
+                if (n < (TInt)sizeof(aPairs[count].iName) - 1)
+                    aPairs[count].iName[n++] = (char)raw[i];
+                i++;
+            }
+            aPairs[count].iName[n] = '\0';
+            if (wh_base64url_decode(secret, (unsigned long)s, aPairs[count].iSecret,
+                                    sizeof(aPairs[count].iSecret)) == 32) {
+                count++;
+            }
+        }
+        while (i < raw.Length() && raw[i] != '\n') i++;
+        i++;
+    }
+    return count;
+}
+
+static TInt SavePairs(const TWhminiPair* aPairs, TInt aCount)
+{
+    RFs fs;
+    RFile file;
+    TFileName path;
+    TBuf8<4096> out;
+    TInt i, err;
+
+    for (i = 0; i < aCount; i++) {
+        char b64[64];
+        if (wh_base64url_encode(aPairs[i].iSecret, 32, b64, sizeof(b64)) < 0) return KErrGeneral;
+        out.Append(TPtrC8((const TUint8*)b64));
+        out.Append('\t');
+        out.Append(TPtrC8((const TUint8*)aPairs[i].iName));
+        out.Append('\n');
+    }
+
+    err = fs.Connect();
+    if (err != KErrNone) return err;
+    err = PairsPath(fs, path);
+    if (err == KErrNone) err = file.Replace(fs, path, EFileWrite);
+    if (err == KErrNone) {
+        err = file.Write(out);
+        file.Close();
+    }
+    fs.Close();
+    return err;
+}
+
+/* Static: sixteen pairings are about 2.5 KB, which does not belong on the
+ * 8 KB stack of whichever thread happens to call. */
+static TWhminiPair gPairs[KMaxPairs];
+
+TInt WhminiAddPair(const char* aName, const unsigned char aSecret[32])
+{
+    TInt count = WhminiLoadPairs(gPairs, KMaxPairs);
+    TInt i;
+    if (count >= KMaxPairs) return KErrOverflow;
+    /* One pairing per line, so neither a tab nor a newline may survive into
+     * the name the peer chose for itself. */
+    for (i = 0; aName[i] && i < (TInt)sizeof(gPairs[count].iName) - 1; i++) {
+        char c = aName[i];
+        gPairs[count].iName[i] = (c == '\t' || c == '\n' || c == '\r') ? ' ' : c;
+    }
+    gPairs[count].iName[i] = '\0';
+    Mem::Copy(gPairs[count].iSecret, aSecret, 32);
+    return SavePairs(gPairs, count + 1);
+}
+
+TInt WhminiRemovePair(TInt aIndex)
+{
+    TInt count = WhminiLoadPairs(gPairs, KMaxPairs);
+    TInt i;
+    if (aIndex < 0 || aIndex >= count) return KErrNotFound;
+    for (i = aIndex; i < count - 1; i++) gPairs[i] = gPairs[i + 1];
+    return SavePairs(gPairs, count - 1);
 }
 
 /* --- the transfer ------------------------------------------------------- */
@@ -523,6 +655,40 @@ static void Finish(TJob* aJob, TInt aState, const char* aMessage)
     aJob->iState = aState;
 }
 
+static void ServerOf(wh_paired_server& aSrv)
+{
+    aSrv.host = gSettings.iMailboxHost;
+    aSrv.port = gSettings.iMailboxPort;
+    aSrv.path = gSettings.iMailboxPath;
+    aSrv.appid = KAppId;
+}
+
+/* Open the receiving side on a paired device's derived code, polling the
+ * buckets either side of the phone's clock. Returns 0, or finishes the job
+ * and returns -1. */
+static TInt OpenPairedReceiver(TJob* aJob, wh_mailbox& aMailbox)
+{
+    wh_paired_server srv;
+    char code[WH_PAIR_CODE_MAX];
+    TInt rc;
+
+    ServerOf(srv);
+    aJob->iState = EJobWaitingForPeer;
+    rc = wh_paired_open_receiver(&aMailbox, &srv, aJob->iSecret, code);
+    if (rc == -3) {
+        Finish(aJob, EJobFailed, "Nothing arrived - did they choose Send?");
+        return -1;
+    }
+    if (rc != 0) {
+        Finish(aJob, EJobFailed, wh_net_cancelled() ? "Cancelled" : "Could not reach the server");
+        return -1;
+    }
+    CopyCStr(aJob->iCode, sizeof(aJob->iCode), code);
+    CopyCStr(aJob->iNameplate, sizeof(aJob->iNameplate), aMailbox.nameplate);
+    CopyCStr(aJob->iMailbox, sizeof(aJob->iMailbox), aMailbox.mailbox);
+    return 0;
+}
+
 static void RunJob(TJob* aJob)
 {
     wh_mailbox mailbox;
@@ -533,41 +699,45 @@ static void RunJob(TJob* aJob)
 
     wh_mailbox_init(&mailbox, &gMailboxBufs);
 
-    if (wh_mailbox_connect(&mailbox, gSettings.iMailboxHost, gSettings.iMailboxPort,
-                           gSettings.iMailboxPath, KAppId) != 0) {
-        Finish(aJob, EJobFailed, "Could not reach the server");
-        return;
-    }
-    if (wh_mailbox_claim(&mailbox, aJob->iCode) != 0) {
-        Finish(aJob, EJobFailed, "That code is not waiting on this server");
-        wh_mailbox_close(&mailbox, "errory");
-        return;
-    }
+    if (aJob->iPaired) {
+        if (OpenPairedReceiver(aJob, mailbox) != 0) return;
+    } else {
+        if (wh_mailbox_connect(&mailbox, gSettings.iMailboxHost, gSettings.iMailboxPort,
+                               gSettings.iMailboxPath, KAppId) != 0) {
+            Finish(aJob, EJobFailed, "Could not reach the server");
+            return;
+        }
+        if (wh_mailbox_claim(&mailbox, aJob->iCode) != 0) {
+            Finish(aJob, EJobFailed, "That code is not waiting on this server");
+            wh_mailbox_close(&mailbox, "errory");
+            return;
+        }
 
-    /* Which mailbox we ended up in. Two peers that never meet are almost
-     * always in different mailboxes, and without this there is no way to
-     * see that from the phone. */
-    CopyCStr(aJob->iNameplate, sizeof(aJob->iNameplate), mailbox.nameplate);
-    CopyCStr(aJob->iMailbox, sizeof(aJob->iMailbox), mailbox.mailbox);
+        /* Which mailbox we ended up in. Two peers that never meet are almost
+         * always in different mailboxes, and without this there is no way to
+         * see that from the phone. */
+        CopyCStr(aJob->iNameplate, sizeof(aJob->iNameplate), mailbox.nameplate);
+        CopyCStr(aJob->iMailbox, sizeof(aJob->iMailbox), mailbox.mailbox);
 
-    aJob->iState = EJobWaitingForPeer;
+        aJob->iState = EJobWaitingForPeer;
 
-    if (wh_mailbox_pake(&mailbox, KAppId, aJob->iCode) != 0) {
-        Finish(aJob, EJobFailed, "Handshake failed");
-        wh_mailbox_close(&mailbox, "errory");
-        return;
-    }
+        if (wh_mailbox_pake(&mailbox, KAppId, aJob->iCode) != 0) {
+            Finish(aJob, EJobFailed, "Handshake failed");
+            wh_mailbox_close(&mailbox, "errory");
+            return;
+        }
 
-    rc = wh_mailbox_version(&mailbox);
-    if (rc == -2) {
-        Finish(aJob, EJobFailed, "Wrong code");
-        wh_mailbox_close(&mailbox, "scary");
-        return;
-    }
-    if (rc != 0) {
-        Finish(aJob, EJobFailed, "Handshake failed");
-        wh_mailbox_close(&mailbox, "errory");
-        return;
+        rc = wh_mailbox_version(&mailbox);
+        if (rc == -2) {
+            Finish(aJob, EJobFailed, "Wrong code");
+            wh_mailbox_close(&mailbox, "scary");
+            return;
+        }
+        if (rc != 0) {
+            Finish(aJob, EJobFailed, "Handshake failed");
+            wh_mailbox_close(&mailbox, "errory");
+            return;
+        }
     }
 
     if (wh_xfer_await_offer(&mailbox, gSettings.iRelayHost, gSettings.iRelayPort,
@@ -866,49 +1036,71 @@ static void RunSendJob(TJob* aJob)
 
     wh_mailbox_init(&mailbox, &gMailboxBufs);
 
-    if (wh_mailbox_connect(&mailbox, gSettings.iMailboxHost, gSettings.iMailboxPort,
-                           gSettings.iMailboxPath, KAppId) != 0) {
-        source.iFile.Close();
-        fs.Close();
-        Finish(aJob, EJobFailed, "Could not reach the server");
-        return;
-    }
+    if (aJob->iPaired) {
+        /* The code is derived, not allocated: nothing to show, just a peer to
+         * wait for - the paired device polls for this very code. */
+        wh_paired_server srv;
+        char pcode[WH_PAIR_CODE_MAX];
+        ServerOf(srv);
+        aJob->iState = EJobWaitingForPeer;
+        rc = wh_paired_open_sender(&mailbox, &srv, aJob->iSecret, pcode);
+        if (rc != 0) {
+            source.iFile.Close();
+            if (folder) fs.Delete(KStageZip);
+            fs.Close();
+            Finish(aJob, EJobFailed,
+                   rc == -3 ? "They did not pick it up - is PortalGems open there?" :
+                   rc == -2 ? "That device holds a different pairing" :
+                   wh_net_cancelled() ? "Cancelled" : "Could not reach the server");
+            return;
+        }
+        CopyCStr(aJob->iCode, sizeof(aJob->iCode), pcode);
+        CopyCStr(aJob->iNameplate, sizeof(aJob->iNameplate), mailbox.nameplate);
+    } else {
+        if (wh_mailbox_connect(&mailbox, gSettings.iMailboxHost, gSettings.iMailboxPort,
+                               gSettings.iMailboxPath, KAppId) != 0) {
+            source.iFile.Close();
+            fs.Close();
+            Finish(aJob, EJobFailed, "Could not reach the server");
+            return;
+        }
 
-    if (wh_mailbox_allocate(&mailbox, code, sizeof(code)) != 0) {
-        source.iFile.Close();
-        fs.Close();
-        Finish(aJob, EJobFailed, "Could not get a code");
-        wh_mailbox_close(&mailbox, "errory");
-        return;
-    }
+        if (wh_mailbox_allocate(&mailbox, code, sizeof(code)) != 0) {
+            source.iFile.Close();
+            fs.Close();
+            Finish(aJob, EJobFailed, "Could not get a code");
+            wh_mailbox_close(&mailbox, "errory");
+            return;
+        }
 
-    CopyCStr(aJob->iCode, sizeof(aJob->iCode), code);
-    CopyCStr(aJob->iNameplate, sizeof(aJob->iNameplate), mailbox.nameplate);
-    aJob->iCodeReady = 1;
-    aJob->iState = EJobShowingCode;
+        CopyCStr(aJob->iCode, sizeof(aJob->iCode), code);
+        CopyCStr(aJob->iNameplate, sizeof(aJob->iNameplate), mailbox.nameplate);
+        aJob->iCodeReady = 1;
+        aJob->iState = EJobShowingCode;
 
-    if (wh_mailbox_pake(&mailbox, KAppId, code) != 0) {
-        source.iFile.Close();
-        fs.Close();
-        Finish(aJob, EJobFailed, "Handshake failed");
-        wh_mailbox_close(&mailbox, "errory");
-        return;
-    }
+        if (wh_mailbox_pake(&mailbox, KAppId, code) != 0) {
+            source.iFile.Close();
+            fs.Close();
+            Finish(aJob, EJobFailed, "Handshake failed");
+            wh_mailbox_close(&mailbox, "errory");
+            return;
+        }
 
-    rc = wh_mailbox_version(&mailbox);
-    if (rc == -2) {
-        source.iFile.Close();
-        fs.Close();
-        Finish(aJob, EJobFailed, "The other side used a wrong code");
-        wh_mailbox_close(&mailbox, "scary");
-        return;
-    }
-    if (rc != 0) {
-        source.iFile.Close();
-        fs.Close();
-        Finish(aJob, EJobFailed, "Handshake failed");
-        wh_mailbox_close(&mailbox, "errory");
-        return;
+        rc = wh_mailbox_version(&mailbox);
+        if (rc == -2) {
+            source.iFile.Close();
+            fs.Close();
+            Finish(aJob, EJobFailed, "The other side used a wrong code");
+            wh_mailbox_close(&mailbox, "scary");
+            return;
+        }
+        if (rc != 0) {
+            source.iFile.Close();
+            fs.Close();
+            Finish(aJob, EJobFailed, "Handshake failed");
+            wh_mailbox_close(&mailbox, "errory");
+            return;
+        }
     }
 
     aJob->iState = EJobSending;
@@ -949,6 +1141,246 @@ static void RunSendJob(TJob* aJob)
     wh_mailbox_close(&mailbox, "happy");
 }
 
+/* --- pairing ------------------------------------------------------------ */
+
+/* The handshake that finishes a pairing is an ordinary, tiny file. These
+ * move it to and from memory instead of the memory card. */
+struct TMemSource
+{
+    const unsigned char* iData;
+    unsigned long iLen;
+    unsigned long iOff;
+};
+
+static long MemSourceRead(void* aCtx, unsigned char* aBuf, unsigned long aCap)
+{
+    TMemSource* m = (TMemSource*)aCtx;
+    unsigned long n = m->iLen - m->iOff;
+    if (n > aCap) n = aCap;
+    Mem::Copy(aBuf, m->iData + m->iOff, (TInt)n);
+    m->iOff += n;
+    return (long)n;
+}
+
+struct TMemSink
+{
+    unsigned char* iData;
+    unsigned long iCap;
+    unsigned long iLen;
+};
+
+static int MemSinkWrite(void* aCtx, const unsigned char* aData, unsigned long aLen)
+{
+    TMemSink* m = (TMemSink*)aCtx;
+    if (m->iLen + aLen > m->iCap) return -1;
+    Mem::Copy(m->iData + m->iLen, aData, (TInt)aLen);
+    m->iLen += aLen;
+    return 0;
+}
+
+/* Wait on the codes derived from `aSecret` for the other device's handshake,
+ * and return its name. Finishes the job on failure. */
+static TInt ReceiveHandshake(TJob* aJob, const unsigned char aSecret[32],
+                             char* aName, TInt aCap)
+{
+    static unsigned char data[1024];
+    wh_mailbox mailbox;
+    wh_offer offer;
+    wh_paired_server srv;
+    char code[WH_PAIR_CODE_MAX];
+    TMemSink sink;
+    TInt rc;
+
+    ServerOf(srv);
+    wh_mailbox_init(&mailbox, &gMailboxBufs);
+    rc = wh_paired_open_receiver(&mailbox, &srv, aSecret, code);
+    if (rc != 0) {
+        Finish(aJob, EJobFailed,
+               rc == -3 ? "The other device did not finish - check both clocks" :
+               wh_net_cancelled() ? "Cancelled" : "Could not reach the server");
+        return -1;
+    }
+    if (wh_xfer_await_offer(&mailbox, gSettings.iRelayHost, gSettings.iRelayPort,
+                            &offer) != 0 ||
+        offer.is_text || offer.is_directory || offer.filesize > sizeof(data)) {
+        Finish(aJob, EJobFailed, "That was not a pairing handshake");
+        wh_mailbox_close(&mailbox, "errory");
+        return -1;
+    }
+    sink.iData = data;
+    sink.iCap = sizeof(data);
+    sink.iLen = 0;
+    if (wh_xfer_accept(&mailbox, KAppId, &offer, gSettings.iRelayHost,
+                       gSettings.iRelayPort, &gXferBufs, MemSinkWrite, &sink,
+                       NULL, NULL) != 0) {
+        Finish(aJob, EJobFailed, "The handshake did not arrive intact");
+        wh_mailbox_close(&mailbox, "errory");
+        return -1;
+    }
+    wh_mailbox_close(&mailbox, "happy");
+    if (wh_pair_handshake_decode((const char*)data, sink.iLen, aName,
+                                 (unsigned long)aCap) != 0) {
+        Finish(aJob, EJobFailed, "Malformed pairing handshake");
+        return -1;
+    }
+    return 0;
+}
+
+/* Pair by showing a code: allocate an ordinary wormhole code and send the
+ * invitation - the PGPAIR1 payload, exactly what a QR code would carry -
+ * through it as a text message. The other device types the code; after that
+ * both sides run the same handshake the apps use. */
+static void RunPairHostJob(TJob* aJob)
+{
+    static char invitation[WH_PAIR_PAYLOAD_MAX];
+    wh_mailbox mailbox;
+    wh_pair_payload p;
+    char code[WH_CODE_MAX];
+    TInt rc;
+
+    aJob->iState = EJobConnecting;
+    CopyCStr(p.name, sizeof(p.name), gSettings.iDeviceName);
+    wh_net_random(p.secret, WH_PAIR_SECRET_LEN);
+    if (wh_pair_encode(&p, invitation, sizeof(invitation)) < 0) {
+        Finish(aJob, EJobFailed, "Could not build the invitation");
+        return;
+    }
+
+    wh_mailbox_init(&mailbox, &gMailboxBufs);
+    if (wh_mailbox_connect(&mailbox, gSettings.iMailboxHost, gSettings.iMailboxPort,
+                           gSettings.iMailboxPath, KAppId) != 0) {
+        Finish(aJob, EJobFailed, "Could not reach the server");
+        return;
+    }
+    if (wh_mailbox_allocate(&mailbox, code, sizeof(code)) != 0) {
+        Finish(aJob, EJobFailed, "Could not get a code");
+        wh_mailbox_close(&mailbox, "errory");
+        return;
+    }
+    CopyCStr(aJob->iCode, sizeof(aJob->iCode), code);
+    CopyCStr(aJob->iNameplate, sizeof(aJob->iNameplate), mailbox.nameplate);
+    aJob->iCodeReady = 1;
+    aJob->iState = EJobShowingCode;
+
+    if (wh_mailbox_pake(&mailbox, KAppId, code) != 0) {
+        Finish(aJob, EJobFailed, wh_net_cancelled() ? "Cancelled" : "Handshake failed");
+        wh_mailbox_close(&mailbox, "errory");
+        return;
+    }
+    rc = wh_mailbox_version(&mailbox);
+    if (rc != 0) {
+        Finish(aJob, EJobFailed, rc == -2 ? "The other side used a wrong code"
+                                          : "Handshake failed");
+        wh_mailbox_close(&mailbox, rc == -2 ? "scary" : "errory");
+        return;
+    }
+    if (wh_xfer_send_text(&mailbox, invitation) != 0) {
+        Finish(aJob, EJobFailed, "The invitation was not delivered");
+        wh_mailbox_close(&mailbox, "errory");
+        return;
+    }
+    wh_mailbox_close(&mailbox, "happy");
+
+    aJob->iState = EJobPairing;
+    if (ReceiveHandshake(aJob, p.secret, aJob->iPeerName, sizeof(aJob->iPeerName)) != 0) return;
+    if (WhminiAddPair(aJob->iPeerName, p.secret) != KErrNone) {
+        Finish(aJob, EJobFailed, "Paired, but could not save it");
+        return;
+    }
+    Finish(aJob, EJobDone, "Paired");
+}
+
+/* Pair by entering the code another device shows. */
+static void RunPairJoinJob(TJob* aJob)
+{
+    static char handshake[256];
+    wh_mailbox mailbox;
+    wh_offer offer;
+    wh_pair_payload p;
+    wh_paired_server srv;
+    char dcode[WH_PAIR_CODE_MAX];
+    TMemSource src;
+    long hslen;
+    TInt rc;
+
+    aJob->iState = EJobConnecting;
+    wh_mailbox_init(&mailbox, &gMailboxBufs);
+    if (wh_mailbox_connect(&mailbox, gSettings.iMailboxHost, gSettings.iMailboxPort,
+                           gSettings.iMailboxPath, KAppId) != 0) {
+        Finish(aJob, EJobFailed, "Could not reach the server");
+        return;
+    }
+    if (wh_mailbox_claim(&mailbox, aJob->iCode) != 0) {
+        Finish(aJob, EJobFailed, "That code is not waiting on this server");
+        wh_mailbox_close(&mailbox, "errory");
+        return;
+    }
+    aJob->iState = EJobWaitingForPeer;
+    if (wh_mailbox_pake(&mailbox, KAppId, aJob->iCode) != 0) {
+        Finish(aJob, EJobFailed, wh_net_cancelled() ? "Cancelled" : "Handshake failed");
+        wh_mailbox_close(&mailbox, "errory");
+        return;
+    }
+    rc = wh_mailbox_version(&mailbox);
+    if (rc != 0) {
+        Finish(aJob, EJobFailed, rc == -2 ? "Wrong code" : "Handshake failed");
+        wh_mailbox_close(&mailbox, rc == -2 ? "scary" : "errory");
+        return;
+    }
+    if (wh_xfer_await_offer(&mailbox, gSettings.iRelayHost, gSettings.iRelayPort,
+                            &offer) != 0) {
+        Finish(aJob, EJobFailed, "No usable offer");
+        wh_mailbox_close(&mailbox, "errory");
+        return;
+    }
+    if (!offer.is_text || wh_pair_decode(offer.text, (unsigned long)User::StringLength(
+                              (const TUint8*)offer.text), &p) != 0) {
+        /* A file offered on the code is declined, so its sender fails
+         * cleanly instead of waiting. */
+        if (!offer.is_text) wh_xfer_reject(&mailbox, "not a pairing invitation");
+        Finish(aJob, EJobFailed, "That code did not carry a pairing invitation");
+        wh_mailbox_close(&mailbox, "errory");
+        return;
+    }
+    wh_mailbox_close(&mailbox, "happy");
+    CopyCStr(aJob->iPeerName, sizeof(aJob->iPeerName), p.name);
+
+    /* Now the handshake: our name, sent over the code both sides derive from
+     * the secret we were just given. */
+    aJob->iState = EJobPairing;
+    ServerOf(srv);
+    wh_mailbox_init(&mailbox, &gMailboxBufs);
+    rc = wh_paired_open_sender(&mailbox, &srv, p.secret, dcode);
+    if (rc != 0) {
+        Finish(aJob, EJobFailed,
+               rc == -3 ? "The other device stopped waiting - check both clocks" :
+               wh_net_cancelled() ? "Cancelled" : "Could not reach the other device");
+        return;
+    }
+    hslen = wh_pair_handshake_encode(gSettings.iDeviceName, handshake, sizeof(handshake));
+    if (hslen < 0) {
+        Finish(aJob, EJobFailed, "Could not build the handshake");
+        wh_mailbox_close(&mailbox, "errory");
+        return;
+    }
+    src.iData = (const unsigned char*)handshake;
+    src.iLen = (unsigned long)hslen;
+    src.iOff = 0;
+    if (wh_xfer_send_file(&mailbox, KAppId, WH_PAIR_HANDSHAKE_FILE, (unsigned long)hslen,
+                          gSettings.iRelayHost, gSettings.iRelayPort, &gXferBufs,
+                          MemSourceRead, &src, NULL, NULL) != 0) {
+        Finish(aJob, EJobFailed, "The handshake was not delivered");
+        wh_mailbox_close(&mailbox, "errory");
+        return;
+    }
+    wh_mailbox_close(&mailbox, "happy");
+    if (WhminiAddPair(p.name, p.secret) != KErrNone) {
+        Finish(aJob, EJobFailed, "Paired, but could not save it");
+        return;
+    }
+    Finish(aJob, EJobDone, "Paired");
+}
+
 TInt WhminiWorker(TAny* aPtr)
 {
     TJob* job = (TJob*)aPtr;
@@ -962,7 +1394,9 @@ TInt WhminiWorker(TAny* aPtr)
     if (cleanup) {
         TRAPD(err,
               job->iKind == EJobKindReceive    ? RunJob(job) :
-              job->iKind == EJobKindSendText   ? RunSendTextJob(job)
+              job->iKind == EJobKindSendText   ? RunSendTextJob(job) :
+              job->iKind == EJobKindPairHost   ? RunPairHostJob(job) :
+              job->iKind == EJobKindPairJoin   ? RunPairJoinJob(job)
                                                : RunSendJob(job));
         if (err != KErrNone && job->iState != EJobFailed) {
             Finish(job, EJobFailed, "Unexpected error");

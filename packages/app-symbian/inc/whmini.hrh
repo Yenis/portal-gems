@@ -16,7 +16,22 @@ enum TWhminiCommands
     EWhminiCmdToggleDirect,
     EWhminiCmdSendText,
     EWhminiCmdShowMessage,
-    EWhminiCmdAbout
+    EWhminiCmdAbout,
+    EWhminiCmdPair,           /* cascade parents - never dispatched */
+    EWhminiCmdPairedSend,
+    EWhminiCmdPairedReceive,
+    EWhminiCmdPairedRemove,
+    EWhminiCmdPairHost,
+    EWhminiCmdPairJoin,
+    EWhminiCmdNoDevices,      /* placeholder shown while nothing is paired */
+    EWhminiCmdSetDeviceName
     };
+
+/* Paired-device menus are filled in when they open, one item per pairing:
+ * the command is the base plus the pairing's index. Well clear of the enum
+ * above and of Avkon's own command range. */
+#define EWhminiCmdPairedSendBase    0x6100
+#define EWhminiCmdPairedReceiveBase 0x6200
+#define EWhminiCmdPairedRemoveBase  0x6300
 
 #endif

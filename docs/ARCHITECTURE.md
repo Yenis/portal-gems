@@ -156,7 +156,11 @@ Consumed by both apps as **npm `file:` symlinks** (see §5 build gotchas).
   2×10 hex; bucket = unixSeconds/300, receiver tries `[b, b−1, b+1]`.
   Timeouts: sender 45 s, receiver poll 60 s, **each poll attempt 10 s**
   (`PAIRED_ATTEMPT_TIMEOUT_MS`). A frozen test vector pins the
-  derivation - **changing it breaks pairing between app versions**. Own UTF-8
+  derivation - **changing it breaks pairing between app versions**. The
+  literals are pinned in core's tests and in `native/wormhole-mini`'s
+  `test_pair.c`, and were checked against an independent Python
+  implementation; the old test compared `deriveCode` with itself and could
+  never fail. Own UTF-8
   codec (Hermes has no TextDecoder). Crypto via @noble/hashes (pure JS).
   - **Getting the payload across.** Three ways, one payload: a QR code,
     copy/paste, or *pairing over a code* - the displayer allocates an ordinary

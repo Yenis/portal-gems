@@ -62,14 +62,25 @@ describe('code derivation', () => {
   // versions can no longer find each other. Never change casually.
   const secret = toBase64Url(Uint8Array.from({ length: 32 }, (_, i) => i));
 
+  // These literals are the derivation's actual output, cross-checked against
+  // an independent Python implementation (hmac/hashlib) and against the C one
+  // in native/wormhole-mini (tests/test_pair.c pins the same values). This
+  // test used to compare deriveCode with itself, which could never fail.
   it('matches the frozen v1 vector', () => {
-    expect(deriveCode(secret, 5_900_000)).toBe(
-      deriveCode(secret, 5_900_000)
+    expect(secret).toBe('AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8');
+    expect(deriveCode(secret, 5_900_000)).toBe('78847104-4b2c920e11-127666f43e');
+    expect(deriveCode(secret, 0)).toBe('84198084-a64125dc4c-c6ce0273f7');
+    expect(deriveCode(secret, 1)).toBe('86751495-84d8487eb6-1858ba58a6');
+    expect(deriveCode(secret, 42)).toBe('93636662-ffcccbd531-9d38f615c1');
+    expect(deriveCode(secret, 5_866_666)).toBe('10150805-bcac0279fb-c1ae797f75');
+  });
+
+  it('pins the payload encoding, non-ASCII name included', () => {
+    expect(
+      encodePairingPayload({ t: 'portalgems-pair', v: 1, name: 'Nokia E72 čćž', secret })
+    ).toBe(
+      'PGPAIR1:eyJ2IjoxLCJuYW1lIjoiTm9raWEgRTcyIMSNxIfFviIsInNlY3JldCI6IkFBRUNBd1FGQmdjSUNRb0xEQTBPRHhBUkVoTVVGUllYR0JrYUd4d2RIaDgifQ'
     );
-    const code = deriveCode(secret, 5_900_000);
-    expect(code).toMatch(/^\d{8}-[0-9a-f]{10}-[0-9a-f]{10}$/);
-    // pin the exact value so cross-version compatibility breaks loudly
-    expect(code).toBe(deriveCode(secret, 5_900_000));
   });
 
   it('changes with the bucket and with the secret', () => {

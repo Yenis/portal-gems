@@ -45,6 +45,18 @@ void wh_net_shutdown(void);
 /* Cryptographically strong bytes. Also what TweetNaCl's randombytes uses. */
 void wh_net_random(unsigned char *buf, unsigned long len);
 
+/* Seconds since 1970-01-01 UTC. Paired devices derive their codes from the
+ * time, so this has to be UTC however the device's clock is presented to its
+ * user - and it has to be roughly right: two clocks more than about five
+ * minutes apart derive codes that never meet. */
+unsigned long wh_net_unix_time(void);
+
+/* The longest a single read may wait, in milliseconds, for reads started after
+ * the call; 0 restores the platform default. A paired receiver polling
+ * candidate codes shortens it while it waits for a handshake, so a nameplate
+ * still held by a sender that died costs seconds rather than minutes. */
+void wh_net_set_read_timeout(unsigned long ms);
+
 /* Where a connection attempt failed, and what the platform said about it.
  * "Could not connect" on a phone is six different problems wearing the same
  * coat - no access point, capability refused, DNS, firewall, wrong port -

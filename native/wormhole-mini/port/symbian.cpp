@@ -368,6 +368,7 @@ extern "C" int wh_net_connect(wh_conn **out, const char *host, unsigned int port
  * failure instead of an application that hangs until the phone is
  * rebooted - which is exactly what happened before this existed. */
 #define WH_READ_TIMEOUT_US 180000000   /* three minutes */
+static TInt gReadTimeoutUs = WH_READ_TIMEOUT_US;
 
 extern "C" int wh_net_write(wh_conn *c, const unsigned char *buf, unsigned long len)
 {
@@ -403,11 +404,11 @@ extern "C" long wh_net_read(wh_conn *c, unsigned char *buf, unsigned long cap)
 
     if (gCancelled) return -1;
 
-    /* The read is never abandoned speculatively - doing that on a timer tick
-     * would risk discarding bytes that had already arrived - so it is only
-     * given up when we really are stopping. */
+    /* Given up only on cancel or on the read timeout - normally three
+     * minutes, shorter while a paired receiver is probing a candidate code
+     * (see wh_net_set_read_timeout). */
     c->socket.RecvOneOrMore(data, 0, status, received);
-    outcome = WaitBounded(status, WH_READ_TIMEOUT_US);
+    outcome = WaitBounded(status, gReadTimeoutUs);
 
     if (outcome != WH_WAIT_DONE) {
         c->socket.CancelRecv();
@@ -449,6 +450,27 @@ extern "C" void wh_net_shutdown(void)
         gSocketServ.Close();
         gNetStarted = EFalse;
     }
+}
+
+extern "C" void wh_net_set_read_timeout(unsigned long ms)
+{
+    /* Symbian's timers take a TInt of microseconds, which tops out at about
+     * 35 minutes - far beyond anything asked for here. */
+    gReadTimeoutUs = ms ? (TInt)(ms * 1000UL) : WH_READ_TIMEOUT_US;
+}
+
+/* UTC, from the phone's clock and its time zone setting together. A phone
+ * whose local time is right but whose zone is wrong reports a UTC that is
+ * hours out, and paired codes will not meet - which is why the app shows this
+ * value on screen rather than trusting it silently. */
+extern "C" unsigned long wh_net_unix_time(void)
+{
+    TTime now;
+    TTime epoch(TDateTime(1970, EJanuary, 0, 0, 0, 0, 0));
+    TTimeIntervalSeconds secs;
+    now.UniversalTime();
+    if (now.SecondsFrom(epoch, secs) != KErrNone) return 0;
+    return (unsigned long)secs.Int();
 }
 
 extern "C" void wh_net_random(unsigned char *buf, unsigned long len)

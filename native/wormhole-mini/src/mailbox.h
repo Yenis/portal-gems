@@ -64,6 +64,17 @@ int wh_mailbox_connect(wh_mailbox *m, const char *host, unsigned int port,
 /* Claim the nameplate at the front of `code` and open the mailbox it names. */
 int wh_mailbox_claim(wh_mailbox *m, const char *code);
 
+/* Is this code's nameplate currently claimed by someone? Asks the server for
+ * its list rather than claiming, because claiming a nameplate that does not
+ * exist creates it - and a paired receiver polling three candidate codes
+ * would then sit in empty mailboxes of its own making. This is what the Rust
+ * client does before joining with `allocate = false`.
+ *
+ * Returns 1 if listed, 0 if not, -1 on a failure - including a list too long
+ * for one message, which a busy public server could send; callers treat that
+ * as "not there yet" and move on. */
+int wh_mailbox_nameplate_listed(wh_mailbox *m, const char *code);
+
 /* Ask the server for a fresh nameplate, build a full code from it with two
  * words from the PGP list, claim it and open the mailbox. The code is what
  * the user reads out or types into the other device. */

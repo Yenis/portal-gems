@@ -12,7 +12,8 @@ VENDOR_CFLAGS = -std=gnu89 -O2 -w
 SRC = src/sha256.c src/kdf.c src/box.c src/spake2.c \
       src/sha1.c src/base64.c src/json.c src/ws.c src/mailbox.c \
       src/transit.c src/xfer.c \
-      src/wordlist.c src/code.c src/crc32.c src/inflate.c src/zip.c src/zipw.c
+      src/wordlist.c src/code.c src/crc32.c src/inflate.c src/zip.c src/zipw.c \
+      src/pair.c src/paired.c
 PORT = port/posix.c
 # src/ed25519.c compiles vendor/tweetnacl/tweetnacl.c inside itself to reach
 # its static ed25519 internals, so tweetnacl.c is never built separately -
@@ -52,6 +53,9 @@ $(BUILD)/test_zip: tests/test_zip.c $(SRC) $(PORT) $(BUILD)/ed25519.o | $(BUILD)
 $(BUILD)/test_zipw: tests/test_zipw.c $(SRC) $(PORT) $(BUILD)/ed25519.o | $(BUILD)
 	$(CC) $(CFLAGS) -o $@ tests/test_zipw.c $(SRC) $(PORT) $(BUILD)/ed25519.o
 
+$(BUILD)/test_pair: tests/test_pair.c $(SRC) $(PORT) $(BUILD)/ed25519.o | $(BUILD)
+	$(CC) $(CFLAGS) -o $@ tests/test_pair.c $(SRC) $(PORT) $(BUILD)/ed25519.o
+
 $(BUILD)/test_proto: tests/test_proto.c $(SRC) $(PORT) $(BUILD)/ed25519.o | $(BUILD)
 	$(CC) $(CFLAGS) -o $@ tests/test_proto.c $(SRC) $(PORT) $(BUILD)/ed25519.o
 
@@ -60,7 +64,7 @@ $(BUILD)/wh-mini: cli/wh-mini.c $(SRC) $(PORT) $(BUILD)/ed25519.o | $(BUILD)
 
 cli: $(BUILD)/wh-mini
 
-test: $(BUILD)/test_vectors $(BUILD)/test_proto $(BUILD)/test_inflate $(BUILD)/test_zip $(BUILD)/test_zipw
+test: $(BUILD)/test_vectors $(BUILD)/test_proto $(BUILD)/test_inflate $(BUILD)/test_zip $(BUILD)/test_zipw $(BUILD)/test_pair
 	./$(BUILD)/test_vectors
 	@echo
 	./$(BUILD)/test_proto
@@ -70,6 +74,8 @@ test: $(BUILD)/test_vectors $(BUILD)/test_proto $(BUILD)/test_inflate $(BUILD)/t
 	./$(BUILD)/test_zip
 	@echo
 	./$(BUILD)/test_zipw
+	@echo
+	./$(BUILD)/test_pair
 	@echo
 	python3 tools/checkzip.py $(BUILD)/written.zip
 
@@ -91,6 +97,9 @@ $(BUILD)/arm/test_zip: tests/test_zip.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o | 
 $(BUILD)/arm/test_zipw: tests/test_zipw.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o | $(BUILD)/arm
 	$(ARM_CC) $(CFLAGS) -static -o $@ tests/test_zipw.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o
 
+$(BUILD)/arm/test_pair: tests/test_pair.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o | $(BUILD)/arm
+	$(ARM_CC) $(CFLAGS) -static -o $@ tests/test_pair.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o
+
 $(BUILD)/arm/test_proto: tests/test_proto.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o | $(BUILD)/arm
 	$(ARM_CC) $(CFLAGS) -static -o $@ tests/test_proto.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o
 
@@ -99,7 +108,7 @@ $(BUILD)/arm/wh-mini: cli/wh-mini.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o | $(BU
 
 cli-arm: $(BUILD)/arm/wh-mini
 
-test-arm: $(BUILD)/arm/test_vectors $(BUILD)/arm/test_proto $(BUILD)/arm/test_inflate $(BUILD)/arm/test_zip $(BUILD)/arm/test_zipw
+test-arm: $(BUILD)/arm/test_vectors $(BUILD)/arm/test_proto $(BUILD)/arm/test_inflate $(BUILD)/arm/test_zip $(BUILD)/arm/test_zipw $(BUILD)/arm/test_pair
 	$(QEMU) ./$(BUILD)/arm/test_vectors
 	@echo
 	$(QEMU) ./$(BUILD)/arm/test_proto
@@ -109,6 +118,8 @@ test-arm: $(BUILD)/arm/test_vectors $(BUILD)/arm/test_proto $(BUILD)/arm/test_in
 	$(QEMU) ./$(BUILD)/arm/test_zip
 	@echo
 	$(QEMU) ./$(BUILD)/arm/test_zipw
+	@echo
+	$(QEMU) ./$(BUILD)/arm/test_pair
 	@echo
 	python3 tools/checkzip.py $(BUILD)/written.zip
 
