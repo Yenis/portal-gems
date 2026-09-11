@@ -5,7 +5,7 @@ All notable changes to PortalGems are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.3.1] - 2026-09-11
 
 Send a text message, on every platform.
 
@@ -23,6 +23,13 @@ Send a text message, on every platform.
   sealed with a key from the same handshake. One difference is worth knowing:
   a message is delivered by the act of offering it, so unlike a file there is
   nothing to accept or decline.
+
+  On Symbian (PortalGems Mini 0.6.0) it is Options > Send message; a received
+  message opens in a scrollable dialog and stays under Options > Show message.
+  Up to 400 characters, with accented letters converted properly rather than
+  mangled.
+
+[1.3.1]: https://github.com/Yenis/portal-gems/releases/tag/v1.3.1
 
 ## [1.3.0] - 2026-09-08
 
