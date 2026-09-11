@@ -154,12 +154,31 @@ Consumed by both apps as **npm `file:` symlinks** (see §5 build gotchas).
   `PGPAIR1:<b64url(json{v,name,secret})>` (32-byte secret); code derivation
   `HMAC-SHA256(secret, "portalgems-code-v1:"+bucket)` → 8-digit nameplate +
   2×10 hex; bucket = unixSeconds/300, receiver tries `[b, b−1, b+1]`.
-  Timeouts: sender 45 s, receiver poll 60 s. A frozen test vector pins the
+  Timeouts: sender 45 s, receiver poll 60 s, **each poll attempt 10 s**
+  (`PAIRED_ATTEMPT_TIMEOUT_MS`). A frozen test vector pins the
   derivation - **changing it breaks pairing between app versions**. Own UTF-8
   codec (Hermes has no TextDecoder). Crypto via @noble/hashes (pure JS).
+  - **Getting the payload across.** Three ways, one payload: a QR code,
+    copy/paste, or *pairing over a code* - the displayer allocates an ordinary
+    wormhole code and sends the encoded payload through it as a text message
+    (`send_text`); the joiner types the code, gets the payload from
+    `IncomingFile.text()`, and from there both sides run the unchanged
+    handshake (joiner sends its name over the derived code, displayer polls for
+    it). No new format and no new derivation, so existing pairings and the QR
+    path are untouched. `classifyPairingInput` lets one field take either a
+    typed code or a pasted payload.
+  - **Why each attempt is bounded.** A nameplate still claimed by a sender
+    that died while waiting (killed, crashed, battery) makes a receiver join
+    and then wait forever for a PAKE that never comes; the loop's own deadline
+    is only checked *between* attempts, so one stale code stalled paired
+    receive indefinitely. Found while testing pairing: the harness's
+    timed-out senders left exactly such claims. Reproduced on purpose (one
+    SIGKILLed sender on `b+1`) and shown abandoned at 10001 ms before the real
+    offer was found. An abandoned attempt leaves our own claim, so the stale
+    nameplate reports "crowded" and fails fast from then on.
 - `errors.ts` - engine-string → i18n-key mapping.
 
-Tests: `cd packages/core && npm test` (vitest, 25 tests).
+Tests: `cd packages/core && npm test` (vitest, 40 tests).
 
 ## 4. The apps
 
@@ -239,6 +258,17 @@ recursive size.
   no existing user's settings or pairings move. The smoke profile is stable, not
   per-run: `PG_SMOKE_PAIRED_RECEIVE`/`_SEND` reuse a pairing made by an earlier
   `PG_SMOKE_PAIR_SHOW` run.
+- **Pairing smoke flows** - two instances, each with its own
+  `PG_SMOKE_PROFILE`: `PG_SMOKE_PAIR_HOST=1` (prints `PAIR-CODE:<code>`) with
+  `PG_SMOKE_PAIR_JOIN=<code>` pairs over a code; `PG_SMOKE_PAIR_SHOW=1`
+  (prints `PAIR-PAYLOAD:...`) with `PG_SMOKE_PAIR_JOIN=<payload>` pairs by
+  paste through the same field. `PG_SMOKE_DUMP_PAIRCODE=1` prints each stored
+  pairing's derived code and its three poll candidates - two paired profiles
+  must print the same, which checks the secret without logging it.
+  `PG_SMOKE_TRACE=1` logs every `requestReceive` (server, nameplate, outcome,
+  duration); it is how the stale-claim stall above was found. Note the paired
+  send smoke uses `PG_SMOKE_RENDEZVOUS`/`_TRANSIT` while the renderer uses its
+  own setting (default: PortalGems server) - point both at the same server.
 - Receives into `~/Downloads` or the folder picked in Settings (localStorage
   `pg-download-dir`). `pg:acceptDownload` stages the transfer in
   `userData/incoming/<id>` and only then moves it into the destination

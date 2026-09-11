@@ -60,7 +60,7 @@
   },
   "pair": {
     "title": "Gerät koppeln",
-    "showButton": "Kopplungscode anzeigen",
+    "showButton": "QR-Code anzeigen",
     "showHint": "Scanne diesen QR-Code mit dem anderen Gerät oder kopiere den Kopplungscode und füge ihn dort ein. Wer diesen Code sieht, kann sich mit dir koppeln - teile ihn nur privat.",
     "scanButton": "QR-Code scannen",
     "manualPlaceholder": "…oder Kopplungscode hier einfügen",
@@ -70,7 +70,13 @@
     "waiting": "Warte, bis das andere Gerät die Kopplung abschließt…",
     "invalidPayload": "Das ist kein gültiger PortalGems-Kopplungscode.",
     "success": "Mit {{name}} gekoppelt!",
-    "failed": "Kopplung fehlgeschlagen: {{message}}"
+    "failed": "Kopplung fehlgeschlagen: {{message}}",
+    "codeButton": "Mit einem Code koppeln",
+    "codeHint": "Tippe auf dem anderen Gerät auf „Neues Gerät koppeln“ und gib diesen Code ein. Er funktioniert einmal - wer ihn zuerst eingibt, wird mit dir gekoppelt. Teile ihn also nur privat.",
+    "hostWaiting": "Warte darauf, dass das andere Gerät den Code eingibt…",
+    "entryPlaceholder": "Code vom anderen Gerät eingeben",
+    "entryButton": "Koppeln",
+    "notAnInvitation": "Dieser Code enthielt keine Kopplungseinladung. Wähle auf dem anderen Gerät „Mit einem Code koppeln“."
   },
   "devices": {
     "title": "Geräte",

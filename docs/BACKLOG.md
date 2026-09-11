@@ -4,7 +4,12 @@ Things worth doing that are deliberately not being done yet. Each entry
 says what the problem actually is, so the next person does not have to
 rediscover it.
 
-## Pairing without a camera
+## Pairing without a camera - in progress
+
+**Status:** pairing over a code is built and verified on the desktop (two
+desktops paired with each other, then transferred between the new pairing);
+Android and Symbian next. See "Getting the payload across" in
+`docs/ARCHITECTURE.md` for how it works.
 
 Pairing currently assumes one device can photograph another's screen. That
 assumption fails in more cases than it holds:

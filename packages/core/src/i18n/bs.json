@@ -60,7 +60,7 @@
   },
   "pair": {
     "title": "Uparivanje uređaja",
-    "showButton": "Prikaži kod za uparivanje",
+    "showButton": "Prikaži QR kod",
     "showHint": "Skeniraj ovaj QR kod drugim uređajem ili kopiraj kod za uparivanje i zalijepi ga tamo. Ko god vidi ovaj kod može se upariti s tobom - dijeli ga samo privatno.",
     "scanButton": "Skeniraj QR kod",
     "manualPlaceholder": "…ili zalijepi kod za uparivanje ovdje",
@@ -70,7 +70,13 @@
     "waiting": "Čekam da drugi uređaj završi uparivanje…",
     "invalidPayload": "Ovo nije važeći PortalGems kod za uparivanje.",
     "success": "Upareno s {{name}}!",
-    "failed": "Uparivanje nije uspjelo: {{message}}"
+    "failed": "Uparivanje nije uspjelo: {{message}}",
+    "codeButton": "Upari pomoću koda",
+    "codeHint": "Na drugom uređaju dodirni Upari novi uređaj i unesi ovaj kod. Radi samo jednom - ko ga prvi unese, uparuje se s tobom, zato ga dijeli privatno.",
+    "hostWaiting": "Čekam da drugi uređaj unese kod…",
+    "entryPlaceholder": "Unesi kod s drugog uređaja",
+    "entryButton": "Upari",
+    "notAnInvitation": "Taj kod nije sadržavao pozivnicu za uparivanje. Na drugom uređaju odaberi Upari pomoću koda."
   },
   "devices": {
     "title": "Uređaji",

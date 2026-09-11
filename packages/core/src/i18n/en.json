@@ -60,7 +60,7 @@
   },
   "pair": {
     "title": "Pair a device",
-    "showButton": "Show pairing code",
+    "showButton": "Show a QR code",
     "showHint": "Scan this QR code with the other device, or copy the pairing code and paste it there. Anyone who sees this code can pair with you - share it privately.",
     "scanButton": "Scan QR code",
     "manualPlaceholder": "…or paste a pairing code here",
@@ -70,7 +70,13 @@
     "waiting": "Waiting for the other device to finish pairing…",
     "invalidPayload": "That is not a valid PortalGems pairing code.",
     "success": "Paired with {{name}}!",
-    "failed": "Pairing failed: {{message}}"
+    "failed": "Pairing failed: {{message}}",
+    "codeButton": "Pair using a code",
+    "codeHint": "On the other device, tap Pair a new device and enter this code. It works once - whoever enters it first becomes paired with you, so share it privately.",
+    "hostWaiting": "Waiting for the other device to enter the code…",
+    "entryPlaceholder": "Enter the code from the other device",
+    "entryButton": "Pair",
+    "notAnInvitation": "That code didn't carry a pairing invitation. On the other device, choose Pair using a code."
   },
   "devices": {
     "title": "Devices",

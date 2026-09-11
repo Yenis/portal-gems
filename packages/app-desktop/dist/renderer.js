@@ -24205,6 +24205,7 @@
   var PAIRING_BUCKET_SECONDS = 300;
   var PAIRED_SEND_TIMEOUT_MS = 45e3;
   var PAIRED_RECEIVE_TIMEOUT_MS = 6e4;
+  var PAIRED_ATTEMPT_TIMEOUT_MS = 1e4;
   var PAIRING_HANDSHAKE_FILE = "pg-pair-handshake.json";
   var B64URL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
   function utf8Encode(s) {
@@ -24337,6 +24338,14 @@
     } catch {
       return null;
     }
+  }
+  var WORMHOLE_CODE_RE = /^\d+(-[a-zA-Z0-9]+)+$/;
+  function classifyPairingInput(raw) {
+    const s = raw.trim();
+    const payload = parsePairingPayload(s);
+    if (payload) return { kind: "payload", payload };
+    if (WORMHOLE_CODE_RE.test(s)) return { kind: "code", code: s };
+    return null;
   }
 
   // ../core/src/servers.ts
@@ -27519,7 +27528,7 @@
     },
     pair: {
       title: "Uparivanje ure\u0111aja",
-      showButton: "Prika\u017Ei kod za uparivanje",
+      showButton: "Prika\u017Ei QR kod",
       showHint: "Skeniraj ovaj QR kod drugim ure\u0111ajem ili kopiraj kod za uparivanje i zalijepi ga tamo. Ko god vidi ovaj kod mo\u017Ee se upariti s tobom - dijeli ga samo privatno.",
       scanButton: "Skeniraj QR kod",
       manualPlaceholder: "\u2026ili zalijepi kod za uparivanje ovdje",
@@ -27529,7 +27538,13 @@
       waiting: "\u010Cekam da drugi ure\u0111aj zavr\u0161i uparivanje\u2026",
       invalidPayload: "Ovo nije va\u017Ee\u0107i PortalGems kod za uparivanje.",
       success: "Upareno s {{name}}!",
-      failed: "Uparivanje nije uspjelo: {{message}}"
+      failed: "Uparivanje nije uspjelo: {{message}}",
+      codeButton: "Upari pomo\u0107u koda",
+      codeHint: "Na drugom ure\u0111aju dodirni Upari novi ure\u0111aj i unesi ovaj kod. Radi samo jednom - ko ga prvi unese, uparuje se s tobom, zato ga dijeli privatno.",
+      hostWaiting: "\u010Cekam da drugi ure\u0111aj unese kod\u2026",
+      entryPlaceholder: "Unesi kod s drugog ure\u0111aja",
+      entryButton: "Upari",
+      notAnInvitation: "Taj kod nije sadr\u017Eavao pozivnicu za uparivanje. Na drugom ure\u0111aju odaberi Upari pomo\u0107u koda."
     },
     devices: {
       title: "Ure\u0111aji",
@@ -27700,7 +27715,7 @@
     },
     pair: {
       title: "Ger\xE4t koppeln",
-      showButton: "Kopplungscode anzeigen",
+      showButton: "QR-Code anzeigen",
       showHint: "Scanne diesen QR-Code mit dem anderen Ger\xE4t oder kopiere den Kopplungscode und f\xFCge ihn dort ein. Wer diesen Code sieht, kann sich mit dir koppeln - teile ihn nur privat.",
       scanButton: "QR-Code scannen",
       manualPlaceholder: "\u2026oder Kopplungscode hier einf\xFCgen",
@@ -27710,7 +27725,13 @@
       waiting: "Warte, bis das andere Ger\xE4t die Kopplung abschlie\xDFt\u2026",
       invalidPayload: "Das ist kein g\xFCltiger PortalGems-Kopplungscode.",
       success: "Mit {{name}} gekoppelt!",
-      failed: "Kopplung fehlgeschlagen: {{message}}"
+      failed: "Kopplung fehlgeschlagen: {{message}}",
+      codeButton: "Mit einem Code koppeln",
+      codeHint: "Tippe auf dem anderen Ger\xE4t auf \u201ENeues Ger\xE4t koppeln\u201C und gib diesen Code ein. Er funktioniert einmal - wer ihn zuerst eingibt, wird mit dir gekoppelt. Teile ihn also nur privat.",
+      hostWaiting: "Warte darauf, dass das andere Ger\xE4t den Code eingibt\u2026",
+      entryPlaceholder: "Code vom anderen Ger\xE4t eingeben",
+      entryButton: "Koppeln",
+      notAnInvitation: "Dieser Code enthielt keine Kopplungseinladung. W\xE4hle auf dem anderen Ger\xE4t \u201EMit einem Code koppeln\u201C."
     },
     devices: {
       title: "Ger\xE4te",
@@ -27881,7 +27902,7 @@
     },
     pair: {
       title: "Pair a device",
-      showButton: "Show pairing code",
+      showButton: "Show a QR code",
       showHint: "Scan this QR code with the other device, or copy the pairing code and paste it there. Anyone who sees this code can pair with you - share it privately.",
       scanButton: "Scan QR code",
       manualPlaceholder: "\u2026or paste a pairing code here",
@@ -27891,7 +27912,13 @@
       waiting: "Waiting for the other device to finish pairing\u2026",
       invalidPayload: "That is not a valid PortalGems pairing code.",
       success: "Paired with {{name}}!",
-      failed: "Pairing failed: {{message}}"
+      failed: "Pairing failed: {{message}}",
+      codeButton: "Pair using a code",
+      codeHint: "On the other device, tap Pair a new device and enter this code. It works once - whoever enters it first becomes paired with you, so share it privately.",
+      hostWaiting: "Waiting for the other device to enter the code\u2026",
+      entryPlaceholder: "Enter the code from the other device",
+      entryButton: "Pair",
+      notAnInvitation: "That code didn't carry a pairing invitation. On the other device, choose Pair using a code."
     },
     devices: {
       title: "Devices",
@@ -28062,7 +28089,7 @@
     },
     pair: {
       title: "Emparejar un dispositivo",
-      showButton: "Mostrar c\xF3digo de emparejamiento",
+      showButton: "Mostrar un c\xF3digo QR",
       showHint: "Escanea este c\xF3digo QR con el otro dispositivo, o copia el c\xF3digo de emparejamiento y p\xE9galo all\xED. Cualquiera que vea este c\xF3digo puede emparejarse contigo - comp\xE1rtelo solo en privado.",
       scanButton: "Escanear c\xF3digo QR",
       manualPlaceholder: "\u2026o pega aqu\xED un c\xF3digo de emparejamiento",
@@ -28072,7 +28099,13 @@
       waiting: "Esperando a que el otro dispositivo termine el emparejamiento\u2026",
       invalidPayload: "Eso no es un c\xF3digo de emparejamiento v\xE1lido de PortalGems.",
       success: "\xA1Emparejado con {{name}}!",
-      failed: "El emparejamiento fall\xF3: {{message}}"
+      failed: "El emparejamiento fall\xF3: {{message}}",
+      codeButton: "Emparejar con un c\xF3digo",
+      codeHint: "En el otro dispositivo, toca Emparejar un dispositivo nuevo e introduce este c\xF3digo. Funciona una sola vez: quien lo introduzca primero quedar\xE1 emparejado contigo, as\xED que comp\xE1rtelo en privado.",
+      hostWaiting: "Esperando a que el otro dispositivo introduzca el c\xF3digo\u2026",
+      entryPlaceholder: "Introduce el c\xF3digo del otro dispositivo",
+      entryButton: "Emparejar",
+      notAnInvitation: "Ese c\xF3digo no conten\xEDa una invitaci\xF3n de emparejamiento. En el otro dispositivo, elige Emparejar con un c\xF3digo."
     },
     devices: {
       title: "Dispositivos",
@@ -28243,7 +28276,7 @@
     },
     pair: {
       title: "Associer un appareil",
-      showButton: "Afficher le code d'association",
+      showButton: "Afficher un QR code",
       showHint: "Scannez ce code QR avec l'autre appareil, ou copiez le code d'association et collez-le l\xE0-bas. Quiconque voit ce code peut s'associer \xE0 vous - partagez-le uniquement en priv\xE9.",
       scanButton: "Scanner un code QR",
       manualPlaceholder: "\u2026ou collez un code d'association ici",
@@ -28253,7 +28286,13 @@
       waiting: "En attente que l'autre appareil termine l'association\u2026",
       invalidPayload: "Ceci n'est pas un code d'association PortalGems valide.",
       success: "Associ\xE9 \xE0 {{name}} !",
-      failed: "\xC9chec de l'association : {{message}}"
+      failed: "\xC9chec de l'association : {{message}}",
+      codeButton: "Associer avec un code",
+      codeHint: "Sur l'autre appareil, touchez Associer un nouvel appareil et saisissez ce code. Il ne fonctionne qu'une fois - la premi\xE8re personne qui le saisit est associ\xE9e \xE0 vous, alors partagez-le en priv\xE9.",
+      hostWaiting: "En attente de la saisie du code sur l'autre appareil\u2026",
+      entryPlaceholder: "Saisissez le code de l'autre appareil",
+      entryButton: "Associer",
+      notAnInvitation: "Ce code ne contenait pas d'invitation d'association. Sur l'autre appareil, choisissez Associer avec un code."
     },
     devices: {
       title: "Appareils",
@@ -28424,7 +28463,7 @@
     },
     pair: {
       title: "\u0421\u0432\u044F\u0437\u0430\u0442\u044C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E",
-      showButton: "\u041F\u043E\u043A\u0430\u0437\u0430\u0442\u044C \u043A\u043E\u0434 \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u044F",
+      showButton: "\u041F\u043E\u043A\u0430\u0437\u0430\u0442\u044C QR-\u043A\u043E\u0434",
       showHint: "\u041E\u0442\u0441\u043A\u0430\u043D\u0438\u0440\u0443\u0439\u0442\u0435 \u044D\u0442\u043E\u0442 QR-\u043A\u043E\u0434 \u0434\u0440\u0443\u0433\u0438\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E\u043C \u0438\u043B\u0438 \u0441\u043A\u043E\u043F\u0438\u0440\u0443\u0439\u0442\u0435 \u043A\u043E\u0434 \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u044F \u0438 \u0432\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u0435\u0433\u043E \u0442\u0430\u043C. \u041B\u044E\u0431\u043E\u0439, \u043A\u0442\u043E \u0443\u0432\u0438\u0434\u0438\u0442 \u044D\u0442\u043E\u0442 \u043A\u043E\u0434, \u0441\u043C\u043E\u0436\u0435\u0442 \u0441\u0432\u044F\u0437\u0430\u0442\u044C\u0441\u044F \u0441 \u0432\u0430\u043C\u0438 - \u0434\u0435\u043B\u0438\u0442\u0435\u0441\u044C \u0438\u043C \u0442\u043E\u043B\u044C\u043A\u043E \u043F\u0440\u0438\u0432\u0430\u0442\u043D\u043E.",
       scanButton: "\u0421\u043A\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u0442\u044C QR-\u043A\u043E\u0434",
       manualPlaceholder: "\u2026\u0438\u043B\u0438 \u0432\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u043A\u043E\u0434 \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u044F \u0441\u044E\u0434\u0430",
@@ -28434,7 +28473,13 @@
       waiting: "\u041E\u0436\u0438\u0434\u0430\u043D\u0438\u0435, \u043F\u043E\u043A\u0430 \u0434\u0440\u0443\u0433\u043E\u0435 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E \u0437\u0430\u0432\u0435\u0440\u0448\u0438\u0442 \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u0435\u2026",
       invalidPayload: "\u042D\u0442\u043E \u043D\u0435 \u043F\u043E\u0445\u043E\u0436\u0435 \u043D\u0430 \u0434\u0435\u0439\u0441\u0442\u0432\u0438\u0442\u0435\u043B\u044C\u043D\u044B\u0439 \u043A\u043E\u0434 \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u044F PortalGems.",
       success: "\u0421\u0432\u044F\u0437\u0430\u043D\u043E \u0441 {{name}}!",
-      failed: "\u0421\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u0435 \u043D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C: {{message}}"
+      failed: "\u0421\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u0435 \u043D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C: {{message}}",
+      codeButton: "\u0421\u0432\u044F\u0437\u0430\u0442\u044C \u043F\u043E \u043A\u043E\u0434\u0443",
+      codeHint: "\u041D\u0430 \u0434\u0440\u0443\u0433\u043E\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0435 \u043D\u0430\u0436\u043C\u0438\u0442\u0435 \xAB\u0421\u0432\u044F\u0437\u0430\u0442\u044C \u043D\u043E\u0432\u043E\u0435 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E\xBB \u0438 \u0432\u0432\u0435\u0434\u0438\u0442\u0435 \u044D\u0442\u043E\u0442 \u043A\u043E\u0434. \u041E\u043D \u0434\u0435\u0439\u0441\u0442\u0432\u0443\u0435\u0442 \u043E\u0434\u0438\u043D \u0440\u0430\u0437 - \u043A\u0442\u043E \u0432\u0432\u0435\u0434\u0451\u0442 \u0435\u0433\u043E \u043F\u0435\u0440\u0432\u044B\u043C, \u0442\u043E\u0442 \u0438 \u0431\u0443\u0434\u0435\u0442 \u0441\u0432\u044F\u0437\u0430\u043D \u0441 \u0432\u0430\u043C\u0438, \u043F\u043E\u044D\u0442\u043E\u043C\u0443 \u043F\u0435\u0440\u0435\u0434\u0430\u0432\u0430\u0439\u0442\u0435 \u0435\u0433\u043E \u0442\u043E\u043B\u044C\u043A\u043E \u043B\u0438\u0447\u043D\u043E.",
+      hostWaiting: "\u041E\u0436\u0438\u0434\u0430\u043D\u0438\u0435, \u043F\u043E\u043A\u0430 \u0434\u0440\u0443\u0433\u043E\u0435 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E \u0432\u0432\u0435\u0434\u0451\u0442 \u043A\u043E\u0434\u2026",
+      entryPlaceholder: "\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u043A\u043E\u0434 \u0441 \u0434\u0440\u0443\u0433\u043E\u0433\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430",
+      entryButton: "\u0421\u0432\u044F\u0437\u0430\u0442\u044C",
+      notAnInvitation: "\u042D\u0442\u043E\u0442 \u043A\u043E\u0434 \u043D\u0435 \u0441\u043E\u0434\u0435\u0440\u0436\u0430\u043B \u043F\u0440\u0438\u0433\u043B\u0430\u0448\u0435\u043D\u0438\u044F \u0434\u043B\u044F \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u044F. \u041D\u0430 \u0434\u0440\u0443\u0433\u043E\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0435 \u0432\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \xAB\u0421\u0432\u044F\u0437\u0430\u0442\u044C \u043F\u043E \u043A\u043E\u0434\u0443\xBB."
     },
     devices: {
       title: "\u0423\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430",
@@ -28632,6 +28677,10 @@
     const devices = await loadDevices();
     await saveDevices(devices.filter((d) => d.id !== id));
   }
+  function requestReceiveBounded(transferId, code) {
+    const timer = setTimeout(() => pg().cancel(transferId), PAIRED_ATTEMPT_TIMEOUT_MS);
+    return pg().requestReceive(transferId, code, currentServer()).finally(() => clearTimeout(timer));
+  }
   async function completePairingAsScanner(payload, myName, transferId) {
     const path = await pg().writeTemp(PAIRING_HANDSHAKE_FILE, encodeHandshake(myName));
     try {
@@ -28651,7 +28700,7 @@
         if (isCancelled()) break;
         try {
           const code = deriveCode(payload.secret, bucket);
-          await pg().requestReceive(transferId, code, currentServer());
+          await requestReceiveBounded(transferId, code);
           const saved = await pg().accept(transferId, tempDir);
           const message = parseHandshake(await pg().readText(saved));
           pg().deleteFile(saved).catch(() => void 0);
@@ -29432,9 +29481,7 @@
               if (cancelledRef.current) break;
               try {
                 const derived = deriveCode(device.secret, bucket);
-                gotOffer(
-                  await window.portalgems.requestReceive(id, derived, currentServer())
-                );
+                gotOffer(await requestReceiveBounded(id, derived));
                 return;
               } catch {
               }
@@ -29527,12 +29574,19 @@
     const [phase, setPhase] = (0, import_react14.useState)("menu");
     const [qrDataUrl, setQrDataUrl] = (0, import_react14.useState)("");
     const [payloadText, setPayloadText] = (0, import_react14.useState)("");
-    const [manual, setManual] = (0, import_react14.useState)("");
+    const [pairCode, setPairCode] = (0, import_react14.useState)("");
+    const [entry, setEntry] = (0, import_react14.useState)("");
     const [peerName, setPeerName] = (0, import_react14.useState)("");
     const [error, setError] = (0, import_react14.useState)("");
     const [copied, setCopied] = (0, import_react14.useState)(false);
     const cancelledRef = (0, import_react14.useRef)(false);
     const idRef = (0, import_react14.useRef)(0);
+    (0, import_react14.useEffect)(
+      () => () => {
+        handlers.delete(idRef.current);
+      },
+      []
+    );
     const succeed = (name) => {
       setPeerName(name);
       setPhase("done");
@@ -29541,13 +29595,11 @@
       setError(friendlyError(t2, e2));
       setPhase("error");
     };
-    const show = async () => {
-      const myName = await window.portalgems.deviceName();
-      const payload = createPairingPayload(myName);
-      const encoded = encodePairingPayload(payload);
-      setPayloadText(encoded);
-      setQrDataUrl(await import_qrcode.default.toDataURL(encoded, { margin: 1, width: 260 }));
-      setPhase("showing");
+    const failWith = (message) => {
+      setError(message);
+      setPhase("error");
+    };
+    const awaitHandshake = (payload) => {
       const id = nextId++;
       idRef.current = id;
       waitForPairingAsDisplayer(payload, id, () => cancelledRef.current).then(
@@ -29557,14 +29609,42 @@
         }
       );
     };
-    const manualPair = async () => {
-      const payload = parsePairingPayload(manual);
-      if (!payload) {
-        setError(t2("pair.invalidPayload"));
-        setPhase("error");
+    const hostWithCode = async () => {
+      const myName = await window.portalgems.deviceName();
+      const payload = createPairingPayload(myName);
+      const id = nextId++;
+      idRef.current = id;
+      setPairCode("");
+      setPhase("hosting");
+      handlers.set(id, (ev) => {
+        if (ev.event === "code") setPairCode(ev.code ?? "");
+      });
+      try {
+        await window.portalgems.sendText(
+          id,
+          encodePairingPayload(payload),
+          void 0,
+          currentServer()
+        );
+      } catch (e2) {
+        handlers.delete(id);
+        if (!cancelledRef.current) fail(e2);
         return;
       }
+      handlers.delete(id);
       setPhase("working");
+      awaitHandshake(payload);
+    };
+    const show = async () => {
+      const myName = await window.portalgems.deviceName();
+      const payload = createPairingPayload(myName);
+      const encoded = encodePairingPayload(payload);
+      setPayloadText(encoded);
+      setQrDataUrl(await import_qrcode.default.toDataURL(encoded, { margin: 1, width: 260 }));
+      setPhase("showing");
+      awaitHandshake(payload);
+    };
+    const completeWith = async (payload) => {
       const myName = await window.portalgems.deviceName();
       const id = nextId++;
       idRef.current = id;
@@ -29581,8 +29661,40 @@
         }
       ).finally(() => clearTimeout(timer));
     };
-    const copyPayload = () => {
-      navigator.clipboard.writeText(payloadText);
+    const join = async () => {
+      const input = classifyPairingInput(entry);
+      if (!input) {
+        failWith(t2("pair.invalidPayload"));
+        return;
+      }
+      setPhase("working");
+      if (input.kind === "payload") {
+        completeWith(input.payload);
+        return;
+      }
+      const id = nextId++;
+      idRef.current = id;
+      let offer;
+      try {
+        offer = await window.portalgems.requestReceive(id, input.code, currentServer());
+      } catch (e2) {
+        if (!cancelledRef.current) fail(e2);
+        return;
+      }
+      if (offer.text == null) {
+        window.portalgems.reject(id).catch(() => void 0);
+        failWith(t2("pair.notAnInvitation"));
+        return;
+      }
+      const payload = parsePairingPayload(offer.text);
+      if (!payload) {
+        failWith(t2("pair.notAnInvitation"));
+        return;
+      }
+      completeWith(payload);
+    };
+    const copy2 = (value) => {
+      navigator.clipboard.writeText(value);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     };
@@ -29591,15 +29703,30 @@
       window.portalgems.cancel(idRef.current);
       onHome();
     };
-    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("pair.title")), phase === "menu" ? /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("pair.showButton"), onClick: show }), /* @__PURE__ */ import_react14.default.createElement(
+    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("pair.title")), phase === "menu" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("pair.codeButton"), onClick: hostWithCode }), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("pair.showButton"), onClick: show })), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(
       TextInput,
       {
         c,
-        value: manual,
-        onChange: setManual,
-        placeholder: t2("pair.manualPlaceholder")
+        value: entry,
+        onChange: setEntry,
+        placeholder: t2("pair.entryPlaceholder")
       }
-    ), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("pair.manualButton"), onClick: manualPair })) : null, phase === "showing" ? /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("pair.showHint")), /* @__PURE__ */ import_react14.default.createElement("div", { style: { textAlign: "center" } }, /* @__PURE__ */ import_react14.default.createElement(
+    ), /* @__PURE__ */ import_react14.default.createElement(
+      PrimaryButton,
+      {
+        c,
+        label: t2("pair.entryButton"),
+        onClick: join,
+        disabled: classifyPairingInput(entry) === null
+      }
+    ))) : null, phase === "hosting" ? /* @__PURE__ */ import_react14.default.createElement(Card, { c }, pairCode ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("pair.codeHint")), /* @__PURE__ */ import_react14.default.createElement(CodeBox, { c, code: pairCode }), /* @__PURE__ */ import_react14.default.createElement(
+      PrimaryButton,
+      {
+        c,
+        label: copied ? t2("send.codeCopied") : t2("send.copyCode"),
+        onClick: () => copy2(pairCode)
+      }
+    ), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("pair.hostWaiting"))) : /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.connecting"))) : null, phase === "showing" ? /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("pair.showHint")), /* @__PURE__ */ import_react14.default.createElement("div", { style: { textAlign: "center" } }, /* @__PURE__ */ import_react14.default.createElement(
       "img",
       {
         src: qrDataUrl,
@@ -29611,7 +29738,7 @@
       {
         c,
         label: copied ? t2("pair.copied") : t2("pair.copyPayload"),
-        onClick: copyPayload
+        onClick: () => copy2(payloadText)
       }
     ), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("pair.waiting"))) : null, phase === "working" ? /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("pair.waiting"))) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("pair.success", { name: peerName }))) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "done" || phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.done"), onClick: onHome }) : /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancelAndBack }));
   }

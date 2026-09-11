@@ -819,7 +819,7 @@ receive-only one.
 - [x] Release artifact prepared by `scripts/symbian-sign.sh`, which now also
       writes `sis/dist/PortalGems-Mini-<version>-symbian.sis` and its
       `.sha256` next to the signed package.
-- [ ] CHANGELOG entry, ARCHITECTURE.md pointer.
+- [x] CHANGELOG entry (1.3.0), ARCHITECTURE.md pointer ("The third app - Symbian").
 
 The Symbian artifact is uploaded by hand rather than built in CI, and that is
 deliberate. The job would need the S60 3rd edition FP2 SDK - a proprietary

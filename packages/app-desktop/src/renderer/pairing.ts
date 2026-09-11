@@ -9,6 +9,7 @@ import {
   newDeviceId,
   parseHandshake,
   PAIRING_HANDSHAKE_FILE,
+  PAIRED_ATTEMPT_TIMEOUT_MS,
   PAIRED_RECEIVE_TIMEOUT_MS,
   type PairedDevice,
   type PairingPayload,
@@ -43,6 +44,23 @@ export async function removeDevice(id: string): Promise<void> {
   await saveDevices(devices.filter((d) => d.id !== id));
 }
 
+/**
+ * One attempt at receiving on a derived code, abandoned after
+ * PAIRED_ATTEMPT_TIMEOUT_MS. A nameplate still held by a sender that died
+ * while waiting would otherwise hold the attempt - and the polling loop
+ * around it - open indefinitely. Cancelling rejects the pending request, so
+ * callers simply move on to the next candidate.
+ */
+export function requestReceiveBounded(
+  transferId: number,
+  code: string
+): ReturnType<Window['portalgems']['requestReceive']> {
+  const timer = setTimeout(() => pg().cancel(transferId), PAIRED_ATTEMPT_TIMEOUT_MS);
+  return pg()
+    .requestReceive(transferId, code, currentServer())
+    .finally(() => clearTimeout(timer));
+}
+
 /** Scanner/paster side: send our device name over the derived code. */
 export async function completePairingAsScanner(
   payload: PairingPayload,
@@ -73,7 +91,7 @@ export async function waitForPairingAsDisplayer(
       if (isCancelled()) break;
       try {
         const code = deriveCode(payload.secret, bucket);
-        await pg().requestReceive(transferId, code, currentServer());
+        await requestReceiveBounded(transferId, code);
         const saved = await pg().accept(transferId, tempDir);
         const message = parseHandshake(await pg().readText(saved));
         pg().deleteFile(saved).catch(() => undefined);

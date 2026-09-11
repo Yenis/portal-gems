@@ -1,6 +1,8 @@
 // PortalGems device pairing: no backend, no accounts.
 //
-// Pairing exchanges a long-term 256-bit secret once (QR code or copy/paste).
+// Pairing exchanges a long-term 256-bit secret once - by QR code, by
+// copy/paste, or through a one-time wormhole code (see "Pairing over a
+// code" below).
 // For every later transfer both devices independently derive the same one-time
 // wormhole code from HMAC-SHA256(secret, time-bucket), so nobody types
 // anything - the code carries the full entropy of the secret, which is far
@@ -41,6 +43,20 @@ export const PAIRED_SEND_TIMEOUT_MS = 45_000;
 
 /** How long a paired receiver keeps polling candidate codes. */
 export const PAIRED_RECEIVE_TIMEOUT_MS = 60_000;
+
+/**
+ * How long a single attempt on one candidate code may take before it is
+ * abandoned and the next candidate tried.
+ *
+ * A code nobody has claimed fails in well under a second, and one a live
+ * sender is waiting on completes almost as fast. The slow case is a nameplate
+ * still held by a sender that died while waiting - killed, crashed, out of
+ * battery. The mailbox keeps that claim, a receiver joins it, and then waits
+ * for a handshake that will never come. Without a bound on each attempt that
+ * one stale code stalls the whole loop past PAIRED_RECEIVE_TIMEOUT_MS, which
+ * is only checked between attempts.
+ */
+export const PAIRED_ATTEMPT_TIMEOUT_MS = 10_000;
 
 /** File name used for the one-shot pairing handshake transfer. */
 export const PAIRING_HANDSHAKE_FILE = 'pg-pair-handshake.json';
@@ -210,4 +226,41 @@ export function parseHandshake(raw: string): HandshakeMessage | null {
   } catch {
     return null;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Pairing over a code
+//
+// A QR code needs one device to photograph the other, which rules out two
+// desktops, a phone with a broken camera, and Symbian entirely. Instead the
+// displaying side can allocate an ordinary wormhole code and send the encoded
+// payload (`encodePairingPayload`) through it as a text message; the other side
+// types the code, receives the payload, and continues exactly as if it had
+// scanned it. Nothing about the payload, the code derivation or stored pairings
+// changes, which is what keeps every existing pairing and the QR path working.
+//
+// The secret now crosses a PAKE-protected channel instead of a camera: an
+// attacker gets one guess at the code, and a wrong guess fails visibly on both
+// devices. A right guess would pair the attacker instead - and leave the real
+// other device with a failed pairing, which is the signal to look at the
+// paired-devices list.
+
+/** A typed wormhole code: nameplate digits, then words. */
+const WORMHOLE_CODE_RE = /^\d+(-[a-zA-Z0-9]+)+$/;
+
+export type PairingInput =
+  | { kind: 'code'; code: string }
+  | { kind: 'payload'; payload: PairingPayload };
+
+/**
+ * What the user typed or pasted into the pairing field: a wormhole code to
+ * receive an invitation over, or a pasted `PGPAIR1:` payload. One field takes
+ * both so the screen does not have to explain the difference.
+ */
+export function classifyPairingInput(raw: string): PairingInput | null {
+  const s = raw.trim();
+  const payload = parsePairingPayload(s);
+  if (payload) return { kind: 'payload', payload };
+  if (WORMHOLE_CODE_RE.test(s)) return { kind: 'code', code: s };
+  return null;
 }

@@ -2260,6 +2260,10 @@ function fromBase64Url(s) {
 function currentBucket(nowMs = Date.now()) {
   return Math.floor(nowMs / 1e3 / PAIRING_BUCKET_SECONDS);
 }
+function candidateBuckets(nowMs = Date.now()) {
+  const b = currentBucket(nowMs);
+  return [b, b - 1, b + 1];
+}
 function deriveCode(secretB64, bucket) {
   const key = fromBase64Url(secretB64);
   const mac = hmac(
@@ -5196,7 +5200,20 @@ import_electron.ipcMain.handle(
 );
 import_electron.ipcMain.handle(
   "pg:requestReceive",
-  (_e, id, code, server) => engine.requestReceive(id, code, server ?? {})
+  async (_e, id, code, server) => {
+    if (!process.env.PG_SMOKE_TRACE) return engine.requestReceive(id, code, server ?? {});
+    const t0 = Date.now();
+    const where = `${server?.rendezvousUrl ?? "(public default)"} ${code.split("-")[0]}`;
+    console.log(`TRACE:requestReceive:start ${where}`);
+    try {
+      const offer = await engine.requestReceive(id, code, server ?? {});
+      console.log(`TRACE:requestReceive:offer ${where} ${Date.now() - t0}ms`);
+      return offer;
+    } catch (e) {
+      console.log(`TRACE:requestReceive:error ${where} ${Date.now() - t0}ms ${String(e).slice(0, 80)}`);
+      throw e;
+    }
+  }
 );
 import_electron.ipcMain.handle("pg:accept", async (_e, id, destDir) => {
   return engine.acceptReceive(id, destDir, forward(id));
@@ -5299,6 +5316,28 @@ import_electron.app.whenReady().then(async () => {
       import_electron.app.exit(1);
     });
   }
+  if (process.env.PG_SMOKE_PAIR_HOST) {
+    runSmokePairHost().catch((e) => {
+      console.log(`SMOKE:ERROR:${e}`);
+      import_electron.app.exit(1);
+    });
+  }
+  if (process.env.PG_SMOKE_PAIR_JOIN) {
+    runSmokePairJoin(process.env.PG_SMOKE_PAIR_JOIN).catch((e) => {
+      console.log(`SMOKE:ERROR:${e}`);
+      import_electron.app.exit(1);
+    });
+  }
+  if (process.env.PG_SMOKE_DUMP_PAIRCODE) {
+    const devices = JSON.parse(readPairs());
+    for (const d of Array.isArray(devices) ? devices : []) {
+      console.log(`PAIR-DERIVED:${d.name}:${deriveCode(d.secret, currentBucket())}`);
+      for (const b of candidateBuckets()) {
+        console.log(`PAIR-CANDIDATE:${b - currentBucket()}:${deriveCode(d.secret, b)}`);
+      }
+    }
+    import_electron.app.exit(0);
+  }
   if (process.env.PG_SMOKE_PAIRED_RECEIVE) {
     runSmokePairedReceive().catch((e) => {
       console.log(`SMOKE:ERROR:${e}`);
@@ -5351,8 +5390,8 @@ var smokeWaitFor = async (needle, timeoutMs) => {
 async function runSmokePairShow() {
   await smokeWaitFor("PortalGems", 1e4);
   await smokeClick("Pair a new device");
-  await smokeWaitFor("Show pairing code", 5e3);
-  await smokeClick("Show pairing code");
+  await smokeWaitFor("Show a QR code", 5e3);
+  await smokeClick("Show a QR code");
   await smokeWaitFor("Copy pairing code", 1e4);
   await smokeClick("Copy pairing code");
   await new Promise((r) => setTimeout(r, 300));
@@ -5361,8 +5400,44 @@ async function runSmokePairShow() {
   console.log("SMOKE:PAIRED-OK");
   import_electron.app.exit(0);
 }
+async function runSmokePairHost() {
+  await smokeWaitFor("PortalGems", 1e4);
+  await smokeClick("Pair a new device");
+  await smokeWaitFor("Pair using a code", 5e3);
+  await smokeClick("Pair using a code");
+  const start = Date.now();
+  let code = "";
+  while (!code) {
+    const text2 = await smokeExec("document.body.innerText");
+    code = text2.match(/\b\d+-[a-z]+-[a-z]+\b/)?.[0] ?? "";
+    if (!code && Date.now() - start > 3e4) throw new Error("no pairing code appeared");
+    if (!code) await new Promise((r) => setTimeout(r, 300));
+  }
+  console.log(`PAIR-CODE:${code}`);
+  await smokeWaitFor("Paired with", 18e4);
+  const text = await smokeExec("document.body.innerText");
+  console.log(`SMOKE:PAIRED-OK:${text.match(/Paired with [^\n]*/)?.[0] ?? ""}`);
+  import_electron.app.exit(0);
+}
+async function runSmokePairJoin(code) {
+  await smokeWaitFor("PortalGems", 1e4);
+  await smokeClick("Pair a new device");
+  await smokeWaitFor("Pair using a code", 5e3);
+  await smokeExec(`(() => {
+    const input = document.querySelector('input');
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    setter.call(input, ${JSON.stringify(code)});
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  })()`);
+  await smokeClick("Pair");
+  await smokeWaitFor("Paired with", 18e4);
+  const text = await smokeExec("document.body.innerText");
+  console.log(`SMOKE:PAIRED-OK:${text.match(/Paired with [^\n]*/)?.[0] ?? ""}`);
+  import_electron.app.exit(0);
+}
 async function runSmokePairedReceive() {
   await smokeWaitFor("PortalGems", 1e4);
+  await smokeWaitFor("Remove", 1e4);
   await smokeClick("Receive");
   await smokeWaitFor("Do you want to receive this file?", 9e4);
   console.log("SMOKE:PAIRED-CONFIRM");

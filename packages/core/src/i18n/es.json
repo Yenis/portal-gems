@@ -60,7 +60,7 @@
   },
   "pair": {
     "title": "Emparejar un dispositivo",
-    "showButton": "Mostrar código de emparejamiento",
+    "showButton": "Mostrar un código QR",
     "showHint": "Escanea este código QR con el otro dispositivo, o copia el código de emparejamiento y pégalo allí. Cualquiera que vea este código puede emparejarse contigo - compártelo solo en privado.",
     "scanButton": "Escanear código QR",
     "manualPlaceholder": "…o pega aquí un código de emparejamiento",
@@ -70,7 +70,13 @@
     "waiting": "Esperando a que el otro dispositivo termine el emparejamiento…",
     "invalidPayload": "Eso no es un código de emparejamiento válido de PortalGems.",
     "success": "¡Emparejado con {{name}}!",
-    "failed": "El emparejamiento falló: {{message}}"
+    "failed": "El emparejamiento falló: {{message}}",
+    "codeButton": "Emparejar con un código",
+    "codeHint": "En el otro dispositivo, toca Emparejar un dispositivo nuevo e introduce este código. Funciona una sola vez: quien lo introduzca primero quedará emparejado contigo, así que compártelo en privado.",
+    "hostWaiting": "Esperando a que el otro dispositivo introduzca el código…",
+    "entryPlaceholder": "Introduce el código del otro dispositivo",
+    "entryButton": "Emparejar",
+    "notAnInvitation": "Ese código no contenía una invitación de emparejamiento. En el otro dispositivo, elige Emparejar con un código."
   },
   "devices": {
     "title": "Dispositivos",

@@ -6,7 +6,7 @@ import { app, BrowserWindow, clipboard, dialog, ipcMain, safeStorage } from 'ele
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { currentBucket, deriveCode } from '@portalgems/core';
+import { candidateBuckets, currentBucket, deriveCode } from '@portalgems/core';
 import { engine, type NativeTransferEvent, type ServerConfig } from './engine';
 
 let win: BrowserWindow | null = null;
@@ -209,8 +209,23 @@ ipcMain.handle(
 
 ipcMain.handle(
   'pg:requestReceive',
-  (_e, id: number, code: string, server?: ServerConfig) =>
-    engine.requestReceive(id, code, server ?? {})
+  async (_e, id: number, code: string, server?: ServerConfig) => {
+    // PG_SMOKE_TRACE=1 logs every attempt - which server, which nameplate,
+    // how it ended and how long it took. A paired receive is a polling loop
+    // over three codes, and without this a stall inside it is invisible.
+    if (!process.env.PG_SMOKE_TRACE) return engine.requestReceive(id, code, server ?? {});
+    const t0 = Date.now();
+    const where = `${server?.rendezvousUrl ?? '(public default)'} ${code.split('-')[0]}`;
+    console.log(`TRACE:requestReceive:start ${where}`);
+    try {
+      const offer = await engine.requestReceive(id, code, server ?? {});
+      console.log(`TRACE:requestReceive:offer ${where} ${Date.now() - t0}ms`);
+      return offer;
+    } catch (e) {
+      console.log(`TRACE:requestReceive:error ${where} ${Date.now() - t0}ms ${String(e).slice(0, 80)}`);
+      throw e;
+    }
+  }
 );
 
 // Plain accept into an explicit directory; used by the pairing handshake.
@@ -349,6 +364,35 @@ app.whenReady().then(async () => {
       app.exit(1);
     });
   }
+  // Pair over a code, the camera-free path. Run one instance with
+  // PG_SMOKE_PAIR_HOST=1 (prints PAIR-CODE:<code>) and a second, with its own
+  // PG_SMOKE_PROFILE, with PG_SMOKE_PAIR_JOIN=<that code>.
+  if (process.env.PG_SMOKE_PAIR_HOST) {
+    runSmokePairHost().catch((e) => {
+      console.log(`SMOKE:ERROR:${e}`);
+      app.exit(1);
+    });
+  }
+  if (process.env.PG_SMOKE_PAIR_JOIN) {
+    runSmokePairJoin(process.env.PG_SMOKE_PAIR_JOIN).catch((e) => {
+      console.log(`SMOKE:ERROR:${e}`);
+      app.exit(1);
+    });
+  }
+  // Print the code each stored pairing derives for the current time bucket.
+  // Two paired profiles must print the same one; comparing codes rather than
+  // secrets keeps the secret itself out of the log.
+  if (process.env.PG_SMOKE_DUMP_PAIRCODE) {
+    const devices = JSON.parse(readPairs());
+    for (const d of Array.isArray(devices) ? devices : []) {
+      console.log(`PAIR-DERIVED:${d.name}:${deriveCode(d.secret, currentBucket())}`);
+      // The receiver's full candidate list, in the order it polls them.
+      for (const b of candidateBuckets()) {
+        console.log(`PAIR-CANDIDATE:${b - currentBucket()}:${deriveCode(d.secret, b)}`);
+      }
+    }
+    app.exit(0);
+  }
   if (process.env.PG_SMOKE_PAIRED_RECEIVE) {
     runSmokePairedReceive().catch((e) => {
       console.log(`SMOKE:ERROR:${e}`);
@@ -411,8 +455,8 @@ const smokeWaitFor = async (needle: string, timeoutMs: number) => {
 async function runSmokePairShow() {
   await smokeWaitFor('PortalGems', 10000);
   await smokeClick('Pair a new device');
-  await smokeWaitFor('Show pairing code', 5000);
-  await smokeClick('Show pairing code');
+  await smokeWaitFor('Show a QR code', 5000);
+  await smokeClick('Show a QR code');
   await smokeWaitFor('Copy pairing code', 10000);
   await smokeClick('Copy pairing code');
   await new Promise((r) => setTimeout(r, 300));
@@ -422,9 +466,52 @@ async function runSmokePairShow() {
   app.exit(0);
 }
 
+async function runSmokePairHost() {
+  await smokeWaitFor('PortalGems', 10000);
+  await smokeClick('Pair a new device');
+  await smokeWaitFor('Pair using a code', 5000);
+  await smokeClick('Pair using a code');
+  // The code appears once the mailbox has allocated it.
+  const start = Date.now();
+  let code = '';
+  while (!code) {
+    const text = await smokeExec<string>('document.body.innerText');
+    code = text.match(/\b\d+-[a-z]+-[a-z]+\b/)?.[0] ?? '';
+    if (!code && Date.now() - start > 30000) throw new Error('no pairing code appeared');
+    if (!code) await new Promise((r) => setTimeout(r, 300));
+  }
+  console.log(`PAIR-CODE:${code}`);
+  await smokeWaitFor('Paired with', 180000);
+  const text = await smokeExec<string>('document.body.innerText');
+  console.log(`SMOKE:PAIRED-OK:${text.match(/Paired with [^\n]*/)?.[0] ?? ''}`);
+  app.exit(0);
+}
+
+async function runSmokePairJoin(code: string) {
+  await smokeWaitFor('PortalGems', 10000);
+  await smokeClick('Pair a new device');
+  await smokeWaitFor('Pair using a code', 5000);
+  await smokeExec(`(() => {
+    const input = document.querySelector('input');
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    setter.call(input, ${JSON.stringify(code)});
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  })()`);
+  await smokeClick('Pair');
+  await smokeWaitFor('Paired with', 180000);
+  const text = await smokeExec<string>('document.body.innerText');
+  console.log(`SMOKE:PAIRED-OK:${text.match(/Paired with [^\n]*/)?.[0] ?? ''}`);
+  app.exit(0);
+}
+
 async function runSmokePairedReceive() {
   await smokeWaitFor('PortalGems', 10000);
-  await smokeClick('Receive'); // first device row's Receive button
+  // Paired devices load asynchronously. Until they do, the only "Receive"
+  // button on the page is the home card's, disabled with an empty code, and
+  // clicking it does nothing at all - so wait for a device row ("Remove" only
+  // appears in one) before clicking the first "Receive", which is then its.
+  await smokeWaitFor('Remove', 10000);
+  await smokeClick('Receive');
   await smokeWaitFor('Do you want to receive this file?', 90000);
   console.log('SMOKE:PAIRED-CONFIRM');
   await smokeClick('Accept');

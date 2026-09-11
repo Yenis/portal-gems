@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import QRCodeLib from 'qrcode';
 import {
+  classifyPairingInput,
   createPairingPayload,
   currentBucket,
   candidateBuckets,
@@ -12,6 +13,7 @@ import {
   isServerUnreachableError,
   parsePairingPayload,
   spacing,
+  type PairingPayload,
   PAIRED_RECEIVE_TIMEOUT_MS,
   PAIRED_SEND_TIMEOUT_MS,
   availableServerChoices,
@@ -33,6 +35,7 @@ import {
   completePairingAsScanner,
   loadDevices,
   removeDevice,
+  requestReceiveBounded,
   waitForPairingAsDisplayer,
 } from './pairing';
 import { loadThemeName, saveThemeName } from './theme';
@@ -670,12 +673,11 @@ function Receive({
             if (cancelledRef.current) break;
             try {
               const derived = deriveCode(device.secret, bucket);
-              gotOffer(
-                await window.portalgems.requestReceive(id, derived, currentServer())
-              );
+              gotOffer(await requestReceiveBounded(id, derived));
               return;
             } catch {
-              // unclaimed nameplate = sender not there yet; keep polling
+              // Unclaimed (sender not there yet) or abandoned (a stale claim
+              // from a sender that died): either way, try the next code.
             }
           }
         }
@@ -860,19 +862,27 @@ function Receive({
   );
 }
 
-type PairPhase = 'menu' | 'showing' | 'working' | 'done' | 'error';
+type PairPhase = 'menu' | 'hosting' | 'showing' | 'working' | 'done' | 'error';
 
 function Pair({ c, onHome }: { c: Palette; onHome: () => void }) {
   const { t } = useTranslation();
   const [phase, setPhase] = useState<PairPhase>('menu');
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [payloadText, setPayloadText] = useState('');
-  const [manual, setManual] = useState('');
+  const [pairCode, setPairCode] = useState('');
+  const [entry, setEntry] = useState('');
   const [peerName, setPeerName] = useState('');
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const cancelledRef = useRef(false);
   const idRef = useRef(0);
+
+  useEffect(
+    () => () => {
+      handlers.delete(idRef.current);
+    },
+    []
+  );
 
   const succeed = (name: string) => {
     setPeerName(name);
@@ -882,14 +892,15 @@ function Pair({ c, onHome }: { c: Palette; onHome: () => void }) {
     setError(friendlyError(t as any, e));
     setPhase('error');
   };
+  const failWith = (message: string) => {
+    setError(message);
+    setPhase('error');
+  };
 
-  const show = async () => {
-    const myName = await window.portalgems.deviceName();
-    const payload = createPairingPayload(myName);
-    const encoded = encodePairingPayload(payload);
-    setPayloadText(encoded);
-    setQrDataUrl(await QRCodeLib.toDataURL(encoded, { margin: 1, width: 260 }));
-    setPhase('showing');
+  // Once the other device holds the payload - however it got there - this
+  // side waits for its handshake on the codes derived from the secret. The
+  // same wait serves the QR path and the code path.
+  const awaitHandshake = (payload: PairingPayload) => {
     const id = nextId++;
     idRef.current = id;
     waitForPairingAsDisplayer(payload, id, () => cancelledRef.current).then(
@@ -900,14 +911,49 @@ function Pair({ c, onHome }: { c: Palette; onHome: () => void }) {
     );
   };
 
-  const manualPair = async () => {
-    const payload = parsePairingPayload(manual);
-    if (!payload) {
-      setError(t('pair.invalidPayload'));
-      setPhase('error');
+  // Pair over a code: allocate an ordinary wormhole code and send the encoded
+  // payload through it as a text message. When that send completes the other
+  // device has the payload, exactly as if it had scanned the QR code.
+  const hostWithCode = async () => {
+    const myName = await window.portalgems.deviceName();
+    const payload = createPairingPayload(myName);
+    const id = nextId++;
+    idRef.current = id;
+    setPairCode('');
+    setPhase('hosting');
+    handlers.set(id, (ev) => {
+      if (ev.event === 'code') setPairCode(ev.code ?? '');
+    });
+    try {
+      await window.portalgems.sendText(
+        id,
+        encodePairingPayload(payload),
+        undefined,
+        currentServer()
+      );
+    } catch (e) {
+      handlers.delete(id);
+      if (!cancelledRef.current) fail(e);
       return;
     }
+    handlers.delete(id);
     setPhase('working');
+    awaitHandshake(payload);
+  };
+
+  const show = async () => {
+    const myName = await window.portalgems.deviceName();
+    const payload = createPairingPayload(myName);
+    const encoded = encodePairingPayload(payload);
+    setPayloadText(encoded);
+    setQrDataUrl(await QRCodeLib.toDataURL(encoded, { margin: 1, width: 260 }));
+    setPhase('showing');
+    awaitHandshake(payload);
+  };
+
+  // The payload is in hand - pasted, or received over a code. Send our name
+  // back over the derived code and store the pairing.
+  const completeWith = async (payload: PairingPayload) => {
     const myName = await window.portalgems.deviceName();
     const id = nextId++;
     idRef.current = id;
@@ -928,8 +974,44 @@ function Pair({ c, onHome }: { c: Palette; onHome: () => void }) {
       .finally(() => clearTimeout(timer));
   };
 
-  const copyPayload = () => {
-    navigator.clipboard.writeText(payloadText);
+  // One field takes either a wormhole code or a pasted payload.
+  const join = async () => {
+    const input = classifyPairingInput(entry);
+    if (!input) {
+      failWith(t('pair.invalidPayload'));
+      return;
+    }
+    setPhase('working');
+    if (input.kind === 'payload') {
+      completeWith(input.payload);
+      return;
+    }
+    const id = nextId++;
+    idRef.current = id;
+    let offer;
+    try {
+      offer = await window.portalgems.requestReceive(id, input.code, currentServer());
+    } catch (e) {
+      if (!cancelledRef.current) fail(e);
+      return;
+    }
+    // Someone offered a file on this code. Decline it so their side fails
+    // cleanly instead of waiting, and say what went wrong here.
+    if (offer.text == null) {
+      window.portalgems.reject(id).catch(() => undefined);
+      failWith(t('pair.notAnInvitation'));
+      return;
+    }
+    const payload = parsePairingPayload(offer.text);
+    if (!payload) {
+      failWith(t('pair.notAnInvitation'));
+      return;
+    }
+    completeWith(payload);
+  };
+
+  const copy = (value: string) => {
+    navigator.clipboard.writeText(value);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
@@ -944,15 +1026,43 @@ function Pair({ c, onHome }: { c: Palette; onHome: () => void }) {
     <>
       <Title c={c} onBack={onHome}>{t('pair.title')}</Title>
       {phase === 'menu' ? (
+        <>
+          <Card c={c}>
+            <PrimaryButton c={c} label={t('pair.codeButton')} onClick={hostWithCode} />
+            <GhostButton c={c} label={t('pair.showButton')} onClick={show} />
+          </Card>
+          <Card c={c}>
+            <TextInput
+              c={c}
+              value={entry}
+              onChange={setEntry}
+              placeholder={t('pair.entryPlaceholder')}
+            />
+            <PrimaryButton
+              c={c}
+              label={t('pair.entryButton')}
+              onClick={join}
+              disabled={classifyPairingInput(entry) === null}
+            />
+          </Card>
+        </>
+      ) : null}
+      {phase === 'hosting' ? (
         <Card c={c}>
-          <PrimaryButton c={c} label={t('pair.showButton')} onClick={show} />
-          <TextInput
-            c={c}
-            value={manual}
-            onChange={setManual}
-            placeholder={t('pair.manualPlaceholder')}
-          />
-          <GhostButton c={c} label={t('pair.manualButton')} onClick={manualPair} />
+          {pairCode ? (
+            <>
+              <Muted c={c}>{t('pair.codeHint')}</Muted>
+              <CodeBox c={c} code={pairCode} />
+              <PrimaryButton
+                c={c}
+                label={copied ? t('send.codeCopied') : t('send.copyCode')}
+                onClick={() => copy(pairCode)}
+              />
+              <Muted c={c}>{t('pair.hostWaiting')}</Muted>
+            </>
+          ) : (
+            <Muted c={c}>{t('receive.connecting')}</Muted>
+          )}
         </Card>
       ) : null}
       {phase === 'showing' ? (
@@ -968,7 +1078,7 @@ function Pair({ c, onHome }: { c: Palette; onHome: () => void }) {
           <PrimaryButton
             c={c}
             label={copied ? t('pair.copied') : t('pair.copyPayload')}
-            onClick={copyPayload}
+            onClick={() => copy(payloadText)}
           />
           <Muted c={c}>{t('pair.waiting')}</Muted>
         </Card>

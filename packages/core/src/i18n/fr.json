@@ -60,7 +60,7 @@
   },
   "pair": {
     "title": "Associer un appareil",
-    "showButton": "Afficher le code d'association",
+    "showButton": "Afficher un QR code",
     "showHint": "Scannez ce code QR avec l'autre appareil, ou copiez le code d'association et collez-le là-bas. Quiconque voit ce code peut s'associer à vous - partagez-le uniquement en privé.",
     "scanButton": "Scanner un code QR",
     "manualPlaceholder": "…ou collez un code d'association ici",
@@ -70,7 +70,13 @@
     "waiting": "En attente que l'autre appareil termine l'association…",
     "invalidPayload": "Ceci n'est pas un code d'association PortalGems valide.",
     "success": "Associé à {{name}} !",
-    "failed": "Échec de l'association : {{message}}"
+    "failed": "Échec de l'association : {{message}}",
+    "codeButton": "Associer avec un code",
+    "codeHint": "Sur l'autre appareil, touchez Associer un nouvel appareil et saisissez ce code. Il ne fonctionne qu'une fois - la première personne qui le saisit est associée à vous, alors partagez-le en privé.",
+    "hostWaiting": "En attente de la saisie du code sur l'autre appareil…",
+    "entryPlaceholder": "Saisissez le code de l'autre appareil",
+    "entryButton": "Associer",
+    "notAnInvitation": "Ce code ne contenait pas d'invitation d'association. Sur l'autre appareil, choisissez Associer avec un code."
   },
   "devices": {
     "title": "Appareils",

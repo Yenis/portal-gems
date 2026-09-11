@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   candidateBuckets,
+  classifyPairingInput,
   createPairingPayload,
   currentBucket,
   deriveCode,
@@ -99,5 +100,45 @@ describe('time buckets', () => {
     const t = 1_760_000_000_000;
     const b = currentBucket(t);
     expect(candidateBuckets(t)).toEqual([b, b - 1, b + 1]);
+  });
+});
+
+describe('pairing input', () => {
+  it('recognises a pasted payload', () => {
+    const encoded = encodePairingPayload(createPairingPayload('Laptop'));
+    const got = classifyPairingInput(`  ${encoded}\n`);
+    expect(got?.kind).toBe('payload');
+    if (got?.kind === 'payload') expect(got.payload.name).toBe('Laptop');
+  });
+
+  it('recognises a typed wormhole code, trimmed', () => {
+    expect(classifyPairingInput(' 7-crossover-clockwork ')).toEqual({
+      kind: 'code',
+      code: '7-crossover-clockwork',
+    });
+  });
+
+  it('accepts the long derived-code shape too', () => {
+    expect(classifyPairingInput('12345678-0a1b2c3d4e-5f60718293')?.kind).toBe('code');
+  });
+
+  it('rejects anything else rather than guessing', () => {
+    expect(classifyPairingInput('')).toBeNull();
+    expect(classifyPairingInput('crossover-clockwork')).toBeNull();
+    expect(classifyPairingInput('7')).toBeNull();
+    expect(classifyPairingInput('PGPAIR1:not-base64-json')).toBeNull();
+    expect(classifyPairingInput('7 crossover clockwork')).toBeNull();
+  });
+
+  /* The invitation sent over a code is the ordinary encoded payload, so a
+   * receiver that parses a text message must get back exactly the secret the
+   * displayer will later derive codes from. */
+  it('an invitation survives the text round trip unchanged', () => {
+    const payload = createPairingPayload('Nokia E72');
+    const received = parsePairingPayload(encodePairingPayload(payload));
+    expect(received).toEqual(payload);
+    expect(deriveCode(received!.secret, 5_000_000)).toBe(
+      deriveCode(payload.secret, 5_000_000)
+    );
   });
 });
