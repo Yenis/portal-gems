@@ -33,8 +33,15 @@ enum TJobKind
     {
     EJobKindReceive = 0,
     EJobKindSend,
-    EJobKindSendFolder
+    EJobKindSendFolder,
+    EJobKindSendText
     };
+
+/* Longest message, in UTF-16 characters as typed. The wire limit is
+ * WH_TEXT_MAX bytes of UTF-8 for the whole offer, and a character outside
+ * ASCII costs two or three of those, so the typed limit is set well below it
+ * and the byte length is checked again after conversion. */
+const TInt KMaxMessageChars = 400;
 
 const TInt KJobTextLen = 128;
 
@@ -57,6 +64,11 @@ public:
     char iMailbox[64];            /* out: the mailbox the server named */
     char iMessage[KJobTextLen];   /* out: what happened */
     char iFileName[KJobTextLen];  /* out: what arrived */
+    /* A text message, UTF-8: in when sending one, out when one arrives.
+     * TJob lives on the heap (it is a member of the AppUi), so a kilobyte
+     * here never touches the 8 KB worker stack. */
+    char iText[1024];
+    volatile TInt iIsText;        /* out: the offer was a message */
     };
 
 /* Worker thread entry point. aPtr is a TJob*. */
@@ -84,6 +96,6 @@ TBool WhminiLoadSettings(TWhminiSettings& aSettings);
 void WhminiSaveSettings(const TWhminiSettings& aSettings);
 
 /* Shown in the app, and must match the version in sis/whmini.pkg. */
-#define WHMINI_VERSION "v0.5.3"
+#define WHMINI_VERSION "v0.6.0"
 
 #endif

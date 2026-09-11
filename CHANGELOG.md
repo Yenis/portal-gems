@@ -5,6 +5,25 @@ All notable changes to PortalGems are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+Send a text message, on every platform.
+
+### Added
+
+- **Text messages.** Type a message instead of picking a file and send it with
+  a one-time code, on the desktop, on Android and on Symbian. Received
+  messages can be copied straight out. It is the standard wormhole `message`
+  offer, so `wormhole send --text` and `wormhole receive` interoperate with it
+  in both directions.
+
+  A message travels inside the offer itself rather than over a transit
+  connection, which means the relay is never involved and no IP addresses are
+  exchanged. The encryption is unchanged - it is an ordinary mailbox message
+  sealed with a key from the same handshake. One difference is worth knowing:
+  a message is delivered by the act of offering it, so unlike a file there is
+  nothing to accept or decline.
+
 ## [1.3.0] - 2026-09-08
 
 PortalGems runs on Symbian. A Nokia E72 from 2010 sends and receives files

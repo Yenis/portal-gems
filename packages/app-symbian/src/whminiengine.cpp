@@ -576,6 +576,17 @@ static void RunJob(TJob* aJob)
         wh_mailbox_close(&mailbox, "errory");
         return;
     }
+    /* A message is already delivered by the time the offer is in hand - the
+     * transfer layer acknowledged it - so there is nothing to accept, nothing
+     * to write, and nothing left to do but show it. */
+    if (offer.is_text) {
+        CopyCStr(aJob->iText, sizeof(aJob->iText), offer.text);
+        aJob->iIsText = 1;
+        Finish(aJob, EJobDone, "Message received");
+        wh_mailbox_close(&mailbox, "happy");
+        return;
+    }
+
     /* A folder arrives as one archive, staged and then unpacked. Only the
      * name check below differs: a folder's name is its own, a file's comes
      * from the offer. */
@@ -680,6 +691,74 @@ static void RunJob(TJob* aJob)
 /* Send: allocate a code, publish it for the UI to display, then wait for
  * whoever types it. The wait is inside wh_mailbox_pake and can be long -
  * which is exactly why this runs on its own thread. */
+/* Send a text message. Much shorter than a file send because there is no
+ * file, no archive and no transit: the message is the offer. */
+static void RunSendTextJob(TJob* aJob)
+{
+    wh_mailbox mailbox;
+    char code[WH_CODE_MAX];
+    TInt rc;
+
+    aJob->iState = EJobConnecting;
+    wh_mailbox_init(&mailbox, &gMailboxBufs);
+
+    if (wh_mailbox_connect(&mailbox, gSettings.iMailboxHost, gSettings.iMailboxPort,
+                           gSettings.iMailboxPath, KAppId) != 0) {
+        Finish(aJob, EJobFailed, "Could not reach the server");
+        return;
+    }
+
+    if (wh_mailbox_allocate(&mailbox, code, sizeof(code)) != 0) {
+        Finish(aJob, EJobFailed, "Could not get a code");
+        wh_mailbox_close(&mailbox, "errory");
+        return;
+    }
+
+    CopyCStr(aJob->iCode, sizeof(aJob->iCode), code);
+    CopyCStr(aJob->iNameplate, sizeof(aJob->iNameplate), mailbox.nameplate);
+    aJob->iCodeReady = 1;
+    aJob->iState = EJobShowingCode;
+
+    if (wh_mailbox_pake(&mailbox, KAppId, code) != 0) {
+        Finish(aJob, EJobFailed, "Handshake failed");
+        wh_mailbox_close(&mailbox, "errory");
+        return;
+    }
+
+    rc = wh_mailbox_version(&mailbox);
+    if (rc == -2) {
+        Finish(aJob, EJobFailed, "The other side used a wrong code");
+        wh_mailbox_close(&mailbox, "scary");
+        return;
+    }
+    if (rc != 0) {
+        Finish(aJob, EJobFailed, "Handshake failed");
+        wh_mailbox_close(&mailbox, "errory");
+        return;
+    }
+
+    aJob->iState = EJobSending;
+    rc = wh_xfer_send_text(&mailbox, aJob->iText);
+    if (rc == -4) {
+        Finish(aJob, EJobFailed, "That message is too long");
+        wh_mailbox_close(&mailbox, "errory");
+        return;
+    }
+    if (rc == -2) {
+        Finish(aJob, EJobFailed, "The other side refused the message");
+        wh_mailbox_close(&mailbox, "errory");
+        return;
+    }
+    if (rc != 0) {
+        Finish(aJob, EJobFailed, "Sending the message failed");
+        wh_mailbox_close(&mailbox, "errory");
+        return;
+    }
+
+    Finish(aJob, EJobDone, "Message sent");
+    wh_mailbox_close(&mailbox, "happy");
+}
+
 static void RunSendJob(TJob* aJob)
 {
     wh_mailbox mailbox;
@@ -881,8 +960,10 @@ TInt WhminiWorker(TAny* aPtr)
     wh_xfer_enable_direct(gSettings.iDirect);
 
     if (cleanup) {
-        TRAPD(err, job->iKind == EJobKindReceive ? RunJob(job)
-                                                 : RunSendJob(job));
+        TRAPD(err,
+              job->iKind == EJobKindReceive    ? RunJob(job) :
+              job->iKind == EJobKindSendText   ? RunSendTextJob(job)
+                                               : RunSendJob(job));
         if (err != KErrNone && job->iState != EJobFailed) {
             Finish(job, EJobFailed, "Unexpected error");
             job->iError = err;

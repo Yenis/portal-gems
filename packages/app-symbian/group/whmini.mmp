@@ -102,6 +102,7 @@ LIBRARY         egul.lib
 LIBRARY         gdi.lib
 LIBRARY         ws32.lib
 LIBRARY         commondialogs.lib   // the native file browser
+LIBRARY         charconv.lib        // CnvUtfConverter, for messages that are not ASCII
 
 // On random.lib: every random byte in this program is security-critical -
 // the SPAKE2 scalar, secretbox nonces, the WebSocket masking key. Math::Random

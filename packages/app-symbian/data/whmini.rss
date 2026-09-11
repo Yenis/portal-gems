@@ -32,6 +32,8 @@ RESOURCE MENU_PANE r_whmini_menu
         MENU_ITEM { command = EWhminiCmdReceive; txt = "Receive file"; },
         MENU_ITEM { command = EWhminiCmdSend;       txt = "Send file"; },
         MENU_ITEM { command = EWhminiCmdSendFolder; txt = "Send folder"; },
+        MENU_ITEM { command = EWhminiCmdSendText;   txt = "Send message"; },
+        MENU_ITEM { command = EWhminiCmdShowMessage; txt = "Show message"; },
         MENU_ITEM { command = EWhminiCmdCancel;  txt = "Cancel transfer"; },
         MENU_ITEM
             {
@@ -77,4 +79,55 @@ RESOURCE MEMORYSELECTIONDIALOG r_whmini_memory_selection
     title = "Select memory";
     softkey_1 = "Select";
     softkey_2 = "Cancel";
+    }
+
+// A message is longer than a server address, so it gets its own query with a
+// taller editor rather than the stock single-line one. maxlength is in
+// characters as typed; the byte length after UTF-8 conversion is checked
+// again before the message goes anywhere near the wire.
+RESOURCE DIALOG r_whmini_text_query
+    {
+    flags = EGeneralQueryFlags;
+    buttons = R_AVKON_SOFTKEYS_OK_CANCEL;
+    items =
+        {
+        DLG_LINE
+            {
+            type = EAknCtQuery;
+            id = EGeneralQuery;
+            control = AVKON_DATA_QUERY
+                {
+                layout = EDataLayout;
+                label = "Message";
+                control = EDWIN
+                    {
+                    flags = EEikEdwinNoHorizScrolling | EEikEdwinResizable;
+                    width = 20;
+                    lines = 5;
+                    maxlength = 400;
+                    };
+                };
+            }
+        };
+    }
+
+// A received message can be longer than the main screen's seven lines, so it
+// is shown in a dialog that scrolls.
+RESOURCE DIALOG r_whmini_message_query
+    {
+    // No heading pane: AVKON_HEADING defaults `headinglayout` to an Avkon
+    // resource this file cannot link against, and rcomp reports that as a
+    // bare "Link name not found". The screen underneath already says a
+    // message arrived, so the dialog only has to show it.
+    flags = EGeneralQueryFlags | EEikDialogFlagNoDrag;
+    buttons = R_AVKON_SOFTKEYS_OK_EMPTY;
+    items =
+        {
+        DLG_LINE
+            {
+            type = EAknCtMessageQuery;
+            id = EAknMessageQueryContentId;
+            control = AVKON_MESSAGE_QUERY { };
+            }
+        };
     }

@@ -10,6 +10,7 @@
 #include "../src/sha1.h"
 #include "../src/json.h"
 #include "../src/wordlist.h"
+#include "../src/mailbox.h"
 
 static int failures = 0;
 static int checks = 0;
@@ -326,6 +327,80 @@ int main(void)
             char tiny[8];
             check_true("a short buffer is refused",
                        wh_make_code("42", tiny, sizeof(tiny)) == -1);
+        }
+    }
+
+    /* A text offer is built and read back through the same JSON writer and
+     * reader the wire uses, because the only thing that can go wrong here is
+     * escaping - and escaping is exactly what a round trip catches. */
+    {
+        static const char *cases[] = {
+            "plain text",
+            "with \"quotes\" and \\backslash",
+            "line one\nline two\ttabbed",
+            "\303\244\303\266\303\274 \304\207\304\215\305\276 UTF-8",
+            "\360\237\230\200 outside the basic plane",
+            "",
+        };
+        int i;
+        int all_ok = 1;
+
+        for (i = 0; i < (int)(sizeof(cases) / sizeof(cases[0])); i++) {
+            char buf[2048];
+            char back[1024];
+            wh_jw w;
+            wh_json_val v, inner;
+
+            wh_jw_init(&w, buf, sizeof(buf));
+            wh_jw_obj_open(&w);
+            wh_jw_key(&w, "offer");
+            wh_jw_obj_open(&w);
+            wh_jw_str(&w, "message", cases[i]);
+            wh_jw_obj_close(&w);
+            wh_jw_obj_close(&w);
+            if (wh_jw_done(&w) != 0) { all_ok = 0; break; }
+
+            if (wh_json_get(buf, strlen(buf), "offer", &v) != 0) { all_ok = 0; break; }
+            if (wh_json_get(v.p, v.len, "message", &inner) != 0) { all_ok = 0; break; }
+            if (wh_json_str(&inner, back, sizeof(back)) < 0) { all_ok = 0; break; }
+            if (strcmp(back, cases[i]) != 0) { all_ok = 0; break; }
+        }
+        check_true("text offers survive a JSON round trip", all_ok);
+
+        /* What the reference client puts on the wire for non-ASCII: escaped
+         * \u sequences, including a surrogate pair. Our reader has to turn
+         * both back into UTF-8, or a message from Python arrives as mojibake. */
+        {
+            static const char DOC[] =
+                "{\"offer\":{\"message\":\"caf\\u00e9 \\ud83d\\ude00\"}}";
+            char back[64];
+            wh_json_val v, inner;
+            check_true("python-style escapes decode to UTF-8",
+                       wh_json_get(DOC, strlen(DOC), "offer", &v) == 0 &&
+                       wh_json_get(v.p, v.len, "message", &inner) == 0 &&
+                       wh_json_str(&inner, back, sizeof(back)) > 0 &&
+                       strcmp(back, "caf\303\251 \360\237\230\200") == 0);
+        }
+
+        /* A message too long for one phase message must be refused, not sent
+         * truncated: half a message delivered as if whole is worse than an
+         * error. */
+        {
+            char huge[WH_PHASE_MAX * 2];
+            char buf[2048];
+            wh_jw w;
+            unsigned long k;
+            for (k = 0; k < sizeof(huge) - 1; k++) huge[k] = 'x';
+            huge[sizeof(huge) - 1] = '\0';
+
+            wh_jw_init(&w, buf, sizeof(buf));
+            wh_jw_obj_open(&w);
+            wh_jw_key(&w, "offer");
+            wh_jw_obj_open(&w);
+            wh_jw_str(&w, "message", huge);
+            wh_jw_obj_close(&w);
+            wh_jw_obj_close(&w);
+            check_true("an oversized message is refused", wh_jw_done(&w) != 0);
         }
     }
 

@@ -17,8 +17,10 @@
 #include <akndoc.h>
 #include <aknappui.h>
 #include <aknquerydialog.h>
+#include <aknmessagequerydialog.h>
 #include <aknnotewrappers.h>
 #include <AknCommonDialogsDynMem.h>
+#include <utf.h>
 #include <avkon.hrh>
 #include <avkon.rsg>
 #include <whmini.rsg>
@@ -125,6 +127,8 @@ private:
     void StartSendL();
     void StartSendFolderL();
     void CancelTransferL();
+    void StartSendTextL();
+    void ShowMessageL();
     TInt StartWorker();
     TBool PrepareJobL();
     void AskForServerL();
@@ -140,6 +144,7 @@ private:
     TInt iWorkerSeq;
     TBool iWorkerRunning;
     TJob iJob;
+    TBool iMessageShown;
     TWhminiSettings iSettings;
     };
 
@@ -247,6 +252,11 @@ void CWhminiAppUi::Refresh()
             {
             TBuf<64> name;
             name.Copy(TPtrC8((const TUint8*)iJob.iFileName));
+            if (iJob.iKind == EJobKindSendText)
+                {
+                iContainer->SetLine(2, _L("Sending the message..."));
+                break;
+                }
             iContainer->SetLine(2, _L("Sending:"));
             iContainer->SetLine(3, name);
             TUint pct = iJob.iTotal ? (iJob.iDone * 100 / iJob.iTotal) : 0;
@@ -285,7 +295,16 @@ void CWhminiAppUi::Refresh()
             {
             TBuf<64> name;
             name.Copy(TPtrC8((const TUint8*)iJob.iFileName));
-            if (iJob.iKind != EJobKindReceive)
+            if (iJob.iKind == EJobKindSendText)
+                {
+                iContainer->SetLine(3, _L("Message sent, and confirmed."));
+                }
+            else if (iJob.iIsText)
+                {
+                iContainer->SetLine(3, _L("Message received."));
+                iContainer->SetLine(4, _L("Options > Show message"));
+                }
+            else if (iJob.iKind != EJobKindReceive)
                 {
                 iContainer->SetLine(3, _L("Sent, and confirmed:"));
                 iContainer->SetLine(4, name);
@@ -336,8 +355,39 @@ TInt CWhminiAppUi::Tick(TAny* aSelf)
             self->iWorker.Close();
             self->iWorkerRunning = EFalse;
             }
+        /* A message is too long for the seven lines this screen has, so it
+         * gets a scrollable dialog of its own the moment it lands. Shown
+         * once; Options > Show message brings it back. */
+        if (self->iJob.iIsText && self->iJob.iState == EJobDone &&
+            !self->iMessageShown)
+            {
+            self->iMessageShown = ETrue;
+            TRAP_IGNORE(self->ShowMessageL());
+            }
         }
     return 0;
+    }
+
+/* Display a received message. The wire carries UTF-8 and the screen wants
+ * UTF-16, so this is a real conversion - a byte-wise widening would turn
+ * every accented character into two pieces of nonsense. */
+void CWhminiAppUi::ShowMessageL()
+    {
+    if (iJob.iText[0] == '\0') return;
+
+    TPtrC8 utf8((const TUint8*)iJob.iText);
+    HBufC* text = HBufC::NewLC(utf8.Length() + 1);
+    TPtr ptr = text->Des();
+    if (CnvUtfConverter::ConvertToUnicodeFromUtf8(ptr, utf8) != 0)
+        {
+        /* Malformed UTF-8 from the peer: show what can be shown rather than
+         * nothing, since the message has already been delivered. */
+        ptr.Copy(utf8.Left(ptr.MaxLength()));
+        }
+
+    CAknMessageQueryDialog* dlg = CAknMessageQueryDialog::NewL(ptr);
+    dlg->ExecuteLD(R_WHMINI_MESSAGE_QUERY);
+    CleanupStack::PopAndDestroy(text);
     }
 
 /* Hosts are trimmed on the way in. A stray space is invisible on screen and
@@ -438,7 +488,55 @@ TBool CWhminiAppUi::PrepareJobL()
     iJob.iFileName[0] = '\0';
     iJob.iNameplate[0] = '\0';
     iJob.iMailbox[0] = '\0';
+    iJob.iText[0] = '\0';
+    iJob.iIsText = 0;
+    iMessageShown = EFalse;
     return ETrue;
+    }
+
+/* Type a message and send it. The text is converted to UTF-8 here rather
+ * than copied byte-wise: a phone keyboard produces the whole Latin-2 range,
+ * and a naive narrowing turns every accented character into rubbish on the
+ * other side. */
+void CWhminiAppUi::StartSendTextL()
+    {
+    if (!PrepareJobL()) return;
+
+    HBufC* text = HBufC::NewLC(KMaxMessageChars);
+    TPtr ptr = text->Des();
+    CAknTextQueryDialog* dlg = CAknTextQueryDialog::NewL(ptr);
+    dlg->SetPredictiveTextInputPermitted(ETrue);
+    if (!dlg->ExecuteLD(R_WHMINI_TEXT_QUERY) || ptr.Length() == 0)
+        {
+        CleanupStack::PopAndDestroy(text);
+        return;
+        }
+
+    TBuf8<1024> utf8;
+    if (CnvUtfConverter::ConvertFromUnicodeToUtf8(utf8, ptr) != 0 ||
+        utf8.Length() >= (TInt)sizeof(iJob.iText))
+        {
+        CleanupStack::PopAndDestroy(text);
+        CAknErrorNote* note = new (ELeave) CAknErrorNote(ETrue);
+        note->ExecuteLD(_L("That message is too long"));
+        return;
+        }
+    Mem::Copy(iJob.iText, utf8.Ptr(), utf8.Length());
+    iJob.iText[utf8.Length()] = '\0';
+    CleanupStack::PopAndDestroy(text);
+
+    iJob.iKind = EJobKindSendText;
+
+    TInt err = StartWorker();
+    if (err != KErrNone)
+        {
+        TBuf<64> line;
+        line.Format(_L("Could not start the transfer (%d)"), err);
+        CAknErrorNote* note = new (ELeave) CAknErrorNote(ETrue);
+        note->ExecuteLD(line);
+        return;
+        }
+    Refresh();
     }
 
 void CWhminiAppUi::StartSendL()
@@ -624,6 +722,12 @@ void CWhminiAppUi::HandleCommandL(TInt aCommand)
             break;
         case EWhminiCmdToggleDirect:
             ToggleDirectL();
+            break;
+        case EWhminiCmdSendText:
+            StartSendTextL();
+            break;
+        case EWhminiCmdShowMessage:
+            ShowMessageL();
             break;
         case EAknSoftkeyExit:
         case EEikCmdExit:

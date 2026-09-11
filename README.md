@@ -103,6 +103,7 @@ PortalGems takes a different approach, inherited from magic-wormhole:
 |---|---|
 | Send & receive files | Between any two magic-wormhole clients, any direction |
 | Send whole folders | Pick a folder and it arrives as a folder - subfolders and all, using the standard wormhole directory transfer (CLI-compatible) |
+| Send a text message | Type a message instead of picking a file; it travels inside the handshake, so no relay and no direct connection is ever involved |
 | Receive confirmation | See the file name and size - or the folder name, file count, and total size - and accept or decline before a byte flows |
 | Your download folder | Pick where received files land (defaults to Downloads); same-name files and folders warn you first - overwrite or keep both |
 | Direct LAN transfers | Same Wi-Fi → peer-to-peer at full speed, no relay |
@@ -174,6 +175,13 @@ languages.
   making online guessing effectively impossible.
 - **No metadata trail:** no accounts, no server-side history, no telemetry.
   Pairing secrets are stored in the Android Keystore / OS keychain.
+- **Text messages** ride inside the offer itself and never touch a transit
+  connection, so the relay is not involved and no IP addresses are exchanged.
+  The encryption is the same: it is an ordinary mailbox message, sealed with a
+  key derived from the same handshake. The one difference is consent - a
+  message is delivered by the act of offering it, so unlike a file there is
+  nothing to accept or decline. Anyone you give a code to can put text in
+  front of you.
 - **What we don't defend against:** an attacker with full control of *your
   unlocked device*, and traffic analysis (an observer can see *that* you
   transferred something and roughly how large it was, but not *what*).
@@ -222,6 +230,7 @@ Avkon UI around it. The installable package is **52 KB**.
 - Send and receive folders, using the standard wormhole directory transfer -
   a folder sent from the phone arrives as a folder in the desktop app and
   under `wormhole receive` alike
+- Send and receive text messages, typed on the phone's keyboard
 - Enter a code on the keyboard, or generate one for the other side
 - Direct LAN connections, off by default and switchable in Settings
 

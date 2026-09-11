@@ -711,6 +711,43 @@ misbehaves, the report arrives as a photograph of a phone.
 v0.5.3 is confirmed working on the E72, sending and receiving over the
 internet through the PortalGems server.
 
+## Text messages
+
+The protocol's third offer type, and by far the cheapest to support: the
+message *is* the offer, so there is no transit connection, no archive, no
+progress and no file to write.
+
+    them -> {"offer": {"message": "..."}}
+    us   -> {"answer": {"message_ack": "ok"}}
+
+That shortness is also the trap. The reference sender builds a transit sender
+only when it has a file to send, so a receiver that helpfully announces its
+own transit hints to a text sender reaches `ts.add_connection_hints(...)`
+with `ts = None` and takes the other end down with an `AttributeError`.
+`wh_xfer_await_offer` therefore reads the peer's **first** message before
+sending anything, and branches on it: a transit message means a file or
+folder is coming, a bare offer means the payload is in hand. That is what the
+reference receiver does too - it sends transit only in reply to transit.
+
+Two details specific to this phone:
+
+- **The text is converted, not narrowed.** A message goes through
+  `CnvUtfConverter` in both directions. Copying 16-bit characters into bytes
+  would work for as long as anyone tested in English and turn every `ć`, `š`
+  or `ž` into rubbish the moment they did not. The typed limit is 400
+  characters and the byte length is checked again after conversion, because a
+  character outside ASCII costs two or three bytes and the whole offer has to
+  fit one 2 KB phase message.
+- **A received message gets its own dialog.** The main screen has seven lines
+  of 64 characters; a message can be longer than all of them together, so it
+  is shown in a scrollable `CAknMessageQueryDialog` and stays available under
+  Options > Show message.
+
+The dialog resource has no heading pane. `AVKON_HEADING` defaults its
+`headinglayout` to an Avkon resource this file cannot link against, and rcomp
+reports that as a bare `Link name not found` with no line number - worth
+knowing before losing an hour to it.
+
 ## The bug that cost the most
 
 Worth writing down, because it was invisible from every angle.
