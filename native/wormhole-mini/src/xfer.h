@@ -8,6 +8,12 @@
  *   then the bytes arrive as transit records, and we reply over transit with
  *   {"ack": "ok", "sha256": "<hex>"}.
  *
+ * A text message is a different, shorter exchange with no transit at all:
+ *   them -> {"offer": {"message": "..."}}
+ *   us   -> {"answer": {"message_ack": "ok"}}
+ * which is why the offer has to be read before our transit message is sent -
+ * a text sender never sends one, and never reads one either.
+ *
  * File bytes leave through a caller-supplied sink, so this layer never
  * touches a filesystem API - which is what lets the same code serve stdio on
  * the host and RFile on Symbian. */
@@ -57,6 +63,12 @@ typedef struct {
     int count;
 } wh_direct_hints;
 
+/* Longest message we will send. The whole offer has to fit one phase
+ * message (WH_PHASE_MAX), and JSON escaping can expand a byte sixfold - a
+ * message of nothing but newlines is the worst case - so the limit is on the
+ * input and the encoder's own overflow check catches the rest. */
+#define WH_TEXT_MAX 1000
+
 typedef struct {
     char filename[256];
     /* Bytes that will arrive over the transit. For a directory offer that
@@ -66,6 +78,13 @@ typedef struct {
      * FAT32 per-file limit on the phone's memory card, so it costs nothing
      * in practice. */
     unsigned long filesize;
+
+    /* A text offer: `text` is the message and nothing else in here means
+     * anything. The message lives in this layer's own static storage and is
+     * valid until the next call - copying a kilobyte into every wh_offer
+     * would put it on a caller's stack, which on Symbian is 8 KB. */
+    int is_text;
+    const char *text;
 
     int is_directory;
     char dirname[256];
@@ -97,7 +116,21 @@ typedef long (*wh_xfer_source)(void *ctx, unsigned char *buf, unsigned long cap)
 /* Called as bytes arrive; `done` and `total` are byte counts. */
 typedef void (*wh_xfer_progress)(void *ctx, unsigned long done, unsigned long total);
 
-/* Exchange transit messages and read the peer's offer. Returns 0. */
+/* Send a text message: offer it, and wait for the peer's acknowledgement.
+ *
+ * No transit is negotiated, because the reference sender does not negotiate
+ * one either - it builds a transit sender only when there is a file, so a
+ * peer that receives transit hints for a text offer dereferences something
+ * it never created. The message travels inside the offer.
+ *
+ * Returns 0 on success, -2 if the peer refused, -4 if the message is longer
+ * than one phase message can carry. */
+int wh_xfer_send_text(wh_mailbox *m, const char *text);
+
+/* Exchange transit messages and read the peer's offer. Returns 0.
+ *
+ * A text offer is complete when this returns: it has been acknowledged, and
+ * there is nothing to accept. Check `is_text` before anything else. */
 int wh_xfer_await_offer(wh_mailbox *m, const char *relay_host,
                         unsigned int relay_port, wh_offer *offer);
 

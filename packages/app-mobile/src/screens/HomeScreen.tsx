@@ -33,6 +33,7 @@ const CODE_RE = /^\d+(-[a-zA-Z0-9]+)+$/;
 
 export default function HomeScreen({
   onSend,
+  onCompose,
   onReceive,
   onReceiveFrom,
   onPair,
@@ -40,6 +41,7 @@ export default function HomeScreen({
   onExplain,
 }: {
   onSend: (item: SendItem, device?: PairedDevice) => void;
+  onCompose: (device?: PairedDevice) => void;
   onReceive: (code: string) => void;
   onReceiveFrom: (device: PairedDevice) => void;
   onPair: () => void;
@@ -169,6 +171,11 @@ export default function HomeScreen({
         <GhostButton
           label={t('home.sendFolderButton')}
           onPress={() => pickFolder()}
+          disabled={picking}
+        />
+        <GhostButton
+          label={t('home.sendTextButton')}
+          onPress={() => onCompose()}
           disabled={picking}
         />
         {pickError ? (

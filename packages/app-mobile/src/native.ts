@@ -26,10 +26,11 @@ export interface ZippedFolder {
   totalBytes: number;
 }
 
-/** What the user picked to send: a single file, or a whole folder. */
+/** What the user chose to send: a file, a whole folder, or a typed message. */
 export type SendItem =
   | ({ kind: 'file' } & PickedFile)
-  | ({ kind: 'folder' } & PickedSendFolder);
+  | ({ kind: 'folder' } & PickedSendFolder)
+  | { kind: 'text'; text: string };
 
 export interface DownloadTargetStat {
   dirOk: boolean;

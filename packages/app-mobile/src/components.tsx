@@ -2,6 +2,7 @@ import React from 'react';
 import {
   ActivityIndicator,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -154,6 +155,21 @@ export function CodeBox({ code }: { code: string }) {
   );
 }
 
+/** A received message. Selectable and scrollable, because the whole value of a
+ *  message is being able to read it and take it somewhere else. */
+export function MessageBox({ text }: { text: string }) {
+  const c = useTheme();
+  return (
+    <ScrollView
+      style={[styles.messageBox, { backgroundColor: c.codeBg }]}
+      contentContainerStyle={{ padding: spacing(3) }}>
+      <Text selectable style={[styles.message, { color: c.text }]}>
+        {text}
+      </Text>
+    </ScrollView>
+  );
+}
+
 const styles = StyleSheet.create({
   card: {
     borderRadius: radius.lg,
@@ -189,5 +205,13 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
     fontSize: fontSize.code,
     fontWeight: '700',
+  },
+  messageBox: {
+    borderRadius: radius.md,
+    maxHeight: 260,
+  },
+  message: {
+    fontSize: fontSize.body,
+    lineHeight: 21,
   },
 });

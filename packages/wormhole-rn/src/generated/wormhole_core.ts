@@ -285,6 +285,61 @@ export async function sendFolder(
 }
 
 /**
+ * Send a text message. `code: None` generates a fresh code (reported via
+ * `listener.on_code`); `code: Some(..)` opens the wormhole on that exact code
+ * (paired-device flow).
+ *
+ * Text travels inside the offer itself, so `on_transit` and `on_progress`
+ * never fire - there is no transit connection and nothing to measure.
+ */
+export async function sendText(
+  text: string,
+  code: string | undefined,
+  server: ServerConfig,
+  listener: TransferListener,
+  asyncOpts_?: { signal: AbortSignal }
+): Promise<void> /*throws*/ {
+  const __stack = uniffiIsDebug ? new Error().stack : undefined;
+  try {
+    return await uniffiRustCallAsync(
+      /*rustCaller:*/ uniffiCaller,
+      /*rustFutureFunc:*/ () => {
+        return nativeModule().ubrn_uniffi_wormhole_core_fn_func_send_text(
+          FfiConverterString.lower(text, nativeModule().rustbuffer_alloc),
+          FfiConverterOptionalString.lower(
+            code,
+            nativeModule().rustbuffer_alloc
+          ),
+          FfiConverterTypeServerConfig.lower(
+            server,
+            nativeModule().rustbuffer_alloc
+          ),
+          FfiConverterTypeTransferListener.lower(
+            listener,
+            nativeModule().rustbuffer_alloc
+          )
+        );
+      },
+      /*pollFunc:*/ nativeModule().ubrn_ffi_wormhole_core_rust_future_poll_void,
+      /*cancelFunc:*/ nativeModule()
+        .ubrn_ffi_wormhole_core_rust_future_cancel_void,
+      /*completeFunc:*/ nativeModule()
+        .ubrn_ffi_wormhole_core_rust_future_complete_void,
+      /*freeFunc:*/ nativeModule().ubrn_ffi_wormhole_core_rust_future_free_void,
+      /*liftFunc:*/ (_v) => {},
+      /*liftString:*/ FfiConverterString.lift.bind(FfiConverterString),
+      /*asyncOpts:*/ asyncOpts_,
+      /*errorHandler:*/ FfiConverterTypeError.lift.bind(FfiConverterTypeError)
+    );
+  } catch (__error: any) {
+    if (uniffiIsDebug && __error instanceof Error) {
+      __error.stack = __stack;
+    }
+    throw __error;
+  }
+}
+
+/**
  * Send an already-zipped folder as a protocol-v1 directory offer. This is
  * the Android path: the app zips the SAF tree into `zip_path` (cache dir)
  * first and passes the file count and unpacked byte total it counted while
@@ -529,6 +584,7 @@ export enum Exception_Tags {
   InvalidCode = 'InvalidCode',
   Cancelled = 'Cancelled',
   AlreadyConsumed = 'AlreadyConsumed',
+  NotAFileOffer = 'NotAFileOffer',
   InvalidServerUrl = 'InvalidServerUrl',
   Archive = 'Archive',
   Wormhole = 'Wormhole',
@@ -602,7 +658,7 @@ export const Exception = (() => {
       return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 3;
     }
   }
-  class InvalidServerUrl extends UniffiError {
+  class NotAFileOffer extends UniffiError {
     /**
      * @private
      * This field is private and should not be used.
@@ -614,6 +670,28 @@ export const Exception = (() => {
      */
     readonly [variantOrdinalSymbol] = 4;
 
+    readonly tag = Exception_Tags.NotAFileOffer;
+
+    constructor(message: string) {
+      super('Exception', 'NotAFileOffer', message);
+    }
+
+    static instanceOf(e: any): e is NotAFileOffer {
+      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 4;
+    }
+  }
+  class InvalidServerUrl extends UniffiError {
+    /**
+     * @private
+     * This field is private and should not be used.
+     */
+    readonly [uniffiTypeNameSymbol]: string = 'Exception';
+    /**
+     * @private
+     * This field is private and should not be used.
+     */
+    readonly [variantOrdinalSymbol] = 5;
+
     readonly tag = Exception_Tags.InvalidServerUrl;
 
     constructor(message: string) {
@@ -621,7 +699,7 @@ export const Exception = (() => {
     }
 
     static instanceOf(e: any): e is InvalidServerUrl {
-      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 4;
+      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 5;
     }
   }
   class Archive extends UniffiError {
@@ -634,7 +712,7 @@ export const Exception = (() => {
      * @private
      * This field is private and should not be used.
      */
-    readonly [variantOrdinalSymbol] = 5;
+    readonly [variantOrdinalSymbol] = 6;
 
     readonly tag = Exception_Tags.Archive;
 
@@ -643,7 +721,7 @@ export const Exception = (() => {
     }
 
     static instanceOf(e: any): e is Archive {
-      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 5;
+      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 6;
     }
   }
   class Wormhole extends UniffiError {
@@ -656,7 +734,7 @@ export const Exception = (() => {
      * @private
      * This field is private and should not be used.
      */
-    readonly [variantOrdinalSymbol] = 6;
+    readonly [variantOrdinalSymbol] = 7;
 
     readonly tag = Exception_Tags.Wormhole;
 
@@ -665,7 +743,7 @@ export const Exception = (() => {
     }
 
     static instanceOf(e: any): e is Wormhole {
-      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 6;
+      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 7;
     }
   }
   class Transfer extends UniffiError {
@@ -678,7 +756,7 @@ export const Exception = (() => {
      * @private
      * This field is private and should not be used.
      */
-    readonly [variantOrdinalSymbol] = 7;
+    readonly [variantOrdinalSymbol] = 8;
 
     readonly tag = Exception_Tags.Transfer;
 
@@ -687,7 +765,7 @@ export const Exception = (() => {
     }
 
     static instanceOf(e: any): e is Transfer {
-      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 7;
+      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 8;
     }
   }
   class Io extends UniffiError {
@@ -700,7 +778,7 @@ export const Exception = (() => {
      * @private
      * This field is private and should not be used.
      */
-    readonly [variantOrdinalSymbol] = 8;
+    readonly [variantOrdinalSymbol] = 9;
 
     readonly tag = Exception_Tags.Io;
 
@@ -709,7 +787,7 @@ export const Exception = (() => {
     }
 
     static instanceOf(e: any): e is Io {
-      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 8;
+      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 9;
     }
   }
 
@@ -721,6 +799,7 @@ export const Exception = (() => {
     InvalidCode,
     Cancelled,
     AlreadyConsumed,
+    NotAFileOffer,
     InvalidServerUrl,
     Archive,
     Wormhole,
@@ -736,6 +815,7 @@ export type Exception = InstanceType<
     | 'InvalidCode'
     | 'Cancelled'
     | 'AlreadyConsumed'
+    | 'NotAFileOffer'
     | 'InvalidServerUrl'
     | 'Archive'
     | 'Wormhole'
@@ -759,18 +839,21 @@ const FfiConverterTypeError = (() => {
           return new Exception.AlreadyConsumed(FfiConverterString.read(from));
 
         case 4:
-          return new Exception.InvalidServerUrl(FfiConverterString.read(from));
+          return new Exception.NotAFileOffer(FfiConverterString.read(from));
 
         case 5:
-          return new Exception.Archive(FfiConverterString.read(from));
+          return new Exception.InvalidServerUrl(FfiConverterString.read(from));
 
         case 6:
-          return new Exception.Wormhole(FfiConverterString.read(from));
+          return new Exception.Archive(FfiConverterString.read(from));
 
         case 7:
-          return new Exception.Transfer(FfiConverterString.read(from));
+          return new Exception.Wormhole(FfiConverterString.read(from));
 
         case 8:
+          return new Exception.Transfer(FfiConverterString.read(from));
+
+        case 9:
           return new Exception.Io(FfiConverterString.read(from));
 
         default:
@@ -1069,6 +1152,14 @@ export interface IncomingFileLike {
    * Decline the offer; the sender sees the transfer fail cleanly.
    */
   reject(asyncOpts_?: { signal: AbortSignal }) /*throws*/ : Promise<void>;
+  /**
+   * The message when the sender offered text; `None` for files and folders.
+   *
+   * A text offer arrives complete - it is acknowledged by the engine, so the
+   * sender is already finished and there is nothing to accept or reject.
+   * `file_name` and `file_size` carry nothing meaningful in this case.
+   */
+  text(): string | undefined;
 }
 /**
  * @deprecated Use `IncomingFileLike` instead.
@@ -1237,6 +1328,33 @@ export class IncomingFile
     }
   }
 
+  /**
+   * The message when the sender offered text; `None` for files and folders.
+   *
+   * A text offer arrives complete - it is acknowledged by the engine, so the
+   * sender is already finished and there is nothing to accept or reject.
+   * `file_name` and `file_size` carry nothing meaningful in this case.
+   */
+  text(): string | undefined {
+    return ((__rb: Uint8Array) => {
+      try {
+        return FfiConverterOptionalString.lift(__rb);
+      } finally {
+        nativeModule().rustbuffer_free(__rb);
+      }
+    })(
+      uniffiCaller.rustCall(
+        /*caller:*/ (callStatus) => {
+          return nativeModule().ubrn_uniffi_wormhole_core_fn_method_incomingfile_text(
+            uniffiTypeIncomingFileObjectFactory.clonePointer(this),
+            callStatus
+          );
+        },
+        /*liftString:*/ FfiConverterString.lift.bind(FfiConverterString)
+      )
+    );
+  }
+
   uniffiDestroy(): void {
     const ptr = (this as any)[destructorGuardSymbol];
     if (ptr !== undefined) {
@@ -1390,6 +1508,13 @@ function uniffiEnsureInitialized() {
     );
   }
   if (
+    nativeModule().ubrn_uniffi_wormhole_core_checksum_func_send_text() !== 53843
+  ) {
+    throw new UniffiInternalError.ApiChecksumMismatch(
+      'uniffi_wormhole_core_checksum_func_send_text'
+    );
+  }
+  if (
     nativeModule().ubrn_uniffi_wormhole_core_checksum_func_send_zip_as_folder() !==
     37812
   ) {
@@ -1435,6 +1560,14 @@ function uniffiEnsureInitialized() {
   ) {
     throw new UniffiInternalError.ApiChecksumMismatch(
       'uniffi_wormhole_core_checksum_method_incomingfile_reject'
+    );
+  }
+  if (
+    nativeModule().ubrn_uniffi_wormhole_core_checksum_method_incomingfile_text() !==
+    19320
+  ) {
+    throw new UniffiInternalError.ApiChecksumMismatch(
+      'uniffi_wormhole_core_checksum_method_incomingfile_text'
     );
   }
   if (

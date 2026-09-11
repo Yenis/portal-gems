@@ -468,7 +468,10 @@ function Send({
         }, PAIRED_SEND_TIMEOUT_MS)
       : null;
     // A message has no path and no transit, so it gets its own call; the
-    // rest of the screen's lifecycle is identical.
+    // rest of the screen's lifecycle is identical. A paired text send has no
+    // transit event to mark it "connected", so the timeout above stands for
+    // "the other device never picked this up" - which is what it should mean,
+    // since delivery is one mailbox round-trip once the peer joins.
     const started =
       item.kind === 'text'
         ? window.portalgems.sendText(id, item.text, pairedCode, currentServer())

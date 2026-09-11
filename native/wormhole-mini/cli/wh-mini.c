@@ -283,6 +283,64 @@ static int handshake(wh_mailbox *m, const char *host, unsigned int port,
     return 0;
 }
 
+static int cmd_send_text(const char *host, unsigned int port, const char *path,
+                         const char *text, const char *fixed_code)
+{
+    wh_mailbox m;
+    char code[WH_CODE_MAX];
+    int rc;
+
+    wh_mailbox_init(&m, &g_mbufs);
+
+    printf("connecting to ws://%s:%u%s\n", host, port, path);
+    if (wh_mailbox_connect(&m, host, port, path, APPID) != 0) {
+        fprintf(stderr, "connect/bind failed\n");
+        return 1;
+    }
+
+    if (fixed_code) {
+        strncpy(code, fixed_code, sizeof(code) - 1);
+        code[sizeof(code) - 1] = '\0';
+        if (wh_mailbox_claim(&m, code) != 0) {
+            fprintf(stderr, "claim failed\n");
+            return 1;
+        }
+    } else if (wh_mailbox_allocate(&m, code, sizeof(code)) != 0) {
+        fprintf(stderr, "could not allocate a code\n");
+        return 1;
+    }
+
+    printf("\nwormhole code: %s\n\n", code);
+    printf("waiting for the other side...\n");
+
+    if (handshake(&m, host, port, path, code) != 0) {
+        wh_mailbox_close(&m, "errory");
+        return 1;
+    }
+    printf("key confirmed, sending the message\n");
+
+    rc = wh_xfer_send_text(&m, text);
+    if (rc == -4) {
+        fprintf(stderr, "the message is too long to fit one mailbox message\n");
+        wh_mailbox_close(&m, "errory");
+        return 1;
+    }
+    if (rc == -2) {
+        fprintf(stderr, "the other side refused the message\n");
+        wh_mailbox_close(&m, "errory");
+        return 1;
+    }
+    if (rc != 0) {
+        fprintf(stderr, "sending the message failed\n");
+        wh_mailbox_close(&m, "errory");
+        return 1;
+    }
+
+    printf("message delivered\n");
+    wh_mailbox_close(&m, "happy");
+    return 0;
+}
+
 static int cmd_send(const char *host, unsigned int port, const char *path,
                     const char *filepath, const char *relay_host,
                     unsigned int relay_port)
@@ -578,6 +636,12 @@ static int cmd_receive(const char *host, unsigned int port, const char *path,
         return 1;
     }
 
+    if (offer.is_text) {
+        printf("message:\n%s\n", offer.text);
+        wh_mailbox_close(&m, "happy");
+        return 0;
+    }
+
     {
         int h;
         printf("peer offers %d direct hint(s)", offer.peer.count);
@@ -666,6 +730,7 @@ int main(int argc, char **argv)
     const char *relay_host = "127.0.0.1";
     const char *outdir = ".";
     const char *filepath = 0;
+    const char *text = 0;
     unsigned int relay_port = 4001;
     unsigned int port = 4000;
     char side[11];
@@ -694,12 +759,14 @@ int main(int argc, char **argv)
         else if (strcmp(argv[i], "--out") == 0 && i + 1 < argc) outdir = argv[++i];
         else if (strcmp(argv[i], "--file") == 0 && i + 1 < argc) filepath = argv[++i];
         else if (strcmp(argv[i], "--no-direct") == 0) wh_xfer_enable_direct(0);
+        else if (strcmp(argv[i], "--text") == 0 && i + 1 < argc) text = argv[++i];
         else if (argv[i][0] != '-') cmd = argv[i];
     }
 
     if (strcmp(cmd, "send") == 0) {
+        if (text) return cmd_send_text(host, port, path, text, code);
         if (!filepath) {
-            fprintf(stderr, "send needs --file PATH\n");
+            fprintf(stderr, "send needs --file PATH or --text MESSAGE\n");
             return 2;
         }
         return cmd_send(host, port, path, filepath, relay_host, relay_port);

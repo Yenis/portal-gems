@@ -187,6 +187,20 @@ static int build_transit_msg(char *out, unsigned long cap,
     return wh_jw_done(&w);
 }
 
+/* The last received message. Static rather than part of wh_offer so that a
+ * kilobyte does not land on a caller's stack; on Symbian a worker thread may
+ * have as little as 8 KB. One transfer is in flight at a time, which is what
+ * makes a single buffer enough. */
+static char g_text[WH_TEXT_MAX + 1];
+
+/* Acknowledge a text offer. The reference receiver sends exactly this and
+ * nothing else; the message is already delivered by the time it goes out. */
+static int send_message_ack(wh_mailbox *m)
+{
+    static const char ACK[] = "{\"answer\":{\"message_ack\":\"ok\"}}";
+    return wh_mailbox_send_phase(m, ACK, sizeof(ACK) - 1);
+}
+
 int wh_xfer_await_offer(wh_mailbox *m, const char *relay_host,
                         unsigned int relay_port, wh_offer *offer)
 {
@@ -198,19 +212,40 @@ int wh_xfer_await_offer(wh_mailbox *m, const char *relay_host,
     offer->dirname[0] = '\0';
     offer->filesize = 0;
     offer->is_directory = 0;
+    offer->is_text = 0;
+    offer->text = g_text;
+    g_text[0] = '\0';
     offer->num_files = 0;
     offer->num_bytes = 0;
     offer->peer.count = 0;
 
-    if (build_transit_msg(buf, sizeof(buf), relay_host, relay_port) != 0) return -1;
-    if (wh_mailbox_send_phase(m, buf, wh_strlen(buf)) != 0) return -1;
-
-    /* Their transit message, which carries the addresses we may be able to
-     * reach them on directly. */
+    /* Read before writing. What arrives first says which exchange this is: a
+     * transit message means a file or folder is coming, an offer on its own
+     * means the payload is that message. Announcing our transit first would
+     * work only for files - and worse, a reference sender that is sending
+     * text has no transit sender built and crashes on hints it never asked
+     * for. The reference receiver has the same shape: it sends transit only
+     * in reply to transit. */
     n = wh_mailbox_recv_phase(m, buf, sizeof(buf));
     if (n < 0) return -1;
+
+    if (wh_json_get(buf, (unsigned long)n, "offer", &v) == 0 &&
+        wh_json_get(v.p, v.len, "message", &inner) == 0) {
+        if (wh_json_str(&inner, g_text, sizeof(g_text)) < 0) return -1;
+        offer->is_text = 1;
+        /* Acknowledged here, not by the caller: the message has arrived, and
+         * the sender is waiting on this to finish. There is nothing left for
+         * anyone to accept or decline. */
+        if (send_message_ack(m) != 0) return -1;
+        return 0;
+    }
+
     if (wh_json_get(buf, (unsigned long)n, "transit", &v) != 0) return -1;
     parse_direct_hints(buf, (unsigned long)n, &offer->peer);
+
+    /* Only now is our own transit message worth sending. */
+    if (build_transit_msg(buf, sizeof(buf), relay_host, relay_port) != 0) return -1;
+    if (wh_mailbox_send_phase(m, buf, wh_strlen(buf)) != 0) return -1;
 
     /* Their offer. */
     n = wh_mailbox_recv_phase(m, buf, sizeof(buf));
@@ -363,6 +398,47 @@ static int send_transit_hints(wh_mailbox *m, const char *relay_host,
     char buf[1024];
     if (build_transit_msg(buf, sizeof(buf), relay_host, relay_port) != 0) return -1;
     return wh_mailbox_send_phase(m, buf, wh_strlen(buf));
+}
+
+int wh_xfer_send_text(wh_mailbox *m, const char *text)
+{
+    char buf[2048];
+    wh_json_val v, inner;
+    wh_jw w;
+    long n;
+    unsigned long len = 0;
+
+    while (text[len]) len++;
+    if (len > WH_TEXT_MAX) return -4;
+
+    /* No transit message: see the note in xfer.h. The offer is the payload. */
+    wh_jw_init(&w, buf, sizeof(buf));
+    wh_jw_obj_open(&w);
+    wh_jw_key(&w, "offer");
+    wh_jw_obj_open(&w);
+    wh_jw_str(&w, "message", text);
+    wh_jw_obj_close(&w);
+    wh_jw_obj_close(&w);
+    /* Escaping can expand the text well past its own length, so the encoder's
+     * overflow check is the real limit and a message that blows it is
+     * reported as too long rather than sent truncated. */
+    if (wh_jw_done(&w) != 0) return -4;
+
+    if (wh_mailbox_send_phase(m, buf, wh_strlen(buf)) != 0) return -1;
+
+    /* A conforming peer answers with message_ack and nothing else, but a
+     * stricter client may volunteer a transit message first; skip it rather
+     * than call it a protocol violation, which is what the reference
+     * implementation's own loop does. */
+    for (;;) {
+        n = wh_mailbox_recv_phase(m, buf, sizeof(buf));
+        if (n < 0) return -1;
+        if (wh_json_get(buf, (unsigned long)n, "transit", &v) == 0) continue;
+        if (wh_json_get(buf, (unsigned long)n, "error", &v) == 0) return -2;
+        if (wh_json_get(buf, (unsigned long)n, "answer", &v) != 0) return -1;
+        if (wh_json_get(v.p, v.len, "message_ack", &inner) != 0) return -2;
+        return 0;
+    }
 }
 
 int wh_xfer_send_file(wh_mailbox *m, const char *appid,

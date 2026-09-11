@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Clipboard from '@react-native-clipboard/clipboard';
-import { sendFile, sendZipAsFolder } from 'wormhole-rn';
+import { sendFile, sendText, sendZipAsFolder } from 'wormhole-rn';
 import {
   currentBucket,
   deriveCode,
@@ -109,7 +109,18 @@ export default function SendScreen({
     void (async () => {
     const server = await currentServer();
     const work = async () => {
-      if (item.kind === 'folder') {
+      if (item.kind === 'text') {
+        // Text rides inside the offer itself - no transit, no progress, so
+        // this call fires only onCode before it completes. That also means a
+        // paired send has no transit event to mark it "connected": the 45s
+        // timeout stands for "the other device never picked this up", which
+        // is what it should mean, since delivery is one mailbox round-trip
+        // once the peer joins.
+        armPairedTimeout();
+        await sendText(item.text, pairedCode, server, listener, {
+          signal: controller.signal,
+        });
+      } else if (item.kind === 'folder') {
         // The SAF tree is zipped into the cache first (Rust cannot read
         // content:// URIs); the engine then sends the zip under a
         // protocol-v1 directory offer with the stats counted while zipping.
@@ -174,7 +185,9 @@ export default function SendScreen({
   };
 
   const summary =
-    item.kind === 'folder'
+    item.kind === 'text'
+      ? t('text.title')
+      : item.kind === 'folder'
       ? folderStats
         ? t('folder.summary', {
             name: item.name,
@@ -211,7 +224,9 @@ export default function SendScreen({
         {phase === 'transferring' ? (
           <>
             <Subtitle>
-              {item.kind === 'folder'
+              {item.kind === 'text'
+                ? t('send.sendingText')
+                : item.kind === 'folder'
                 ? t('send.sendingFolder', { name: item.name })
                 : t('send.sending', { name: item.name })}
             </Subtitle>
@@ -224,7 +239,11 @@ export default function SendScreen({
         {phase === 'done' ? (
           <>
             <Subtitle>
-              {item.kind === 'folder' ? t('send.successFolder') : t('send.success')}
+              {item.kind === 'text'
+                ? t('send.successText')
+                : item.kind === 'folder'
+                ? t('send.successFolder')
+                : t('send.success')}
             </Subtitle>
             <Text style={{ color: c.success, fontSize: fontSize.body }}>
               {summary}

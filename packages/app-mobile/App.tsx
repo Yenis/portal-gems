@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import { initI18n, setLanguage, type PairedDevice } from '@portalgems/core';
+import ComposeScreen from './src/screens/ComposeScreen';
 import ExplainerScreen from './src/screens/ExplainerScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import PairScreen from './src/screens/PairScreen';
@@ -30,6 +31,7 @@ getSetting('language')
 type Route =
   | { name: 'home' }
   | { name: 'send'; item: SendItem; device?: PairedDevice }
+  | { name: 'compose'; device?: PairedDevice }
   | { name: 'receive'; code?: string; device?: PairedDevice }
   | { name: 'pair' }
   | { name: 'settings'; scrollToServer?: boolean }
@@ -97,6 +99,7 @@ function AppShell() {
       {route.name === 'home' ? (
         <HomeScreen
           onSend={(item, device) => navigate({ name: 'send', item, device })}
+          onCompose={(device) => navigate({ name: 'compose', device })}
           onReceive={(code) => navigate({ name: 'receive', code })}
           onReceiveFrom={(device) => navigate({ name: 'receive', device })}
           onPair={() => navigate({ name: 'pair' })}
@@ -109,6 +112,13 @@ function AppShell() {
           device={route.device}
           onHome={goBack}
           onServerSettings={() => navigate({ name: 'settings', scrollToServer: true })}
+        />
+      ) : route.name === 'compose' ? (
+        <ComposeScreen
+          onHome={goBack}
+          onSend={(text) =>
+            navigate({ name: 'send', item: { kind: 'text', text }, device: route.device })
+          }
         />
       ) : route.name === 'receive' ? (
         <ReceiveScreen code={route.code} device={route.device} onHome={goBack} />

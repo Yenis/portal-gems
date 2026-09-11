@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import Clipboard from '@react-native-clipboard/clipboard';
 import { requestReceive, type IncomingFileInterface } from 'wormhole-rn';
 import {
   candidateBuckets,
@@ -13,6 +14,7 @@ import {
 import {
   Card,
   GhostButton,
+  MessageBox,
   Muted,
   PrimaryButton,
   ProgressBar,
@@ -38,6 +40,7 @@ import { useTheme } from '../theme';
 type Phase =
   | 'connecting'
   | 'confirm'
+  | 'message'
   | 'conflict'
   | 'transferring'
   | 'saving'
@@ -71,6 +74,9 @@ export default function ReceiveScreen({
   const [pct, setPct] = useState(0);
   const [savedName, setSavedName] = useState('');
   const [existingSize, setExistingSize] = useState(0);
+  // Set when the sender offered text instead of a file.
+  const [message, setMessage] = useState<string | null>(null);
+  const [copiedText, setCopiedText] = useState(false);
   const [usedFallback, setUsedFallback] = useState(false);
   const [error, setError] = useState('');
   const abortRef = useRef<AbortController | null>(null);
@@ -90,6 +96,14 @@ export default function ReceiveScreen({
 
     const gotOffer = (incoming: IncomingFileInterface) => {
       incomingRef.current = incoming;
+      // Text arrives complete - the engine acknowledged it - so there is
+      // nothing to accept and no reason to ask.
+      const text = incoming.text();
+      if (text !== undefined) {
+        setMessage(text);
+        setPhase('message');
+        return;
+      }
       setOfferName(incoming.fileName());
       setOfferSize(Number(incoming.fileSize()));
       const folder = incoming.folderOffer();
@@ -254,6 +268,21 @@ export default function ReceiveScreen({
               ? t('paired.receiveWaiting', { name: device.name })
               : t('receive.connecting')}
           </Muted>
+        ) : null}
+
+        {phase === 'message' && message !== null ? (
+          <>
+            <Subtitle>{t('text.received')}</Subtitle>
+            <MessageBox text={message} />
+            <PrimaryButton
+              label={copiedText ? t('text.copied') : t('text.copy')}
+              onPress={() => {
+                Clipboard.setString(message);
+                setCopiedText(true);
+                setTimeout(() => setCopiedText(false), 1500);
+              }}
+            />
+          </>
         ) : null}
 
         {phase === 'confirm' ? (
