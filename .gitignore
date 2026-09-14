@@ -25,6 +25,14 @@ release-artifacts/
 # C client build output (native/wormhole-mini)
 native/wormhole-mini/build/
 
+# Real pairing secrets. wh-mini writes its pairings to --pairs, which
+# defaults to wh-pairs.txt in the working directory: run it from the repo and
+# a genuine 32-byte secret lands here. The apps keep theirs outside the repo
+# (private directory, Keystore, safeStorage) and never in a file like this.
+wh-pairs.txt
+**/wh-pairs.txt
+pairs.txt
+
 # Symbian self-signed development certificate (never commit)
 packages/app-symbian/sis/portalgems-dev.key
 packages/app-symbian/sis/portalgems-dev.cer
