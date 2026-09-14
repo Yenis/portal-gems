@@ -1239,6 +1239,7 @@ static void RunPairHostJob(TJob* aJob)
     TInt rc;
 
     aJob->iState = EJobConnecting;
+    aJob->iStep = EStepInvitation;
     CopyCStr(p.name, sizeof(p.name), gSettings.iDeviceName);
     wh_net_random(p.secret, WH_PAIR_SECRET_LEN);
     if (wh_pair_encode(&p, invitation, sizeof(invitation)) < 0) {
@@ -1246,12 +1247,14 @@ static void RunPairHostJob(TJob* aJob)
         return;
     }
 
+    aJob->iStep = EStepConnect;
     wh_mailbox_init(&mailbox, &gMailboxBufs);
     if (wh_mailbox_connect(&mailbox, gSettings.iMailboxHost, gSettings.iMailboxPort,
                            gSettings.iMailboxPath, KAppId) != 0) {
         Finish(aJob, EJobFailed, "Could not reach the server");
         return;
     }
+    aJob->iStep = EStepAllocate;
     if (wh_mailbox_allocate(&mailbox, code, sizeof(code)) != 0) {
         Finish(aJob, EJobFailed, "Could not get a code");
         wh_mailbox_close(&mailbox, "errory");
@@ -1274,6 +1277,7 @@ static void RunPairHostJob(TJob* aJob)
         wh_mailbox_close(&mailbox, rc == -2 ? "scary" : "errory");
         return;
     }
+    aJob->iStep = EStepSendInvitation;
     if (wh_xfer_send_text(&mailbox, invitation) != 0) {
         Finish(aJob, EJobFailed, "The invitation was not delivered");
         wh_mailbox_close(&mailbox, "errory");
@@ -1282,6 +1286,7 @@ static void RunPairHostJob(TJob* aJob)
     wh_mailbox_close(&mailbox, "happy");
 
     aJob->iState = EJobPairing;
+    aJob->iStep = EStepAwaitHandshake;
     if (ReceiveHandshake(aJob, p.secret, aJob->iPeerName, sizeof(aJob->iPeerName)) != 0) return;
     if (WhminiAddPair(aJob->iPeerName, p.secret) != KErrNone) {
         Finish(aJob, EJobFailed, "Paired, but could not save it");
@@ -1304,12 +1309,14 @@ static void RunPairJoinJob(TJob* aJob)
     TInt rc;
 
     aJob->iState = EJobConnecting;
+    aJob->iStep = EStepConnect;
     wh_mailbox_init(&mailbox, &gMailboxBufs);
     if (wh_mailbox_connect(&mailbox, gSettings.iMailboxHost, gSettings.iMailboxPort,
                            gSettings.iMailboxPath, KAppId) != 0) {
         Finish(aJob, EJobFailed, "Could not reach the server");
         return;
     }
+    aJob->iStep = EStepClaim;
     if (wh_mailbox_claim(&mailbox, aJob->iCode) != 0) {
         Finish(aJob, EJobFailed, "That code is not waiting on this server");
         wh_mailbox_close(&mailbox, "errory");
@@ -1327,6 +1334,7 @@ static void RunPairJoinJob(TJob* aJob)
         wh_mailbox_close(&mailbox, rc == -2 ? "scary" : "errory");
         return;
     }
+    aJob->iStep = EStepReadInvitation;
     if (wh_xfer_await_offer(&mailbox, gSettings.iRelayHost, gSettings.iRelayPort,
                             &offer) != 0) {
         Finish(aJob, EJobFailed, "No usable offer");
@@ -1348,6 +1356,7 @@ static void RunPairJoinJob(TJob* aJob)
     /* Now the handshake: our name, sent over the code both sides derive from
      * the secret we were just given. */
     aJob->iState = EJobPairing;
+    aJob->iStep = EStepSendName;
     ServerOf(srv);
     wh_mailbox_init(&mailbox, &gMailboxBufs);
     rc = wh_paired_open_sender(&mailbox, &srv, p.secret, dcode);

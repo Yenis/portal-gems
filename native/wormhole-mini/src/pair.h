@@ -22,6 +22,12 @@ extern "C" {
 /* "NNNNNNNN-xxxxxxxxxx-xxxxxxxxxx" and its NUL. */
 #define WH_PAIR_CODE_MAX       32
 #define WH_PAIR_PAYLOAD_MAX    1024
+/* The JSON inside a payload, before base64url. Kept well below the payload
+ * limit because these buffers are locals, and the phone's worker thread can
+ * be given as little as 8 KB of stack: a name of 128 bytes plus a 43-byte
+ * secret needs about 200, so 512 is room to spare without spending the
+ * stack the protocol itself needs. */
+#define WH_PAIR_JSON_MAX       512
 #define WH_PAIR_BUCKET_SECONDS 300
 
 /* What a pairing invitation carries: the displaying device's name and the

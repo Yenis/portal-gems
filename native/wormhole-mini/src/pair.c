@@ -66,7 +66,7 @@ void wh_pair_derive_code(const unsigned char secret[WH_PAIR_SECRET_LEN],
 
 long wh_pair_encode(const wh_pair_payload *p, char *out, unsigned long cap)
 {
-    char json[WH_PAIR_PAYLOAD_MAX];
+    char json[WH_PAIR_JSON_MAX];
     char secret_b64[48];
     wh_jw w;
     long n;
@@ -109,7 +109,7 @@ static void copy_str(char *dst, unsigned long cap, const char *src)
 
 int wh_pair_decode(const char *text, unsigned long len, wh_pair_payload *out)
 {
-    char json[WH_PAIR_PAYLOAD_MAX];
+    char json[WH_PAIR_JSON_MAX];
     char secret_b64[64];
     unsigned char secret[WH_PAIR_SECRET_LEN + 8];
     wh_json_val v;

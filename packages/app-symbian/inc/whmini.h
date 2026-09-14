@@ -40,6 +40,23 @@ enum TJobKind
     EJobKindPairJoin      /* receive an invitation over a typed code */
     };
 
+/* Where a job has got to, for the screen. A transfer that stalls looks
+ * exactly like one that died until the phone says which step it is on, and
+ * there is no debugger on the other end of this - only a photograph of the
+ * screen. */
+enum TJobStep
+    {
+    EStepNone = 0,
+    EStepInvitation,        /* building the pairing invitation */
+    EStepConnect,           /* opening the connection to the server */
+    EStepAllocate,          /* asking the server for a code */
+    EStepSendInvitation,    /* delivering the invitation through it */
+    EStepAwaitHandshake,    /* waiting for the other device's name */
+    EStepClaim,             /* claiming the code that was typed in */
+    EStepReadInvitation,    /* waiting for the invitation to arrive */
+    EStepSendName           /* sending our name back */
+    };
+
 /* Stored pairings. One file in the application's private directory
  * (C:\private\e1000001\), which platform security keeps every other
  * application out of - the nearest thing S60 3rd edition has to the Android
@@ -96,6 +113,8 @@ public:
     unsigned char iSecret[32];
     /* Paired transfers: who, in. Pairing: who we paired with, out. */
     char iPeerName[128];
+    /* out: one of TJobStep, updated as the worker goes. */
+    volatile TInt iStep;
     };
 
 /* Worker thread entry point. aPtr is a TJob*. */
@@ -125,6 +144,6 @@ TBool WhminiLoadSettings(TWhminiSettings& aSettings);
 void WhminiSaveSettings(const TWhminiSettings& aSettings);
 
 /* Shown in the app, and must match the version in sis/whmini.pkg. */
-#define WHMINI_VERSION "v0.7.0"
+#define WHMINI_VERSION "v0.7.1"
 
 #endif

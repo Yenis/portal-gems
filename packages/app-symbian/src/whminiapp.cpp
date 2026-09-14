@@ -145,6 +145,7 @@ private:
     void EditPortL(TUint& aTarget, const TDesC& aPrompt);
     void ToggleDirectL();
     void Refresh();
+    void StepLine(TDes& aOut);
     static TInt Tick(TAny* aSelf);
 
     CWhminiContainer* iContainer;
@@ -152,6 +153,8 @@ private:
     RThread iWorker;
     TInt iWorkerSeq;
     TBool iWorkerRunning;
+    TInt iTicks;            /* polls since this job started - elapsed time */
+    TInt iStackSize;        /* what the worker actually got, in bytes */
     TJob iJob;
     TBool iMessageShown;
     /* Reloaded whenever a paired-device menu opens, so a pairing made a
@@ -210,6 +213,15 @@ static void Utf8ToDes(const char* aUtf8, TDes& aOut)
         aOut.Copy(in.Left(aOut.MaxLength()));
     }
 
+_LIT(KStepInvitation,     "building invitation");
+_LIT(KStepConnect,        "connecting to server");
+_LIT(KStepAllocate,       "asking for a code");
+_LIT(KStepSendInvitation, "sending invitation");
+_LIT(KStepAwaitHandshake, "waiting for their name");
+_LIT(KStepClaim,          "claiming the code");
+_LIT(KStepReadInvitation, "reading invitation");
+_LIT(KStepSendName,       "sending our name");
+
 /* Paired devices meet on codes derived from the time, so a wrong clock -
  * or a right local time in the wrong time zone - silently breaks pairing.
  * Show the UTC the phone believes in, so a mismatch is visible. */
@@ -219,6 +231,28 @@ static void ClockLine(TDes& aOut)
     now.UniversalTime();
     TDateTime dt = now.DateTime();
     aOut.Format(_L("Phone clock: %02d:%02d UTC"), dt.Hour(), dt.Minute());
+    }
+
+/* What the worker is doing and for how long. A screen that cannot show the
+ * difference between slow and stuck is the reason this exists. */
+void CWhminiAppUi::StepLine(TDes& aOut)
+    {
+    const TDesC* what = &KNullDesC;
+    switch (iJob.iStep)
+        {
+        case EStepInvitation:     what = &KStepInvitation; break;
+        case EStepConnect:        what = &KStepConnect; break;
+        case EStepAllocate:       what = &KStepAllocate; break;
+        case EStepSendInvitation: what = &KStepSendInvitation; break;
+        case EStepAwaitHandshake: what = &KStepAwaitHandshake; break;
+        case EStepClaim:          what = &KStepClaim; break;
+        case EStepReadInvitation: what = &KStepReadInvitation; break;
+        case EStepSendName:       what = &KStepSendName; break;
+        default: break;
+        }
+    TInt seconds = iTicks / (1000000 / KPollInterval);
+    if (what->Length() == 0) aOut.Format(_L("%ds, stack %dk"), seconds, iStackSize / 1024);
+    else aOut.Format(_L("%S %ds, stack %dk"), what, seconds, iStackSize / 1024);
     }
 
 void CWhminiAppUi::Refresh()
@@ -261,8 +295,13 @@ void CWhminiAppUi::Refresh()
             iContainer->SetLine(4, _L("Options > Send file"));
             break;
         case EJobConnecting:
+            {
+            TBuf<64> step;
             iContainer->SetLine(3, _L("Connecting..."));
+            StepLine(step);
+            iContainer->SetLine(4, step);
             break;
+            }
         case EJobZipping:
             iContainer->SetLine(3, _L("Building archive..."));
             break;
@@ -283,12 +322,20 @@ void CWhminiAppUi::Refresh()
             iContainer->SetLine(5, iJob.iKind == EJobKindPairHost
                                        ? _L("(Pair a device > Enter a pairing code)")
                                        : _L("Waiting for them..."));
+            {
+            TBuf<64> step;
+            StepLine(step);
+            iContainer->SetLine(6, step);
+            }
             break;
             }
         case EJobPairing:
             {
             TBuf<64> clock;
+            TBuf<64> step;
             iContainer->SetLine(3, _L("Finishing pairing..."));
+            StepLine(step);
+            iContainer->SetLine(4, step);
             ClockLine(clock);
             iContainer->SetLine(5, clock);
             break;
@@ -423,6 +470,26 @@ void CWhminiAppUi::Refresh()
 TInt CWhminiAppUi::Tick(TAny* aSelf)
     {
     CWhminiAppUi* self = (CWhminiAppUi*)aSelf;
+    self->iTicks++;
+
+    /* A worker that exits without reporting - a panic, most often - used to
+     * leave the screen on its last state for ever, which looks exactly like
+     * a server that never answers. Name it instead: the exit category and
+     * reason are the panic ("KERN-EXEC 3"), which is the whole diagnosis. */
+    if (self->iWorkerRunning &&
+        self->iWorker.ExitType() != EExitPending &&
+        self->iJob.iState != EJobDone && self->iJob.iState != EJobFailed)
+        {
+        TExitCategoryName category = self->iWorker.ExitCategory();
+        TBuf<80> msg;
+        TInt i;
+        msg.Format(_L("Stopped: %S %d"), &category, self->iWorker.ExitReason());
+        for (i = 0; i < msg.Length() && i < KJobTextLen - 1; i++)
+            self->iJob.iMessage[i] = (char)msg[i];
+        self->iJob.iMessage[i] = '\0';
+        self->iJob.iState = EJobFailed;
+        }
+
     self->Refresh();
 
     if (self->iJob.iState == EJobDone || self->iJob.iState == EJobFailed)
@@ -572,6 +639,8 @@ TBool CWhminiAppUi::PrepareJobL()
     /* Reset every time: a transfer that inherited the last one's secret
      * would quietly go to the wrong device. */
     iJob.iPaired = 0;
+    iJob.iStep = EStepNone;
+    iTicks = 0;
     iJob.iPeerName[0] = '\0';
     Mem::FillZ(iJob.iSecret, sizeof(iJob.iSecret));
     return ETrue;
@@ -748,6 +817,10 @@ TInt CWhminiAppUi::StartWorker()
                              KWorkerStackSizes[i], NULL, &iJob);
         if (err == KErrNone)
             {
+            /* Which rung of the ladder we landed on. The protocol needs far
+             * more than the smallest, so when something dies for no visible
+             * reason this is the first thing worth knowing. */
+            iStackSize = KWorkerStackSizes[i];
             iWorkerRunning = ETrue;
             iWorker.Resume();
             iTimer->Cancel();
