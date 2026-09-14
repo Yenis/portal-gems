@@ -4,16 +4,17 @@ Things worth doing that are deliberately not being done yet. Each entry
 says what the problem actually is, so the next person does not have to
 rediscover it.
 
-## Pairing without a camera - in progress
+## Pairing without a camera - Symbian remaining
 
-**Status:** pairing over a code is built and verified on the desktop (two
-desktops paired with each other, then transferred between the new pairing)
-and on Android, where it sits below the QR buttons as the alternative for a
-peer without a camera (verified on an emulator against the desktop in both
-directions, plus a paired transfer). On Symbian the C side is proven on the
-host against the desktop and the phone build is ready; it has not yet been
-run on the E72 itself. See "Getting the payload across" in
-`docs/ARCHITECTURE.md`, and "Pairing" in `docs/SYMBIAN.md`.
+**Status:** shipped for the desktop and Android in 1.3.2. On Symbian the
+portable C side is proven on the host against a real desktop instance, but
+the phone build has not completed a pairing on the E72 yet: "Show a pairing
+code" stalls on Connecting, and 0.7.1 adds the instrumentation to find out
+why (a live step line with elapsed time and the worker's stack size, and a
+worker that dies now reports its panic instead of leaving the screen
+unchanged). The README still says Symbian cannot pair; that stays until it
+does. See "Getting the payload across" in `docs/ARCHITECTURE.md`, and
+"Pairing" in `docs/SYMBIAN.md`.
 
 ## Android: a cancelled receive leaks its partial file and renames the next
 

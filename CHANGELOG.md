@@ -5,6 +5,40 @@ All notable changes to PortalGems are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.2] - 2026-09-14
+
+Pair two devices without a camera between them.
+
+### Added
+
+- **Pair using a code.** Pairing used to mean one device photographing the
+  other's screen, which rules out two desktops, a phone whose camera is
+  broken, and anything without a camera at all. Now either device can show a
+  one-time pairing code instead, and you type it on the other. QR pairing is
+  unchanged and still the quickest way when a camera is at hand: on the
+  desktop the code comes first, and on Android it sits below the QR buttons
+  for when the *other* device is the one without a camera.
+
+  The same thing crosses either way - a device name and a random 256-bit
+  secret - so a device paired by code and one paired by QR are
+  indistinguishable afterwards, and pairings made by earlier versions keep
+  working. A typed code carries the secret through an ordinary encrypted
+  wormhole rather than across the room on a screen: one guess at the code,
+  and a wrong guess fails visibly on both devices. One field accepts either a
+  typed code or a pasted pairing code.
+
+### Fixed
+
+- **A paired receive could wait for ever.** If the sending device died while
+  waiting - killed, crashed, out of battery - its claim on the one-time code
+  stayed on the server, and the receiver would join it and wait for a
+  handshake that could never arrive. The minute-long limit on the search was
+  only checked between codes, never during one, so the screen sat there until
+  it was cancelled. Each attempt is now given ten seconds before the receiver
+  moves on to the next code.
+
+[1.3.2]: https://github.com/Yenis/portal-gems/releases/tag/v1.3.2
+
 ## [1.3.1] - 2026-09-11
 
 Send a text message, on every platform.

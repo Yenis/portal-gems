@@ -192,9 +192,13 @@ The wormhole protocol lets a sender *choose* the code instead of getting a
 random one. PortalGems uses this to make repeat transfers between your own
 devices effortless - with no server involved:
 
-1. **Pair once:** device A shows a QR code containing a device name and a
-   random 256-bit secret; device B scans it (or you paste the pairing code by
-   hand). Both store the entry locally (Keystore/keychain).
+1. **Pair once,** whichever way suits the two devices. One shows a QR code and
+   the other scans it; or one shows a one-time pairing code and you type it on
+   the other, which is how two computers pair when there is no camera between
+   them. Either way the same thing crosses - a device name and a random
+   256-bit secret - and both devices store it locally (Keystore/keychain). A
+   typed code carries the secret through an encrypted wormhole rather than
+   across the room on a screen, and it works once.
 2. **Transfer forever after:** when you tap *Send* / *Receive* on a paired
    device, both sides independently derive the same one-time wormhole code from
    the shared secret and the current time window - and connect automatically.
