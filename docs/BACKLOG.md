@@ -128,8 +128,17 @@ Three changes:
 future, and fails without the guard. The fix reaches a phone only once the
 native library is rebuilt, and has not been re-run on a device yet.
 
-Desktop was never affected; it stages each transfer in its own
-`incoming/<id>` directory and removes it in a `finally`.
+Only Android showed the rename, because only Android stages every transfer
+into one shared directory and took the saved name from the staged path.
+Desktop downloads were never affected either way: each one gets its own
+`incoming/<id>` directory, removed in a `finally`. The leak itself was in the
+engine, though, so it reached further than the symptom did - the pairing
+handshake accepts into a shared directory on both platforms (the OS temp
+directory on the desktop, `incomingDir` on Android), where a cancelled or
+failed handshake left its partial `pg-pair-handshake.json` behind for good.
+Harmless, since that path is used as returned and then deleted, but it is the
+same fault and the same guard fixes it. The Symbian client has its own C
+implementation and never ran this code.
 
 ## ~~Using the reference CLI against the PortalGems server~~ - done
 
