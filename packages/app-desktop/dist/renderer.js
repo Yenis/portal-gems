@@ -24206,6 +24206,8 @@
   var PAIRED_SEND_TIMEOUT_MS = 45e3;
   var PAIRED_RECEIVE_TIMEOUT_MS = 6e4;
   var PAIRED_ATTEMPT_TIMEOUT_MS = 1e4;
+  var PAIRED_CODE_ATTEMPTS = 3;
+  var SEND_ATTEMPTS_KEY = "pg-paired-send-attempts";
   var PAIRING_HANDSHAKE_FILE = "pg-pair-handshake.json";
   var B64URL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
   function utf8Encode(s) {
@@ -24312,12 +24314,59 @@
     const b = currentBucket(nowMs);
     return [b, b - 1, b + 1];
   }
-  function deriveCode(secretB64, bucket) {
+  function candidateCodes(secretB64, nowMs = Date.now()) {
+    const codes = [];
+    for (const bucket of candidateBuckets(nowMs)) {
+      for (let attempt = 0; attempt < PAIRED_CODE_ATTEMPTS; attempt += 1) {
+        codes.push(deriveCode(secretB64, bucket, attempt));
+      }
+    }
+    return codes;
+  }
+  function parseSendAttempts(raw) {
+    if (!raw) return {};
+    try {
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+      const out = {};
+      for (const [id, value] of Object.entries(parsed)) {
+        const v = value;
+        if (v && typeof v.bucket === "number" && Number.isFinite(v.bucket) && typeof v.attempt === "number" && Number.isFinite(v.attempt)) {
+          out[id] = { bucket: v.bucket, attempt: v.attempt };
+        }
+      }
+      return out;
+    } catch {
+      return {};
+    }
+  }
+  function nextSendAttempt(attempts, deviceId, nowMs = Date.now()) {
+    const marker = attempts[deviceId];
+    if (!marker || marker.bucket !== currentBucket(nowMs)) return 0;
+    return Math.min(marker.attempt + 1, PAIRED_CODE_ATTEMPTS - 1);
+  }
+  function withSendStarted(attempts, deviceId, attempt, nowMs = Date.now()) {
+    const bucket = currentBucket(nowMs);
+    const out = {};
+    for (const [id, marker] of Object.entries(attempts)) {
+      if (marker.bucket === bucket) out[id] = marker;
+    }
+    out[deviceId] = { bucket, attempt };
+    return out;
+  }
+  function withSendFinished(attempts, deviceId) {
+    const out = { ...attempts };
+    delete out[deviceId];
+    return out;
+  }
+  function deriveCode(secretB64, bucket, attempt = 0) {
     const key = fromBase64Url(secretB64);
     const mac = hmac(
       sha256,
       key,
-      utf8Encode(`portalgems-code-v1:${bucket}`)
+      utf8Encode(
+        attempt === 0 ? `portalgems-code-v1:${bucket}` : `portalgems-code-v1:${bucket}:${attempt}`
+      )
     );
     const u32 = (mac[0] << 24 | mac[1] << 16 | mac[2] << 8 | mac[3]) >>> 0;
     const nameplate = String(1e7 + u32 % 9e7);
@@ -29540,7 +29589,15 @@
           setPct(ev.total ? Math.floor((ev.done ?? 0) / ev.total * 100) : 100);
         }
       });
-      const pairedCode = device ? deriveCode(device.secret, currentBucket()) : void 0;
+      let attempts = {};
+      let pairedCode;
+      if (device) {
+        attempts = parseSendAttempts(localStorage.getItem(SEND_ATTEMPTS_KEY));
+        const attempt = nextSendAttempt(attempts, device.id);
+        pairedCode = deriveCode(device.secret, currentBucket(), attempt);
+        attempts = withSendStarted(attempts, device.id, attempt);
+        localStorage.setItem(SEND_ATTEMPTS_KEY, JSON.stringify(attempts));
+      }
       const timer = device ? setTimeout(() => {
         if (!connected) {
           timedOut = true;
@@ -29549,7 +29606,15 @@
       }, PAIRED_SEND_TIMEOUT_MS) : null;
       const started = item.kind === "text" ? window.portalgems.sendText(id, item.text, pairedCode, currentServer()) : (item.kind === "folder" ? window.portalgems.sendFolder : window.portalgems.send)(id, item.path, pairedCode, currentServer());
       started.then(
-        () => setPhase("done"),
+        () => {
+          if (device) {
+            localStorage.setItem(
+              SEND_ATTEMPTS_KEY,
+              JSON.stringify(withSendFinished(attempts, device.id))
+            );
+          }
+          setPhase("done");
+        },
         (e2) => {
           if (timedOut) setPhase("peerNotOpen");
           else if (cancelledRef.current) setPhase("cancelled");
@@ -29641,10 +29706,9 @@
         (async () => {
           const deadline = Date.now() + PAIRED_RECEIVE_TIMEOUT_MS;
           while (Date.now() < deadline && !cancelledRef.current) {
-            for (const bucket of candidateBuckets()) {
+            for (const derived of candidateCodes(device.secret)) {
               if (cancelledRef.current) break;
               try {
-                const derived = deriveCode(device.secret, bucket);
                 gotOffer(await requestReceiveBounded(id, derived));
                 return;
               } catch {

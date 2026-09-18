@@ -5,8 +5,7 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import { requestReceive, type IncomingFileInterface } from 'wormhole-rn';
 import {
   deviceLabel,
-  candidateBuckets,
-  deriveCode,
+  candidateCodes,
   fontSize,
   spacing,
   PAIRED_RECEIVE_TIMEOUT_MS,
@@ -132,16 +131,18 @@ export default function ReceiveScreen({
       // Paired receive: poll the derived candidate codes until the sender
       // shows up or we give up. An unclaimed nameplate just means "not yet";
       // each attempt is bounded, because a nameplate held by a sender that
-      // died while waiting would otherwise stall the loop indefinitely.
+      // died while waiting would otherwise stall the loop indefinitely. The
+      // candidates cover the neighbouring buckets for clock skew, and the
+      // later codes inside each one, which is where a sender goes after a
+      // send that did not finish.
       (async () => {
         const server = await currentServer();
         const deadline = Date.now() + PAIRED_RECEIVE_TIMEOUT_MS;
         let lastError: unknown = new Error(t('paired.nothingFound', { name: deviceLabel(device) }));
         while (Date.now() < deadline && !controller.signal.aborted) {
-          for (const bucket of candidateBuckets()) {
+          for (const derived of candidateCodes(device.secret)) {
             if (controller.signal.aborted) break;
             try {
-              const derived = deriveCode(device.secret, bucket);
               const incoming = await withAttemptBound(controller.signal, (attempt) =>
                 requestReceive(derived, server, { signal: attempt })
               );

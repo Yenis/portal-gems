@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
   candidateBuckets,
+  candidateCodes,
   classifyPairingInput,
   createPairingPayload,
   currentBucket,
   deriveCode,
+  nextSendAttempt,
+  parseSendAttempts,
+  withSendFinished,
+  withSendStarted,
+  PAIRED_CODE_ATTEMPTS,
   encodePairingPayload,
   fromBase64Url,
   parsePairingPayload,
@@ -96,6 +102,105 @@ describe('code derivation', () => {
     const [nameplate] = deriveCode(secret, 42).split('-');
     expect(Number(nameplate)).toBeGreaterThanOrEqual(10_000_000);
     expect(Number(nameplate)).toBeLessThan(100_000_000);
+  });
+
+  // Attempt 0 has to stay byte-identical to what every earlier release
+  // derived, or an updated device stops meeting one that knows no attempts.
+  it('leaves attempt 0 exactly where it was', () => {
+    expect(deriveCode(secret, 5_900_000, 0)).toBe(deriveCode(secret, 5_900_000));
+    expect(deriveCode(secret, 0, 0)).toBe('84198084-a64125dc4c-c6ce0273f7');
+  });
+
+  // Frozen the same way as the bucket vectors above, and for the same reason:
+  // `native/wormhole-mini` has to derive these too before a Symbian peer can
+  // meet a sender that moved past its first code.
+  it('matches the frozen vector for the later attempts', () => {
+    expect(deriveCode(secret, 5_900_000, 1)).toBe('40195543-473b0563ba-339609eb11');
+    expect(deriveCode(secret, 5_900_000, 2)).toBe('48285071-b26659425e-40472610d4');
+  });
+
+  it('gives each later attempt its own code', () => {
+    const codes = [0, 1, 2].map((a) => deriveCode(secret, 42, a));
+    expect(new Set(codes).size).toBe(3);
+    // and a later attempt is not just the next bucket under another name
+    expect(codes[1]).not.toBe(deriveCode(secret, 43));
+  });
+
+  it('keeps the wormhole code shape on later attempts', () => {
+    const [nameplate] = deriveCode(secret, 42, 2).split('-');
+    expect(Number(nameplate)).toBeGreaterThanOrEqual(10_000_000);
+    expect(Number(nameplate)).toBeLessThan(100_000_000);
+  });
+});
+
+describe('receiver candidate codes', () => {
+  const secret = toBase64Url(Uint8Array.from({ length: 32 }, (_, i) => i));
+  const now = 5_900_000 * 300 * 1000;
+
+  it('covers every bucket and attempt, without repeats', () => {
+    const codes = candidateCodes(secret, now);
+    expect(codes).toHaveLength(candidateBuckets(now).length * PAIRED_CODE_ATTEMPTS);
+    expect(new Set(codes).size).toBe(codes.length);
+  });
+
+  it('looks first where a working sender actually is', () => {
+    expect(candidateCodes(secret, now)[0]).toBe(deriveCode(secret, currentBucket(now), 0));
+  });
+
+  it('includes the code a sender moves to after a failure', () => {
+    const bumped = deriveCode(secret, currentBucket(now), 1);
+    expect(candidateCodes(secret, now)).toContain(bumped);
+  });
+});
+
+describe('in-flight send markers', () => {
+  const now = 5_900_000 * 300 * 1000;
+  const bucket = currentBucket(now);
+
+  it('starts at attempt 0 with nothing recorded', () => {
+    expect(nextSendAttempt({}, 'dev-1', now)).toBe(0);
+  });
+
+  it('steps past a send that was never seen through', () => {
+    const after = withSendStarted({}, 'dev-1', 0, now);
+    expect(nextSendAttempt(after, 'dev-1', now)).toBe(1);
+    expect(nextSendAttempt(withSendStarted(after, 'dev-1', 1, now), 'dev-1', now)).toBe(2);
+  });
+
+  it('returns to attempt 0 once a send completes', () => {
+    const started = withSendStarted({}, 'dev-1', 0, now);
+    expect(nextSendAttempt(withSendFinished(started, 'dev-1'), 'dev-1', now)).toBe(0);
+  });
+
+  it('keeps one device out of another device\'s way', () => {
+    const started = withSendStarted({}, 'dev-1', 0, now);
+    expect(nextSendAttempt(started, 'dev-2', now)).toBe(0);
+  });
+
+  it('ignores a marker from an older bucket, and forgets it', () => {
+    const old = withSendStarted({}, 'dev-1', 1, now);
+    const later = now + 300 * 1000;
+    expect(nextSendAttempt(old, 'dev-1', later)).toBe(0);
+    expect(withSendStarted(old, 'dev-2', 0, later)['dev-1']).toBeUndefined();
+  });
+
+  it('stops at the last attempt rather than inventing codes', () => {
+    const exhausted = { 'dev-1': { bucket, attempt: PAIRED_CODE_ATTEMPTS - 1 } };
+    expect(nextSendAttempt(exhausted, 'dev-1', now)).toBe(PAIRED_CODE_ATTEMPTS - 1);
+  });
+
+  it('survives a round trip through storage', () => {
+    const started = withSendStarted({}, 'dev-1', 1, now);
+    expect(parseSendAttempts(JSON.stringify(started))).toEqual(started);
+  });
+
+  it('reads anything unusable as no markers at all', () => {
+    expect(parseSendAttempts(null)).toEqual({});
+    expect(parseSendAttempts('')).toEqual({});
+    expect(parseSendAttempts('not json')).toEqual({});
+    expect(parseSendAttempts('[1,2]')).toEqual({});
+    expect(parseSendAttempts('{"dev-1":{"bucket":"x"}}')).toEqual({});
+    expect(parseSendAttempts('{"dev-1":null}')).toEqual({});
   });
 });
 

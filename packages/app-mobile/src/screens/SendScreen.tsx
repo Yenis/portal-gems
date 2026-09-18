@@ -8,9 +8,15 @@ import {
   currentBucket,
   deriveCode,
   fontSize,
+  nextSendAttempt,
+  parseSendAttempts,
   spacing,
+  withSendFinished,
+  withSendStarted,
   PAIRED_SEND_TIMEOUT_MS,
+  SEND_ATTEMPTS_KEY,
   type PairedDevice,
+  type SendAttempts,
 } from '@portalgems/core';
 import {
   Card,
@@ -26,6 +32,8 @@ import { friendlyError, isServerUnreachableError } from '../errors';
 import {
   deleteFile,
   formatSize,
+  getSetting,
+  setSetting,
   withTransferService,
   zipTreeToCache,
   type SendItem,
@@ -78,9 +86,10 @@ export default function SendScreen({
     // pick up within the timeout, give up with a "device not open" message.
     // The timer is armed when the wormhole work starts - for folders that is
     // AFTER zipping, so a slow zip cannot eat into the peer's window.
-    const pairedCode = device
-      ? deriveCode(device.secret, currentBucket())
-      : undefined;
+    //
+    // Which of the bucket's codes to use is decided below, once the marker
+    // left by the previous send has been read.
+    let pairedCode: string | undefined;
     let timer: ReturnType<typeof setTimeout> | null = null;
     const armPairedTimeout = () => {
       if (!device) return;
@@ -109,6 +118,21 @@ export default function SendScreen({
 
     void (async () => {
     const server = await currentServer();
+    // A send that does not finish leaves its claim on the nameplate until the
+    // bucket rolls over, so the code it used is spent. The marker written
+    // here says which one that is; it is cleared only when the send
+    // completes, so a crash, a cancel and a timeout all push the next send on
+    // to the following code.
+    let attempts: SendAttempts = {};
+    if (device) {
+      attempts = parseSendAttempts(await getSetting(SEND_ATTEMPTS_KEY).catch(() => null));
+      const attempt = nextSendAttempt(attempts, device.id);
+      pairedCode = deriveCode(device.secret, currentBucket(), attempt);
+      attempts = withSendStarted(attempts, device.id, attempt);
+      await setSetting(SEND_ATTEMPTS_KEY, JSON.stringify(attempts)).catch(
+        () => undefined
+      );
+    }
     const work = async () => {
       if (item.kind === 'text') {
         // Text rides inside the offer itself - no transit, no progress, so
@@ -155,7 +179,15 @@ export default function SendScreen({
       }
     };
     withTransferService(t('send.title'), work).then(
-      () => setPhase('done'),
+      async () => {
+        if (device) {
+          await setSetting(
+            SEND_ATTEMPTS_KEY,
+            JSON.stringify(withSendFinished(attempts, device.id))
+          ).catch(() => undefined);
+        }
+        setPhase('done');
+      },
       (e) => {
         if (timedOut) {
           setPhase('peerNotOpen');

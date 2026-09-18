@@ -16,56 +16,65 @@ unchanged). The README still says Symbian cannot pair; that stays until it
 does. See "Getting the payload across" in `docs/ARCHITECTURE.md`, and
 "Pairing" in `docs/SYMBIAN.md`.
 
-## Paired send: a dead sender burns its code for the rest of the bucket
+## Paired send: the codes a dead sender leaves claimed - what is left
 
-A paired sender must use the code derived for the current five-minute
-bucket - it cannot skip to another one the way a receiver can. If a sender
-dies while waiting, its claim on that nameplate stays on the server.
+The original problem: a paired sender must use the code derived for the
+current five-minute bucket, and a sender that dies while waiting leaves its
+claim on that nameplate. Confirmed on the host (2026-09-18) against a local
+`magic-wormhole-mailbox-server`, the one `docs/VPS-SETUP.md` installs:
 
-Confirmed on the host (2026-09-18) against a local
-`magic-wormhole-mailbox-server`, the one `docs/VPS-SETUP.md` installs, driving
-the engine's own `send` and `recv` examples:
+- A killed sender leaves its claim behind. A retry in the same bucket claimed
+  the nameplate a second time without error and sat on a perfectly normal
+  waiting screen, so nothing on the sending device suggested a problem.
+- The receiver that then joined was the third claim, and the server rejected
+  it: `ServerError: crowded`. The send could not complete for the rest of the
+  bucket, and the failure surfaced on the wrong device.
+- The sender retry was not even needed. A dead sender plus one bounded
+  receiver attempt (`PAIRED_ATTEMPT_TIMEOUT_MS`) sufficed: the receiver's own
+  second poll of that code got `crowded`.
+- A completed transfer releases cleanly, so back-to-back paired sends inside
+  one bucket were always fine. The fault is strictly the sender that does not
+  finish - and that includes a user-pressed Cancel and an expired
+  `PAIRED_SEND_TIMEOUT_MS`, not only a crash.
 
-- A killed sender leaves its claim behind. A retry in the same bucket claims
-  the nameplate a second time without error and sits on a perfectly normal
-  waiting screen, so nothing on the sending device suggests a problem.
-- The receiver that then joins is the third claim, and the server rejects it:
-  `ServerError: crowded`. The send cannot complete for the rest of the
-  bucket, and the failure surfaces on the wrong device.
-- The sender retry is not even needed. A dead sender plus one bounded
-  receiver attempt (`PAIRED_ATTEMPT_TIMEOUT_MS`) is enough: the receiver's
-  own second poll of that code gets `crowded`, so the receive loop burns the
-  nameplate by itself.
-- A completed transfer releases cleanly - reusing a code after a successful
-  send works - so back-to-back paired sends inside one bucket are fine. The
-  fault is strictly the sender that does not finish.
+**Fixed:** each bucket now holds `PAIRED_CODE_ATTEMPTS` codes instead of one.
+A marker written before a paired send, and cleared only when one completes,
+tells the next send to move on to the following code; the receiver looks for
+all of them (`candidateCodes`). Verified end to end on the local server: a
+killed sender, a retry, and a receiver that walks its candidate list pays one
+bounded 10 s attempt on the dead code and then completes on the next one -
+where before, the same retry left the receiver with `crowded` and no way
+through until the bucket rolled over.
 
-It is also wider than a crash. The apps cancel by aborting the UniFFI future,
-which drops the Rust future without sending a release, so a user-pressed
-Cancel and an expired `PAIRED_SEND_TIMEOUT_MS` leave exactly the same stale
-claim. That path was read in the code rather than reproduced on its own; at
-the protocol level the socket just closes either way.
+What that does **not** cover, in the order it is worth doing:
 
-Both apps are affected: each send screen derives `currentBucket()` and
-nothing else, and the two paired receive loops have the same shape.
-
-Neither side is told what happened. The receiver polls for the full
-`PAIRED_RECEIVE_TIMEOUT_MS` and then reports "nothing found", while the
-sender blames the peer for never picking up. On a typed code the error
-reaches `friendlyError`, where `SERVER_UNREACHABLE_RE` matches the word
-"rendezvous" inside it and tells the user their server is unreachable,
-offering to change it, when the server is fine.
-
-**The shape of a fix**: a retry that moves to a fresh code both sides can
-still find - an attempt counter folded into the derivation
-(`portalgems-code-v1:{bucket}:{attempt}`) that the receiver adds to its
-candidate list. The cost is a candidate set growing from 3 to 3xN, with a
-stale nameplate charging the full attempt timeout on each pass, against a 60s
-receive window. Cheaper, and worth doing either way: release the nameplate on
-a graceful cancel and on the send timeout. That needs a real cancel future
-plumbed through `ffi.rs` instead of cancel-by-drop, since a dropped future
-cannot send anything - and it leaves only the true crash for the counter to
-handle.
+- **The Symbian client derives attempt 0 only.** `wh_pair_derive_code` in
+  `native/wormhole-mini` takes a bucket and nothing else, so a sender that
+  moved past its first code is invisible to a Symbian peer. Normal transfers
+  are unaffected (attempt 0 is byte-identical to what it always was), and
+  Symbian cannot pair at all yet, which is why this is not urgent - but the
+  vectors for attempts 1 and 2 are already pinned in core's tests for
+  `test_pair.c` to match.
+- **The stale claim is still never released.** The cheap-sounding fix - hand
+  the engine a real cancel future instead of cancel-by-drop - does not work:
+  `sender_connect` claims the nameplate in `MailboxConnection::connect` and
+  then waits inside `Wormhole::connect(mailbox)`, which consumes the mailbox,
+  and `wormhole-core` races that whole future against `cancel`, so the losing
+  side is dropped either way. `MailboxConnection::shutdown` (it sends
+  `release` then `close`) can only be reached by keeping the mailbox alive
+  across cancellation, which means patching the vendored crate. Worth doing
+  only if stale claims turn out to matter beyond the retry case, since the
+  attempt codes already route around them.
+- **`crowded` is reported as "your server is unreachable".** The engine's
+  message contains the word "rendezvous", which `SERVER_UNREACHABLE_RE` in
+  `packages/core/src/errors.ts` matches, so a typed code that hits a crowded
+  nameplate tells the user to change servers when the server is fine. Needs
+  one new string in all six locales.
+- **A different device's dead send still burns the code.** The derivation is
+  direction-agnostic, so if the peer was the one that died mid-send, the
+  marker on this device knows nothing about it. Ground truth would be a
+  `list_nameplates` probe in the engine before claiming; it costs a round
+  trip per send and a rebuild of both bindings.
 
 Pairing currently assumes one device can photograph another's screen. That
 assumption fails in more cases than it holds:

@@ -6,7 +6,7 @@ import { app, BrowserWindow, clipboard, dialog, ipcMain, safeStorage } from 'ele
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { candidateBuckets, currentBucket, deriveCode } from '@portalgems/core';
+import { candidateCodes, currentBucket, deriveCode } from '@portalgems/core';
 import { engine, type NativeTransferEvent, type ServerConfig } from './engine';
 
 let win: BrowserWindow | null = null;
@@ -401,10 +401,12 @@ app.whenReady().then(async () => {
     const devices = JSON.parse(readPairs());
     for (const d of Array.isArray(devices) ? devices : []) {
       console.log(`PAIR-DERIVED:${d.name}:${deriveCode(d.secret, currentBucket())}`);
-      // The receiver's full candidate list, in the order it polls them.
-      for (const b of candidateBuckets()) {
-        console.log(`PAIR-CANDIDATE:${b - currentBucket()}:${deriveCode(d.secret, b)}`);
-      }
+      // The receiver's full candidate list, in the order it polls them: every
+      // bucket it tolerates, and inside each the codes a sender moves through
+      // after a send that did not finish.
+      candidateCodes(d.secret).forEach((code, i) => {
+        console.log(`PAIR-CANDIDATE:${i}:${code}`);
+      });
     }
     app.exit(0);
   }

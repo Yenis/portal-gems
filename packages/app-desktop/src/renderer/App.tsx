@@ -6,17 +6,23 @@ import {
   classifyPairingInput,
   createPairingPayload,
   currentBucket,
-  candidateBuckets,
+  candidateCodes,
   deriveCode,
   encodePairingPayload,
   fontSize,
   friendlyError,
   isServerUnreachableError,
+  nextSendAttempt,
   parsePairingPayload,
+  parseSendAttempts,
   spacing,
+  withSendFinished,
+  withSendStarted,
   type PairingPayload,
+  type SendAttempts,
   PAIRED_RECEIVE_TIMEOUT_MS,
   PAIRED_SEND_TIMEOUT_MS,
+  SEND_ATTEMPTS_KEY,
   availableServerChoices,
   isCustomServerUsable,
   type PairedDevice,
@@ -525,7 +531,20 @@ function Send({
         setPct(ev.total ? Math.floor(((ev.done ?? 0) / ev.total) * 100) : 100);
       }
     });
-    const pairedCode = device ? deriveCode(device.secret, currentBucket()) : undefined;
+    // A send that does not finish leaves its claim on the nameplate until the
+    // bucket rolls over, so the code it used is spent. The marker written here
+    // says which one that is; it is cleared only when the send completes, so a
+    // crash, a cancel and a timeout all push the next send on to the following
+    // code.
+    let attempts: SendAttempts = {};
+    let pairedCode: string | undefined;
+    if (device) {
+      attempts = parseSendAttempts(localStorage.getItem(SEND_ATTEMPTS_KEY));
+      const attempt = nextSendAttempt(attempts, device.id);
+      pairedCode = deriveCode(device.secret, currentBucket(), attempt);
+      attempts = withSendStarted(attempts, device.id, attempt);
+      localStorage.setItem(SEND_ATTEMPTS_KEY, JSON.stringify(attempts));
+    }
     const timer = device
       ? setTimeout(() => {
           if (!connected) {
@@ -546,7 +565,15 @@ function Send({
             ? window.portalgems.sendFolder
             : window.portalgems.send)(id, item.path, pairedCode, currentServer());
     started.then(
-      () => setPhase('done'),
+      () => {
+        if (device) {
+          localStorage.setItem(
+            SEND_ATTEMPTS_KEY,
+            JSON.stringify(withSendFinished(attempts, device.id))
+          );
+        }
+        setPhase('done');
+      },
       (e) => {
         if (timedOut) setPhase('peerNotOpen');
         else if (cancelledRef.current) setPhase('cancelled');
@@ -733,10 +760,9 @@ function Receive({
       (async () => {
         const deadline = Date.now() + PAIRED_RECEIVE_TIMEOUT_MS;
         while (Date.now() < deadline && !cancelledRef.current) {
-          for (const bucket of candidateBuckets()) {
+          for (const derived of candidateCodes(device.secret)) {
             if (cancelledRef.current) break;
             try {
-              const derived = deriveCode(device.secret, bucket);
               gotOffer(await requestReceiveBounded(id, derived));
               return;
             } catch {

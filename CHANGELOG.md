@@ -16,6 +16,14 @@ that is now corrected.
 
 ### Fixed
 
+- **A paired send can be retried straight away.** Sending to a paired device
+  uses a code both devices work out for themselves, and until now a send that
+  was cancelled, timed out or crashed left that code unusable: trying again
+  looked normal on the sending device, but the other one could never pick the
+  transfer up, and there was nothing to do but wait up to five minutes for the
+  code to change. Each code period now holds several, and a send that did not
+  finish moves the next one on to the next code.
+
 - **A stopped transfer no longer renames the next one.** On Android, a
   receive you cancelled - or one that failed - left its half-written file in
   the app's private staging folder, so the next file of that name arrived in

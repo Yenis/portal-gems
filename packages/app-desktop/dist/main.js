@@ -2221,6 +2221,7 @@ var sha256 = /* @__PURE__ */ createHasher(
 
 // ../core/src/pairing.ts
 var PAIRING_BUCKET_SECONDS = 300;
+var PAIRED_CODE_ATTEMPTS = 3;
 var B64URL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 function utf8Encode(s) {
   const out = [];
@@ -2264,12 +2265,23 @@ function candidateBuckets(nowMs = Date.now()) {
   const b = currentBucket(nowMs);
   return [b, b - 1, b + 1];
 }
-function deriveCode(secretB64, bucket) {
+function candidateCodes(secretB64, nowMs = Date.now()) {
+  const codes = [];
+  for (const bucket of candidateBuckets(nowMs)) {
+    for (let attempt = 0; attempt < PAIRED_CODE_ATTEMPTS; attempt += 1) {
+      codes.push(deriveCode(secretB64, bucket, attempt));
+    }
+  }
+  return codes;
+}
+function deriveCode(secretB64, bucket, attempt = 0) {
   const key = fromBase64Url(secretB64);
   const mac = hmac(
     sha256,
     key,
-    utf8Encode(`portalgems-code-v1:${bucket}`)
+    utf8Encode(
+      attempt === 0 ? `portalgems-code-v1:${bucket}` : `portalgems-code-v1:${bucket}:${attempt}`
+    )
   );
   const u32 = (mac[0] << 24 | mac[1] << 16 | mac[2] << 8 | mac[3]) >>> 0;
   const nameplate = String(1e7 + u32 % 9e7);
@@ -5344,9 +5356,9 @@ import_electron.app.whenReady().then(async () => {
     const devices = JSON.parse(readPairs());
     for (const d of Array.isArray(devices) ? devices : []) {
       console.log(`PAIR-DERIVED:${d.name}:${deriveCode(d.secret, currentBucket())}`);
-      for (const b of candidateBuckets()) {
-        console.log(`PAIR-CANDIDATE:${b - currentBucket()}:${deriveCode(d.secret, b)}`);
-      }
+      candidateCodes(d.secret).forEach((code, i) => {
+        console.log(`PAIR-CANDIDATE:${i}:${code}`);
+      });
     }
     import_electron.app.exit(0);
   }

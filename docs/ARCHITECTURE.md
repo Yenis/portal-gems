@@ -159,6 +159,18 @@ Consumed by both apps as **npm `file:` symlinks** (see §5 build gotchas).
   `PGPAIR1:<b64url(json{v,name,secret})>` (32-byte secret); code derivation
   `HMAC-SHA256(secret, "portalgems-code-v1:"+bucket)` → 8-digit nameplate +
   2×10 hex; bucket = unixSeconds/300, receiver tries `[b, b−1, b+1]`.
+  Each bucket holds `PAIRED_CODE_ATTEMPTS` (3) codes: attempt 0 hashes the
+  label above unchanged, later attempts append `":"+attempt`. A sender only
+  moves past attempt 0 after one of its own sends failed to finish, because
+  the server keeps that send's claim on the nameplate until the bucket rolls
+  over and a second claim on it makes the receiver a third, which the server
+  rejects (`crowded`). Which attempt to use comes from an in-flight marker
+  (`SEND_ATTEMPTS_KEY`, `nextSendAttempt`/`withSendStarted`/
+  `withSendFinished`) written before a paired send and cleared only when one
+  completes - so a crash, a cancel and a timeout all step the next send on.
+  `candidateCodes()` is the receiver's side of that: every bucket × attempt,
+  likeliest first. Attempt 0 staying byte-identical is what lets an updated
+  device still meet one that knows nothing of attempts.
   Timeouts: sender 45 s, receiver poll 60 s, **each poll attempt 10 s**
   (`PAIRED_ATTEMPT_TIMEOUT_MS`). A frozen test vector pins the
   derivation - **changing it breaks pairing between app versions**. The
@@ -291,8 +303,9 @@ recursive size.
   `PG_SMOKE_PAIR_JOIN=<code>` pairs over a code; `PG_SMOKE_PAIR_SHOW=1`
   (prints `PAIR-PAYLOAD:...`) with `PG_SMOKE_PAIR_JOIN=<payload>` pairs by
   paste through the same field. `PG_SMOKE_DUMP_PAIRCODE=1` prints each stored
-  pairing's derived code and its three poll candidates - two paired profiles
-  must print the same, which checks the secret without logging it.
+  pairing's derived code and its full poll candidate list (bucket × attempt,
+  in polling order) - two paired profiles must print the same, which checks
+  the secret without logging it.
   `PG_SMOKE_TRACE=1` logs every `requestReceive` (server, nameplate, outcome,
   duration); it is how the stale-claim stall above was found. Note the paired
   send smoke uses `PG_SMOKE_RENDEZVOUS`/`_TRANSIT` while the renderer uses its

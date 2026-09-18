@@ -65,6 +65,23 @@ export const PAIRED_RECEIVE_TIMEOUT_MS = 60_000;
  */
 export const PAIRED_ATTEMPT_TIMEOUT_MS = 10_000;
 
+/**
+ * How many codes each bucket holds.
+ *
+ * A sender that stopped without finishing still holds its claim on the
+ * nameplate it used: the server keeps the claim, and only the sender that
+ * completes releases it. A retry inside the same bucket therefore cannot use
+ * the same code - it would join its own dead claim, and the receiver that
+ * turned up would be a third claim, which the server rejects outright
+ * (`crowded`). These are the codes a sender can move on to, and the ones a
+ * receiver looks for. Three is enough for a couple of retries inside one
+ * five-minute bucket; past that the bucket has rolled over anyway.
+ */
+export const PAIRED_CODE_ATTEMPTS = 3;
+
+/** Where both apps keep their in-flight send markers. */
+export const SEND_ATTEMPTS_KEY = 'pg-paired-send-attempts';
+
 /** File name used for the one-shot pairing handshake transfer. */
 export const PAIRING_HANDSHAKE_FILE = 'pg-pair-handshake.json';
 
@@ -192,16 +209,138 @@ export function candidateBuckets(nowMs: number = Date.now()): number[] {
 }
 
 /**
+ * Every code a paired receiver should look for, most likely first: the
+ * current bucket before its neighbours, and inside each bucket the first
+ * attempt before the ones a sender only reaches after a failure.
+ *
+ * An unclaimed code fails in well under a second, so the extra candidates
+ * cost little; the expensive one is a nameplate a dead sender still holds,
+ * and that is bounded per attempt by `PAIRED_ATTEMPT_TIMEOUT_MS`.
+ *
+ * The pairing handshake deliberately keeps to `candidateBuckets` and attempt
+ * 0. Its secret is one-shot: a pairing that fails is retried by showing a new
+ * payload, which derives entirely new codes, so there is no stale claim to
+ * route around and no reason to make that side poll three times as much.
+ */
+export function candidateCodes(secretB64: string, nowMs: number = Date.now()): string[] {
+  const codes: string[] = [];
+  for (const bucket of candidateBuckets(nowMs)) {
+    for (let attempt = 0; attempt < PAIRED_CODE_ATTEMPTS; attempt += 1) {
+      codes.push(deriveCode(secretB64, bucket, attempt));
+    }
+  }
+  return codes;
+}
+
+/**
+ * A paired send that was started and never seen through, so the code it used
+ * must be assumed to be holding a claim until the bucket rolls over.
+ */
+export interface SendAttempt {
+  bucket: number;
+  attempt: number;
+}
+
+/** In-flight send markers, by paired device id, as stored between launches. */
+export type SendAttempts = Record<string, SendAttempt>;
+
+/** Read the stored markers; anything unrecognizable reads as "none". */
+export function parseSendAttempts(raw: string | null | undefined): SendAttempts {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    const out: SendAttempts = {};
+    for (const [id, value] of Object.entries(parsed as Record<string, unknown>)) {
+      const v = value as { bucket?: unknown; attempt?: unknown } | null;
+      if (
+        v &&
+        typeof v.bucket === 'number' &&
+        Number.isFinite(v.bucket) &&
+        typeof v.attempt === 'number' &&
+        Number.isFinite(v.attempt)
+      ) {
+        out[id] = { bucket: v.bucket, attempt: v.attempt };
+      }
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Which attempt the next send to `deviceId` should use: the one after
+ * whatever was left in flight in this bucket, and 0 when nothing was - a
+ * marker from an older bucket says nothing about this one, whose codes
+ * nobody has touched yet.
+ *
+ * The last attempt is returned again once they are exhausted. There is
+ * nothing better to offer: every code this bucket holds is then claimed, and
+ * the next bucket is at most five minutes away.
+ */
+export function nextSendAttempt(
+  attempts: SendAttempts,
+  deviceId: string,
+  nowMs: number = Date.now()
+): number {
+  const marker = attempts[deviceId];
+  if (!marker || marker.bucket !== currentBucket(nowMs)) return 0;
+  return Math.min(marker.attempt + 1, PAIRED_CODE_ATTEMPTS - 1);
+}
+
+/**
+ * Note that a send is starting on `attempt`. Markers from older buckets are
+ * dropped here rather than swept elsewhere: their codes are unreachable now,
+ * so they say nothing worth keeping.
+ */
+export function withSendStarted(
+  attempts: SendAttempts,
+  deviceId: string,
+  attempt: number,
+  nowMs: number = Date.now()
+): SendAttempts {
+  const bucket = currentBucket(nowMs);
+  const out: SendAttempts = {};
+  for (const [id, marker] of Object.entries(attempts)) {
+    if (marker.bucket === bucket) out[id] = marker;
+  }
+  out[deviceId] = { bucket, attempt };
+  return out;
+}
+
+/**
+ * Note that a send finished. Only a completed send clears its marker: the
+ * transfer released the nameplate on its way out, so the code is free again.
+ * A cancelled, timed-out or crashed send leaves the marker standing, which is
+ * exactly what makes the next one step past it.
+ */
+export function withSendFinished(attempts: SendAttempts, deviceId: string): SendAttempts {
+  const out = { ...attempts };
+  delete out[deviceId];
+  return out;
+}
+
+/**
  * Derive the one-time wormhole code for a bucket. Format
  * `NNNNNNNN-xxxxxxxxxx-xxxxxxxxxx`: an 8-digit nameplate (collision chance on
  * the public mailbox server is negligible) and 80 bits of hex password.
+ *
+ * `attempt` picks between the codes a bucket holds (see
+ * `PAIRED_CODE_ATTEMPTS`). Attempt 0 hashes exactly what every release has
+ * hashed, so a device that knows nothing of attempts still meets an updated
+ * one on the code both of them derive first.
  */
-export function deriveCode(secretB64: string, bucket: number): string {
+export function deriveCode(secretB64: string, bucket: number, attempt = 0): string {
   const key = fromBase64Url(secretB64);
   const mac = hmac(
     sha256,
     key,
-    utf8Encode(`portalgems-code-v1:${bucket}`)
+    utf8Encode(
+      attempt === 0
+        ? `portalgems-code-v1:${bucket}`
+        : `portalgems-code-v1:${bucket}:${attempt}`
+    )
   );
   const u32 = ((mac[0] << 24) | (mac[1] << 16) | (mac[2] << 8) | mac[3]) >>> 0;
   const nameplate = String(10_000_000 + (u32 % 90_000_000));
