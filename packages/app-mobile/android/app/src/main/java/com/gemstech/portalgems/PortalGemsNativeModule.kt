@@ -231,6 +231,26 @@ class PortalGemsNativeModule(reactContext: ReactApplicationContext) :
     }
   }
 
+  /**
+   * Empty the staging directory incoming transfers are written into.
+   *
+   * The engine removes its own partial file when a transfer fails or is
+   * cancelled, but nothing runs when Android kills the process outright, and
+   * whatever is left would push the next transfer of that name to `name (1)`.
+   * Called once at app start, when no transfer can be in flight.
+   */
+  @ReactMethod
+  fun clearIncomingDir(promise: Promise) {
+    try {
+      File(reactApplicationContext.cacheDir, "incoming").listFiles()?.forEach {
+        it.deleteRecursively()
+      }
+      promise.resolve(null)
+    } catch (e: Exception) {
+      promise.reject("clear_incoming_failed", e.message, e)
+    }
+  }
+
   @ReactMethod
   fun copyToCache(uriString: String, promise: Promise) {
     try {

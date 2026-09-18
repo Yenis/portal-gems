@@ -16,32 +16,56 @@ unchanged). The README still says Symbian cannot pair; that stays until it
 does. See "Getting the payload across" in `docs/ARCHITECTURE.md`, and
 "Pairing" in `docs/SYMBIAN.md`.
 
-## Android: a cancelled receive leaks its partial file and renames the next
-
-Found while testing pairing, unrelated to it. The engine stages an incoming
-file in the app's private `incomingDir` under a never-overwrite name. A
-receive that is cancelled or fails leaves its partial file there, so the next
-transfer of the same name is staged as `name (1).ext` - and `ReceiveScreen`
-takes the final name from the staged path (`savedPath.split('/').pop()`), so
-the `(1)` reaches Downloads even when nothing there has that name. Two small
-fixes: save under the offer's own name, and delete the staged file when the
-transfer does not complete. Desktop is not affected; it stages each transfer
-in its own `incoming/<id>` directory.
-
-## Paired send: a dead sender blocks its own code for the rest of the bucket
+## Paired send: a dead sender burns its code for the rest of the bucket
 
 A paired sender must use the code derived for the current five-minute
 bucket - it cannot skip to another one the way a receiver can. If a sender
 dies while waiting, its claim on that nameplate stays on the server.
 
-Observed: a receiver that joins such a nameplate waits for a handshake that
-never comes (now bounded by `PAIRED_ATTEMPT_TIMEOUT_MS`), and once further
-claims pile up the server rejects the nameplate outright. Not yet observed
-directly, but implied by the same mechanism: a sender retrying within the
-same bucket lands on that stale nameplate too, since it has no other code to
-use. If that holds, a paired send interrupted by a crash cannot be retried
-until the bucket rolls over. Worth confirming first; the fix would be a
-retry that moves to a fresh code both sides can still find.
+Confirmed on the host (2026-09-18) against a local
+`magic-wormhole-mailbox-server`, the one `docs/VPS-SETUP.md` installs, driving
+the engine's own `send` and `recv` examples:
+
+- A killed sender leaves its claim behind. A retry in the same bucket claims
+  the nameplate a second time without error and sits on a perfectly normal
+  waiting screen, so nothing on the sending device suggests a problem.
+- The receiver that then joins is the third claim, and the server rejects it:
+  `ServerError: crowded`. The send cannot complete for the rest of the
+  bucket, and the failure surfaces on the wrong device.
+- The sender retry is not even needed. A dead sender plus one bounded
+  receiver attempt (`PAIRED_ATTEMPT_TIMEOUT_MS`) is enough: the receiver's
+  own second poll of that code gets `crowded`, so the receive loop burns the
+  nameplate by itself.
+- A completed transfer releases cleanly - reusing a code after a successful
+  send works - so back-to-back paired sends inside one bucket are fine. The
+  fault is strictly the sender that does not finish.
+
+It is also wider than a crash. The apps cancel by aborting the UniFFI future,
+which drops the Rust future without sending a release, so a user-pressed
+Cancel and an expired `PAIRED_SEND_TIMEOUT_MS` leave exactly the same stale
+claim. That path was read in the code rather than reproduced on its own; at
+the protocol level the socket just closes either way.
+
+Both apps are affected: each send screen derives `currentBucket()` and
+nothing else, and the two paired receive loops have the same shape.
+
+Neither side is told what happened. The receiver polls for the full
+`PAIRED_RECEIVE_TIMEOUT_MS` and then reports "nothing found", while the
+sender blames the peer for never picking up. On a typed code the error
+reaches `friendlyError`, where `SERVER_UNREACHABLE_RE` matches the word
+"rendezvous" inside it and tells the user their server is unreachable,
+offering to change it, when the server is fine.
+
+**The shape of a fix**: a retry that moves to a fresh code both sides can
+still find - an attempt counter folded into the derivation
+(`portalgems-code-v1:{bucket}:{attempt}`) that the receiver adds to its
+candidate list. The cost is a candidate set growing from 3 to 3xN, with a
+stale nameplate charging the full attempt timeout on each pass, against a 60s
+receive window. Cheaper, and worth doing either way: release the nameplate on
+a graceful cancel and on the send timeout. That needs a real cancel future
+plumbed through `ffi.rs` instead of cancel-by-drop, since a dropped future
+cannot send anything - and it leaves only the true crash for the counter to
+handle.
 
 Pairing currently assumes one device can photograph another's screen. That
 assumption fails in more cases than it holds:
@@ -76,6 +100,36 @@ old phone can manage comfortably.
 
 Worth checking before building: whether the existing pairing handshake can
 carry the payload as its first message, in which case this is mostly UI.
+
+## ~~Android: a cancelled receive leaks its partial file and renames the next~~ - done
+
+Found while testing pairing, unrelated to it. The engine staged an incoming
+file in the app's private `incomingDir` under a never-overwrite name. A
+receive that was cancelled or failed left its partial file there, so the next
+transfer of the same name was staged as `name (1).ext` - and `ReceiveScreen`
+took the final name from the staged path, so the `(1)` reached Downloads even
+when nothing there had that name. Both halves were reproduced on the host:
+killing a receive mid-transfer left a 5 MB partial behind, and the next
+transfer of that name arrived as `big (1).bin`.
+
+Three changes:
+
+- `PendingReceive::accept` guards the staged file and the unpacked folder
+  with `Drop` rather than an error branch. Cancellation is not an error
+  return: the apps abort the UniFFI future, which drops the Rust one
+  mid-write, so nothing after the `await` would run. The folder path's zip is
+  still removed on every outcome.
+- `ReceiveScreen` saves under the offer's own name, not the staged file's.
+- Android empties the staging directory at app start, the only cover for a
+  process the OS kills outright, where no `Drop` runs.
+
+`cancelled_receive_leaves_no_partial_file` covers the regression: an
+`#[ignore]`d network test that cancels the way the apps do, by dropping the
+future, and fails without the guard. The fix reaches a phone only once the
+native library is rebuilt, and has not been re-run on a device yet.
+
+Desktop was never affected; it stages each transfer in its own
+`incoming/<id>` directory and removes it in a `finally`.
 
 ## ~~Using the reference CLI against the PortalGems server~~ - done
 

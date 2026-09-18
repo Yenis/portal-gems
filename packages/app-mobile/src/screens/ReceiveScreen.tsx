@@ -195,7 +195,14 @@ export default function ReceiveScreen({
         { signal: controller.signal }
       );
       setPhase('saving');
-      const savedName = savedPath.split('/').pop() ?? 'received.bin';
+      // Save under the name the offer asked for, not the staged file's name.
+      // Anything already sitting in the staging directory - a partial file
+      // from a transfer the OS killed - makes the engine stage this one as
+      // `name (1).ext`, and that suffix has no business reaching Downloads.
+      const savedName =
+        (folderOffer ? folderOffer.dirName : offerName) ||
+        savedPath.split('/').pop() ||
+        'received.bin';
       const dir = downloadDirRef.current;
       if (folderOffer) {
         // `savedPath` is the unpacked folder staged in the app cache.

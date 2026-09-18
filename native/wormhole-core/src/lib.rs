@@ -477,6 +477,93 @@ pub async fn request_receive(
     .await
 }
 
+/// A file staged inside the destination directory for one transfer.
+///
+/// A transfer that does not complete must not leave its partial file behind:
+/// the next transfer of the same name would be staged as `name (1).ext`, and
+/// that suffix reaches the name the caller finally saves under. The cleanup
+/// lives in `Drop` because a cancelled transfer never unwinds through an error
+/// path - the apps cancel by aborting the UniFFI future, which drops this one
+/// mid-write, so nothing written after the `await` would run. Removal is
+/// synchronous: `Drop` cannot await, and unlinking one file is cheap.
+struct StagedFile {
+    path: PathBuf,
+    /// Held so the guard closes the handle before unlinking; Windows will not
+    /// remove a file that is still open.
+    file: Option<async_fs::File>,
+    keep: bool,
+}
+
+impl StagedFile {
+    fn new(path: PathBuf, file: async_fs::File) -> Self {
+        Self {
+            path,
+            file: Some(file),
+            keep: false,
+        }
+    }
+
+    fn path(&self) -> &Path {
+        &self.path
+    }
+
+    /// The handle the transfer writes into; only valid before `close`.
+    fn file(&mut self) -> &mut async_fs::File {
+        self.file.as_mut().expect("staged file already closed")
+    }
+
+    /// Done writing. The file stays on disk, still guarded.
+    fn close(&mut self) {
+        self.file = None;
+    }
+
+    /// The transfer completed: hand the path over and stop guarding it.
+    fn keep(mut self) -> PathBuf {
+        self.keep = true;
+        self.path.clone()
+    }
+}
+
+impl Drop for StagedFile {
+    fn drop(&mut self) {
+        self.file = None;
+        if !self.keep {
+            std::fs::remove_file(&self.path).ok();
+        }
+    }
+}
+
+/// A directory staged inside the destination directory, removed unless the
+/// transfer that fills it completes. Same reasoning as `StagedFile`: a folder
+/// left half-extracted would push the next one of that name to `name (1)`.
+struct StagedDir {
+    path: PathBuf,
+    keep: bool,
+}
+
+impl StagedDir {
+    fn new(path: PathBuf) -> Self {
+        Self { path, keep: false }
+    }
+
+    fn path(&self) -> &Path {
+        &self.path
+    }
+
+    fn keep(mut self) -> PathBuf {
+        self.keep = true;
+        self.path.clone()
+    }
+}
+
+impl Drop for StagedDir {
+    fn drop(&mut self) {
+        if !self.keep {
+            std::fs::remove_dir_all(&self.path).ok();
+        }
+    }
+}
+
 impl PendingReceive {
     /// Accept the offer, writing into `dest_dir`; returns the saved path.
     ///
@@ -502,47 +589,45 @@ impl PendingReceive {
         };
         match &self.folder {
             None => {
-                let (dest, mut file) = create_unique(dest_dir, &self.file_name).await?;
+                let (path, file) = create_unique(dest_dir, &self.file_name).await?;
+                let mut staged = StagedFile::new(path, file);
                 request
                     .accept(
                         |info| on_transit(describe_transit(&info)),
                         progress,
-                        &mut file,
+                        staged.file(),
                         cancel,
                     )
                     .await?;
-                Ok(dest)
+                staged.close();
+                Ok(staged.keep())
             },
             Some(folder) => {
                 let folder = folder.clone();
-                let (zip_path, mut zip_file) = create_unique(dest_dir, &self.file_name).await?;
+                let (zip_path, zip_file) = create_unique(dest_dir, &self.file_name).await?;
+                // The zip is scratch either way, so this guard is never kept:
+                // it goes on success, on failure and on cancellation alike.
+                let mut zip = StagedFile::new(zip_path, zip_file);
                 let received = request
                     .accept(
                         |info| on_transit(describe_transit(&info)),
                         progress,
-                        &mut zip_file,
+                        zip.file(),
                         cancel,
                     )
                     .await;
-                drop(zip_file);
-                if let Err(e) = received {
-                    async_fs::remove_file(&zip_path).await.ok();
-                    return Err(e.into());
-                }
+                zip.close();
+                received?;
 
-                let dest = create_unique_dir(dest_dir, &folder.dir_name).await?;
+                let dest = StagedDir::new(create_unique_dir(dest_dir, &folder.dir_name).await?);
                 let cap = unpack_cap(folder.num_bytes);
                 let unpacked = {
-                    let (zip, out) = (zip_path.clone(), dest.clone());
-                    blocking::unblock(move || unzip_into_sync(&zip, &out, cap)).await
+                    let (src, out) = (zip.path().to_path_buf(), dest.path().to_path_buf());
+                    blocking::unblock(move || unzip_into_sync(&src, &out, cap)).await
                 };
-                async_fs::remove_file(&zip_path).await.ok();
-                if let Err(e) = unpacked {
-                    // Leave nothing half-extracted behind.
-                    async_fs::remove_dir_all(&dest).await.ok();
-                    return Err(e);
-                }
-                Ok(dest)
+                // Leave nothing half-extracted behind.
+                unpacked?;
+                Ok(dest.keep())
             },
         }
     }
@@ -1107,6 +1192,110 @@ mod tests {
             assert!(dest.join("hollow").is_dir());
             // the staged zip must be gone
             assert!(!recv_dir.join("shared-folder.zip").exists());
+            std::fs::remove_dir_all(&dir).ok();
+        });
+    }
+
+    /// Where the network tests below meet: the public server by default, or a
+    /// local mailbox through `PG_RENDEZVOUS_URL` - the same variable the
+    /// `send`/`recv` examples read.
+    fn test_server() -> ServerConfig {
+        ServerConfig {
+            rendezvous_url: std::env::var("PG_RENDEZVOUS_URL").ok(),
+            transit_url: std::env::var("PG_TRANSIT_URL").ok(),
+        }
+    }
+
+    /// A receive that is cancelled must leave nothing staged: a partial file
+    /// left in the destination pushes the next transfer of that name to
+    /// `name (1).ext`, which is the name the caller ends up saving under.
+    ///
+    /// Cancellation in the apps is not an error return. They abort the UniFFI
+    /// future, which drops the Rust one mid-write, so the cleanup cannot live
+    /// on an error path - and this test cancels the same way, by dropping the
+    /// `accept` future rather than by firing its `cancel` argument.
+    ///
+    /// Run with `cargo test -- --ignored` when online.
+    #[test]
+    #[ignore]
+    fn cancelled_receive_leaves_no_partial_file() {
+        use std::sync::atomic::{AtomicBool, Ordering};
+        use std::sync::Arc;
+
+        futures_lite::future::block_on(async {
+            let dir = std::env::temp_dir().join(format!("pg-cancel-{}", std::process::id()));
+            std::fs::remove_dir_all(&dir).ok();
+            let src_dir = dir.join("src");
+            let recv_dir = dir.join("recv");
+            std::fs::create_dir_all(&src_dir).unwrap();
+            std::fs::create_dir_all(&recv_dir).unwrap();
+            // Big enough that the transfer is still running when the first
+            // progress callback arrives.
+            let src = create_test_file(src_dir.to_string_lossy().into_owned(), 32 * 1024).unwrap();
+
+            let code = format!(
+                "9{}-cancel-integration-test",
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .subsec_nanos()
+                    % 1_000_000
+            );
+            let send_code = code.clone();
+            let src_clone = src.clone();
+            let sender = std::thread::spawn(move || {
+                futures_lite::future::block_on(send_file(
+                    &src_clone,
+                    Some(&send_code),
+                    &test_server(),
+                    |_| {},
+                    |_| {},
+                    |_, _| {},
+                    pending::<()>(),
+                ))
+            });
+            std::thread::sleep(std::time::Duration::from_secs(2));
+
+            let pending_receive = request_receive(&code, &test_server(), pending::<()>())
+                .await
+                .unwrap();
+
+            // Cancel on the first bytes: the transfer is certainly in flight
+            // by then, and the staged file certainly exists.
+            let started = Arc::new(AtomicBool::new(false));
+            let flag = started.clone();
+            let accepting = pending_receive.accept(
+                &recv_dir,
+                |_| {},
+                move |done, _| {
+                    if done > 0 {
+                        flag.store(true, Ordering::SeqCst);
+                    }
+                },
+                pending::<()>(),
+            );
+            let finished = futures_lite::future::or(
+                async { Some(accepting.await) },
+                async {
+                    while !started.load(Ordering::SeqCst) {
+                        async_io::Timer::after(std::time::Duration::from_millis(5)).await;
+                    }
+                    None
+                },
+            )
+            .await;
+            assert!(
+                finished.is_none(),
+                "the transfer finished before it could be cancelled - send a bigger file"
+            );
+
+            let staged: Vec<_> = std::fs::read_dir(&recv_dir)
+                .unwrap()
+                .map(|e| e.unwrap().file_name())
+                .collect();
+            assert!(staged.is_empty(), "left behind: {staged:?}");
+
+            sender.join().unwrap().ok();
             std::fs::remove_dir_all(&dir).ok();
         });
     }

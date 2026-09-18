@@ -7,12 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Nothing for the desktop or Android yet. PortalGems Mini (Symbian) 0.9.0 adds
-Options > Settings > Server: the same PortalGems / public / custom choice the
-other apps have, at cleartext addresses the phone can reach. It turns out the
-public magic-wormhole mailbox still answers plain WebSocket on port 4000, so
-a Symbian phone no longer needs a self-hosted server to talk to anything -
-the README said it did, and that is now corrected.
+PortalGems Mini (Symbian) 0.9.0 adds Options > Settings > Server: the same
+PortalGems / public / custom choice the other apps have, at cleartext
+addresses the phone can reach. It turns out the public magic-wormhole mailbox
+still answers plain WebSocket on port 4000, so a Symbian phone no longer
+needs a self-hosted server to talk to anything - the README said it did, and
+that is now corrected.
+
+### Fixed
+
+- **A stopped transfer no longer renames the next one.** On Android, a
+  receive you cancelled - or one that failed - left its half-written file in
+  the app's private staging folder, so the next file of that name arrived in
+  Downloads as "name (1)" even when nothing there was called that. The
+  partial file is now removed whenever a transfer does not finish, the file
+  is saved under the name the sender offered, and anything left behind by the
+  system killing the app mid-transfer is cleared at startup.
 
 ## [1.3.3] - 2026-09-18
 

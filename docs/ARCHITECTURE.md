@@ -67,7 +67,12 @@ cancel must cover more than the transfer phase):
   `dest_dir`, unpacks it into a folder named after the offer, deletes the
   zip, and returns the folder path. Unpacking is zip-slip-safe
   (`enclosed_name`) and capped at `unpack_cap(num_bytes)` (claim + 25% +
-  16 MiB) against zip bombs. `::reject()` unchanged.
+  16 MiB) against zip bombs. A transfer that does not complete leaves nothing
+  staged: the partial file, and a half-unpacked folder, are removed by a
+  `Drop` guard rather than on an error path, because cancellation arrives as
+  a dropped future (the apps abort the UniFFI future) and never unwinds. That
+  matters beyond tidiness - a leftover partial would push the next transfer
+  of that name to `name (1).ext`. `::reject()` unchanged.
 - `receive_file(...)` = request + auto-accept (used by pairing handshake).
 - `create_test_file(dir, size_kb)` - dev/test helper.
 - File names from the network are sanitized (`sanitize_file_name` strips path
@@ -229,8 +234,10 @@ recursive size.
   queried back), foreground `TransferService` (dataSync, held only during
   transfers), `consumePendingShare` (ACTION_SEND intake, polled on mount +
   AppState active), EncryptedSharedPreferences pair store, zxing-embedded
-  `scanQr()`, plain SharedPreferences `get/setSetting`, constants
-  (`incomingDir`, `cacheDir`, `deviceName`, `locale`).
+  `scanQr()`, plain SharedPreferences `get/setSetting`,
+  `clearIncomingDir()` (empties `cache/incoming`, called once at bundle load:
+  the engine's own cleanup cannot run when Android kills the process), and
+  constants (`incomingDir`, `cacheDir`, `deviceName`, `locale`).
 - Folder support (all heavy methods run on their own `Thread`):
   `pickSendFolder` (ACTION_OPEN_DOCUMENT_TREE, read-only grant, request code
   49376), `zipTreeToCache(uri)` (walks the DocumentFile tree once, streams it

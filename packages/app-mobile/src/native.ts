@@ -82,6 +82,7 @@ interface PortalGemsNativeSpec {
   writeTextFile(dir: string, name: string, content: string): Promise<string>;
   readTextFile(path: string): Promise<string>;
   deleteFile(path: string): Promise<void>;
+  clearIncomingDir(): Promise<void>;
 }
 
 const native = NativeModules.PortalGemsNative as PortalGemsNativeSpec;
@@ -102,6 +103,7 @@ export const writeTextFile = (dir: string, name: string, content: string) =>
   native.writeTextFile(dir, name, content);
 export const readTextFile = (path: string) => native.readTextFile(path);
 export const deleteFile = (path: string) => native.deleteFile(path);
+export const clearIncomingDir = () => native.clearIncomingDir();
 export const saveToDownloads = (srcPath: string, fileName: string) =>
   native.saveToDownloads(srcPath, fileName);
 export const pickDownloadDirectory = () => native.pickDownloadDirectory();

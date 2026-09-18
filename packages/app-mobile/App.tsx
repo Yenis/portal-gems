@@ -16,6 +16,7 @@ import SendScreen from './src/screens/SendScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import { ThemeProvider, useTheme } from './src/theme';
 import {
+  clearIncomingDir,
   consumePendingShare,
   copyToCache,
   deviceLocale,
@@ -27,6 +28,10 @@ initI18n(deviceLocale);
 getSetting('language')
   .then((saved) => saved && setLanguage(saved))
   .catch(() => undefined);
+// Anything still in the staging directory is debris from a transfer the OS
+// killed - the engine clears its own on failure and on cancel. Done here, at
+// bundle load, because no screen exists yet to have a transfer in flight.
+clearIncomingDir().catch(() => undefined);
 
 type Route =
   | { name: 'home' }
