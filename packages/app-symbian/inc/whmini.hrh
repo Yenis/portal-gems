@@ -25,7 +25,11 @@ enum TWhminiCommands
     EWhminiCmdPairHost,
     EWhminiCmdPairJoin,
     EWhminiCmdNoDevices,      /* placeholder shown while nothing is paired */
-    EWhminiCmdSetDeviceName
+    EWhminiCmdSetDeviceName,
+    EWhminiCmdServer,          /* cascade parent - never dispatched */
+    EWhminiCmdServerPublic,
+    EWhminiCmdServerPortalGems,
+    EWhminiCmdServerCustom
     };
 
 /* Paired-device menus are filled in when they open, one item per pairing:

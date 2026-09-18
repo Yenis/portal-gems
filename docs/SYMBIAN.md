@@ -796,6 +796,19 @@ Things worth knowing:
   that died while waiting leaves its nameplate listed, and a receiver that
   joins it would otherwise wait out the full read timeout - three minutes
   on this phone.
+- **Choosing a server.** Options > Settings > Server offers PortalGems,
+  public, or custom, the same three the other apps have, but with cleartext
+  `ws://host:4000/v1` addresses because this phone cannot do `wss://`. The
+  public magic-wormhole mailbox still answers plain WebSocket on 4000, and a
+  full `wh-mini` transfer through it and `transit.magic-wormhole.io:4001` was
+  verified on 2026-09-18; it is a legacy endpoint, so treat it as something
+  that works rather than something promised.
+
+  The four manual fields remain the source of truth: the choice is a label
+  derived from the addresses (`WhminiInferServerChoice`, re-derived on every
+  save), which is why a `server.txt` written before 0.9.0 - no
+  `server_choice` line - loads with the right label anyway, and why typing a
+  host by hand can never leave a stale "portalgems" on screen.
 - **Names.** Options > Settings > Device name is what this phone calls
   itself when pairing (default "Symbian phone"), and Options > Rename paired
   device relabels one that is already paired - a local label only, cleared by

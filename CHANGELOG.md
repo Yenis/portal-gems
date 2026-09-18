@@ -5,6 +5,15 @@ All notable changes to PortalGems are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+Nothing for the desktop or Android yet. PortalGems Mini (Symbian) 0.9.0 adds
+Options > Settings > Server: the same PortalGems / public / custom choice the
+other apps have, at cleartext addresses the phone can reach. It turns out the
+public magic-wormhole mailbox still answers plain WebSocket on port 4000, so
+a Symbian phone no longer needs a self-hosted server to talk to anything -
+the README said it did, and that is now corrected.
+
 ## [1.3.3] - 2026-09-18
 
 Call your devices what you like.

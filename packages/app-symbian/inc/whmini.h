@@ -130,6 +130,23 @@ public:
 /* Worker thread entry point. aPtr is a TJob*. */
 TInt WhminiWorker(TAny* aPtr);
 
+/* Which server the phone is pointed at. The four fields below stay the
+ * source of truth for connecting; this is a label over them, so a server.txt
+ * written before 0.9.0 - which has no server_choice line - still works and
+ * simply has its choice inferred from the host.
+ *
+ * The addresses differ from the other platforms on purpose: Symbian's TLS is
+ * TLS 1.0 with a 2009 root store and cannot reach a modern wss:// mailbox,
+ * so every preset here is cleartext ws:// on port 4000. The mailbox only
+ * ever carries PAKE messages and ciphertext - see "What it does not do" in
+ * docs/SYMBIAN.md. */
+enum TWhminiServerChoice
+    {
+    EWhminiServerPublic = 0,
+    EWhminiServerPortalGems,
+    EWhminiServerCustom
+    };
+
 /* Settings, read from and written to E:\PortalGems\server.txt. */
 class TWhminiSettings
     {
@@ -145,15 +162,29 @@ public:
     TInt iDirect;
     /* What paired devices see this phone as. */
     char iDeviceName[64];
+    /* One of TWhminiServerChoice - a label over the addresses above. */
+    TInt iServerChoice;
     };
+
+/* Point the settings at one of the presets. Custom leaves them alone. */
+void WhminiApplyServerChoice(TWhminiSettings& aSettings, TInt aChoice);
+
+/* Which preset the current addresses match, or custom if none. */
+TInt WhminiInferServerChoice(const TWhminiSettings& aSettings);
+
+/* A short word for the current choice, for the screen. */
+const char* WhminiServerChoiceName(TInt aChoice);
 
 void WhminiDefaultSettings(TWhminiSettings& aSettings);
 /* Strip surrounding blanks and control characters, in place. */
 void WhminiTrim(char* aText);
 TBool WhminiLoadSettings(TWhminiSettings& aSettings);
-void WhminiSaveSettings(const TWhminiSettings& aSettings);
+/* Writes server.txt. Takes a non-const reference because it re-derives the
+ * server choice from the addresses first: the label follows the addresses,
+ * so a host typed by hand can never leave a stale "PortalGems" on screen. */
+void WhminiSaveSettings(TWhminiSettings& aSettings);
 
 /* Shown in the app, and must match the version in sis/whmini.pkg. */
-#define WHMINI_VERSION "v0.8.0"
+#define WHMINI_VERSION "v0.9.0"
 
 #endif

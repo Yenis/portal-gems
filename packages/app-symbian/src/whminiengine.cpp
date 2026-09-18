@@ -105,13 +105,73 @@ void WhminiTrim(char* aText)
     TrimInPlace(aText);
 }
 
+/* The presets, in cleartext ws:// because that is all this phone's TLS can
+ * do. The public mailbox answers plain WebSocket on 4000 just as the
+ * PortalGems one does; both carry nothing but PAKE messages and ciphertext. */
+struct TServerPreset
+{
+    const char* iMailboxHost;
+    TUint iMailboxPort;
+    const char* iMailboxPath;
+    const char* iRelayHost;
+    TUint iRelayPort;
+};
+
+static const TServerPreset KServerPresets[] = {
+    /* EWhminiServerPublic */
+    { "relay.magic-wormhole.io", 4000, "/v1", "transit.magic-wormhole.io", 4001 },
+    /* EWhminiServerPortalGems */
+    { "be-my-guest.io", 4000, "/v1", "be-my-guest.io", 4001 }
+};
+
+void WhminiApplyServerChoice(TWhminiSettings& aSettings, TInt aChoice)
+{
+    if (aChoice != EWhminiServerPublic && aChoice != EWhminiServerPortalGems) {
+        aSettings.iServerChoice = EWhminiServerCustom;
+        return;
+    }
+    const TServerPreset& p = KServerPresets[aChoice];
+    CopyCStr(aSettings.iMailboxHost, sizeof(aSettings.iMailboxHost), p.iMailboxHost);
+    aSettings.iMailboxPort = p.iMailboxPort;
+    CopyCStr(aSettings.iMailboxPath, sizeof(aSettings.iMailboxPath), p.iMailboxPath);
+    CopyCStr(aSettings.iRelayHost, sizeof(aSettings.iRelayHost), p.iRelayHost);
+    aSettings.iRelayPort = p.iRelayPort;
+    aSettings.iServerChoice = aChoice;
+}
+
+TInt WhminiInferServerChoice(const TWhminiSettings& aSettings)
+{
+    TInt i;
+    for (i = 0; i < (TInt)(sizeof(KServerPresets) / sizeof(KServerPresets[0])); i++) {
+        const TServerPreset& p = KServerPresets[i];
+        if (SameStr(aSettings.iMailboxHost, p.iMailboxHost) &&
+            aSettings.iMailboxPort == p.iMailboxPort &&
+            SameStr(aSettings.iMailboxPath, p.iMailboxPath) &&
+            SameStr(aSettings.iRelayHost, p.iRelayHost) &&
+            aSettings.iRelayPort == p.iRelayPort) {
+            return i;
+        }
+    }
+    return EWhminiServerCustom;
+}
+
+const char* WhminiServerChoiceName(TInt aChoice)
+{
+    if (aChoice == EWhminiServerPublic) return "public";
+    if (aChoice == EWhminiServerPortalGems) return "portalgems";
+    return "custom";
+}
+
 void WhminiDefaultSettings(TWhminiSettings& aSettings)
 {
+    /* No server until one is chosen: an empty host is what makes the app
+     * ask on first use rather than connecting somewhere unannounced. */
     aSettings.iMailboxHost[0] = '\0';
     aSettings.iMailboxPort = 4000;
     CopyCStr(aSettings.iMailboxPath, sizeof(aSettings.iMailboxPath), "/v1");
     aSettings.iRelayHost[0] = '\0';
     aSettings.iRelayPort = 4001;
+    aSettings.iServerChoice = EWhminiServerCustom;
     aSettings.iDirect = 0;
     /* Honest rather than specific: the app runs on any FP2 phone, and the
      * name is one menu item away from being whatever the owner prefers. */
@@ -132,6 +192,11 @@ static void ApplySetting(TWhminiSettings& aS, const char* aKey, const char* aVal
     }
     else if (SameStr(aKey, "relay_port")) aS.iRelayPort = ParseUint(aValue, 4001);
     else if (SameStr(aKey, "direct")) aS.iDirect = (TInt)ParseUint(aValue, 0);
+    else if (SameStr(aKey, "server_choice")) {
+        if (SameStr(aValue, "public")) aS.iServerChoice = EWhminiServerPublic;
+        else if (SameStr(aValue, "portalgems")) aS.iServerChoice = EWhminiServerPortalGems;
+        else aS.iServerChoice = EWhminiServerCustom;
+    }
     else if (SameStr(aKey, "device_name")) {
         CopyCStr(aS.iDeviceName, sizeof(aS.iDeviceName), aValue);
         TrimInPlace(aS.iDeviceName);
@@ -179,14 +244,20 @@ TBool WhminiLoadSettings(TWhminiSettings& aSettings)
         if (k > 0) ApplySetting(aSettings, key, value);
         while (i < raw.Length() && (raw[i] == '\n' || raw[i] == '\r')) i++;
     }
+    /* A file written before 0.9.0 has no server_choice, and one written
+     * since may have been hand-edited to a different host. Either way the
+     * addresses decide: the label follows them, never the other way round. */
+    aSettings.iServerChoice = WhminiInferServerChoice(aSettings);
     return aSettings.iMailboxHost[0] != '\0';
 }
 
-void WhminiSaveSettings(const TWhminiSettings& aSettings)
+void WhminiSaveSettings(TWhminiSettings& aSettings)
 {
     RFs fs;
     RFile file;
     TBuf8<512> out;
+
+    aSettings.iServerChoice = WhminiInferServerChoice(aSettings);
 
     if (fs.Connect() != KErrNone) return;
     fs.MkDirAll(KSettingsFile);
@@ -209,6 +280,8 @@ void WhminiSaveSettings(const TWhminiSettings& aSettings)
     out.AppendNum(aSettings.iDirect);
     out.Append(_L8("\ndevice_name="));
     out.Append(TPtrC8((const TUint8*)aSettings.iDeviceName));
+    out.Append(_L8("\nserver_choice="));
+    out.Append(TPtrC8((const TUint8*)WhminiServerChoiceName(aSettings.iServerChoice)));
     out.Append(_L8("\n"));
 
     file.Write(out);

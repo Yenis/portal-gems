@@ -52,7 +52,7 @@ Grab the latest build for your platform from the
 | Fedora/RHEL | `PortalGems-<version>-linux-x86_64.rpm` | `sudo dnf install ./PortalGems-*.rpm` |
 | Windows | `PortalGems-<version>-windows-x64.exe` | Portable; just run it, no installer |
 | macOS (Apple Silicon) | `PortalGems-<version>-macos-arm64.dmg` | Unsigned; right-click → Open on first launch |
-| Symbian (S60 3rd ed. FP2) | `PortalGems-Mini-<version>-symbian.sis` | Self-signed; needs a self-hosted server. See [PortalGems on Symbian](#portalgems-on-symbian) |
+| Symbian (S60 3rd ed. FP2) | `PortalGems-Mini-<version>-symbian.sis` | Self-signed; needs a cleartext server. See [PortalGems on Symbian](#portalgems-on-symbian) |
 
 Building from source instead? See [Building from source](#building-from-source).
 
@@ -247,14 +247,20 @@ Avkon UI around it. The installable package is **52 KB**.
 
 - No QR pairing (there is no camera API worth the name here, and pairing is
   not implemented on this client yet), no themes, no translations
-- **It needs a self-hosted server.** Symbian's TLS is TLS 1.0 with a 2009
-  root store and cannot reach a modern `wss://` mailbox, so the phone talks
-  to a cleartext `ws://` listener - one extra port on your own server, see
-  [Self-hosting a server](#self-hosting-a-server). That costs less than it
-  sounds: the mailbox only ever carries PAKE messages and ciphertext, so an
-  observer on that port learns which code slot was used and when, never the
-  key and never the file. Cleartext is exactly the setting a PAKE is
-  designed for.
+- **It needs a cleartext server.** Symbian's TLS is TLS 1.0 with a 2009 root
+  store and cannot reach a modern `wss://` mailbox, so the phone talks to a
+  cleartext `ws://` listener instead. Options > Settings > Server offers the
+  same three choices as the other apps, at addresses this phone can reach:
+  the PortalGems server, the public magic-wormhole server (which still
+  answers plain WebSocket on port 4000, though nothing promises it always
+  will), or your own - see [Self-hosting a server](#self-hosting-a-server),
+  one extra port.
+
+  Cleartext costs less than it sounds: the mailbox only ever carries PAKE
+  messages and ciphertext, so an observer on that port learns which code slot
+  was used and when, never the key and never the file. Cleartext is exactly
+  the setting a PAKE is designed for. The transit relay was never encrypted
+  on any platform - the file inside it is.
 
 **Installing**
 

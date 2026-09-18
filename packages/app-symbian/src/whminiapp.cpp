@@ -145,6 +145,7 @@ private:
     void EditHostL(char* aTarget, TInt aCap, const TDesC& aPrompt);
     void EditPortL(TUint& aTarget, const TDesC& aPrompt);
     void ToggleDirectL();
+    void ChooseServerL(TInt aChoice);
     void Refresh();
     void StepLine(TDes& aOut);
     static TInt Tick(TAny* aSelf);
@@ -293,8 +294,15 @@ void CWhminiAppUi::Refresh()
         relay.Copy(TPtrC8((const TUint8*)iSettings.iRelayHost));
         line.Format(_L("Relay:  %S:%u"), &relay, iSettings.iRelayPort);
         iContainer->SetLine(2, line);
-        iContainer->SetLine(6, iSettings.iDirect ? _L("direct: on")
-                                                 : _L("direct: off"));
+        /* Which server, beside the direct flag: the host is on line 1 for
+         * diagnosis, this says which of the three it is. */
+        {
+        TBuf<32> choice;
+        choice.Copy(TPtrC8((const TUint8*)WhminiServerChoiceName(iSettings.iServerChoice)));
+        line.Format(iSettings.iDirect ? _L("direct: on   %S") : _L("direct: off   %S"),
+                    &choice);
+        iContainer->SetLine(6, line);
+        }
         }
 
     switch (iJob.iState)
@@ -581,6 +589,32 @@ void CWhminiAppUi::EditPortL(TUint& aTarget, const TDesC& aPrompt)
 
     aTarget = (TUint)value;
     WhminiSaveSettings(iSettings);
+    Refresh();
+    }
+
+/* Point the phone at one of the presets, or leave the addresses alone and
+ * just call them custom. The four manual items below this in the menu still
+ * work; editing any of them turns the choice back into custom, because the
+ * addresses are what actually decide. */
+void CWhminiAppUi::ChooseServerL(TInt aChoice)
+    {
+    WhminiApplyServerChoice(iSettings, aChoice);
+    WhminiSaveSettings(iSettings);
+
+    if (aChoice == EWhminiServerCustom)
+        {
+        /* Nothing to fill in, so send them where the addresses are typed. */
+        AskForServerL();
+        }
+    else
+        {
+        TBuf<64> host;
+        TBuf<80> msg;
+        host.Copy(TPtrC8((const TUint8*)iSettings.iMailboxHost));
+        msg.Format(_L("Using %S"), &host);
+        CAknConfirmationNote* note = new (ELeave) CAknConfirmationNote(ETrue);
+        note->ExecuteLD(msg);
+        }
     Refresh();
     }
 
@@ -1072,6 +1106,15 @@ void CWhminiAppUi::HandleCommandL(TInt aCommand)
             break;
         case EWhminiCmdCancel:
             CancelTransferL();
+            break;
+        case EWhminiCmdServerPublic:
+            ChooseServerL(EWhminiServerPublic);
+            break;
+        case EWhminiCmdServerPortalGems:
+            ChooseServerL(EWhminiServerPortalGems);
+            break;
+        case EWhminiCmdServerCustom:
+            ChooseServerL(EWhminiServerCustom);
             break;
         case EWhminiCmdSetMailboxHost:
             AskForServerL();
