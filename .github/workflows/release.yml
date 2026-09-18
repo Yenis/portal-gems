@@ -9,6 +9,12 @@
 #
 # All build jobs run in parallel; if one fails the others still publish.
 #
+# Re-running a failed tag-push run replays the workflow file as it existed at
+# that tag, so a CI fix landed afterwards on master will not apply to it. To
+# rebuild an old tag with the current workflow, use Run workflow (dispatch)
+# from master and pass the tag: the steps come from master, while every job
+# checks out the tag itself, so the binaries still match what was released.
+#
 # Required secrets for the `android` job (Settings -> Secrets and variables ->
 # Actions). Without them the APK is signed with the debug key or the job fails:
 #   ANDROID_KEYSTORE_BASE64    base64 of android/app/portalgems-release.keystore
@@ -40,6 +46,8 @@ jobs:
       tag: ${{ steps.tag.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
 
       - id: tag
         run: echo "tag=${{ github.event.inputs.tag || github.ref_name }}" >> "$GITHUB_OUTPUT"
@@ -72,6 +80,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.create-release.outputs.tag }}
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -120,6 +130,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.create-release.outputs.tag }}
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -218,6 +230,8 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.create-release.outputs.tag }}
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
