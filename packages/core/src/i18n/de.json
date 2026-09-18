@@ -83,7 +83,11 @@
     "receive": "Empfangen",
     "remove": "Entfernen",
     "removeConfirm": "Dieses Gerät entfernen? Du kannst es später wieder koppeln.",
-    "empty": "Noch keine gekoppelten Geräte."
+    "empty": "Noch keine gekoppelten Geräte.",
+    "rename": "Umbenennen",
+    "renameTitle": "{{name}} umbenennen",
+    "renameHint": "Dieser Name gilt nur auf diesem Gerät. Leer lassen, um wieder {{name}} zu verwenden.",
+    "renamePlaceholder": "Name für dieses Gerät"
   },
   "paired": {
     "sendWaiting": "Warte auf {{name}} - stelle sicher, dass PortalGems dort geöffnet ist…",
@@ -124,6 +128,13 @@
       "invalidUrl": "Gib eine gültige Adresse ein oder lass das Feld leer, um die Standardeinstellung zu verwenden.",
       "leaveBlankHint": "Lass ein Feld leer, um dafür den öffentlichen Standard zu behalten.",
       "change": "Server ändern"
+    },
+    "deviceName": {
+      "title": "Gerätename",
+      "hint": "So nennt sich dieses Gerät, wenn ihr es mit einem anderen koppelt. Bereits gekoppelte Geräte behalten den Namen, den sie kennen.",
+      "defaultLabel": "Standard: {{name}}",
+      "placeholder": "Name für dieses Gerät",
+      "reset": "Standard verwenden"
     }
   },
   "explain": {
@@ -156,7 +167,8 @@
     "retry": "Erneut versuchen",
     "accept": "Annehmen",
     "decline": "Ablehnen",
-    "gotIt": "Verstanden"
+    "gotIt": "Verstanden",
+    "save": "Speichern"
   },
   "errors": {
     "title": "Etwas ist schiefgelaufen",

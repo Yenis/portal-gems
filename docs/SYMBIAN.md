@@ -796,10 +796,18 @@ Things worth knowing:
   that died while waiting leaves its nameplate listed, and a receiver that
   joins it would otherwise wait out the full read timeout - three minutes
   on this phone.
+- **Names.** Options > Settings > Device name is what this phone calls
+  itself when pairing (default "Symbian phone"), and Options > Rename paired
+  device relabels one that is already paired - a local label only, cleared by
+  answering with an empty name. Both are the same model as the other
+  platforms; see "Names and renames" in `docs/ARCHITECTURE.md`.
 - **Pairings live in `C:\private\e1000001\pairs.txt`.** Platform security
   keeps every other application out of an app's private directory, which
-  is the closest S60 3rd edition comes to a keystore. The device name the
-  phone presents is a setting (default "Symbian phone").
+  is the closest S60 3rd edition comes to a keystore. One line per pairing:
+  `<secret base64url>\t<name>` and, since 0.8.0, an optional `\t<label>` for
+  a local rename - a file written by an earlier version has two fields, no
+  rename, and keeps working. The read and write buffer is static rather than
+  a 4 KB local, because a worker thread can be given an 8 KB stack.
 
 ## The bug that cost the most
 

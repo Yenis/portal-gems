@@ -5328,6 +5328,18 @@ import_electron.app.whenReady().then(async () => {
       import_electron.app.exit(1);
     });
   }
+  if (process.env.PG_SMOKE_DEVICE_NAME) {
+    runSmokeDeviceName(process.env.PG_SMOKE_DEVICE_NAME).catch((e) => {
+      console.log(`SMOKE:ERROR:${e}`);
+      import_electron.app.exit(1);
+    });
+  }
+  if (process.env.PG_SMOKE_RENAME !== void 0) {
+    runSmokeRename(process.env.PG_SMOKE_RENAME).catch((e) => {
+      console.log(`SMOKE:ERROR:${e}`);
+      import_electron.app.exit(1);
+    });
+  }
   if (process.env.PG_SMOKE_DUMP_PAIRCODE) {
     const devices = JSON.parse(readPairs());
     for (const d of Array.isArray(devices) ? devices : []) {
@@ -5374,8 +5386,23 @@ import_electron.app.whenReady().then(async () => {
 });
 var smokeExec = (js) => win.webContents.executeJavaScript(js);
 var smokeClick = (label) => smokeExec(
-  `[...document.querySelectorAll('button')].find(b => b.textContent === ${JSON.stringify(label)})?.click() ?? 'missing'`
+  `[...document.querySelectorAll('button, a')].find(b => b.textContent === ${JSON.stringify(label)})?.click() ?? 'missing'`
 );
+var smokeFill = (nth, value) => smokeExec(`(() => {
+    /* Text fields only: the settings screen's radios are inputs too. */
+    const fields = [...document.querySelectorAll('input')].filter(
+      (i) => !i.type || i.type === 'text');
+    const el = fields[${nth}];
+    if (!el) return false;
+    const setter = Object.getOwnPropertyDescriptor(
+      window.HTMLInputElement.prototype, 'value').set;
+    setter.call(el, ${JSON.stringify(value)});
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    /* React's onBlur listens for focusout, and a plain blur event does not
+     * bubble - without this the value is typed but never committed. */
+    el.dispatchEvent(new Event('focusout', { bubbles: true }));
+    return true;
+  })()`);
 var smokeWaitFor = async (needle, timeoutMs) => {
   const start = Date.now();
   for (; ; ) {
@@ -5433,6 +5460,35 @@ async function runSmokePairJoin(code) {
   await smokeWaitFor("Paired with", 18e4);
   const text = await smokeExec("document.body.innerText");
   console.log(`SMOKE:PAIRED-OK:${text.match(/Paired with [^\n]*/)?.[0] ?? ""}`);
+  import_electron.app.exit(0);
+}
+async function runSmokeDeviceName(name) {
+  await smokeWaitFor("PortalGems", 1e4);
+  await smokeClick("Settings");
+  await smokeWaitFor("Device name", 1e4);
+  if (!await smokeFill(0, name)) throw new Error("no device name field");
+  const stored = await smokeExec(`localStorage.getItem('pg-device-name')`);
+  console.log(`SMOKE:DEVICE-NAME:${stored}`);
+  import_electron.app.exit(0);
+}
+async function runSmokeRename(label) {
+  await smokeWaitFor("PortalGems", 1e4);
+  await smokeWaitFor("Remove", 1e4);
+  await smokeClick("Rename");
+  await smokeWaitFor("Save", 5e3);
+  if (!await smokeFill(0, label)) throw new Error("no rename field");
+  await smokeClick("Save");
+  await smokeWaitFor("Rename", 1e4);
+  const shown = await smokeExec(`(() => {
+    const spans = [...document.querySelectorAll('span')];
+    const row = spans.find((x) => x.style && x.style.fontWeight === '600');
+    return row ? row.textContent : '(no device row)';
+  })()`);
+  const stored = await smokeExec(`(async () =>
+    JSON.parse(await window.portalgems.pairsGet()).map(
+      (d) => d.name + '|' + (d.label === undefined ? '(none)' : d.label)).join(','))()`);
+  console.log(`SMOKE:RENAME-SHOWN:${shown}`);
+  console.log(`SMOKE:RENAME-STORED:${stored}`);
   import_electron.app.exit(0);
 }
 async function runSmokePairedReceive() {

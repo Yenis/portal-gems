@@ -83,7 +83,11 @@
     "receive": "Recevoir",
     "remove": "Retirer",
     "removeConfirm": "Retirer cet appareil ? Vous pourrez l'associer à nouveau plus tard.",
-    "empty": "Aucun appareil associé pour l'instant."
+    "empty": "Aucun appareil associé pour l'instant.",
+    "rename": "Renommer",
+    "renameTitle": "Renommer {{name}}",
+    "renameHint": "Ce nom ne sert que sur cet appareil. Laissez vide pour revenir à {{name}}.",
+    "renamePlaceholder": "Nom de cet appareil"
   },
   "paired": {
     "sendWaiting": "En attente de {{name}} - vérifiez que PortalGems y est ouvert…",
@@ -124,6 +128,13 @@
       "invalidUrl": "Saisissez une adresse valide, ou laissez vide pour utiliser la valeur par défaut.",
       "leaveBlankHint": "Laissez un champ vide pour en conserver la valeur publique par défaut.",
       "change": "Changer de serveur"
+    },
+    "deviceName": {
+      "title": "Nom de l'appareil",
+      "hint": "Le nom que cet appareil donne lorsque vous l'associez à un autre. Les appareils déjà associés gardent le nom qu'ils connaissent.",
+      "defaultLabel": "Par défaut : {{name}}",
+      "placeholder": "Nom de cet appareil",
+      "reset": "Valeur par défaut"
     }
   },
   "explain": {
@@ -156,7 +167,8 @@
     "retry": "Réessayer",
     "accept": "Accepter",
     "decline": "Refuser",
-    "gotIt": "Compris"
+    "gotIt": "Compris",
+    "save": "Enregistrer"
   },
   "errors": {
     "title": "Un problème est survenu",

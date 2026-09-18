@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import QRCodeLib from 'qrcode';
 import {
+  deviceLabel,
   classifyPairingInput,
   createPairingPayload,
   currentBucket,
@@ -35,9 +36,16 @@ import {
   completePairingAsScanner,
   loadDevices,
   removeDevice,
+  renameDevice,
   requestReceiveBounded,
   waitForPairingAsDisplayer,
 } from './pairing';
+import {
+  defaultDeviceName,
+  loadDeviceNameOverride,
+  myDeviceName,
+  saveDeviceNameOverride,
+} from './devicename';
 import { loadThemeName, saveThemeName } from './theme';
 import { currentServer, loadServerSettings, saveServerSettings } from './server';
 import { loadDownloadDir, saveDownloadDir } from './downloads';
@@ -277,10 +285,28 @@ function Home({
     }
   };
 
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+
   const remove = (device: PairedDevice) => {
-    if (window.confirm(`${t('devices.remove')}: ${device.name}?`)) {
+    if (window.confirm(`${t('devices.remove')}: ${deviceLabel(device)}?`)) {
       removeDevice(device.id).then(() => loadDevices().then(setDevices));
     }
+  };
+
+  // A local rename, edited in place: Electron has no window.prompt, and a
+  // row that turns into a field is less abrupt than a dialog anyway. Saving
+  // an empty field clears the rename and the device goes back to the name it
+  // gave when pairing.
+  const startRename = (device: PairedDevice) => {
+    setRenamingId(device.id);
+    setRenameValue(device.label ?? '');
+  };
+  const commitRename = (device: PairedDevice) => {
+    renameDevice(device.id, renameValue).then(() => {
+      setRenamingId(null);
+      loadDevices().then(setDevices);
+    });
   };
 
   return (
@@ -306,32 +332,70 @@ function Home({
           <div
             key={device.id}
             style={{ display: 'flex', gap: spacing(2), alignItems: 'center' }}>
-            <span
-              style={{ flex: 1, color: c.text, fontWeight: 600, overflow: 'hidden' }}>
-              {device.name}
-            </span>
-            <div style={{ width: 110 }}>
-              <PrimaryButton
-                c={c}
-                label={t('devices.send')}
-                onClick={() => pick(device)}
-              />
-            </div>
-            <div style={{ width: 110 }}>
-              <GhostButton
-                c={c}
-                label={t('devices.receive')}
-                onClick={() => onReceiveFrom(device)}
-              />
-            </div>
-            <div style={{ width: 100 }}>
-              <GhostButton
-                c={c}
-                label={t('devices.remove')}
-                danger
-                onClick={() => remove(device)}
-              />
-            </div>
+            {renamingId === device.id ? (
+              <>
+                <div style={{ flex: 1 }}>
+                  <TextInput
+                    c={c}
+                    value={renameValue}
+                    onChange={setRenameValue}
+                    placeholder={device.name}
+                    monospace={false}
+                  />
+                </div>
+                <div style={{ width: 110 }}>
+                  <PrimaryButton
+                    c={c}
+                    label={t('common.save')}
+                    onClick={() => commitRename(device)}
+                  />
+                </div>
+                <div style={{ width: 110 }}>
+                  <GhostButton
+                    c={c}
+                    label={t('common.cancel')}
+                    onClick={() => setRenamingId(null)}
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <span
+                  style={{ flex: 1, color: c.text, fontWeight: 600, overflow: 'hidden' }}
+                  title={device.label ? device.name : undefined}>
+                  {deviceLabel(device)}
+                </span>
+                <div style={{ width: 110 }}>
+                  <PrimaryButton
+                    c={c}
+                    label={t('devices.send')}
+                    onClick={() => pick(device)}
+                  />
+                </div>
+                <div style={{ width: 110 }}>
+                  <GhostButton
+                    c={c}
+                    label={t('devices.receive')}
+                    onClick={() => onReceiveFrom(device)}
+                  />
+                </div>
+                <div style={{ width: 110 }}>
+                  <GhostButton
+                    c={c}
+                    label={t('devices.rename')}
+                    onClick={() => startRename(device)}
+                  />
+                </div>
+                <div style={{ width: 100 }}>
+                  <GhostButton
+                    c={c}
+                    label={t('devices.remove')}
+                    danger
+                    onClick={() => remove(device)}
+                  />
+                </div>
+              </>
+            )}
           </div>
         ))}
         <GhostButton c={c} label={t('home.pairNew')} onClick={onPair} />
@@ -531,7 +595,7 @@ function Send({
         {phase === 'starting' ? <Muted c={c}>{t('receive.connecting')}</Muted> : null}
         {phase === 'waiting' ? (
           device ? (
-            <Muted c={c}>{t('paired.sendWaiting', { name: device.name })}</Muted>
+            <Muted c={c}>{t('paired.sendWaiting', { name: deviceLabel(device) })}</Muted>
           ) : (
             <>
               <Subtitle c={c}>{t('send.waitingForReceiver')}</Subtitle>
@@ -579,7 +643,7 @@ function Send({
         {phase === 'cancelled' ? <Muted c={c}>{t('errors.cancelled')}</Muted> : null}
         {phase === 'peerNotOpen' && device ? (
           <p style={{ color: c.danger, margin: 0 }}>
-            {t('paired.notOpen', { name: device.name })}
+            {t('paired.notOpen', { name: deviceLabel(device) })}
           </p>
         ) : null}
       </Card>
@@ -681,7 +745,7 @@ function Receive({
             }
           }
         }
-        failed(new Error(t('paired.nothingFound', { name: device.name })));
+        failed(new Error(t('paired.nothingFound', { name: deviceLabel(device) })));
       })();
     } else if (code) {
       window.portalgems
@@ -747,12 +811,12 @@ function Receive({
   return (
     <>
       <Title c={c} onBack={onHome}>{t('receive.title')}</Title>
-      <Muted c={c}>{device ? device.name : code}</Muted>
+      <Muted c={c}>{device ? deviceLabel(device) : code}</Muted>
       <Card c={c}>
         {phase === 'connecting' ? (
           <Muted c={c}>
             {device
-              ? t('paired.receiveWaiting', { name: device.name })
+              ? t('paired.receiveWaiting', { name: deviceLabel(device) })
               : t('receive.connecting')}
           </Muted>
         ) : null}
@@ -904,7 +968,7 @@ function Pair({ c, onHome }: { c: Palette; onHome: () => void }) {
     const id = nextId++;
     idRef.current = id;
     waitForPairingAsDisplayer(payload, id, () => cancelledRef.current).then(
-      (device) => succeed(device.name),
+      (device) => succeed(deviceLabel(device)),
       (e) => {
         if (!cancelledRef.current) fail(e);
       }
@@ -915,7 +979,7 @@ function Pair({ c, onHome }: { c: Palette; onHome: () => void }) {
   // payload through it as a text message. When that send completes the other
   // device has the payload, exactly as if it had scanned the QR code.
   const hostWithCode = async () => {
-    const myName = await window.portalgems.deviceName();
+    const myName = await myDeviceName();
     const payload = createPairingPayload(myName);
     const id = nextId++;
     idRef.current = id;
@@ -942,7 +1006,7 @@ function Pair({ c, onHome }: { c: Palette; onHome: () => void }) {
   };
 
   const show = async () => {
-    const myName = await window.portalgems.deviceName();
+    const myName = await myDeviceName();
     const payload = createPairingPayload(myName);
     const encoded = encodePairingPayload(payload);
     setPayloadText(encoded);
@@ -954,7 +1018,7 @@ function Pair({ c, onHome }: { c: Palette; onHome: () => void }) {
   // The payload is in hand - pasted, or received over a code. Send our name
   // back over the derived code and store the pairing.
   const completeWith = async (payload: PairingPayload) => {
-    const myName = await window.portalgems.deviceName();
+    const myName = await myDeviceName();
     const id = nextId++;
     idRef.current = id;
     // Don't wait forever if the other side stopped listening.
@@ -965,7 +1029,7 @@ function Pair({ c, onHome }: { c: Palette; onHome: () => void }) {
     }, 60_000);
     completePairingAsScanner(payload, myName, id)
       .then(
-        (device) => succeed(device.name),
+        (device) => succeed(deviceLabel(device)),
         (e) => {
           if (timedOut) fail(new Error(t('paired.notOpen', { name: payload.name })));
           else if (!cancelledRef.current) fail(e);
@@ -1133,6 +1197,14 @@ function Settings({
   const { t, i18n } = useTranslation();
   const [server, setServer] = useState<ServerSettings>(() => loadServerSettings());
   const [downloadDir, setDownloadDir] = useState<string | null>(() => loadDownloadDir());
+  // The typed value, kept as typed while editing; what gets stored is
+  // sanitized on the way out, so the field never fights the user mid-word.
+  const [deviceName, setDeviceName] = useState<string>(() => loadDeviceNameOverride());
+  const [hostName, setHostName] = useState<string>('');
+
+  useEffect(() => {
+    defaultDeviceName().then(setHostName);
+  }, []);
 
   const chooseDownloadDir = async () => {
     const dir = await window.portalgems.pickDirectory();
@@ -1224,6 +1296,37 @@ function Settings({
             ) : null}
           </div>
         ))}
+      </Card>
+      <Card c={c}>
+        <Subtitle c={c}>{t('settings.deviceName.title')}</Subtitle>
+        <Muted c={c}>{t('settings.deviceName.hint')}</Muted>
+        <TextInput
+          c={c}
+          value={deviceName}
+          /* Saved as it is typed rather than only on blur, so a window closed
+           * or a screen left mid-edit keeps the name. The field keeps what
+           * was typed; what is stored is the sanitized form. */
+          onChange={(v) => {
+            setDeviceName(v);
+            saveDeviceNameOverride(v);
+          }}
+          onBlur={() => setDeviceName(saveDeviceNameOverride(deviceName))}
+          placeholder={hostName || t('settings.deviceName.placeholder')}
+          monospace={false}
+        />
+        {deviceName.trim().length === 0 && hostName ? (
+          <Muted c={c}>{t('settings.deviceName.defaultLabel', { name: hostName })}</Muted>
+        ) : null}
+        {deviceName.trim().length > 0 ? (
+          <GhostButton
+            c={c}
+            label={t('settings.deviceName.reset')}
+            onClick={() => {
+              saveDeviceNameOverride('');
+              setDeviceName('');
+            }}
+          />
+        ) : null}
       </Card>
       <Card c={c}>
         <Subtitle c={c}>{t('settings.downloads.title')}</Subtitle>

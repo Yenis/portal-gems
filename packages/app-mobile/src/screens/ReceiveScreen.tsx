@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { requestReceive, type IncomingFileInterface } from 'wormhole-rn';
 import {
+  deviceLabel,
   candidateBuckets,
   deriveCode,
   fontSize,
@@ -135,7 +136,7 @@ export default function ReceiveScreen({
       (async () => {
         const server = await currentServer();
         const deadline = Date.now() + PAIRED_RECEIVE_TIMEOUT_MS;
-        let lastError: unknown = new Error(t('paired.nothingFound', { name: device.name }));
+        let lastError: unknown = new Error(t('paired.nothingFound', { name: deviceLabel(device) }));
         while (Date.now() < deadline && !controller.signal.aborted) {
           for (const bucket of candidateBuckets()) {
             if (controller.signal.aborted) break;
@@ -152,7 +153,7 @@ export default function ReceiveScreen({
           }
         }
         if (!controller.signal.aborted) {
-          failed(new Error(t('paired.nothingFound', { name: device.name })));
+          failed(new Error(t('paired.nothingFound', { name: deviceLabel(device) })));
         } else {
           failed(lastError);
         }
@@ -262,13 +263,13 @@ export default function ReceiveScreen({
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
       <Title onBack={onHome}>{t('receive.title')}</Title>
-      <Muted>{device ? device.name : code}</Muted>
+      <Muted>{device ? deviceLabel(device) : code}</Muted>
 
       <Card>
         {phase === 'connecting' ? (
           <Muted>
             {device
-              ? t('paired.receiveWaiting', { name: device.name })
+              ? t('paired.receiveWaiting', { name: deviceLabel(device) })
               : t('receive.connecting')}
           </Muted>
         ) : null}

@@ -21,6 +21,7 @@ enum TWhminiCommands
     EWhminiCmdPairedSend,
     EWhminiCmdPairedReceive,
     EWhminiCmdPairedRemove,
+    EWhminiCmdPairedRename,
     EWhminiCmdPairHost,
     EWhminiCmdPairJoin,
     EWhminiCmdNoDevices,      /* placeholder shown while nothing is paired */
@@ -33,5 +34,6 @@ enum TWhminiCommands
 #define EWhminiCmdPairedSendBase    0x6100
 #define EWhminiCmdPairedReceiveBase 0x6200
 #define EWhminiCmdPairedRemoveBase  0x6300
+#define EWhminiCmdPairedRenameBase  0x6400
 
 #endif

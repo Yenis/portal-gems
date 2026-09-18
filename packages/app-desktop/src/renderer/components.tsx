@@ -372,17 +372,24 @@ export function TextInput({
   c,
   value,
   onChange,
+  onBlur,
   placeholder,
+  // URLs and codes read better fixed-width, ordinary prose does not - a
+  // device name is prose.
+  monospace = true,
 }: {
   c: Palette;
   value: string;
   onChange: (v: string) => void;
+  onBlur?: () => void;
   placeholder: string;
+  monospace?: boolean;
 }) {
   return (
     <input
       value={value}
       onChange={(e) => onChange(e.target.value)}
+      onBlur={onBlur}
       placeholder={placeholder}
       spellCheck={false}
       style={{
@@ -390,7 +397,7 @@ export function TextInput({
         borderRadius: radius.md,
         padding: spacing(3),
         fontSize: fontSize.body,
-        fontFamily: 'monospace',
+        fontFamily: monospace ? 'monospace' : undefined,
         background: c.background,
         color: c.text,
         width: '100%',

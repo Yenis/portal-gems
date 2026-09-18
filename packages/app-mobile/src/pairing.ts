@@ -13,6 +13,7 @@ import {
   PAIRED_ATTEMPT_TIMEOUT_MS,
   PAIRED_RECEIVE_TIMEOUT_MS,
   parsePairingPayload,
+  sanitizeDeviceName,
   type PairedDevice,
   type PairingPayload,
 } from '@portalgems/core';
@@ -52,6 +53,21 @@ export async function addDevice(name: string, secret: string): Promise<PairedDev
   devices.push(device);
   await saveDevices(devices);
   return device;
+}
+
+/**
+ * Rename a paired device locally. An empty name clears the rename, so the
+ * device goes back to calling itself what it calls itself; `name` is never
+ * touched, which is what makes that possible.
+ */
+export async function renameDevice(id: string, label: string): Promise<void> {
+  const clean = sanitizeDeviceName(label);
+  const devices = await loadDevices();
+  await saveDevices(
+    devices.map((d) =>
+      d.id === id ? { ...d, label: clean.length > 0 ? clean : undefined } : d
+    )
+  );
 }
 
 export async function removeDevice(id: string): Promise<void> {

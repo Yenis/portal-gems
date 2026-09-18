@@ -12,6 +12,9 @@ import {
   utf8Decode,
   utf8Encode,
   PAIRING_BUCKET_SECONDS,
+  deviceLabel,
+  sanitizeDeviceName,
+  DEVICE_NAME_MAX_BYTES,
 } from '../pairing';
 
 describe('base64url + utf8', () => {
@@ -151,5 +154,58 @@ describe('pairing input', () => {
     expect(deriveCode(received!.secret, 5_000_000)).toBe(
       deriveCode(payload.secret, 5_000_000)
     );
+  });
+});
+
+describe('device names and local renames', () => {
+  it('shows the name a device gave when there is no rename', () => {
+    expect(deviceLabel({ name: 'xollow', label: undefined })).toBe('xollow');
+    expect(deviceLabel({ name: 'xollow' })).toBe('xollow');
+  });
+
+  it('shows the rename when there is one', () => {
+    expect(deviceLabel({ name: 'sdk_gphone64_x86_64', label: 'Work phone' })).toBe(
+      'Work phone'
+    );
+  });
+
+  it('treats a blank rename as no rename, so clearing it restores the name', () => {
+    expect(deviceLabel({ name: 'xollow', label: '' })).toBe('xollow');
+    expect(deviceLabel({ name: 'xollow', label: '   ' })).toBe('xollow');
+  });
+
+  it('strips blanks, line breaks and control characters', () => {
+    expect(sanitizeDeviceName('  Nokia E72  ')).toBe('Nokia E72');
+    expect(sanitizeDeviceName('Nokia\nE72')).toBe('Nokia E72');
+    expect(sanitizeDeviceName('Nokia\tE72')).toBe('Nokia E72');
+    expect(sanitizeDeviceName('   ')).toBe('');
+  });
+
+  it('caps the length in bytes, not characters', () => {
+    const ascii = sanitizeDeviceName('a'.repeat(200));
+    expect(ascii.length).toBe(DEVICE_NAME_MAX_BYTES);
+
+    // Each of these costs two bytes, so half as many survive.
+    const accented = sanitizeDeviceName('ž'.repeat(200));
+    expect(accented.length).toBe(DEVICE_NAME_MAX_BYTES / 2);
+  });
+
+  it('never cuts a character in half', () => {
+    // An emoji is two UTF-16 code units and four UTF-8 bytes; a naive cut
+    // would leave a lone surrogate behind.
+    const out = sanitizeDeviceName('x'.repeat(DEVICE_NAME_MAX_BYTES - 2) + '🙂');
+    expect(out.endsWith('🙂')).toBe(false);
+    expect(out).toBe('x'.repeat(DEVICE_NAME_MAX_BYTES - 2));
+    expect([...out].every((ch) => ch === 'x')).toBe(true);
+
+    const fits = sanitizeDeviceName('x'.repeat(DEVICE_NAME_MAX_BYTES - 4) + '🙂');
+    expect(fits.endsWith('🙂')).toBe(true);
+  });
+
+  it('a sanitized name survives the payload round trip', () => {
+    const name = sanitizeDeviceName('  Yenis\u2019 Nokia E72 čćž  ');
+    const payload = createPairingPayload(name);
+    const back = parsePairingPayload(encodePairingPayload(payload));
+    expect(back?.name).toBe(name);
   });
 });

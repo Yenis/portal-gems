@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { sendFile, sendText, sendZipAsFolder } from 'wormhole-rn';
 import {
+  deviceLabel,
   currentBucket,
   deriveCode,
   fontSize,
@@ -208,7 +209,7 @@ export default function SendScreen({
 
         {phase === 'waiting' ? (
           device ? (
-            <Muted>{t('paired.sendWaiting', { name: device.name })}</Muted>
+            <Muted>{t('paired.sendWaiting', { name: deviceLabel(device) })}</Muted>
           ) : (
             <>
               <Subtitle>{t('send.waitingForReceiver')}</Subtitle>
@@ -264,7 +265,7 @@ export default function SendScreen({
 
         {phase === 'peerNotOpen' && device ? (
           <Text style={{ color: c.danger, fontSize: fontSize.body }}>
-            {t('paired.notOpen', { name: device.name })}
+            {t('paired.notOpen', { name: deviceLabel(device) })}
           </Text>
         ) : null}
       </Card>

@@ -199,11 +199,16 @@ devices effortless - with no server involved:
    256-bit secret - and both devices store it locally (Keystore/keychain). A
    typed code carries the secret through an encrypted wormhole rather than
    across the room on a screen, and it works once.
-2. **Transfer forever after:** when you tap *Send* / *Receive* on a paired
+2. **Name things how you like.** Each device has a name it gives out when
+   pairing - the computer's hostname, the phone's own name - and you can
+   change it in Settings. You can also rename any device you have paired
+   with, which is a label kept on your device alone: renaming a phone to
+   "Kitchen tablet" changes nothing on the phone itself.
+3. **Transfer forever after:** when you tap *Send* / *Receive* on a paired
    device, both sides independently derive the same one-time wormhole code from
    the shared secret and the current time window - and connect automatically.
    You just confirm the incoming file.
-3. **Both apps must be open.** There is no background service and no push
+4. **Both apps must be open.** There is no background service and no push
    server. If the other device isn't listening, the transfer times out with a
    clear message.
 

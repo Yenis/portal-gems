@@ -5,6 +5,32 @@ All notable changes to PortalGems are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Name your devices.** Settings now has a device name: what this device
+  calls itself when you pair with another one, instead of a hostname or a
+  model number like "sdk_gphone64_x86_64". On Symbian it is Options >
+  Settings > Device name.
+
+- **Rename a paired device.** Any device you have paired with can be renamed
+  on your side - "Kitchen tablet", "Work laptop" - and the name is yours
+  alone: nothing is sent anywhere, the other device never learns of it, and
+  clearing the name brings back the one it gave. Desktop and Android rename
+  in the device row; Symbian has Options > Rename paired device.
+
+  The two are independent on purpose. Renaming your own device later does not
+  reach devices already paired with you - they keep the name they learned,
+  and can relabel you themselves.
+
+### Fixed
+
+- A device name typed in Settings on Android was lost if you left the screen
+  with Back without tapping elsewhere first, because it was only saved when
+  the field lost focus. Names are saved as they are typed now, on the desktop
+  too.
+
 ## [1.3.2] - 2026-09-14
 
 Pair two devices without a camera between them.

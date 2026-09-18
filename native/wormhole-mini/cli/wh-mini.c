@@ -735,9 +735,10 @@ static int cmd_receive(const char *host, unsigned int port, const char *path,
  *   paired-send    send a file to a paired device
  *   paired-receive receive a file from a paired device
  *
- * Pairings live in a plain file of "<secret base64url>\t<name>" lines. That
- * is fine for a test tool and nothing more; the phone keeps its pairings in
- * its private directory. */
+ * Pairings live in a plain file of "<secret base64url>\t<name>" lines, with
+ * an optional third "\t<label>" field holding a local rename - the same
+ * shape the phone writes. That is fine for a test tool and nothing more; the
+ * phone keeps its pairings in its private directory. */
 
 typedef struct {
     const unsigned char *p;
@@ -770,7 +771,14 @@ static int mem_sink(void *ctx, const unsigned char *data, unsigned long len)
 
 #define MAX_PAIRS 16
 static char g_pair_names[MAX_PAIRS][WH_PAIR_NAME_MAX];
+static char g_pair_labels[MAX_PAIRS][WH_PAIR_NAME_MAX];
 static unsigned char g_pair_secrets[MAX_PAIRS][WH_PAIR_SECRET_LEN];
+
+/* What to call a pairing: the local rename if it has one, else its own name. */
+static const char *pair_label(int i)
+{
+    return g_pair_labels[i][0] ? g_pair_labels[i] : g_pair_names[i];
+}
 
 static int pairs_load(const char *file)
 {
@@ -780,6 +788,7 @@ static int pairs_load(const char *file)
     if (!f) return 0;
     while (count < MAX_PAIRS && fgets(line, sizeof(line), f)) {
         char *tab = strchr(line, '\t');
+        char *label;
         char *nl;
         if (!tab) continue;
         *tab = '\0';
@@ -787,8 +796,17 @@ static int pairs_load(const char *file)
         if (nl) *nl = '\0';
         if (wh_base64url_decode(line, strlen(line), g_pair_secrets[count],
                                 WH_PAIR_SECRET_LEN) != WH_PAIR_SECRET_LEN) continue;
+        /* An optional third field is a local rename; without this the whole
+         * rest of the line, rename included, would become the name. */
+        label = strchr(tab + 1, '\t');
+        if (label) *label++ = '\0';
         strncpy(g_pair_names[count], tab + 1, WH_PAIR_NAME_MAX - 1);
         g_pair_names[count][WH_PAIR_NAME_MAX - 1] = '\0';
+        g_pair_labels[count][0] = '\0';
+        if (label) {
+            strncpy(g_pair_labels[count], label, WH_PAIR_NAME_MAX - 1);
+            g_pair_labels[count][WH_PAIR_NAME_MAX - 1] = '\0';
+        }
         count++;
     }
     fclose(f);
@@ -825,7 +843,7 @@ static int cmd_pairs(const char *pairsfile)
     char code[WH_PAIR_CODE_MAX];
     for (i = 0; i < n; i++) {
         wh_pair_derive_code(g_pair_secrets[i], b, code);
-        printf("PAIR-DERIVED:%d:%s:%s\n", i, g_pair_names[i], code);
+        printf("PAIR-DERIVED:%d:%s:%s\n", i, pair_label(i), code);
         for (k = -1; k <= 1; k++) {
             wh_pair_derive_code(g_pair_secrets[i], b + (unsigned long)k, code);
             printf("PAIR-CANDIDATE:%d:%d:%s\n", i, k, code);
@@ -1013,11 +1031,11 @@ static int cmd_paired_send(const wh_paired_server *srv, const char *relay_host,
     base = base ? base + 1 : filepath;
 
     wh_mailbox_init(&m, &g_mbufs);
-    printf("waiting for %s\n", g_pair_names[device]);
+    printf("waiting for %s\n", pair_label(device));
     rc = wh_paired_open_sender(&m, srv, g_pair_secrets[device], code);
     if (rc != 0) {
         fprintf(stderr, rc == -3 ? "%s did not pick it up\n" : "could not reach %s\n",
-                g_pair_names[device]);
+                pair_label(device));
         fclose(f);
         return 1;
     }
@@ -1052,11 +1070,11 @@ static int cmd_paired_receive(const wh_paired_server *srv, const char *relay_hos
         return 1;
     }
     wh_mailbox_init(&m, &g_mbufs);
-    printf("looking for a transfer from %s\n", g_pair_names[device]);
+    printf("looking for a transfer from %s\n", pair_label(device));
     rc = wh_paired_open_receiver(&m, srv, g_pair_secrets[device], code);
     if (rc != 0) {
         fprintf(stderr, rc == -3 ? "nothing arrived from %s\n" : "could not look for %s\n",
-                g_pair_names[device]);
+                pair_label(device));
         return 1;
     }
     printf("found it on %s\n", code);

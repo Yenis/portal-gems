@@ -83,7 +83,11 @@
     "receive": "Recibir",
     "remove": "Quitar",
     "removeConfirm": "¿Quitar este dispositivo? Puedes volver a emparejarlo más tarde.",
-    "empty": "Aún no hay dispositivos emparejados."
+    "empty": "Aún no hay dispositivos emparejados.",
+    "rename": "Cambiar nombre",
+    "renameTitle": "Cambiar el nombre de {{name}}",
+    "renameHint": "Este nombre solo se usa en este dispositivo. Déjalo vacío para volver a {{name}}.",
+    "renamePlaceholder": "Nombre de este dispositivo"
   },
   "paired": {
     "sendWaiting": "Esperando a {{name}} - asegúrate de que PortalGems esté abierto allí…",
@@ -124,6 +128,13 @@
       "invalidUrl": "Introduce una dirección válida o déjalo en blanco para usar el valor predeterminado.",
       "leaveBlankHint": "Deja un campo en blanco para conservar el valor público predeterminado.",
       "change": "Cambiar servidor"
+    },
+    "deviceName": {
+      "title": "Nombre del dispositivo",
+      "hint": "Así se presenta este dispositivo al emparejarlo con otro. Los dispositivos ya emparejados conservan el nombre que aprendieron.",
+      "defaultLabel": "Predeterminado: {{name}}",
+      "placeholder": "Nombre de este dispositivo",
+      "reset": "Usar predeterminado"
     }
   },
   "explain": {
@@ -156,7 +167,8 @@
     "retry": "Reintentar",
     "accept": "Aceptar",
     "decline": "Rechazar",
-    "gotIt": "Entendido"
+    "gotIt": "Entendido",
+    "save": "Guardar"
   },
   "errors": {
     "title": "Algo salió mal",

@@ -162,6 +162,18 @@ Consumed by both apps as **npm `file:` symlinks** (see §5 build gotchas).
   implementation; the old test compared `deriveCode` with itself and could
   never fail. Own UTF-8
   codec (Hermes has no TextDecoder). Crypto via @noble/hashes (pure JS).
+  - **Names and renames.** A device sends the name it calls itself
+    (`createPairingPayload`, and the handshake), and the other side stores it
+    as `PairedDevice.name`. `label` on top of it is a local rename that never
+    leaves the device: `deviceLabel(d)` - `label` if non-blank, else `name` -
+    is what every screen shows, and clearing the label brings the original
+    back, which is why the two are kept apart. Own name: desktop localStorage
+    `pg-device-name` over `os.hostname()`, mobile setting `pg-device-name`
+    over Android's, Symbian `device_name` in server.txt. All three run typed
+    names through `sanitizeDeviceName` (no control characters, capped at
+    `DEVICE_NAME_MAX_BYTES` = 60 **bytes** on a character boundary), because
+    a name crosses the wire into fixed C buffers. Renaming later reaches
+    nobody: the peer keeps the name it learned, and renames its own end.
   - **Getting the payload across.** Three ways, one payload: a QR code,
     copy/paste, or *pairing over a code* - the displayer allocates an ordinary
     wormhole code and sends the encoded payload through it as a text message

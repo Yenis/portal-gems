@@ -66,13 +66,23 @@ const TInt KMaxPairs = 16;
 class TWhminiPair
     {
 public:
+    /* What the device calls itself, as it gave it when pairing. */
     char iName[128];
+    /* A local rename, shown instead of iName on this phone only. Empty means
+     * there is none, and clearing one brings iName back - which is why the
+     * two are kept apart. */
+    char iLabel[128];
     unsigned char iSecret[32];
     };
+
+/* What to call a pairing on screen: the rename if there is one, else the
+ * name it gave. Every screen and menu goes through this. */
+const char* WhminiPairLabel(const TWhminiPair& aPair);
 
 /* Returns how many were loaded, 0 if there is no file yet. */
 TInt WhminiLoadPairs(TWhminiPair* aPairs, TInt aMax);
 TInt WhminiAddPair(const char* aName, const unsigned char aSecret[32]);
+TInt WhminiRenamePair(TInt aIndex, const char* aLabel);
 TInt WhminiRemovePair(TInt aIndex);
 
 /* Longest message, in UTF-16 characters as typed. The wire limit is
@@ -144,6 +154,6 @@ TBool WhminiLoadSettings(TWhminiSettings& aSettings);
 void WhminiSaveSettings(const TWhminiSettings& aSettings);
 
 /* Shown in the app, and must match the version in sis/whmini.pkg. */
-#define WHMINI_VERSION "v0.7.1"
+#define WHMINI_VERSION "v0.8.0"
 
 #endif

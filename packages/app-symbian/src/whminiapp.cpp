@@ -136,6 +136,7 @@ private:
     void StartPairedSendL(TInt aIndex);
     void StartPairedReceiveL(TInt aIndex);
     void RemovePairL(TInt aIndex);
+    void RenamePairL(TInt aIndex);
     void EditDeviceNameL();
     TBool UsePairL(TInt aIndex);
     TInt StartWorker();
@@ -204,6 +205,14 @@ CWhminiAppUi::~CWhminiAppUi()
 
 /* Redraw the whole status area from the job. Cheap enough to do wholesale
  * rather than track what changed. */
+/* Copy a NUL-terminated UTF-8 string into a fixed job field. */
+static void CopyToJobName(char* aDst, TInt aCap, const char* aSrc)
+    {
+    TInt i;
+    for (i = 0; aSrc[i] && i < aCap - 1; i++) aDst[i] = aSrc[i];
+    aDst[i] = '\0';
+    }
+
 /* UTF-8 from the wire or the pairings file, for the screen. A byte-wise
  * widening would split every accented character in a device name. */
 static void Utf8ToDes(const char* aUtf8, TDes& aOut)
@@ -869,6 +878,7 @@ void CWhminiAppUi::DynInitMenuPaneL(TInt aResourceId, CEikMenuPane* aMenuPane)
     if (aResourceId == R_WHMINI_PAIRED_SEND_MENU) base = EWhminiCmdPairedSendBase;
     else if (aResourceId == R_WHMINI_PAIRED_RECEIVE_MENU) base = EWhminiCmdPairedReceiveBase;
     else if (aResourceId == R_WHMINI_PAIRED_REMOVE_MENU) base = EWhminiCmdPairedRemoveBase;
+    else if (aResourceId == R_WHMINI_PAIRED_RENAME_MENU) base = EWhminiCmdPairedRenameBase;
     else return;
 
     iPairCount = WhminiLoadPairs(iPairs, KMaxPairs);
@@ -882,7 +892,7 @@ void CWhminiAppUi::DynInitMenuPaneL(TInt aResourceId, CEikMenuPane* aMenuPane)
         item.iCascadeId = 0;
         item.iFlags = 0;
         item.iExtraText = KNullDesC;
-        Utf8ToDes(iPairs[i].iName, item.iText);
+        Utf8ToDes(WhminiPairLabel(iPairs[i]), item.iText);
         aMenuPane->AddMenuItemL(item);
         }
     }
@@ -895,7 +905,7 @@ TBool CWhminiAppUi::UsePairL(TInt aIndex)
     if (aIndex < 0 || aIndex >= iPairCount) return EFalse;
     iJob.iPaired = 1;
     Mem::Copy(iJob.iSecret, iPairs[aIndex].iSecret, sizeof(iJob.iSecret));
-    Mem::Copy(iJob.iPeerName, iPairs[aIndex].iName, sizeof(iJob.iPeerName));
+    CopyToJobName(iJob.iPeerName, sizeof(iJob.iPeerName), WhminiPairLabel(iPairs[aIndex]));
     return ETrue;
     }
 
@@ -960,6 +970,43 @@ void CWhminiAppUi::StartPairedReceiveL(TInt aIndex)
     LaunchJobL();
     }
 
+/* A local rename: only this phone sees it, and an empty answer clears it so
+ * the device goes back to the name it gave when pairing. */
+void CWhminiAppUi::RenamePairL(TInt aIndex)
+    {
+    iPairCount = WhminiLoadPairs(iPairs, KMaxPairs);
+    if (aIndex < 0 || aIndex >= iPairCount) return;
+
+    TBuf<64> value;
+    TBuf<64> prompt;
+    TBuf<40> original;
+    Utf8ToDes(iPairs[aIndex].iLabel, value);
+    Utf8ToDes(iPairs[aIndex].iName, original);
+    prompt.Format(_L("Name for %S"), &original);
+
+    CAknTextQueryDialog* dlg = CAknTextQueryDialog::NewL(value);
+    dlg->SetPromptL(prompt);
+    if (!dlg->ExecuteLD(R_AVKON_DIALOG_QUERY_VALUE_TEXT)) return;
+
+    TBuf8<160> utf8;
+    if (CnvUtfConverter::ConvertFromUnicodeToUtf8(utf8, value) != 0) return;
+    {
+        char label[128];
+        TInt n = utf8.Length();
+        if (n > (TInt)sizeof(label) - 1) n = sizeof(label) - 1;
+        Mem::Copy(label, utf8.Ptr(), n);
+        label[n] = '\0';
+        if (WhminiRenamePair(aIndex, label) != KErrNone)
+            {
+            CAknErrorNote* note = new (ELeave) CAknErrorNote(ETrue);
+            note->ExecuteLD(_L("Could not save the name"));
+            return;
+            }
+        }
+    CAknConfirmationNote* note = new (ELeave) CAknConfirmationNote(ETrue);
+    note->ExecuteLD(value.Length() ? _L("Renamed") : _L("Name cleared"));
+    }
+
 void CWhminiAppUi::RemovePairL(TInt aIndex)
     {
     iPairCount = WhminiLoadPairs(iPairs, KMaxPairs);
@@ -967,7 +1014,7 @@ void CWhminiAppUi::RemovePairL(TInt aIndex)
 
     TBuf<40> name;
     TBuf<96> prompt;
-    Utf8ToDes(iPairs[aIndex].iName, name);
+    Utf8ToDes(WhminiPairLabel(iPairs[aIndex]), name);
     prompt.Format(_L("Remove %S? You can pair again later."), &name);
     CAknQueryDialog* dlg = CAknQueryDialog::NewL();
     dlg->SetPromptL(prompt);
@@ -1071,6 +1118,9 @@ void CWhminiAppUi::HandleCommandL(TInt aCommand)
             else if (aCommand >= EWhminiCmdPairedRemoveBase &&
                      aCommand < EWhminiCmdPairedRemoveBase + KMaxPairs)
                 RemovePairL(aCommand - EWhminiCmdPairedRemoveBase);
+            else if (aCommand >= EWhminiCmdPairedRenameBase &&
+                     aCommand < EWhminiCmdPairedRenameBase + KMaxPairs)
+                RenamePairL(aCommand - EWhminiCmdPairedRenameBase);
             break;
         }
     }

@@ -83,7 +83,11 @@
     "receive": "Receive",
     "remove": "Remove",
     "removeConfirm": "Unpair this device? You can pair with it again later.",
-    "empty": "No paired devices yet."
+    "empty": "No paired devices yet.",
+    "rename": "Rename",
+    "renameTitle": "Rename {{name}}",
+    "renameHint": "This name is only used on this device. Leave it empty to go back to {{name}}.",
+    "renamePlaceholder": "Name for this device"
   },
   "paired": {
     "sendWaiting": "Waiting for {{name}} - make sure PortalGems is open there…",
@@ -103,7 +107,8 @@
     "retry": "Try again",
     "accept": "Accept",
     "decline": "Decline",
-    "gotIt": "Got it"
+    "gotIt": "Got it",
+    "save": "Save"
   },
   "settings": {
     "title": "Settings",
@@ -138,6 +143,13 @@
       "invalidUrl": "Enter a valid address, or leave blank to use the default.",
       "leaveBlankHint": "Leave a field blank to keep the public default for it.",
       "change": "Change server"
+    },
+    "deviceName": {
+      "title": "Device name",
+      "hint": "What this device calls itself when you pair with another one. Devices you have already paired with keep the name they learned.",
+      "defaultLabel": "Default: {{name}}",
+      "placeholder": "Name for this device",
+      "reset": "Use default"
     }
   },
   "explain": {

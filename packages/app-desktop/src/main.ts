@@ -379,6 +379,21 @@ app.whenReady().then(async () => {
       app.exit(1);
     });
   }
+  // Set what this instance calls itself, as Settings > Device name would,
+  // then leave. Run it before a pairing flow to check the name crosses.
+  if (process.env.PG_SMOKE_DEVICE_NAME) {
+    runSmokeDeviceName(process.env.PG_SMOKE_DEVICE_NAME).catch((e) => {
+      console.log(`SMOKE:ERROR:${e}`);
+      app.exit(1);
+    });
+  }
+  // Rename the first paired device locally and print what the row then says.
+  if (process.env.PG_SMOKE_RENAME !== undefined) {
+    runSmokeRename(process.env.PG_SMOKE_RENAME).catch((e) => {
+      console.log(`SMOKE:ERROR:${e}`);
+      app.exit(1);
+    });
+  }
   // Print the code each stored pairing derives for the current time bucket.
   // Two paired profiles must print the same one; comparing codes rather than
   // secrets keeps the secret itself out of the log.
@@ -436,10 +451,32 @@ app.whenReady().then(async () => {
 // ---- smoke helpers (dev only) ----
 
 const smokeExec = <T>(js: string): Promise<T> => win!.webContents.executeJavaScript(js);
+/* Buttons and links alike: some of the app's own navigation (Settings, How
+ * it works) is an anchor, and a helper that only saw buttons made those
+ * screens untestable. */
 const smokeClick = (label: string) =>
   smokeExec(
-    `[...document.querySelectorAll('button')].find(b => b.textContent === ${JSON.stringify(label)})?.click() ?? 'missing'`
+    `[...document.querySelectorAll('button, a')].find(b => b.textContent === ${JSON.stringify(label)})?.click() ?? 'missing'`
   );
+/* Type into an input, the way React wants it: set the value through the
+ * native setter so React's own onChange sees the new value, then dispatch. */
+const smokeFill = (nth: number, value: string) =>
+  smokeExec<boolean>(`(() => {
+    /* Text fields only: the settings screen's radios are inputs too. */
+    const fields = [...document.querySelectorAll('input')].filter(
+      (i) => !i.type || i.type === 'text');
+    const el = fields[${nth}];
+    if (!el) return false;
+    const setter = Object.getOwnPropertyDescriptor(
+      window.HTMLInputElement.prototype, 'value').set;
+    setter.call(el, ${JSON.stringify(value)});
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    /* React's onBlur listens for focusout, and a plain blur event does not
+     * bubble - without this the value is typed but never committed. */
+    el.dispatchEvent(new Event('focusout', { bubbles: true }));
+    return true;
+  })()`);
+
 const smokeWaitFor = async (needle: string, timeoutMs: number) => {
   const start = Date.now();
   for (;;) {
@@ -501,6 +538,39 @@ async function runSmokePairJoin(code: string) {
   await smokeWaitFor('Paired with', 180000);
   const text = await smokeExec<string>('document.body.innerText');
   console.log(`SMOKE:PAIRED-OK:${text.match(/Paired with [^\n]*/)?.[0] ?? ''}`);
+  app.exit(0);
+}
+
+async function runSmokeDeviceName(name: string) {
+  await smokeWaitFor('PortalGems', 10000);
+  await smokeClick('Settings');
+  await smokeWaitFor('Device name', 10000);
+  /* The first text field on the settings screen is the device name. */
+  if (!(await smokeFill(0, name))) throw new Error('no device name field');
+  const stored = await smokeExec<string>(`localStorage.getItem('pg-device-name')`);
+  console.log(`SMOKE:DEVICE-NAME:${stored}`);
+  app.exit(0);
+}
+
+async function runSmokeRename(label: string) {
+  await smokeWaitFor('PortalGems', 10000);
+  await smokeWaitFor('Remove', 10000);
+  await smokeClick('Rename');
+  await smokeWaitFor('Save', 5000);
+  /* The rename field is the only text input on the home screen. */
+  if (!(await smokeFill(0, label))) throw new Error('no rename field');
+  await smokeClick('Save');
+  await smokeWaitFor('Rename', 10000);
+  const shown = await smokeExec<string>(`(() => {
+    const spans = [...document.querySelectorAll('span')];
+    const row = spans.find((x) => x.style && x.style.fontWeight === '600');
+    return row ? row.textContent : '(no device row)';
+  })()`);
+  const stored = await smokeExec<string>(`(async () =>
+    JSON.parse(await window.portalgems.pairsGet()).map(
+      (d) => d.name + '|' + (d.label === undefined ? '(none)' : d.label)).join(','))()`);
+  console.log(`SMOKE:RENAME-SHOWN:${shown}`);
+  console.log(`SMOKE:RENAME-STORED:${stored}`);
   app.exit(0);
 }
 

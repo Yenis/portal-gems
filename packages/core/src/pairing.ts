@@ -18,8 +18,15 @@ import { randomBytes } from '@noble/hashes/utils.js';
 export interface PairedDevice {
   /** stable local id */
   id: string;
-  /** the peer's human-readable device name */
+  /** the peer's human-readable device name, as the peer gave it */
   name: string;
+  /**
+   * A local rename, shown instead of `name` on this device only. Nothing
+   * sends it anywhere: the peer keeps calling itself whatever it calls
+   * itself, and `name` is left alone so a rename can be undone by clearing
+   * this. Absent, empty or blank means "use the name they gave".
+   */
+  label?: string;
   /** shared 32-byte secret, base64url */
   secret: string;
   /** ms epoch when paired */
@@ -202,6 +209,54 @@ export function deriveCode(secretB64: string, bucket: number): string {
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
   return `${nameplate}-${hex.slice(0, 10)}-${hex.slice(10, 20)}`;
+}
+
+/**
+ * The longest a device name may be once encoded, in bytes.
+ *
+ * A name crosses the wire in the pairing payload and is stored by every
+ * platform, including one with fixed buffers: the Symbian client reads names
+ * into 128 bytes and sends its own from 64. Staying under both means a name
+ * can never be the reason a pairing fails, and the limit is in bytes rather
+ * than characters because "Håkan's Nokia" costs more than it looks.
+ */
+export const DEVICE_NAME_MAX_BYTES = 60;
+
+/**
+ * Clean up a device name or label typed by a person: no surrounding blanks,
+ * no control characters or line breaks (every platform stores these in line-
+ * oriented files), and short enough for the smallest buffer that will hold
+ * it. Truncation happens on a character boundary, never mid-character.
+ *
+ * Returns '' for anything that was only blanks, which callers treat as "no
+ * name set" rather than storing an empty one.
+ */
+export function sanitizeDeviceName(raw: string): string {
+  // eslint-disable-next-line no-control-regex
+  const flattened = raw.replace(/[\u0000-\u001f\u007f]/g, ' ').trim();
+  if (flattened.length === 0) return '';
+
+  let out = '';
+  let bytes = 0;
+  // Array.from, not indexing: a character outside the basic plane is two
+  // code units, and cutting between them would leave half of it behind.
+  for (const ch of Array.from(flattened)) {
+    const size = utf8Encode(ch).length;
+    if (bytes + size > DEVICE_NAME_MAX_BYTES) break;
+    out += ch;
+    bytes += size;
+  }
+  return out.trim();
+}
+
+/**
+ * What to call a paired device on screen: the local rename if there is one,
+ * otherwise the name it gave at pairing. Every screen goes through this, so
+ * a renamed device reads the same everywhere.
+ */
+export function deviceLabel(device: Pick<PairedDevice, 'name' | 'label'>): string {
+  const label = device.label?.trim();
+  return label && label.length > 0 ? label : device.name;
 }
 
 export function newDeviceId(): string {

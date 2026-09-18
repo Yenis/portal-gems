@@ -26,6 +26,11 @@ import {
 } from '@portalgems/core';
 import { Card, GhostButton, PrimaryButton, Subtitle, Title } from '../components';
 import {
+  defaultDeviceName,
+  loadDeviceNameOverride,
+  saveDeviceNameOverride,
+} from '../devicename';
+import {
   getSetting,
   loadDownloadDir,
   pickDownloadDirectory,
@@ -57,6 +62,16 @@ export default function SettingsScreen({
   const c = useTheme();
   const { themeName, setThemeName } = useThemeControl();
   const [langOpen, setLangOpen] = useState(false);
+
+  // The typed value is kept as typed while editing; what gets stored is
+  // sanitized when the field is committed, so it never fights the user
+  // mid-word. Blank means "use the name Android reports".
+  const [deviceName, setDeviceName] = useState('');
+  const phoneName = defaultDeviceName();
+
+  useEffect(() => {
+    loadDeviceNameOverride().then(setDeviceName);
+  }, []);
 
   // Deep-link target: scroll to the server section when arriving from the
   // send-screen "Change server" shortcut.
@@ -222,6 +237,46 @@ export default function SettingsScreen({
         </View>
       </Card>
 
+      <Card>
+        <Subtitle>{t('settings.deviceName.title')}</Subtitle>
+        <Text style={{ color: c.textMuted, fontSize: fontSize.small }}>
+          {t('settings.deviceName.hint')}
+        </Text>
+        <TextInput
+          style={[
+            styles.nameInput,
+            { borderColor: c.border, color: c.text, backgroundColor: c.background },
+          ]}
+          value={deviceName}
+          /* Saved as it is typed, not on blur: dismissing the keyboard with
+           * Back does not blur the field, so a name typed and left behind
+           * would be lost. The field keeps what was typed; what is stored is
+           * the sanitized form. */
+          onChangeText={(v) => {
+            setDeviceName(v);
+            void saveDeviceNameOverride(v);
+          }}
+          onBlur={() => {
+            void saveDeviceNameOverride(deviceName).then(setDeviceName);
+          }}
+          placeholder={phoneName}
+          placeholderTextColor={c.textMuted}
+          autoCapitalize="words"
+          autoCorrect={false}
+        />
+        {deviceName.trim().length === 0 ? (
+          <Text style={{ color: c.textMuted, fontSize: fontSize.small }}>
+            {t('settings.deviceName.defaultLabel', { name: phoneName })}
+          </Text>
+        ) : (
+          <GhostButton
+            label={t('settings.deviceName.reset')}
+            onPress={() => {
+              void saveDeviceNameOverride('').then(() => setDeviceName(''));
+            }}
+          />
+        )}
+      </Card>
       <Card>
         <Subtitle>{t('settings.downloads.title')}</Subtitle>
         <Text style={{ color: c.textMuted, fontSize: fontSize.small }}>
@@ -414,6 +469,13 @@ const styles = StyleSheet.create({
     marginTop: spacing(2),
     paddingVertical: spacing(1),
     paddingHorizontal: spacing(2),
+  },
+  nameInput: {
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing(3),
+    paddingVertical: spacing(3),
+    fontSize: fontSize.body,
   },
   input: {
     borderWidth: 1,

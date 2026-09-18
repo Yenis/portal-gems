@@ -231,12 +231,28 @@ static TInt PairsPath(RFs& aFs, TFileName& aPath)
     return KErrNone;
 }
 
+/* One line per pairing: "<secret base64url>\t<name>" and, since 0.8.0, an
+ * optional "\t<label>" for a local rename. A file written by an earlier
+ * version has two fields and simply has no rename, so it keeps working. */
+static TBuf8<8192> gPairsIo;   /* not on the stack: a worker thread may have 8 KB */
+
+/* Copy one tab- or newline-delimited field, stopping at the delimiter. */
+static TInt ReadField(const TDesC8& aRaw, TInt& aPos, char* aOut, TInt aCap)
+{
+    TInt n = 0;
+    while (aPos < aRaw.Length() && aRaw[aPos] != '\t' && aRaw[aPos] != '\n') {
+        if (n < aCap - 1) aOut[n++] = (char)aRaw[aPos];
+        aPos++;
+    }
+    aOut[n] = '\0';
+    return n;
+}
+
 TInt WhminiLoadPairs(TWhminiPair* aPairs, TInt aMax)
 {
     RFs fs;
     RFile file;
     TFileName path;
-    TBuf8<4096> raw;
     TInt count = 0, i = 0;
 
     if (fs.Connect() != KErrNone) return 0;
@@ -245,35 +261,38 @@ TInt WhminiLoadPairs(TWhminiPair* aPairs, TInt aMax)
         fs.Close();
         return 0;
     }
-    file.Read(raw);
+    file.Read(gPairsIo);
     file.Close();
     fs.Close();
 
-    while (i < raw.Length() && count < aMax) {
+    while (i < gPairsIo.Length() && count < aMax) {
         char secret[64];
-        TInt s = 0, n = 0;
-        while (i < raw.Length() && raw[i] != '\t' && raw[i] != '\n') {
-            if (s < (TInt)sizeof(secret) - 1) secret[s++] = (char)raw[i];
+        TInt s = ReadField(gPairsIo, i, secret, sizeof(secret));
+
+        aPairs[count].iName[0] = '\0';
+        aPairs[count].iLabel[0] = '\0';
+
+        if (i < gPairsIo.Length() && gPairsIo[i] == '\t') {
             i++;
-        }
-        secret[s] = '\0';
-        if (i < raw.Length() && raw[i] == '\t') {
-            i++;
-            while (i < raw.Length() && raw[i] != '\n') {
-                if (n < (TInt)sizeof(aPairs[count].iName) - 1)
-                    aPairs[count].iName[n++] = (char)raw[i];
+            ReadField(gPairsIo, i, aPairs[count].iName, sizeof(aPairs[count].iName));
+            if (i < gPairsIo.Length() && gPairsIo[i] == '\t') {
                 i++;
+                ReadField(gPairsIo, i, aPairs[count].iLabel, sizeof(aPairs[count].iLabel));
             }
-            aPairs[count].iName[n] = '\0';
             if (wh_base64url_decode(secret, (unsigned long)s, aPairs[count].iSecret,
                                     sizeof(aPairs[count].iSecret)) == 32) {
                 count++;
             }
         }
-        while (i < raw.Length() && raw[i] != '\n') i++;
+        while (i < gPairsIo.Length() && gPairsIo[i] != '\n') i++;
         i++;
     }
     return count;
+}
+
+const char* WhminiPairLabel(const TWhminiPair& aPair)
+{
+    return aPair.iLabel[0] ? aPair.iLabel : aPair.iName;
 }
 
 static TInt SavePairs(const TWhminiPair* aPairs, TInt aCount)
@@ -281,16 +300,22 @@ static TInt SavePairs(const TWhminiPair* aPairs, TInt aCount)
     RFs fs;
     RFile file;
     TFileName path;
-    TBuf8<4096> out;
     TInt i, err;
 
+    gPairsIo.Zero();
     for (i = 0; i < aCount; i++) {
         char b64[64];
         if (wh_base64url_encode(aPairs[i].iSecret, 32, b64, sizeof(b64)) < 0) return KErrGeneral;
-        out.Append(TPtrC8((const TUint8*)b64));
-        out.Append('\t');
-        out.Append(TPtrC8((const TUint8*)aPairs[i].iName));
-        out.Append('\n');
+        gPairsIo.Append(TPtrC8((const TUint8*)b64));
+        gPairsIo.Append('\t');
+        gPairsIo.Append(TPtrC8((const TUint8*)aPairs[i].iName));
+        /* Only written when there is one, so the file stays exactly as an
+         * older version would have left it until something is renamed. */
+        if (aPairs[i].iLabel[0]) {
+            gPairsIo.Append('\t');
+            gPairsIo.Append(TPtrC8((const TUint8*)aPairs[i].iLabel));
+        }
+        gPairsIo.Append('\n');
     }
 
     err = fs.Connect();
@@ -298,31 +323,47 @@ static TInt SavePairs(const TWhminiPair* aPairs, TInt aCount)
     err = PairsPath(fs, path);
     if (err == KErrNone) err = file.Replace(fs, path, EFileWrite);
     if (err == KErrNone) {
-        err = file.Write(out);
+        err = file.Write(gPairsIo);
         file.Close();
     }
     fs.Close();
     return err;
 }
 
-/* Static: sixteen pairings are about 2.5 KB, which does not belong on the
- * 8 KB stack of whichever thread happens to call. */
+/* Static: sixteen pairings are about 4.5 KB with a rename each, which does
+ * not belong on the 8 KB stack of whichever thread happens to call. */
 static TWhminiPair gPairs[KMaxPairs];
+
+/* A field may hold neither a tab nor a newline: one pairing is one line. */
+static void CopyClean(char* aDst, TInt aCap, const char* aSrc)
+{
+    TInt i;
+    for (i = 0; aSrc[i] && i < aCap - 1; i++) {
+        char ch = aSrc[i];
+        aDst[i] = (ch == '\t' || ch == '\n' || ch == '\r') ? ' ' : ch;
+    }
+    aDst[i] = '\0';
+}
 
 TInt WhminiAddPair(const char* aName, const unsigned char aSecret[32])
 {
     TInt count = WhminiLoadPairs(gPairs, KMaxPairs);
-    TInt i;
     if (count >= KMaxPairs) return KErrOverflow;
-    /* One pairing per line, so neither a tab nor a newline may survive into
-     * the name the peer chose for itself. */
-    for (i = 0; aName[i] && i < (TInt)sizeof(gPairs[count].iName) - 1; i++) {
-        char c = aName[i];
-        gPairs[count].iName[i] = (c == '\t' || c == '\n' || c == '\r') ? ' ' : c;
-    }
-    gPairs[count].iName[i] = '\0';
+    CopyClean(gPairs[count].iName, sizeof(gPairs[count].iName), aName);
+    gPairs[count].iLabel[0] = '\0';
     Mem::Copy(gPairs[count].iSecret, aSecret, 32);
     return SavePairs(gPairs, count + 1);
+}
+
+/* Rename a pairing locally. An empty label clears the rename, and the device
+ * goes back to the name it gave; iName is never touched. */
+TInt WhminiRenamePair(TInt aIndex, const char* aLabel)
+{
+    TInt count = WhminiLoadPairs(gPairs, KMaxPairs);
+    if (aIndex < 0 || aIndex >= count) return KErrNotFound;
+    CopyClean(gPairs[aIndex].iLabel, sizeof(gPairs[aIndex].iLabel), aLabel);
+    WhminiTrim(gPairs[aIndex].iLabel);
+    return SavePairs(gPairs, count);
 }
 
 TInt WhminiRemovePair(TInt aIndex)

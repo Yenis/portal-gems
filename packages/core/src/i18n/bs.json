@@ -83,7 +83,11 @@
     "receive": "Primi",
     "remove": "Ukloni",
     "removeConfirm": "Ukloniti ovaj uređaj? Možeš ga ponovo upariti kad god želiš.",
-    "empty": "Još nema uparenih uređaja."
+    "empty": "Još nema uparenih uređaja.",
+    "rename": "Preimenuj",
+    "renameTitle": "Preimenuj {{name}}",
+    "renameHint": "Ovaj naziv vrijedi samo na ovom uređaju. Ostavite prazno da se vratite na {{name}}.",
+    "renamePlaceholder": "Naziv za ovaj uređaj"
   },
   "paired": {
     "sendWaiting": "Čekam {{name}} - provjeri da li je PortalGems tamo otvoren…",
@@ -124,6 +128,13 @@
       "invalidUrl": "Unesi ispravnu adresu ili ostavi prazno da se koristi zadana.",
       "leaveBlankHint": "Ostavi polje prazno da za njega zadržiš javnu zadanu vrijednost.",
       "change": "Promijeni server"
+    },
+    "deviceName": {
+      "title": "Naziv uređaja",
+      "hint": "Ovako se ovaj uređaj predstavlja kada ga uparite s drugim. Već upareni uređaji zadržavaju naziv koji su zapamtili.",
+      "defaultLabel": "Zadano: {{name}}",
+      "placeholder": "Naziv za ovaj uređaj",
+      "reset": "Koristi zadano"
     }
   },
   "explain": {
@@ -156,7 +167,8 @@
     "retry": "Pokušaj ponovo",
     "accept": "Prihvati",
     "decline": "Odbij",
-    "gotIt": "U redu"
+    "gotIt": "U redu",
+    "save": "Sačuvaj"
   },
   "errors": {
     "title": "Nešto je pošlo po zlu",

@@ -24279,11 +24279,11 @@
     }
     return Uint8Array.from(out);
   }
-  function createPairingPayload(myDeviceName) {
+  function createPairingPayload(myDeviceName2) {
     return {
       t: "portalgems-pair",
       v: 1,
-      name: myDeviceName,
+      name: myDeviceName2,
       secret: toBase64Url(randomBytes(32))
     };
   }
@@ -24324,11 +24324,29 @@
     const hex = Array.from(mac.slice(4, 14)).map((b) => b.toString(16).padStart(2, "0")).join("");
     return `${nameplate}-${hex.slice(0, 10)}-${hex.slice(10, 20)}`;
   }
+  var DEVICE_NAME_MAX_BYTES = 60;
+  function sanitizeDeviceName(raw) {
+    const flattened = raw.replace(/[\u0000-\u001f\u007f]/g, " ").trim();
+    if (flattened.length === 0) return "";
+    let out = "";
+    let bytes = 0;
+    for (const ch of Array.from(flattened)) {
+      const size = utf8Encode(ch).length;
+      if (bytes + size > DEVICE_NAME_MAX_BYTES) break;
+      out += ch;
+      bytes += size;
+    }
+    return out.trim();
+  }
+  function deviceLabel(device) {
+    const label = device.label?.trim();
+    return label && label.length > 0 ? label : device.name;
+  }
   function newDeviceId() {
     return toBase64Url(randomBytes(9));
   }
-  function encodeHandshake(myDeviceName) {
-    return JSON.stringify({ v: 1, name: myDeviceName });
+  function encodeHandshake(myDeviceName2) {
+    return JSON.stringify({ v: 1, name: myDeviceName2 });
   }
   function parseHandshake(raw) {
     try {
@@ -27551,7 +27569,11 @@
       receive: "Primi",
       remove: "Ukloni",
       removeConfirm: "Ukloniti ovaj ure\u0111aj? Mo\u017Ee\u0161 ga ponovo upariti kad god \u017Eeli\u0161.",
-      empty: "Jo\u0161 nema uparenih ure\u0111aja."
+      empty: "Jo\u0161 nema uparenih ure\u0111aja.",
+      rename: "Preimenuj",
+      renameTitle: "Preimenuj {{name}}",
+      renameHint: "Ovaj naziv vrijedi samo na ovom ure\u0111aju. Ostavite prazno da se vratite na {{name}}.",
+      renamePlaceholder: "Naziv za ovaj ure\u0111aj"
     },
     paired: {
       sendWaiting: "\u010Cekam {{name}} - provjeri da li je PortalGems tamo otvoren\u2026",
@@ -27592,6 +27614,13 @@
         invalidUrl: "Unesi ispravnu adresu ili ostavi prazno da se koristi zadana.",
         leaveBlankHint: "Ostavi polje prazno da za njega zadr\u017Ei\u0161 javnu zadanu vrijednost.",
         change: "Promijeni server"
+      },
+      deviceName: {
+        title: "Naziv ure\u0111aja",
+        hint: "Ovako se ovaj ure\u0111aj predstavlja kada ga uparite s drugim. Ve\u0107 upareni ure\u0111aji zadr\u017Eavaju naziv koji su zapamtili.",
+        defaultLabel: "Zadano: {{name}}",
+        placeholder: "Naziv za ovaj ure\u0111aj",
+        reset: "Koristi zadano"
       }
     },
     explain: {
@@ -27624,7 +27653,8 @@
       retry: "Poku\u0161aj ponovo",
       accept: "Prihvati",
       decline: "Odbij",
-      gotIt: "U redu"
+      gotIt: "U redu",
+      save: "Sa\u010Duvaj"
     },
     errors: {
       title: "Ne\u0161to je po\u0161lo po zlu",
@@ -27737,7 +27767,11 @@
       receive: "Empfangen",
       remove: "Entfernen",
       removeConfirm: "Dieses Ger\xE4t entfernen? Du kannst es sp\xE4ter wieder koppeln.",
-      empty: "Noch keine gekoppelten Ger\xE4te."
+      empty: "Noch keine gekoppelten Ger\xE4te.",
+      rename: "Umbenennen",
+      renameTitle: "{{name}} umbenennen",
+      renameHint: "Dieser Name gilt nur auf diesem Ger\xE4t. Leer lassen, um wieder {{name}} zu verwenden.",
+      renamePlaceholder: "Name f\xFCr dieses Ger\xE4t"
     },
     paired: {
       sendWaiting: "Warte auf {{name}} - stelle sicher, dass PortalGems dort ge\xF6ffnet ist\u2026",
@@ -27778,6 +27812,13 @@
         invalidUrl: "Gib eine g\xFCltige Adresse ein oder lass das Feld leer, um die Standardeinstellung zu verwenden.",
         leaveBlankHint: "Lass ein Feld leer, um daf\xFCr den \xF6ffentlichen Standard zu behalten.",
         change: "Server \xE4ndern"
+      },
+      deviceName: {
+        title: "Ger\xE4tename",
+        hint: "So nennt sich dieses Ger\xE4t, wenn ihr es mit einem anderen koppelt. Bereits gekoppelte Ger\xE4te behalten den Namen, den sie kennen.",
+        defaultLabel: "Standard: {{name}}",
+        placeholder: "Name f\xFCr dieses Ger\xE4t",
+        reset: "Standard verwenden"
       }
     },
     explain: {
@@ -27810,7 +27851,8 @@
       retry: "Erneut versuchen",
       accept: "Annehmen",
       decline: "Ablehnen",
-      gotIt: "Verstanden"
+      gotIt: "Verstanden",
+      save: "Speichern"
     },
     errors: {
       title: "Etwas ist schiefgelaufen",
@@ -27923,7 +27965,11 @@
       receive: "Receive",
       remove: "Remove",
       removeConfirm: "Unpair this device? You can pair with it again later.",
-      empty: "No paired devices yet."
+      empty: "No paired devices yet.",
+      rename: "Rename",
+      renameTitle: "Rename {{name}}",
+      renameHint: "This name is only used on this device. Leave it empty to go back to {{name}}.",
+      renamePlaceholder: "Name for this device"
     },
     paired: {
       sendWaiting: "Waiting for {{name}} - make sure PortalGems is open there\u2026",
@@ -27943,7 +27989,8 @@
       retry: "Try again",
       accept: "Accept",
       decline: "Decline",
-      gotIt: "Got it"
+      gotIt: "Got it",
+      save: "Save"
     },
     settings: {
       title: "Settings",
@@ -27978,6 +28025,13 @@
         invalidUrl: "Enter a valid address, or leave blank to use the default.",
         leaveBlankHint: "Leave a field blank to keep the public default for it.",
         change: "Change server"
+      },
+      deviceName: {
+        title: "Device name",
+        hint: "What this device calls itself when you pair with another one. Devices you have already paired with keep the name they learned.",
+        defaultLabel: "Default: {{name}}",
+        placeholder: "Name for this device",
+        reset: "Use default"
       }
     },
     explain: {
@@ -28109,7 +28163,11 @@
       receive: "Recibir",
       remove: "Quitar",
       removeConfirm: "\xBFQuitar este dispositivo? Puedes volver a emparejarlo m\xE1s tarde.",
-      empty: "A\xFAn no hay dispositivos emparejados."
+      empty: "A\xFAn no hay dispositivos emparejados.",
+      rename: "Cambiar nombre",
+      renameTitle: "Cambiar el nombre de {{name}}",
+      renameHint: "Este nombre solo se usa en este dispositivo. D\xE9jalo vac\xEDo para volver a {{name}}.",
+      renamePlaceholder: "Nombre de este dispositivo"
     },
     paired: {
       sendWaiting: "Esperando a {{name}} - aseg\xFArate de que PortalGems est\xE9 abierto all\xED\u2026",
@@ -28150,6 +28208,13 @@
         invalidUrl: "Introduce una direcci\xF3n v\xE1lida o d\xE9jalo en blanco para usar el valor predeterminado.",
         leaveBlankHint: "Deja un campo en blanco para conservar el valor p\xFAblico predeterminado.",
         change: "Cambiar servidor"
+      },
+      deviceName: {
+        title: "Nombre del dispositivo",
+        hint: "As\xED se presenta este dispositivo al emparejarlo con otro. Los dispositivos ya emparejados conservan el nombre que aprendieron.",
+        defaultLabel: "Predeterminado: {{name}}",
+        placeholder: "Nombre de este dispositivo",
+        reset: "Usar predeterminado"
       }
     },
     explain: {
@@ -28182,7 +28247,8 @@
       retry: "Reintentar",
       accept: "Aceptar",
       decline: "Rechazar",
-      gotIt: "Entendido"
+      gotIt: "Entendido",
+      save: "Guardar"
     },
     errors: {
       title: "Algo sali\xF3 mal",
@@ -28295,7 +28361,11 @@
       receive: "Recevoir",
       remove: "Retirer",
       removeConfirm: "Retirer cet appareil ? Vous pourrez l'associer \xE0 nouveau plus tard.",
-      empty: "Aucun appareil associ\xE9 pour l'instant."
+      empty: "Aucun appareil associ\xE9 pour l'instant.",
+      rename: "Renommer",
+      renameTitle: "Renommer {{name}}",
+      renameHint: "Ce nom ne sert que sur cet appareil. Laissez vide pour revenir \xE0 {{name}}.",
+      renamePlaceholder: "Nom de cet appareil"
     },
     paired: {
       sendWaiting: "En attente de {{name}} - v\xE9rifiez que PortalGems y est ouvert\u2026",
@@ -28336,6 +28406,13 @@
         invalidUrl: "Saisissez une adresse valide, ou laissez vide pour utiliser la valeur par d\xE9faut.",
         leaveBlankHint: "Laissez un champ vide pour en conserver la valeur publique par d\xE9faut.",
         change: "Changer de serveur"
+      },
+      deviceName: {
+        title: "Nom de l'appareil",
+        hint: "Le nom que cet appareil donne lorsque vous l'associez \xE0 un autre. Les appareils d\xE9j\xE0 associ\xE9s gardent le nom qu'ils connaissent.",
+        defaultLabel: "Par d\xE9faut : {{name}}",
+        placeholder: "Nom de cet appareil",
+        reset: "Valeur par d\xE9faut"
       }
     },
     explain: {
@@ -28368,7 +28445,8 @@
       retry: "R\xE9essayer",
       accept: "Accepter",
       decline: "Refuser",
-      gotIt: "Compris"
+      gotIt: "Compris",
+      save: "Enregistrer"
     },
     errors: {
       title: "Un probl\xE8me est survenu",
@@ -28481,7 +28559,11 @@
       receive: "\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C",
       remove: "\u0423\u0434\u0430\u043B\u0438\u0442\u044C",
       removeConfirm: "\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u044D\u0442\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E? \u041F\u043E\u0437\u0436\u0435 \u0435\u0433\u043E \u043C\u043E\u0436\u043D\u043E \u0441\u0432\u044F\u0437\u0430\u0442\u044C \u0441\u043D\u043E\u0432\u0430.",
-      empty: "\u0421\u0432\u044F\u0437\u0430\u043D\u043D\u044B\u0445 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432 \u043F\u043E\u043A\u0430 \u043D\u0435\u0442."
+      empty: "\u0421\u0432\u044F\u0437\u0430\u043D\u043D\u044B\u0445 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432 \u043F\u043E\u043A\u0430 \u043D\u0435\u0442.",
+      rename: "\u041F\u0435\u0440\u0435\u0438\u043C\u0435\u043D\u043E\u0432\u0430\u0442\u044C",
+      renameTitle: "\u041F\u0435\u0440\u0435\u0438\u043C\u0435\u043D\u043E\u0432\u0430\u0442\u044C {{name}}",
+      renameHint: "\u042D\u0442\u043E \u0438\u043C\u044F \u0432\u0438\u0434\u043D\u043E \u0442\u043E\u043B\u044C\u043A\u043E \u043D\u0430 \u044D\u0442\u043E\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0435. \u041E\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u043F\u0443\u0441\u0442\u044B\u043C, \u0447\u0442\u043E\u0431\u044B \u0432\u0435\u0440\u043D\u0443\u0442\u044C {{name}}.",
+      renamePlaceholder: "\u0418\u043C\u044F \u044D\u0442\u043E\u0433\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430"
     },
     paired: {
       sendWaiting: "\u041E\u0436\u0438\u0434\u0430\u043D\u0438\u0435 {{name}} - \u0443\u0431\u0435\u0434\u0438\u0442\u0435\u0441\u044C, \u0447\u0442\u043E \u0442\u0430\u043C \u043E\u0442\u043A\u0440\u044B\u0442 PortalGems\u2026",
@@ -28522,6 +28604,13 @@
         invalidUrl: "\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u043A\u043E\u0440\u0440\u0435\u043A\u0442\u043D\u044B\u0439 \u0430\u0434\u0440\u0435\u0441 \u0438\u043B\u0438 \u043E\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u043F\u043E\u043B\u0435 \u043F\u0443\u0441\u0442\u044B\u043C, \u0447\u0442\u043E\u0431\u044B \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u044C \u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0435 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E.",
         leaveBlankHint: "\u041E\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u043F\u043E\u043B\u0435 \u043F\u0443\u0441\u0442\u044B\u043C, \u0447\u0442\u043E\u0431\u044B \u0441\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C \u0434\u043B\u044F \u043D\u0435\u0433\u043E \u043F\u0443\u0431\u043B\u0438\u0447\u043D\u043E\u0435 \u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0435 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E.",
         change: "\u0421\u043C\u0435\u043D\u0438\u0442\u044C \u0441\u0435\u0440\u0432\u0435\u0440"
+      },
+      deviceName: {
+        title: "\u0418\u043C\u044F \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430",
+        hint: "\u0422\u0430\u043A \u044D\u0442\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E \u043F\u0440\u0435\u0434\u0441\u0442\u0430\u0432\u043B\u044F\u0435\u0442\u0441\u044F \u043F\u0440\u0438 \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u0438 \u0441 \u0434\u0440\u0443\u0433\u0438\u043C. \u0423 \u0443\u0436\u0435 \u0441\u0432\u044F\u0437\u0430\u043D\u043D\u044B\u0445 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432 \u043E\u0441\u0442\u0430\u043D\u0435\u0442\u0441\u044F \u043F\u0440\u0435\u0436\u043D\u0435\u0435 \u0438\u043C\u044F.",
+        defaultLabel: "\u041F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E: {{name}}",
+        placeholder: "\u0418\u043C\u044F \u044D\u0442\u043E\u0433\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430",
+        reset: "\u041F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E"
       }
     },
     explain: {
@@ -28554,7 +28643,8 @@
       retry: "\u041F\u043E\u0432\u0442\u043E\u0440\u0438\u0442\u044C",
       accept: "\u041F\u0440\u0438\u043D\u044F\u0442\u044C",
       decline: "\u041E\u0442\u043A\u043B\u043E\u043D\u0438\u0442\u044C",
-      gotIt: "\u041F\u043E\u043D\u044F\u0442\u043D\u043E"
+      gotIt: "\u041F\u043E\u043D\u044F\u0442\u043D\u043E",
+      save: "\u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C"
     },
     errors: {
       title: "\u0427\u0442\u043E-\u0442\u043E \u043F\u043E\u0448\u043B\u043E \u043D\u0435 \u0442\u0430\u043A",
@@ -28667,6 +28757,15 @@
     await saveDevices(devices);
     return device;
   }
+  async function renameDevice(id, label) {
+    const clean2 = sanitizeDeviceName(label);
+    const devices = await loadDevices();
+    await saveDevices(
+      devices.map(
+        (d) => d.id === id ? { ...d, label: clean2.length > 0 ? clean2 : void 0 } : d
+      )
+    );
+  }
   async function removeDevice(id) {
     const devices = await loadDevices();
     await saveDevices(devices.filter((d) => d.id !== id));
@@ -28708,6 +28807,32 @@
     throw lastError;
   }
 
+  // src/renderer/devicename.ts
+  var KEY2 = "pg-device-name";
+  function loadDeviceNameOverride() {
+    try {
+      return sanitizeDeviceName(localStorage.getItem(KEY2) ?? "");
+    } catch {
+      return "";
+    }
+  }
+  function saveDeviceNameOverride(raw) {
+    const clean2 = sanitizeDeviceName(raw);
+    try {
+      if (clean2.length === 0) localStorage.removeItem(KEY2);
+      else localStorage.setItem(KEY2, clean2);
+    } catch {
+    }
+    return clean2;
+  }
+  async function defaultDeviceName() {
+    const host = await window.portalgems.deviceName();
+    return sanitizeDeviceName(host) || "PortalGems desktop";
+  }
+  async function myDeviceName() {
+    return loadDeviceNameOverride() || await defaultDeviceName();
+  }
+
   // src/renderer/theme.ts
   var import_react12 = __toESM(require_react());
   function loadThemeName() {
@@ -28736,25 +28861,25 @@
   }
 
   // src/renderer/downloads.ts
-  var KEY2 = "pg-download-dir";
+  var KEY3 = "pg-download-dir";
   function loadDownloadDir() {
-    const v = localStorage.getItem(KEY2);
+    const v = localStorage.getItem(KEY3);
     return v && v.trim() !== "" ? v : null;
   }
   function saveDownloadDir(dir2) {
-    if (dir2) localStorage.setItem(KEY2, dir2);
-    else localStorage.removeItem(KEY2);
+    if (dir2) localStorage.setItem(KEY3, dir2);
+    else localStorage.removeItem(KEY3);
   }
 
   // src/renderer/sendlocation.ts
-  var KEY3 = "pg-last-send-dir";
+  var KEY4 = "pg-last-send-dir";
   function loadLastSendDir() {
-    const v = localStorage.getItem(KEY3);
+    const v = localStorage.getItem(KEY4);
     return v && v.trim() !== "" ? v : null;
   }
   function rememberSendLocation(pickedPath) {
     const dir2 = parentDir(pickedPath);
-    if (dir2) localStorage.setItem(KEY3, dir2);
+    if (dir2) localStorage.setItem(KEY4, dir2);
   }
   function parentDir(p) {
     const i = Math.max(p.lastIndexOf("/"), p.lastIndexOf("\\"));
@@ -29090,13 +29215,18 @@
     c,
     value,
     onChange,
-    placeholder
+    onBlur,
+    placeholder,
+    // URLs and codes read better fixed-width, ordinary prose does not - a
+    // device name is prose.
+    monospace = true
   }) {
     return /* @__PURE__ */ import_react13.default.createElement(
       "input",
       {
         value,
         onChange: (e2) => onChange(e2.target.value),
+        onBlur,
         placeholder,
         spellCheck: false,
         style: {
@@ -29104,7 +29234,7 @@
           borderRadius: radius.md,
           padding: spacing(3),
           fontSize: fontSize.body,
-          fontFamily: "monospace",
+          fontFamily: monospace ? "monospace" : void 0,
           background: c.background,
           color: c.text,
           width: "100%",
@@ -29220,10 +29350,22 @@
         onSend({ kind: "folder", ...folder }, device);
       }
     };
+    const [renamingId, setRenamingId] = (0, import_react14.useState)(null);
+    const [renameValue, setRenameValue] = (0, import_react14.useState)("");
     const remove = (device) => {
-      if (window.confirm(`${t2("devices.remove")}: ${device.name}?`)) {
+      if (window.confirm(`${t2("devices.remove")}: ${deviceLabel(device)}?`)) {
         removeDevice(device.id).then(() => loadDevices().then(setDevices));
       }
+    };
+    const startRename = (device) => {
+      setRenamingId(device.id);
+      setRenameValue(device.label ?? "");
+    };
+    const commitRename = (device) => {
+      renameDevice(device.id, renameValue).then(() => {
+        setRenamingId(null);
+        loadDevices().then(setDevices);
+      });
     };
     return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c }, t2("app.name")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("home.tagline")), /* @__PURE__ */ import_react14.default.createElement("div", { style: { display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: spacing(2) } }, /* @__PURE__ */ import_react14.default.createElement(
       "a",
@@ -29245,30 +29387,58 @@
         key: device.id,
         style: { display: "flex", gap: spacing(2), alignItems: "center" }
       },
-      /* @__PURE__ */ import_react14.default.createElement(
+      renamingId === device.id ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ import_react14.default.createElement(
+        TextInput,
+        {
+          c,
+          value: renameValue,
+          onChange: setRenameValue,
+          placeholder: device.name,
+          monospace: false
+        }
+      )), /* @__PURE__ */ import_react14.default.createElement("div", { style: { width: 110 } }, /* @__PURE__ */ import_react14.default.createElement(
+        PrimaryButton,
+        {
+          c,
+          label: t2("common.save"),
+          onClick: () => commitRename(device)
+        }
+      )), /* @__PURE__ */ import_react14.default.createElement("div", { style: { width: 110 } }, /* @__PURE__ */ import_react14.default.createElement(
+        GhostButton,
+        {
+          c,
+          label: t2("common.cancel"),
+          onClick: () => setRenamingId(null)
+        }
+      ))) : /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(
         "span",
         {
-          style: { flex: 1, color: c.text, fontWeight: 600, overflow: "hidden" }
+          style: { flex: 1, color: c.text, fontWeight: 600, overflow: "hidden" },
+          title: device.label ? device.name : void 0
         },
-        device.name
-      ),
-      /* @__PURE__ */ import_react14.default.createElement("div", { style: { width: 110 } }, /* @__PURE__ */ import_react14.default.createElement(
+        deviceLabel(device)
+      ), /* @__PURE__ */ import_react14.default.createElement("div", { style: { width: 110 } }, /* @__PURE__ */ import_react14.default.createElement(
         PrimaryButton,
         {
           c,
           label: t2("devices.send"),
           onClick: () => pick(device)
         }
-      )),
-      /* @__PURE__ */ import_react14.default.createElement("div", { style: { width: 110 } }, /* @__PURE__ */ import_react14.default.createElement(
+      )), /* @__PURE__ */ import_react14.default.createElement("div", { style: { width: 110 } }, /* @__PURE__ */ import_react14.default.createElement(
         GhostButton,
         {
           c,
           label: t2("devices.receive"),
           onClick: () => onReceiveFrom(device)
         }
-      )),
-      /* @__PURE__ */ import_react14.default.createElement("div", { style: { width: 100 } }, /* @__PURE__ */ import_react14.default.createElement(
+      )), /* @__PURE__ */ import_react14.default.createElement("div", { style: { width: 110 } }, /* @__PURE__ */ import_react14.default.createElement(
+        GhostButton,
+        {
+          c,
+          label: t2("devices.rename"),
+          onClick: () => startRename(device)
+        }
+      )), /* @__PURE__ */ import_react14.default.createElement("div", { style: { width: 100 } }, /* @__PURE__ */ import_react14.default.createElement(
         GhostButton,
         {
           c,
@@ -29276,7 +29446,7 @@
           danger: true,
           onClick: () => remove(device)
         }
-      ))
+      )))
     )), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("home.pairNew"), onClick: onPair })), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("home.sendTitle")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("home.sendHint")), /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("home.sendButton"), onClick: () => pick() }), /* @__PURE__ */ import_react14.default.createElement(
       GhostButton,
       {
@@ -29410,14 +29580,14 @@
       count: item.fileCount,
       size: formatSize(item.totalBytes)
     }) : `${item.name} \xB7 ${formatSize(item.size)}`;
-    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("send.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, summary), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, phase === "starting" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.connecting")) : null, phase === "waiting" ? device ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("paired.sendWaiting", { name: device.name })) : /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("send.waitingForReceiver")), /* @__PURE__ */ import_react14.default.createElement(CodeBox, { c, code }), /* @__PURE__ */ import_react14.default.createElement(
+    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("send.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, summary), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, phase === "starting" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.connecting")) : null, phase === "waiting" ? device ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("paired.sendWaiting", { name: deviceLabel(device) })) : /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("send.waitingForReceiver")), /* @__PURE__ */ import_react14.default.createElement(CodeBox, { c, code }), /* @__PURE__ */ import_react14.default.createElement(
       PrimaryButton,
       {
         c,
         label: copied ? t2("send.codeCopied") : t2("send.copyCode"),
         onClick: copy2
       }
-    )) : null, phase === "transferring" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, item.kind === "text" ? t2("send.sendingText") : item.kind === "folder" ? t2("send.sendingFolder", { name: item.name }) : t2("send.sending", { name: item.name })), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, direct ? t2("transfer.direct") : t2("transfer.relay")), /* @__PURE__ */ import_react14.default.createElement(ProgressBar, { c, pct }), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("transfer.progress", { pct }))) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, item.kind === "text" ? t2("send.successText") : item.kind === "folder" ? t2("send.successFolder") : t2("send.success")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.success, margin: 0 } }, summary)) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "cancelled" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("errors.cancelled")) : null, phase === "peerNotOpen" && device ? /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, t2("paired.notOpen", { name: device.name })) : null), busy ? /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancel }) : phase === "error" && serverErr ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(
+    )) : null, phase === "transferring" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, item.kind === "text" ? t2("send.sendingText") : item.kind === "folder" ? t2("send.sendingFolder", { name: item.name }) : t2("send.sending", { name: item.name })), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, direct ? t2("transfer.direct") : t2("transfer.relay")), /* @__PURE__ */ import_react14.default.createElement(ProgressBar, { c, pct }), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("transfer.progress", { pct }))) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, item.kind === "text" ? t2("send.successText") : item.kind === "folder" ? t2("send.successFolder") : t2("send.success")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.success, margin: 0 } }, summary)) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "cancelled" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("errors.cancelled")) : null, phase === "peerNotOpen" && device ? /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, t2("paired.notOpen", { name: deviceLabel(device) })) : null), busy ? /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancel }) : phase === "error" && serverErr ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(
       PrimaryButton,
       {
         c,
@@ -29481,7 +29651,7 @@
               }
             }
           }
-          failed(new Error(t2("paired.nothingFound", { name: device.name })));
+          failed(new Error(t2("paired.nothingFound", { name: deviceLabel(device) })));
         })();
       } else if (code) {
         window.portalgems.requestReceive(id, code, currentServer()).then(gotOffer, failed);
@@ -29528,7 +29698,7 @@
       window.portalgems.cancel(idRef.current);
     };
     const busy = phase === "connecting" || phase === "transferring";
-    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("receive.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, device ? device.name : code), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, phase === "connecting" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, device ? t2("paired.receiveWaiting", { name: device.name }) : t2("receive.connecting")) : null, phase === "message" && offer?.text != null ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("text.received")), /* @__PURE__ */ import_react14.default.createElement(MessageBox, { c, text: offer.text }), /* @__PURE__ */ import_react14.default.createElement(
+    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("receive.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, device ? deviceLabel(device) : code), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, phase === "connecting" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, device ? t2("paired.receiveWaiting", { name: deviceLabel(device) }) : t2("receive.connecting")) : null, phase === "message" && offer?.text != null ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("text.received")), /* @__PURE__ */ import_react14.default.createElement(MessageBox, { c, text: offer.text }), /* @__PURE__ */ import_react14.default.createElement(
       PrimaryButton,
       {
         c,
@@ -29597,14 +29767,14 @@
       const id = nextId++;
       idRef.current = id;
       waitForPairingAsDisplayer(payload, id, () => cancelledRef.current).then(
-        (device) => succeed(device.name),
+        (device) => succeed(deviceLabel(device)),
         (e2) => {
           if (!cancelledRef.current) fail(e2);
         }
       );
     };
     const hostWithCode = async () => {
-      const myName = await window.portalgems.deviceName();
+      const myName = await myDeviceName();
       const payload = createPairingPayload(myName);
       const id = nextId++;
       idRef.current = id;
@@ -29630,7 +29800,7 @@
       awaitHandshake(payload);
     };
     const show = async () => {
-      const myName = await window.portalgems.deviceName();
+      const myName = await myDeviceName();
       const payload = createPairingPayload(myName);
       const encoded = encodePairingPayload(payload);
       setPayloadText(encoded);
@@ -29639,7 +29809,7 @@
       awaitHandshake(payload);
     };
     const completeWith = async (payload) => {
-      const myName = await window.portalgems.deviceName();
+      const myName = await myDeviceName();
       const id = nextId++;
       idRef.current = id;
       let timedOut = false;
@@ -29648,7 +29818,7 @@
         window.portalgems.cancel(id);
       }, 6e4);
       completePairingAsScanner(payload, myName, id).then(
-        (device) => succeed(device.name),
+        (device) => succeed(deviceLabel(device)),
         (e2) => {
           if (timedOut) fail(new Error(t2("paired.notOpen", { name: payload.name })));
           else if (!cancelledRef.current) fail(e2);
@@ -29754,6 +29924,11 @@
     const { t: t2, i18n } = useTranslation();
     const [server, setServer] = (0, import_react14.useState)(() => loadServerSettings());
     const [downloadDir, setDownloadDir] = (0, import_react14.useState)(() => loadDownloadDir());
+    const [deviceName, setDeviceName] = (0, import_react14.useState)(() => loadDeviceNameOverride());
+    const [hostName, setHostName] = (0, import_react14.useState)("");
+    (0, import_react14.useEffect)(() => {
+      defaultDeviceName().then(setHostName);
+    }, []);
     const chooseDownloadDir = async () => {
       const dir2 = await window.portalgems.pickDirectory();
       if (!dir2) return;
@@ -29820,7 +29995,30 @@
           background: themes[name].light.primary
         }
       }
-    ), /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.text } }, t2(`settings.themes.${name}`))), themeName === name ? /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.primary, fontWeight: 700 } }, "\u2713") : null))), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("settings.downloads.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("settings.downloads.hint")), /* @__PURE__ */ import_react14.default.createElement("div", { style: { ...row(false), cursor: "default" } }, /* @__PURE__ */ import_react14.default.createElement(
+    ), /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.text } }, t2(`settings.themes.${name}`))), themeName === name ? /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.primary, fontWeight: 700 } }, "\u2713") : null))), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("settings.deviceName.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("settings.deviceName.hint")), /* @__PURE__ */ import_react14.default.createElement(
+      TextInput,
+      {
+        c,
+        value: deviceName,
+        onChange: (v) => {
+          setDeviceName(v);
+          saveDeviceNameOverride(v);
+        },
+        onBlur: () => setDeviceName(saveDeviceNameOverride(deviceName)),
+        placeholder: hostName || t2("settings.deviceName.placeholder"),
+        monospace: false
+      }
+    ), deviceName.trim().length === 0 && hostName ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("settings.deviceName.defaultLabel", { name: hostName })) : null, deviceName.trim().length > 0 ? /* @__PURE__ */ import_react14.default.createElement(
+      GhostButton,
+      {
+        c,
+        label: t2("settings.deviceName.reset"),
+        onClick: () => {
+          saveDeviceNameOverride("");
+          setDeviceName("");
+        }
+      }
+    ) : null), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("settings.downloads.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("settings.downloads.hint")), /* @__PURE__ */ import_react14.default.createElement("div", { style: { ...row(false), cursor: "default" } }, /* @__PURE__ */ import_react14.default.createElement(
       "span",
       {
         style: {

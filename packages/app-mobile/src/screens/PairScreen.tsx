@@ -5,6 +5,7 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import QRCode from 'react-native-qrcode-svg';
 import { sendText } from 'wormhole-rn';
 import {
+  deviceLabel,
   classifyPairingInput,
   createPairingPayload,
   encodePairingPayload,
@@ -24,7 +25,8 @@ import {
   Title,
 } from '../components';
 import { friendlyError } from '../errors';
-import { deviceName, scanQr } from '../native';
+import { scanQr } from '../native';
+import { myDeviceName } from '../devicename';
 import {
   completePairingAsScanner,
   NotAnInvitationError,
@@ -68,15 +70,15 @@ export default function PairScreen({ onHome }: { onHome: () => void }) {
   // over a code - this side waits for its handshake on the derived codes.
   const awaitHandshake = (p: PairingPayload, controller: AbortController) => {
     waitForPairingAsDisplayer(p, controller.signal).then(
-      (device) => succeed(device.name),
+      (device) => succeed(deviceLabel(device)),
       (e) => {
         if (!controller.signal.aborted) fail(e);
       }
     );
   };
 
-  const show = () => {
-    const p = createPairingPayload(deviceName);
+  const show = async () => {
+    const p = createPairingPayload(await myDeviceName());
     setPayload(p);
     setPhase('showing');
     const controller = new AbortController();
@@ -89,7 +91,7 @@ export default function PairScreen({ onHome }: { onHome: () => void }) {
   // When the send completes the other device has the payload, exactly as if
   // it had scanned the QR code.
   const hostWithCode = async () => {
-    const p = createPairingPayload(deviceName);
+    const p = createPairingPayload(await myDeviceName());
     const controller = new AbortController();
     abortRef.current = controller;
     setPairCode('');
@@ -111,7 +113,8 @@ export default function PairScreen({ onHome }: { onHome: () => void }) {
     awaitHandshake(p, controller);
   };
 
-  const pairFromPayload = (p: PairingPayload) => {
+  const pairFromPayload = async (p: PairingPayload) => {
+    const myName = await myDeviceName();
     setPhase('working');
     const controller = new AbortController();
     abortRef.current = controller;
@@ -121,9 +124,9 @@ export default function PairScreen({ onHome }: { onHome: () => void }) {
       timedOut = true;
       controller.abort();
     }, 60_000);
-    completePairingAsScanner(p, deviceName, controller.signal)
+    completePairingAsScanner(p, myName, controller.signal)
       .then(
-        (device) => succeed(device.name),
+        (device) => succeed(deviceLabel(device)),
         (e) => {
           if (timedOut) fail(new Error(t('paired.notOpen', { name: p.name })));
           else if (!controller.signal.aborted) fail(e);
@@ -145,7 +148,7 @@ export default function PairScreen({ onHome }: { onHome: () => void }) {
       setPhase('error');
       return;
     }
-    pairFromPayload(p);
+    void pairFromPayload(p);
   };
 
   // One field takes either the code from the other device or a pasted
@@ -158,14 +161,14 @@ export default function PairScreen({ onHome }: { onHome: () => void }) {
       return;
     }
     if (input.kind === 'payload') {
-      pairFromPayload(input.payload);
+      void pairFromPayload(input.payload);
       return;
     }
     setPhase('working');
     const controller = new AbortController();
     abortRef.current = controller;
     try {
-      pairFromPayload(await receivePairingInvitation(input.code, controller.signal));
+      await pairFromPayload(await receivePairingInvitation(input.code, controller.signal));
     } catch (e) {
       if (controller.signal.aborted) return;
       if (e instanceof NotAnInvitationError) {
@@ -198,7 +201,7 @@ export default function PairScreen({ onHome }: { onHome: () => void }) {
       {phase === 'menu' || phase === 'scanning' ? (
         <>
           <Card>
-            <PrimaryButton label={t('pair.showButton')} onPress={show} />
+            <PrimaryButton label={t('pair.showButton')} onPress={() => void show()} />
             <PrimaryButton label={t('pair.scanButton')} onPress={scan} />
           </Card>
           <Card>

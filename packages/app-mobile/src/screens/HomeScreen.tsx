@@ -11,6 +11,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { pick } from '@react-native-documents/picker';
 import {
+  deviceLabel,
   fontSize,
   radius,
   spacing,
@@ -25,7 +26,7 @@ import {
   Title,
 } from '../components';
 import { copyToCache, pickSendFolder, type SendItem } from '../native';
-import { loadDevices, removeDevice } from '../pairing';
+import { loadDevices, removeDevice, renameDevice } from '../pairing';
 import { useTheme } from '../theme';
 
 // Codes look like "7-crossover-clockwork": numeric nameplate, dash, words.
@@ -89,8 +90,25 @@ export default function HomeScreen({
     }
   };
 
+  // A local rename, edited in the row itself: React Native has no prompt
+  // dialog on Android, and saving an empty field clears the rename so the
+  // device goes back to the name it gave when pairing.
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+
+  const startRename = (device: PairedDevice) => {
+    setRenamingId(device.id);
+    setRenameValue(device.label ?? '');
+  };
+  const commitRename = (device: PairedDevice) => {
+    renameDevice(device.id, renameValue).then(() => {
+      setRenamingId(null);
+      loadDevices().then(setDevices);
+    });
+  };
+
   const confirmRemove = (device: PairedDevice) => {
-    Alert.alert(device.name, t('devices.removeConfirm'), [
+    Alert.alert(deviceLabel(device), t('devices.removeConfirm'), [
       { text: t('common.cancel'), style: 'cancel' },
       {
         text: t('devices.remove'),
@@ -128,33 +146,76 @@ export default function HomeScreen({
         {devices.length === 0 ? <Muted>{t('home.devicesEmpty')}</Muted> : null}
         {devices.map((device) => (
           <View key={device.id} style={styles.device}>
-            <Text
-              numberOfLines={1}
-              style={{ color: c.text, fontSize: fontSize.body, fontWeight: '600' }}>
-              {device.name}
-            </Text>
-            <View style={styles.deviceRow}>
-              <View style={styles.deviceButton}>
-                <PrimaryButton
-                  label={t('devices.send')}
-                  onPress={() => pickFile(device)}
-                  disabled={picking}
+            {renamingId === device.id ? (
+              <>
+                <TextInput
+                  style={[
+                    styles.renameInput,
+                    { borderColor: c.border, color: c.text, backgroundColor: c.background },
+                  ]}
+                  value={renameValue}
+                  onChangeText={setRenameValue}
+                  placeholder={device.name}
+                  placeholderTextColor={c.textMuted}
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                  autoFocus
                 />
-              </View>
-              <View style={styles.deviceButton}>
-                <GhostButton
-                  label={t('devices.receive')}
-                  onPress={() => onReceiveFrom(device)}
-                />
-              </View>
-              <View style={styles.deviceButton}>
-                <GhostButton
-                  label={t('devices.remove')}
-                  danger
-                  onPress={() => confirmRemove(device)}
-                />
-              </View>
-            </View>
+                <Muted>{t('devices.renameHint', { name: device.name })}</Muted>
+                <View style={styles.deviceRow}>
+                  <View style={styles.deviceButton}>
+                    <PrimaryButton
+                      label={t('common.save')}
+                      onPress={() => commitRename(device)}
+                    />
+                  </View>
+                  <View style={styles.deviceButton}>
+                    <GhostButton
+                      label={t('common.cancel')}
+                      onPress={() => setRenamingId(null)}
+                    />
+                  </View>
+                </View>
+              </>
+            ) : (
+              <>
+                <Text
+                  numberOfLines={1}
+                  style={{ color: c.text, fontSize: fontSize.body, fontWeight: '600' }}>
+                  {deviceLabel(device)}
+                </Text>
+                <View style={styles.deviceRow}>
+                  <View style={styles.deviceButton}>
+                    <PrimaryButton
+                      label={t('devices.send')}
+                      onPress={() => pickFile(device)}
+                      disabled={picking}
+                    />
+                  </View>
+                  <View style={styles.deviceButton}>
+                    <GhostButton
+                      label={t('devices.receive')}
+                      onPress={() => onReceiveFrom(device)}
+                    />
+                  </View>
+                </View>
+                <View style={styles.deviceRow}>
+                  <View style={styles.deviceButton}>
+                    <GhostButton
+                      label={t('devices.rename')}
+                      onPress={() => startRename(device)}
+                    />
+                  </View>
+                  <View style={styles.deviceButton}>
+                    <GhostButton
+                      label={t('devices.remove')}
+                      danger
+                      onPress={() => confirmRemove(device)}
+                    />
+                  </View>
+                </View>
+              </>
+            )}
           </View>
         ))}
         <GhostButton label={t('home.pairNew')} onPress={onPair} />
@@ -237,6 +298,13 @@ const styles = StyleSheet.create({
     gap: spacing(2),
   },
   device: { gap: spacing(2) },
+  renameInput: {
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing(3),
+    paddingVertical: spacing(2),
+    fontSize: fontSize.body,
+  },
   deviceRow: {
     flexDirection: 'row',
     // Stretch, not center: if a translated label wraps to two lines the three
