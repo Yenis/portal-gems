@@ -132,7 +132,7 @@ TInt WhminiWorker(TAny* aPtr);
 
 /* Which server the phone is pointed at. The four fields below stay the
  * source of truth for connecting; this is a label over them, so a server.txt
- * written before 0.9.0 - which has no server_choice line - still works and
+ * written before 0.9.1 - which has no server_choice line - still works and
  * simply has its choice inferred from the host.
  *
  * The addresses differ from the other platforms on purpose: Symbian's TLS is
@@ -185,6 +185,6 @@ TBool WhminiLoadSettings(TWhminiSettings& aSettings);
 void WhminiSaveSettings(TWhminiSettings& aSettings);
 
 /* Shown in the app, and must match the version in sis/whmini.pkg. */
-#define WHMINI_VERSION "v0.9.0"
+#define WHMINI_VERSION "v0.9.1"
 
 #endif

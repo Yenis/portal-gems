@@ -5,9 +5,11 @@ All notable changes to PortalGems are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.3.4] - 2026-09-18
 
-PortalGems Mini (Symbian) 0.9.0 adds Options > Settings > Server: the same
+When a transfer goes wrong, the next one still works.
+
+PortalGems Mini (Symbian) 0.9.1 adds Options > Settings > Server: the same
 PortalGems / public / custom choice the other apps have, at cleartext
 addresses the phone can reach. It turns out the public magic-wormhole mailbox
 still answers plain WebSocket on port 4000, so a Symbian phone no longer
@@ -31,6 +33,8 @@ that is now corrected.
   partial file is now removed whenever a transfer does not finish, the file
   is saved under the name the sender offered, and anything left behind by the
   system killing the app mid-transfer is cleared at startup.
+
+[1.3.4]: https://github.com/Yenis/portal-gems/releases/tag/v1.3.4
 
 ## [1.3.3] - 2026-09-18
 

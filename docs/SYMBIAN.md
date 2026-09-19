@@ -806,7 +806,7 @@ Things worth knowing:
 
   The four manual fields remain the source of truth: the choice is a label
   derived from the addresses (`WhminiInferServerChoice`, re-derived on every
-  save), which is why a `server.txt` written before 0.9.0 - no
+  save), which is why a `server.txt` written before 0.9.1 - no
   `server_choice` line - loads with the right label anyway, and why typing a
   host by hand can never leave a stale "portalgems" on screen.
 - **Names.** Options > Settings > Device name is what this phone calls
