@@ -336,10 +336,13 @@ function Home({
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
 
+  // Removing is confirmed in the row itself, like a rename is edited there:
+  // the question sits next to the device it is about, in the app's own
+  // words, where window.confirm gave a bare system box.
+  const [removingId, setRemovingId] = useState<string | null>(null);
   const remove = (device: PairedDevice) => {
-    if (window.confirm(`${t('devices.remove')}: ${deviceLabel(device)}?`)) {
-      removeDevice(device.id).then(() => loadDevices().then(setDevices));
-    }
+    setRemovingId(null);
+    removeDevice(device.id).then(() => loadDevices().then(setDevices));
   };
 
   // A local rename, edited in place: Electron has no window.prompt, and a
@@ -408,7 +411,7 @@ function Home({
       key: 'remove',
       label: t('devices.remove'),
       danger: true,
-      onClick: () => remove(device),
+      onClick: () => setRemovingId(device.id),
     },
   ];
 
@@ -457,7 +460,38 @@ function Home({
               outline: dropId === device.id ? `2px dashed ${c.primary}` : 'none',
               outlineOffset: spacing(1),
             }}>
-            {renamingId === device.id ? (
+            {removingId === device.id ? (
+              <>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      color: c.text,
+                      fontWeight: 600,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}>
+                    {deviceLabel(device)}
+                  </div>
+                  <Muted c={c}>{t('devices.removeConfirm')}</Muted>
+                </div>
+                <div style={{ width: 110 }}>
+                  <GhostButton
+                    c={c}
+                    label={t('devices.remove')}
+                    danger
+                    onClick={() => remove(device)}
+                  />
+                </div>
+                <div style={{ width: 110 }}>
+                  <GhostButton
+                    c={c}
+                    label={t('common.cancel')}
+                    onClick={() => setRemovingId(null)}
+                  />
+                </div>
+              </>
+            ) : renamingId === device.id ? (
               <>
                 <div style={{ flex: 1 }}>
                   <TextInput

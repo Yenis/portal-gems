@@ -29592,10 +29592,10 @@
     };
     const [renamingId, setRenamingId] = (0, import_react14.useState)(null);
     const [renameValue, setRenameValue] = (0, import_react14.useState)("");
+    const [removingId, setRemovingId] = (0, import_react14.useState)(null);
     const remove = (device) => {
-      if (window.confirm(`${t2("devices.remove")}: ${deviceLabel(device)}?`)) {
-        removeDevice(device.id).then(() => loadDevices().then(setDevices));
-      }
+      setRemovingId(null);
+      removeDevice(device.id).then(() => loadDevices().then(setDevices));
     };
     const startRename = (device) => {
       setRenamingId(device.id);
@@ -29648,7 +29648,7 @@
         key: "remove",
         label: t2("devices.remove"),
         danger: true,
-        onClick: () => remove(device)
+        onClick: () => setRemovingId(device.id)
       }
     ];
     return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c }, t2("app.name")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("home.tagline")), /* @__PURE__ */ import_react14.default.createElement("div", { style: { display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: spacing(2) } }, /* @__PURE__ */ import_react14.default.createElement(
@@ -29691,7 +29691,34 @@
           outlineOffset: spacing(1)
         }
       },
-      renamingId === device.id ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ import_react14.default.createElement(
+      removingId === device.id ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement("div", { style: { flex: 1, minWidth: 0 } }, /* @__PURE__ */ import_react14.default.createElement(
+        "div",
+        {
+          style: {
+            color: c.text,
+            fontWeight: 600,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap"
+          }
+        },
+        deviceLabel(device)
+      ), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("devices.removeConfirm"))), /* @__PURE__ */ import_react14.default.createElement("div", { style: { width: 110 } }, /* @__PURE__ */ import_react14.default.createElement(
+        GhostButton,
+        {
+          c,
+          label: t2("devices.remove"),
+          danger: true,
+          onClick: () => remove(device)
+        }
+      )), /* @__PURE__ */ import_react14.default.createElement("div", { style: { width: 110 } }, /* @__PURE__ */ import_react14.default.createElement(
+        GhostButton,
+        {
+          c,
+          label: t2("common.cancel"),
+          onClick: () => setRemovingId(null)
+        }
+      ))) : renamingId === device.id ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ import_react14.default.createElement(
         TextInput,
         {
           c,
