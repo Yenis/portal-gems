@@ -29,7 +29,8 @@ enum TWhminiCommands
     EWhminiCmdServer,          /* cascade parent - never dispatched */
     EWhminiCmdServerPublic,
     EWhminiCmdServerPortalGems,
-    EWhminiCmdServerCustom
+    EWhminiCmdServerCustom,
+    EWhminiCmdHelp
     };
 
 /* Paired-device menus are filled in when they open, one item per pairing:

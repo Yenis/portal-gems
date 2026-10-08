@@ -17,7 +17,8 @@
     "receiveHint": "Saisissez le code que l'expéditeur vous a donné.",
     "receivePlaceholder": "p. ex. 7-crossover-clockwork",
     "receiveButton": "Recevoir",
-    "sendTextButton": "Écrire un message à envoyer"
+    "sendTextButton": "Écrire un message à envoyer",
+    "guideLink": "Guide d'utilisation"
   },
   "send": {
     "title": "Envoi",
@@ -159,6 +160,26 @@
       "placeholder": "Nom de cet appareil",
       "reset": "Valeur par défaut"
     }
+  },
+  "guide": {
+    "title": "Guide d'utilisation",
+    "intro": "Tout ce que PortalGems sait faire, au même endroit.",
+    "sendTitle": "Envoyer un fichier, un dossier ou un message",
+    "sendBody": "Sous Envoyer un fichier, choisissez un fichier, un dossier entier, ou écrivez un message. L'application affiche un code à usage unique - donnez-le à l'autre personne. Le transfert démarre dès qu'elle le saisit. Un dossier arrive comme un dossier, sous-dossiers compris.",
+    "receiveTitle": "Recevoir avec un code",
+    "receiveBody": "Saisissez le code donné par l'expéditeur et appuyez sur Recevoir. Vous voyez d'abord le nom et la taille, et pouvez accepter ou refuser. Si un élément du même nom existe déjà, vous choisissez de l'écraser ou de garder les deux. Un message est simplement affiché, prêt à être copié.",
+    "pairTitle": "Associer les appareils que vous utilisez souvent",
+    "pairBody": "Associer un nouvel appareil relie deux appareils une fois pour toutes, pour ne plus jamais saisir de code entre eux. Affichez un code QR sur l'un et scannez-le avec l'autre, ou utilisez un code d'association s'il n'y a pas de caméra. Juste après l'association, vous pouvez donner à l'appareil le nom de votre choix et essayer un premier transfert.",
+    "devicesTitle": "Envoyer à un appareil associé",
+    "devicesBody": "Chaque appareil associé a des boutons Envoyer et Recevoir : l'un appuie sur Envoyer, l'autre sur Recevoir à côté du nom de l'expéditeur. PortalGems doit être ouvert sur les deux. Appuyez sur le nom de l'appareil pour en voir plus - envoyer un dossier, envoyer un message, le renommer ou le retirer. Le dernier appareil utilisé est en haut, avec l'heure du dernier transfert.",
+    "shareTitle": "Partager depuis d'autres applications",
+    "shareBody": "Dans votre galerie ou votre gestionnaire de fichiers, choisissez Partager puis PortalGems. Vous pouvez alors envoyer le fichier à l'un de vos appareils associés, ou à n'importe qui avec un code à usage unique.",
+    "dropTitle": "Glisser-déposer",
+    "dropBody": "Déposez un fichier ou un dossier sur un appareil associé de la liste pour le lui envoyer aussitôt.",
+    "settingsTitle": "À votre façon",
+    "settingsBody": "Dans Paramètres, vous pouvez changer le nom que cet appareil donne lors de l'association, l'emplacement des fichiers reçus, la langue et le thème de couleur. Vous pouvez aussi y changer de serveur de connexion - les deux appareils doivent utiliser le même.",
+    "troubleTitle": "Si un transfert ne démarre pas",
+    "troubleBody": "Vérifiez que PortalGems est ouvert sur les deux appareils et que tous deux sont en ligne. Entre appareils associés, assurez-vous que les deux horloges sont à l'heure - les appareils s'en servent pour se retrouver. Un code à usage unique ne fonctionne qu'une fois : en cas de problème, relancez l'envoi pour en obtenir un nouveau."
   },
   "explain": {
     "title": "Comment ça marche",

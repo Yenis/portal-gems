@@ -19,6 +19,12 @@ themselves. No exceptions.
 - `README.md` is the public product page - keep it updated after every
   meaningful change (standing user instruction), and keep it free of
   development-status noise (it markets a finished app)
+- The in-app User guide lists every feature a user could miss - keep it
+  updated with each user-visible feature (standing user instruction):
+  `guide.*` in `packages/core/src/i18n/*.json` (all six languages), the
+  section lists in `app-mobile/src/screens/GuideScreen.tsx` and `Guide` in
+  `app-desktop/src/renderer/App.tsx`, and `KHelpText` (Options > Help) in
+  `packages/app-symbian/src/whminiapp.cpp`
 - Historical: `PLAN.md` (original plan) and `docs/phase*.md` (discovery notes)
 - User's typography preference: plain hyphens, no em-dashes, in repo docs
 - Engine: `native/wormhole-core` (Rust, uniffi) · desktop addon:

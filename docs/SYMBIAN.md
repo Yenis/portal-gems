@@ -809,6 +809,10 @@ Things worth knowing:
   save), which is why a `server.txt` written before 0.9.1 - no
   `server_choice` line - loads with the right label anyway, and why typing a
   host by hand can never leave a stale "portalgems" on screen.
+- **Options > Help** shows `KHelpText`, a plain list of what the menus can
+  do, in the scrolling dialog a received message uses. It is this phone's
+  version of the other apps' User guide and has to be kept up with the menus
+  by hand.
 - **A finished pairing offers the next step.** When a pairing job ends, the
   polling timer shows a list query once (`OfferFirstStepL`): Send to it,
   Receive from it, Rename it. Cancelling changes nothing - the same three

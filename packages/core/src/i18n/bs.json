@@ -17,7 +17,8 @@
     "receiveHint": "Unesi kod koji ti je poslao pošiljalac.",
     "receivePlaceholder": "npr. 7-crossover-clockwork",
     "receiveButton": "Primi",
-    "sendTextButton": "Napiši poruku za slanje"
+    "sendTextButton": "Napiši poruku za slanje",
+    "guideLink": "Uputstvo"
   },
   "send": {
     "title": "Slanje",
@@ -78,7 +79,7 @@
     "codeSectionHint": "Drugi uređaj nema kameru, recimo računar? Onda uparite pomoću koda.",
     "successHint": "Od sada je za slanje između ova dva uređaja dovoljan jedan dodir na svakoj strani.",
     "renamePrompt": "Želiš ga nazvati drugačije? Ime se koristi samo na ovom uređaju.",
-    "sendFirst": "Pošalji fajl na {{name}}",
+    "sendFirst": "Pošalji datoteku na {{name}}",
     "receiveFirst": "Primi sa {{name}}",
     "firstHint": "Da probaš odmah, jedno od vas dodirne Pošalji, a drugo Primi."
   },
@@ -95,8 +96,8 @@
     "renameTitle": "Preimenuj {{name}}",
     "renameHint": "Ovaj naziv vrijedi samo na ovom uređaju. Ostavite prazno da se vratite na {{name}}.",
     "renamePlaceholder": "Naziv za ovaj uređaj",
-    "dropHint": "Prevuci fajl ili folder na uređaj da ga pošalješ tamo.",
-    "dropOne": "Prevuci samo jedan fajl ili folder odjednom.",
+    "dropHint": "Prevuci datoteku ili folder na uređaj da ga pošalješ tamo.",
+    "dropOne": "Prevuci samo jednu datoteku ili folder odjednom.",
     "dropFailed": "To se nije moglo pročitati. Pokušaj ga odabrati dugmetom Pošalji.",
     "lastUsed": "Zadnji prijenos {{when}}",
     "lastUsedOn": "Zadnji prijenos {{date}}"
@@ -159,6 +160,26 @@
       "placeholder": "Naziv za ovaj uređaj",
       "reset": "Koristi zadano"
     }
+  },
+  "guide": {
+    "title": "Uputstvo",
+    "intro": "Sve što PortalGems može, na jednom mjestu.",
+    "sendTitle": "Pošalji datoteku, folder ili poruku",
+    "sendBody": "Pod Pošalji datoteku odaberi datoteku, cijeli folder ili napiši poruku. Aplikacija prikaže jednokratni kod - daj ga drugoj osobi. Prijenos počinje čim ga ona unese. Folder stiže kao folder, sa svim podfolderima.",
+    "receiveTitle": "Primi pomoću koda",
+    "receiveBody": "Upiši kod koji ti je dao pošiljalac i dodirni Primi. Prvo vidiš naziv i veličinu, pa možeš prihvatiti ili odbiti. Ako nešto s tim nazivom već postoji, biraš hoćeš li ga prepisati ili zadržati oboje. Poruka se jednostavno prikaže, spremna za kopiranje.",
+    "pairTitle": "Upari uređaje koje često koristiš",
+    "pairBody": "Upari novi uređaj povezuje dva uređaja jednom zauvijek, pa između njih više nikad ne kucaš kod. Prikaži QR kod na jednom i skeniraj ga drugim, ili koristi kod za uparivanje kad nema kamere. Odmah nakon uparivanja možeš uređaju dati svoje ime i isprobati prvi prijenos.",
+    "devicesTitle": "Pošalji na upareni uređaj",
+    "devicesBody": "Svaki upareni uređaj ima dugmad Pošalji i Primi: jedno od vas dodirne Pošalji, a drugo Primi pored imena pošiljaoca. PortalGems mora biti otvoren na oba. Dodirni ime uređaja za više - pošalji folder, pošalji poruku, preimenuj ga ili ukloni. Uređaj koji si zadnji koristio je na vrhu, s vremenom zadnjeg prijenosa.",
+    "shareTitle": "Dijeli iz drugih aplikacija",
+    "shareBody": "U galeriji ili upravitelju datoteka odaberi Dijeli, pa PortalGems. Zatim datoteku možeš poslati na jedan od uparenih uređaja, ili bilo kome pomoću jednokratnog koda.",
+    "dropTitle": "Prevuci i pusti",
+    "dropBody": "Prevuci datoteku ili folder na upareni uređaj u listi da ga odmah pošalješ tamo.",
+    "settingsTitle": "Prilagodi sebi",
+    "settingsBody": "U Postavkama možeš promijeniti ime koje ovaj uređaj daje pri uparivanju, gdje se spremaju primljene datoteke, jezik i temu boja. Tamo možeš promijeniti i server za povezivanje - oba uređaja moraju koristiti isti.",
+    "troubleTitle": "Ako prijenos ne počne",
+    "troubleBody": "Provjeri da je PortalGems otvoren na oba uređaja i da su oba na mreži. Kod uparenih uređaja provjeri da oba sata pokazuju tačno vrijeme - uređaji se pomoću njega pronalaze. Jednokratni kod vrijedi samo jednom: ako nešto pođe po zlu, pokreni slanje ponovo da dobiješ novi."
   },
   "explain": {
     "title": "Kako radi",

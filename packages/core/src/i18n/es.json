@@ -17,7 +17,8 @@
     "receiveHint": "Introduce el código que te dio el remitente.",
     "receivePlaceholder": "p. ej. 7-crossover-clockwork",
     "receiveButton": "Recibir",
-    "sendTextButton": "Escribir un mensaje para enviar"
+    "sendTextButton": "Escribir un mensaje para enviar",
+    "guideLink": "Guía de uso"
   },
   "send": {
     "title": "Enviando",
@@ -159,6 +160,26 @@
       "placeholder": "Nombre de este dispositivo",
       "reset": "Usar predeterminado"
     }
+  },
+  "guide": {
+    "title": "Guía de uso",
+    "intro": "Todo lo que PortalGems puede hacer, en un solo lugar.",
+    "sendTitle": "Enviar un archivo, una carpeta o un mensaje",
+    "sendBody": "En Enviar un archivo, elige un archivo, una carpeta entera o escribe un mensaje. La app muestra un código de un solo uso: dáselo a la otra persona. La transferencia empieza en cuanto lo introduce. Una carpeta llega como carpeta, con todas sus subcarpetas.",
+    "receiveTitle": "Recibir con un código",
+    "receiveBody": "Escribe el código que te dio quien envía y pulsa Recibir. Primero ves el nombre y el tamaño, y puedes aceptar o rechazar. Si ya existe algo con ese nombre, eliges entre sobrescribirlo o conservar ambos. Un mensaje simplemente se muestra, listo para copiar.",
+    "pairTitle": "Empareja los dispositivos que usas a menudo",
+    "pairBody": "Emparejar un dispositivo nuevo vincula dos dispositivos una sola vez, para no volver a escribir códigos entre ellos. Muestra un código QR en uno y escanéalo con el otro, o usa un código de emparejamiento si no hay cámara. Justo después de emparejar puedes darle al dispositivo un nombre a tu gusto y probar una primera transferencia.",
+    "devicesTitle": "Enviar a un dispositivo emparejado",
+    "devicesBody": "Cada dispositivo emparejado tiene los botones Enviar y Recibir: uno pulsa Enviar y el otro pulsa Recibir junto al nombre de quien envía. PortalGems debe estar abierto en ambos. Pulsa el nombre del dispositivo para ver más: enviar una carpeta, enviar un mensaje, cambiarle el nombre o quitarlo. El último que usaste aparece arriba, con la hora de la última transferencia.",
+    "shareTitle": "Compartir desde otras apps",
+    "shareBody": "En la galería o el gestor de archivos, elige Compartir y selecciona PortalGems. Después puedes enviar el archivo a uno de tus dispositivos emparejados, o a cualquiera con un código de un solo uso.",
+    "dropTitle": "Arrastrar y soltar",
+    "dropBody": "Suelta un archivo o una carpeta sobre un dispositivo emparejado de la lista para enviarlo allí al instante.",
+    "settingsTitle": "Hazlo tuyo",
+    "settingsBody": "En Ajustes puedes cambiar el nombre que este dispositivo da al emparejarse, dónde se guardan los archivos recibidos, el idioma y el tema de color. También puedes cambiar allí el servidor de conexión: ambos dispositivos deben usar el mismo.",
+    "troubleTitle": "Si una transferencia no empieza",
+    "troubleBody": "Comprueba que PortalGems está abierto en ambos dispositivos y que los dos tienen conexión. Entre dispositivos emparejados, asegúrate de que ambos relojes marcan la hora correcta: los dispositivos la usan para encontrarse. Un código de un solo uso funciona una única vez: si algo salió mal, vuelve a iniciar el envío para obtener uno nuevo."
   },
   "explain": {
     "title": "Cómo funciona",

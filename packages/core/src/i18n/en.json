@@ -17,7 +17,8 @@
     "receiveHint": "Enter the code the sender gave you.",
     "receivePlaceholder": "e.g. 7-crossover-clockwork",
     "receiveButton": "Receive",
-    "sendTextButton": "Write a message to send"
+    "sendTextButton": "Write a message to send",
+    "guideLink": "User guide"
   },
   "send": {
     "title": "Sending",
@@ -174,6 +175,26 @@
       "placeholder": "Name for this device",
       "reset": "Use default"
     }
+  },
+  "guide": {
+    "title": "User guide",
+    "intro": "Everything PortalGems can do, in one place.",
+    "sendTitle": "Send a file, a folder or a message",
+    "sendBody": "Under Send a file, choose a file, a whole folder, or write a message. The app shows a one-time code - give it to the other person. The transfer starts as soon as they enter it. A folder arrives as a folder, subfolders and all.",
+    "receiveTitle": "Receive with a code",
+    "receiveBody": "Type the code the sender gave you and tap Receive. You see the name and size first, and can accept or decline. If something with that name already exists, you choose whether to overwrite it or keep both. A message is simply shown, ready to copy.",
+    "pairTitle": "Pair the devices you use often",
+    "pairBody": "Pair a new device links two devices once, so you never type a code between them again. Show a QR code on one and scan it with the other, or use a pairing code when there is no camera. Right after pairing you can give the device a name of your own and try a first transfer.",
+    "devicesTitle": "Send to a paired device",
+    "devicesBody": "Every paired device has Send and Receive buttons: one of you taps Send, the other taps Receive next to the sender's name. PortalGems must be open on both. Tap the device's name for more - send a folder, send a message, rename it or remove it. The device you used last is at the top, with the time of your last transfer.",
+    "shareTitle": "Share from other apps",
+    "shareBody": "In your gallery or file manager, choose Share and pick PortalGems. You can then send the file to one of your paired devices, or to anyone with a one-time code.",
+    "dropTitle": "Drag and drop",
+    "dropBody": "Drop a file or a folder onto a paired device in the list to send it there straight away.",
+    "settingsTitle": "Make it yours",
+    "settingsBody": "In Settings you can change the name this device gives when pairing, where received files are saved, the language and the color theme. You can also switch the connection server there - both devices must use the same one.",
+    "troubleTitle": "If a transfer does not start",
+    "troubleBody": "Check that PortalGems is open on both devices and that both are online. Between paired devices, make sure both clocks show the right time - the devices use it to find each other. A one-time code works only once: if something went wrong, start the send again to get a fresh one."
   },
   "explain": {
     "title": "How it works",

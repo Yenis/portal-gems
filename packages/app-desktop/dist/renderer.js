@@ -27581,7 +27581,8 @@
       receiveHint: "Unesi kod koji ti je poslao po\u0161iljalac.",
       receivePlaceholder: "npr. 7-crossover-clockwork",
       receiveButton: "Primi",
-      sendTextButton: "Napi\u0161i poruku za slanje"
+      sendTextButton: "Napi\u0161i poruku za slanje",
+      guideLink: "Uputstvo"
     },
     send: {
       title: "Slanje",
@@ -27642,7 +27643,7 @@
       codeSectionHint: "Drugi ure\u0111aj nema kameru, recimo ra\u010Dunar? Onda uparite pomo\u0107u koda.",
       successHint: "Od sada je za slanje izme\u0111u ova dva ure\u0111aja dovoljan jedan dodir na svakoj strani.",
       renamePrompt: "\u017Deli\u0161 ga nazvati druga\u010Dije? Ime se koristi samo na ovom ure\u0111aju.",
-      sendFirst: "Po\u0161alji fajl na {{name}}",
+      sendFirst: "Po\u0161alji datoteku na {{name}}",
       receiveFirst: "Primi sa {{name}}",
       firstHint: "Da proba\u0161 odmah, jedno od vas dodirne Po\u0161alji, a drugo Primi."
     },
@@ -27659,8 +27660,8 @@
       renameTitle: "Preimenuj {{name}}",
       renameHint: "Ovaj naziv vrijedi samo na ovom ure\u0111aju. Ostavite prazno da se vratite na {{name}}.",
       renamePlaceholder: "Naziv za ovaj ure\u0111aj",
-      dropHint: "Prevuci fajl ili folder na ure\u0111aj da ga po\u0161alje\u0161 tamo.",
-      dropOne: "Prevuci samo jedan fajl ili folder odjednom.",
+      dropHint: "Prevuci datoteku ili folder na ure\u0111aj da ga po\u0161alje\u0161 tamo.",
+      dropOne: "Prevuci samo jednu datoteku ili folder odjednom.",
       dropFailed: "To se nije moglo pro\u010Ditati. Poku\u0161aj ga odabrati dugmetom Po\u0161alji.",
       lastUsed: "Zadnji prijenos {{when}}",
       lastUsedOn: "Zadnji prijenos {{date}}"
@@ -27723,6 +27724,26 @@
         placeholder: "Naziv za ovaj ure\u0111aj",
         reset: "Koristi zadano"
       }
+    },
+    guide: {
+      title: "Uputstvo",
+      intro: "Sve \u0161to PortalGems mo\u017Ee, na jednom mjestu.",
+      sendTitle: "Po\u0161alji datoteku, folder ili poruku",
+      sendBody: "Pod Po\u0161alji datoteku odaberi datoteku, cijeli folder ili napi\u0161i poruku. Aplikacija prika\u017Ee jednokratni kod - daj ga drugoj osobi. Prijenos po\u010Dinje \u010Dim ga ona unese. Folder sti\u017Ee kao folder, sa svim podfolderima.",
+      receiveTitle: "Primi pomo\u0107u koda",
+      receiveBody: "Upi\u0161i kod koji ti je dao po\u0161iljalac i dodirni Primi. Prvo vidi\u0161 naziv i veli\u010Dinu, pa mo\u017Ee\u0161 prihvatiti ili odbiti. Ako ne\u0161to s tim nazivom ve\u0107 postoji, bira\u0161 ho\u0107e\u0161 li ga prepisati ili zadr\u017Eati oboje. Poruka se jednostavno prika\u017Ee, spremna za kopiranje.",
+      pairTitle: "Upari ure\u0111aje koje \u010Desto koristi\u0161",
+      pairBody: "Upari novi ure\u0111aj povezuje dva ure\u0111aja jednom zauvijek, pa izme\u0111u njih vi\u0161e nikad ne kuca\u0161 kod. Prika\u017Ei QR kod na jednom i skeniraj ga drugim, ili koristi kod za uparivanje kad nema kamere. Odmah nakon uparivanja mo\u017Ee\u0161 ure\u0111aju dati svoje ime i isprobati prvi prijenos.",
+      devicesTitle: "Po\u0161alji na upareni ure\u0111aj",
+      devicesBody: "Svaki upareni ure\u0111aj ima dugmad Po\u0161alji i Primi: jedno od vas dodirne Po\u0161alji, a drugo Primi pored imena po\u0161iljaoca. PortalGems mora biti otvoren na oba. Dodirni ime ure\u0111aja za vi\u0161e - po\u0161alji folder, po\u0161alji poruku, preimenuj ga ili ukloni. Ure\u0111aj koji si zadnji koristio je na vrhu, s vremenom zadnjeg prijenosa.",
+      shareTitle: "Dijeli iz drugih aplikacija",
+      shareBody: "U galeriji ili upravitelju datoteka odaberi Dijeli, pa PortalGems. Zatim datoteku mo\u017Ee\u0161 poslati na jedan od uparenih ure\u0111aja, ili bilo kome pomo\u0107u jednokratnog koda.",
+      dropTitle: "Prevuci i pusti",
+      dropBody: "Prevuci datoteku ili folder na upareni ure\u0111aj u listi da ga odmah po\u0161alje\u0161 tamo.",
+      settingsTitle: "Prilagodi sebi",
+      settingsBody: "U Postavkama mo\u017Ee\u0161 promijeniti ime koje ovaj ure\u0111aj daje pri uparivanju, gdje se spremaju primljene datoteke, jezik i temu boja. Tamo mo\u017Ee\u0161 promijeniti i server za povezivanje - oba ure\u0111aja moraju koristiti isti.",
+      troubleTitle: "Ako prijenos ne po\u010Dne",
+      troubleBody: "Provjeri da je PortalGems otvoren na oba ure\u0111aja i da su oba na mre\u017Ei. Kod uparenih ure\u0111aja provjeri da oba sata pokazuju ta\u010Dno vrijeme - ure\u0111aji se pomo\u0107u njega pronalaze. Jednokratni kod vrijedi samo jednom: ako ne\u0161to po\u0111e po zlu, pokreni slanje ponovo da dobije\u0161 novi."
     },
     explain: {
       title: "Kako radi",
@@ -27802,7 +27823,8 @@
       receiveHint: "Gib den Code ein, den dir der Absender gegeben hat.",
       receivePlaceholder: "z. B. 7-crossover-clockwork",
       receiveButton: "Empfangen",
-      sendTextButton: "Nachricht schreiben und senden"
+      sendTextButton: "Nachricht schreiben und senden",
+      guideLink: "Anleitung"
     },
     send: {
       title: "Senden",
@@ -27945,6 +27967,26 @@
         reset: "Standard verwenden"
       }
     },
+    guide: {
+      title: "Anleitung",
+      intro: "Alles, was PortalGems kann, an einem Ort.",
+      sendTitle: "Eine Datei, einen Ordner oder eine Nachricht senden",
+      sendBody: "W\xE4hle unter Datei senden eine Datei, einen ganzen Ordner oder schreibe eine Nachricht. Die App zeigt einen Einmalcode - gib ihn der anderen Person. Die \xDCbertragung beginnt, sobald sie ihn eingibt. Ein Ordner kommt als Ordner an, mit allen Unterordnern.",
+      receiveTitle: "Mit einem Code empfangen",
+      receiveBody: "Gib den Code ein, den du vom Absender bekommen hast, und tippe auf Empfangen. Du siehst zuerst Name und Gr\xF6\xDFe und kannst annehmen oder ablehnen. Gibt es schon etwas mit diesem Namen, entscheidest du, ob es \xFCberschrieben wird oder beides bleibt. Eine Nachricht wird einfach angezeigt und l\xE4sst sich kopieren.",
+      pairTitle: "Ger\xE4te koppeln, die du oft nutzt",
+      pairBody: "Neues Ger\xE4t koppeln verbindet zwei Ger\xE4te einmalig, sodass du zwischen ihnen nie wieder einen Code eintippen musst. Zeige auf einem Ger\xE4t einen QR-Code und scanne ihn mit dem anderen, oder nutze einen Kopplungscode, wenn keine Kamera vorhanden ist. Direkt nach dem Koppeln kannst du dem Ger\xE4t einen eigenen Namen geben und eine erste \xDCbertragung ausprobieren.",
+      devicesTitle: "An ein gekoppeltes Ger\xE4t senden",
+      devicesBody: "Jedes gekoppelte Ger\xE4t hat die Schaltfl\xE4chen Senden und Empfangen: Einer tippt auf Senden, der andere auf Empfangen neben dem Namen des Absenders. PortalGems muss auf beiden ge\xF6ffnet sein. Tippe auf den Ger\xE4tenamen f\xFCr mehr - Ordner senden, Nachricht senden, umbenennen oder entfernen. Das zuletzt genutzte Ger\xE4t steht oben, mit dem Zeitpunkt der letzten \xDCbertragung.",
+      shareTitle: "Aus anderen Apps teilen",
+      shareBody: "W\xE4hle in der Galerie oder im Dateimanager Teilen und dann PortalGems. Du kannst die Datei an eines deiner gekoppelten Ger\xE4te senden oder mit einem Einmalcode an jeden.",
+      dropTitle: "Ziehen und Ablegen",
+      dropBody: "Ziehe eine Datei oder einen Ordner auf ein gekoppeltes Ger\xE4t in der Liste, um sie sofort dorthin zu senden.",
+      settingsTitle: "Nach deinem Geschmack",
+      settingsBody: "In den Einstellungen \xE4nderst du den Namen, den dieses Ger\xE4t beim Koppeln nennt, den Speicherort f\xFCr empfangene Dateien, die Sprache und das Farbschema. Dort kannst du auch den Verbindungsserver wechseln - beide Ger\xE4te m\xFCssen denselben verwenden.",
+      troubleTitle: "Wenn eine \xDCbertragung nicht startet",
+      troubleBody: "Pr\xFCfe, ob PortalGems auf beiden Ger\xE4ten ge\xF6ffnet ist und beide online sind. Bei gekoppelten Ger\xE4ten m\xFCssen beide Uhren richtig gehen - die Ger\xE4te finden einander dar\xFCber. Ein Einmalcode funktioniert nur einmal: Ist etwas schiefgegangen, starte das Senden neu, um einen frischen zu bekommen."
+    },
     explain: {
       title: "So funktioniert's",
       intro: "PortalGems nutzt das Magic-Wormhole-Protokoll - einen offenen Standard, um Dateien sicher von einem Ger\xE4t zum anderen zu \xFCbertragen. Hier erf\xE4hrst du, was dabei passiert und warum du dem vertrauen kannst.",
@@ -28023,7 +28065,8 @@
       receiveHint: "Enter the code the sender gave you.",
       receivePlaceholder: "e.g. 7-crossover-clockwork",
       receiveButton: "Receive",
-      sendTextButton: "Write a message to send"
+      sendTextButton: "Write a message to send",
+      guideLink: "User guide"
     },
     send: {
       title: "Sending",
@@ -28181,6 +28224,26 @@
         reset: "Use default"
       }
     },
+    guide: {
+      title: "User guide",
+      intro: "Everything PortalGems can do, in one place.",
+      sendTitle: "Send a file, a folder or a message",
+      sendBody: "Under Send a file, choose a file, a whole folder, or write a message. The app shows a one-time code - give it to the other person. The transfer starts as soon as they enter it. A folder arrives as a folder, subfolders and all.",
+      receiveTitle: "Receive with a code",
+      receiveBody: "Type the code the sender gave you and tap Receive. You see the name and size first, and can accept or decline. If something with that name already exists, you choose whether to overwrite it or keep both. A message is simply shown, ready to copy.",
+      pairTitle: "Pair the devices you use often",
+      pairBody: "Pair a new device links two devices once, so you never type a code between them again. Show a QR code on one and scan it with the other, or use a pairing code when there is no camera. Right after pairing you can give the device a name of your own and try a first transfer.",
+      devicesTitle: "Send to a paired device",
+      devicesBody: "Every paired device has Send and Receive buttons: one of you taps Send, the other taps Receive next to the sender's name. PortalGems must be open on both. Tap the device's name for more - send a folder, send a message, rename it or remove it. The device you used last is at the top, with the time of your last transfer.",
+      shareTitle: "Share from other apps",
+      shareBody: "In your gallery or file manager, choose Share and pick PortalGems. You can then send the file to one of your paired devices, or to anyone with a one-time code.",
+      dropTitle: "Drag and drop",
+      dropBody: "Drop a file or a folder onto a paired device in the list to send it there straight away.",
+      settingsTitle: "Make it yours",
+      settingsBody: "In Settings you can change the name this device gives when pairing, where received files are saved, the language and the color theme. You can also switch the connection server there - both devices must use the same one.",
+      troubleTitle: "If a transfer does not start",
+      troubleBody: "Check that PortalGems is open on both devices and that both are online. Between paired devices, make sure both clocks show the right time - the devices use it to find each other. A one-time code works only once: if something went wrong, start the send again to get a fresh one."
+    },
     explain: {
       title: "How it works",
       intro: "PortalGems uses the magic-wormhole protocol - an open standard for sending files safely from one device to another. Here is what happens under the hood, and why you can trust it.",
@@ -28244,7 +28307,8 @@
       receiveHint: "Introduce el c\xF3digo que te dio el remitente.",
       receivePlaceholder: "p. ej. 7-crossover-clockwork",
       receiveButton: "Recibir",
-      sendTextButton: "Escribir un mensaje para enviar"
+      sendTextButton: "Escribir un mensaje para enviar",
+      guideLink: "Gu\xEDa de uso"
     },
     send: {
       title: "Enviando",
@@ -28387,6 +28451,26 @@
         reset: "Usar predeterminado"
       }
     },
+    guide: {
+      title: "Gu\xEDa de uso",
+      intro: "Todo lo que PortalGems puede hacer, en un solo lugar.",
+      sendTitle: "Enviar un archivo, una carpeta o un mensaje",
+      sendBody: "En Enviar un archivo, elige un archivo, una carpeta entera o escribe un mensaje. La app muestra un c\xF3digo de un solo uso: d\xE1selo a la otra persona. La transferencia empieza en cuanto lo introduce. Una carpeta llega como carpeta, con todas sus subcarpetas.",
+      receiveTitle: "Recibir con un c\xF3digo",
+      receiveBody: "Escribe el c\xF3digo que te dio quien env\xEDa y pulsa Recibir. Primero ves el nombre y el tama\xF1o, y puedes aceptar o rechazar. Si ya existe algo con ese nombre, eliges entre sobrescribirlo o conservar ambos. Un mensaje simplemente se muestra, listo para copiar.",
+      pairTitle: "Empareja los dispositivos que usas a menudo",
+      pairBody: "Emparejar un dispositivo nuevo vincula dos dispositivos una sola vez, para no volver a escribir c\xF3digos entre ellos. Muestra un c\xF3digo QR en uno y escan\xE9alo con el otro, o usa un c\xF3digo de emparejamiento si no hay c\xE1mara. Justo despu\xE9s de emparejar puedes darle al dispositivo un nombre a tu gusto y probar una primera transferencia.",
+      devicesTitle: "Enviar a un dispositivo emparejado",
+      devicesBody: "Cada dispositivo emparejado tiene los botones Enviar y Recibir: uno pulsa Enviar y el otro pulsa Recibir junto al nombre de quien env\xEDa. PortalGems debe estar abierto en ambos. Pulsa el nombre del dispositivo para ver m\xE1s: enviar una carpeta, enviar un mensaje, cambiarle el nombre o quitarlo. El \xFAltimo que usaste aparece arriba, con la hora de la \xFAltima transferencia.",
+      shareTitle: "Compartir desde otras apps",
+      shareBody: "En la galer\xEDa o el gestor de archivos, elige Compartir y selecciona PortalGems. Despu\xE9s puedes enviar el archivo a uno de tus dispositivos emparejados, o a cualquiera con un c\xF3digo de un solo uso.",
+      dropTitle: "Arrastrar y soltar",
+      dropBody: "Suelta un archivo o una carpeta sobre un dispositivo emparejado de la lista para enviarlo all\xED al instante.",
+      settingsTitle: "Hazlo tuyo",
+      settingsBody: "En Ajustes puedes cambiar el nombre que este dispositivo da al emparejarse, d\xF3nde se guardan los archivos recibidos, el idioma y el tema de color. Tambi\xE9n puedes cambiar all\xED el servidor de conexi\xF3n: ambos dispositivos deben usar el mismo.",
+      troubleTitle: "Si una transferencia no empieza",
+      troubleBody: "Comprueba que PortalGems est\xE1 abierto en ambos dispositivos y que los dos tienen conexi\xF3n. Entre dispositivos emparejados, aseg\xFArate de que ambos relojes marcan la hora correcta: los dispositivos la usan para encontrarse. Un c\xF3digo de un solo uso funciona una \xFAnica vez: si algo sali\xF3 mal, vuelve a iniciar el env\xEDo para obtener uno nuevo."
+    },
     explain: {
       title: "C\xF3mo funciona",
       intro: "PortalGems usa el protocolo magic-wormhole - un est\xE1ndar abierto para enviar archivos de forma segura de un dispositivo a otro. Esto es lo que ocurre por dentro y por qu\xE9 puedes confiar en ello.",
@@ -28465,7 +28549,8 @@
       receiveHint: "Saisissez le code que l'exp\xE9diteur vous a donn\xE9.",
       receivePlaceholder: "p. ex. 7-crossover-clockwork",
       receiveButton: "Recevoir",
-      sendTextButton: "\xC9crire un message \xE0 envoyer"
+      sendTextButton: "\xC9crire un message \xE0 envoyer",
+      guideLink: "Guide d'utilisation"
     },
     send: {
       title: "Envoi",
@@ -28608,6 +28693,26 @@
         reset: "Valeur par d\xE9faut"
       }
     },
+    guide: {
+      title: "Guide d'utilisation",
+      intro: "Tout ce que PortalGems sait faire, au m\xEAme endroit.",
+      sendTitle: "Envoyer un fichier, un dossier ou un message",
+      sendBody: "Sous Envoyer un fichier, choisissez un fichier, un dossier entier, ou \xE9crivez un message. L'application affiche un code \xE0 usage unique - donnez-le \xE0 l'autre personne. Le transfert d\xE9marre d\xE8s qu'elle le saisit. Un dossier arrive comme un dossier, sous-dossiers compris.",
+      receiveTitle: "Recevoir avec un code",
+      receiveBody: "Saisissez le code donn\xE9 par l'exp\xE9diteur et appuyez sur Recevoir. Vous voyez d'abord le nom et la taille, et pouvez accepter ou refuser. Si un \xE9l\xE9ment du m\xEAme nom existe d\xE9j\xE0, vous choisissez de l'\xE9craser ou de garder les deux. Un message est simplement affich\xE9, pr\xEAt \xE0 \xEAtre copi\xE9.",
+      pairTitle: "Associer les appareils que vous utilisez souvent",
+      pairBody: "Associer un nouvel appareil relie deux appareils une fois pour toutes, pour ne plus jamais saisir de code entre eux. Affichez un code QR sur l'un et scannez-le avec l'autre, ou utilisez un code d'association s'il n'y a pas de cam\xE9ra. Juste apr\xE8s l'association, vous pouvez donner \xE0 l'appareil le nom de votre choix et essayer un premier transfert.",
+      devicesTitle: "Envoyer \xE0 un appareil associ\xE9",
+      devicesBody: "Chaque appareil associ\xE9 a des boutons Envoyer et Recevoir : l'un appuie sur Envoyer, l'autre sur Recevoir \xE0 c\xF4t\xE9 du nom de l'exp\xE9diteur. PortalGems doit \xEAtre ouvert sur les deux. Appuyez sur le nom de l'appareil pour en voir plus - envoyer un dossier, envoyer un message, le renommer ou le retirer. Le dernier appareil utilis\xE9 est en haut, avec l'heure du dernier transfert.",
+      shareTitle: "Partager depuis d'autres applications",
+      shareBody: "Dans votre galerie ou votre gestionnaire de fichiers, choisissez Partager puis PortalGems. Vous pouvez alors envoyer le fichier \xE0 l'un de vos appareils associ\xE9s, ou \xE0 n'importe qui avec un code \xE0 usage unique.",
+      dropTitle: "Glisser-d\xE9poser",
+      dropBody: "D\xE9posez un fichier ou un dossier sur un appareil associ\xE9 de la liste pour le lui envoyer aussit\xF4t.",
+      settingsTitle: "\xC0 votre fa\xE7on",
+      settingsBody: "Dans Param\xE8tres, vous pouvez changer le nom que cet appareil donne lors de l'association, l'emplacement des fichiers re\xE7us, la langue et le th\xE8me de couleur. Vous pouvez aussi y changer de serveur de connexion - les deux appareils doivent utiliser le m\xEAme.",
+      troubleTitle: "Si un transfert ne d\xE9marre pas",
+      troubleBody: "V\xE9rifiez que PortalGems est ouvert sur les deux appareils et que tous deux sont en ligne. Entre appareils associ\xE9s, assurez-vous que les deux horloges sont \xE0 l'heure - les appareils s'en servent pour se retrouver. Un code \xE0 usage unique ne fonctionne qu'une fois : en cas de probl\xE8me, relancez l'envoi pour en obtenir un nouveau."
+    },
     explain: {
       title: "Comment \xE7a marche",
       intro: "PortalGems utilise le protocole magic-wormhole - un standard ouvert pour envoyer des fichiers en toute s\xE9curit\xE9 d'un appareil \xE0 un autre. Voici ce qui se passe sous le capot, et pourquoi vous pouvez lui faire confiance.",
@@ -28686,7 +28791,8 @@
       receiveHint: "\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u043A\u043E\u0434, \u043A\u043E\u0442\u043E\u0440\u044B\u0439 \u0432\u0430\u043C \u0434\u0430\u043B \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u0435\u043B\u044C.",
       receivePlaceholder: "\u043D\u0430\u043F\u0440\u0438\u043C\u0435\u0440, 7-crossover-clockwork",
       receiveButton: "\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C",
-      sendTextButton: "\u041D\u0430\u043F\u0438\u0441\u0430\u0442\u044C \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435"
+      sendTextButton: "\u041D\u0430\u043F\u0438\u0441\u0430\u0442\u044C \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435",
+      guideLink: "\u0420\u0443\u043A\u043E\u0432\u043E\u0434\u0441\u0442\u0432\u043E"
     },
     send: {
       title: "\u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430",
@@ -28828,6 +28934,26 @@
         placeholder: "\u0418\u043C\u044F \u044D\u0442\u043E\u0433\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430",
         reset: "\u041F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E"
       }
+    },
+    guide: {
+      title: "\u0420\u0443\u043A\u043E\u0432\u043E\u0434\u0441\u0442\u0432\u043E",
+      intro: "\u0412\u0441\u0451, \u0447\u0442\u043E \u0443\u043C\u0435\u0435\u0442 PortalGems, \u0432 \u043E\u0434\u043D\u043E\u043C \u043C\u0435\u0441\u0442\u0435.",
+      sendTitle: "\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u0444\u0430\u0439\u043B, \u043F\u0430\u043F\u043A\u0443 \u0438\u043B\u0438 \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435",
+      sendBody: "\u0412 \u0440\u0430\u0437\u0434\u0435\u043B\u0435 \xAB\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u0444\u0430\u0439\u043B\xBB \u0432\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0444\u0430\u0439\u043B, \u0446\u0435\u043B\u0443\u044E \u043F\u0430\u043F\u043A\u0443 \u0438\u043B\u0438 \u043D\u0430\u043F\u0438\u0448\u0438\u0442\u0435 \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435. \u041F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435 \u043F\u043E\u043A\u0430\u0436\u0435\u0442 \u043E\u0434\u043D\u043E\u0440\u0430\u0437\u043E\u0432\u044B\u0439 \u043A\u043E\u0434 - \u043F\u0435\u0440\u0435\u0434\u0430\u0439\u0442\u0435 \u0435\u0433\u043E \u043F\u043E\u043B\u0443\u0447\u0430\u0442\u0435\u043B\u044E. \u041F\u0435\u0440\u0435\u0434\u0430\u0447\u0430 \u043D\u0430\u0447\u043D\u0451\u0442\u0441\u044F, \u043A\u0430\u043A \u0442\u043E\u043B\u044C\u043A\u043E \u043E\u043D \u0435\u0433\u043E \u0432\u0432\u0435\u0434\u0451\u0442. \u041F\u0430\u043F\u043A\u0430 \u043F\u0440\u0438\u0445\u043E\u0434\u0438\u0442 \u043F\u0430\u043F\u043A\u043E\u0439, \u0441\u043E \u0432\u0441\u0435\u043C\u0438 \u0432\u043B\u043E\u0436\u0435\u043D\u043D\u044B\u043C\u0438.",
+      receiveTitle: "\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C \u043F\u043E \u043A\u043E\u0434\u0443",
+      receiveBody: "\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u043A\u043E\u0434, \u043A\u043E\u0442\u043E\u0440\u044B\u0439 \u0434\u0430\u043B \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u0435\u043B\u044C, \u0438 \u043D\u0430\u0436\u043C\u0438\u0442\u0435 \xAB\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C\xBB. \u0421\u043D\u0430\u0447\u0430\u043B\u0430 \u0432\u044B \u0443\u0432\u0438\u0434\u0438\u0442\u0435 \u0438\u043C\u044F \u0438 \u0440\u0430\u0437\u043C\u0435\u0440 \u0438 \u0441\u043C\u043E\u0436\u0435\u0442\u0435 \u043F\u0440\u0438\u043D\u044F\u0442\u044C \u0438\u043B\u0438 \u043E\u0442\u043A\u043B\u043E\u043D\u0438\u0442\u044C. \u0415\u0441\u043B\u0438 \u0447\u0442\u043E-\u0442\u043E \u0441 \u0442\u0430\u043A\u0438\u043C \u0438\u043C\u0435\u043D\u0435\u043C \u0443\u0436\u0435 \u0435\u0441\u0442\u044C, \u0432\u044B \u0432\u044B\u0431\u0438\u0440\u0430\u0435\u0442\u0435: \u0437\u0430\u043C\u0435\u043D\u0438\u0442\u044C \u0438\u043B\u0438 \u0441\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C \u043E\u0431\u0430. \u0421\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435 \u043F\u0440\u043E\u0441\u0442\u043E \u043F\u043E\u043A\u0430\u0437\u044B\u0432\u0430\u0435\u0442\u0441\u044F, \u0435\u0433\u043E \u043C\u043E\u0436\u043D\u043E \u0441\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C.",
+      pairTitle: "\u0421\u0432\u044F\u0436\u0438\u0442\u0435 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430, \u043A\u043E\u0442\u043E\u0440\u044B\u043C\u0438 \u0447\u0430\u0441\u0442\u043E \u043F\u043E\u043B\u044C\u0437\u0443\u0435\u0442\u0435\u0441\u044C",
+      pairBody: "\xAB\u0421\u0432\u044F\u0437\u0430\u0442\u044C \u043D\u043E\u0432\u043E\u0435 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E\xBB \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u0435\u0442 \u0434\u0432\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u043E\u0434\u0438\u043D \u0440\u0430\u0437, \u0438 \u0431\u043E\u043B\u044C\u0448\u0435 \u0432\u0432\u043E\u0434\u0438\u0442\u044C \u043A\u043E\u0434\u044B \u043C\u0435\u0436\u0434\u0443 \u043D\u0438\u043C\u0438 \u043D\u0435 \u043D\u0443\u0436\u043D\u043E. \u041F\u043E\u043A\u0430\u0436\u0438\u0442\u0435 QR-\u043A\u043E\u0434 \u043D\u0430 \u043E\u0434\u043D\u043E\u043C \u0438 \u043E\u0442\u0441\u043A\u0430\u043D\u0438\u0440\u0443\u0439\u0442\u0435 \u0434\u0440\u0443\u0433\u0438\u043C, \u043B\u0438\u0431\u043E \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0439\u0442\u0435 \u043A\u043E\u0434 \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u044F, \u0435\u0441\u043B\u0438 \u043A\u0430\u043C\u0435\u0440\u044B \u043D\u0435\u0442. \u0421\u0440\u0430\u0437\u0443 \u043F\u043E\u0441\u043B\u0435 \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u044F \u043C\u043E\u0436\u043D\u043E \u0434\u0430\u0442\u044C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0443 \u0441\u0432\u043E\u0451 \u0438\u043C\u044F \u0438 \u043F\u043E\u043F\u0440\u043E\u0431\u043E\u0432\u0430\u0442\u044C \u043F\u0435\u0440\u0432\u0443\u044E \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0443.",
+      devicesTitle: "\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u043D\u0430 \u0441\u0432\u044F\u0437\u0430\u043D\u043D\u043E\u0435 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E",
+      devicesBody: "\u0423 \u043A\u0430\u0436\u0434\u043E\u0433\u043E \u0441\u0432\u044F\u0437\u0430\u043D\u043D\u043E\u0433\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u0435\u0441\u0442\u044C \u043A\u043D\u043E\u043F\u043A\u0438 \xAB\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C\xBB \u0438 \xAB\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C\xBB: \u043E\u0434\u0438\u043D \u043D\u0430\u0436\u0438\u043C\u0430\u0435\u0442 \xAB\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C\xBB, \u0434\u0440\u0443\u0433\u043E\u0439 - \xAB\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C\xBB \u0440\u044F\u0434\u043E\u043C \u0441 \u0438\u043C\u0435\u043D\u0435\u043C \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u0435\u043B\u044F. PortalGems \u0434\u043E\u043B\u0436\u0435\u043D \u0431\u044B\u0442\u044C \u043E\u0442\u043A\u0440\u044B\u0442 \u043D\u0430 \u043E\u0431\u043E\u0438\u0445. \u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u043D\u0430 \u0438\u043C\u044F \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430, \u0447\u0442\u043E\u0431\u044B \u0443\u0432\u0438\u0434\u0435\u0442\u044C \u0431\u043E\u043B\u044C\u0448\u0435: \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u043F\u0430\u043F\u043A\u0443, \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435, \u043F\u0435\u0440\u0435\u0438\u043C\u0435\u043D\u043E\u0432\u0430\u0442\u044C \u0438\u043B\u0438 \u0443\u0434\u0430\u043B\u0438\u0442\u044C. \u041F\u043E\u0441\u043B\u0435\u0434\u043D\u0435\u0435 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u043D\u043D\u043E\u0435 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E \u0441\u0442\u043E\u0438\u0442 \u043F\u0435\u0440\u0432\u044B\u043C, \u0441 \u0432\u0440\u0435\u043C\u0435\u043D\u0435\u043C \u043F\u043E\u0441\u043B\u0435\u0434\u043D\u0435\u0439 \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0438.",
+      shareTitle: "\u041F\u043E\u0434\u0435\u043B\u0438\u0442\u044C\u0441\u044F \u0438\u0437 \u0434\u0440\u0443\u0433\u0438\u0445 \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0439",
+      shareBody: "\u0412 \u0433\u0430\u043B\u0435\u0440\u0435\u0435 \u0438\u043B\u0438 \u0444\u0430\u0439\u043B\u043E\u0432\u043E\u043C \u043C\u0435\u043D\u0435\u0434\u0436\u0435\u0440\u0435 \u0432\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \xAB\u041F\u043E\u0434\u0435\u043B\u0438\u0442\u044C\u0441\u044F\xBB, \u0437\u0430\u0442\u0435\u043C PortalGems. \u041F\u043E\u0441\u043B\u0435 \u044D\u0442\u043E\u0433\u043E \u0444\u0430\u0439\u043B \u043C\u043E\u0436\u043D\u043E \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u043D\u0430 \u043E\u0434\u043D\u043E \u0438\u0437 \u0441\u0432\u044F\u0437\u0430\u043D\u043D\u044B\u0445 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432 \u0438\u043B\u0438 \u043A\u043E\u043C\u0443 \u0443\u0433\u043E\u0434\u043D\u043E \u043F\u043E \u043E\u0434\u043D\u043E\u0440\u0430\u0437\u043E\u0432\u043E\u043C\u0443 \u043A\u043E\u0434\u0443.",
+      dropTitle: "\u041F\u0435\u0440\u0435\u0442\u0430\u0441\u043A\u0438\u0432\u0430\u043D\u0438\u0435",
+      dropBody: "\u041F\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u0442\u0435 \u0444\u0430\u0439\u043B \u0438\u043B\u0438 \u043F\u0430\u043F\u043A\u0443 \u043D\u0430 \u0441\u0432\u044F\u0437\u0430\u043D\u043D\u043E\u0435 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E \u0432 \u0441\u043F\u0438\u0441\u043A\u0435, \u0447\u0442\u043E\u0431\u044B \u0441\u0440\u0430\u0437\u0443 \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C.",
+      settingsTitle: "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u0442\u0435 \u043F\u043E\u0434 \u0441\u0435\u0431\u044F",
+      settingsBody: "\u0412 \xAB\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0430\u0445\xBB \u043C\u043E\u0436\u043D\u043E \u0438\u0437\u043C\u0435\u043D\u0438\u0442\u044C \u0438\u043C\u044F, \u043A\u043E\u0442\u043E\u0440\u044B\u043C \u044D\u0442\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E \u043D\u0430\u0437\u044B\u0432\u0430\u0435\u0442\u0441\u044F \u043F\u0440\u0438 \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u0438, \u043C\u0435\u0441\u0442\u043E \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0438\u044F \u043F\u043E\u043B\u0443\u0447\u0435\u043D\u043D\u044B\u0445 \u0444\u0430\u0439\u043B\u043E\u0432, \u044F\u0437\u044B\u043A \u0438 \u0446\u0432\u0435\u0442\u043E\u0432\u0443\u044E \u0442\u0435\u043C\u0443. \u0422\u0430\u043C \u0436\u0435 \u043C\u043E\u0436\u043D\u043E \u0441\u043C\u0435\u043D\u0438\u0442\u044C \u0441\u0435\u0440\u0432\u0435\u0440 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u044F - \u043E\u0431\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u0434\u043E\u043B\u0436\u043D\u044B \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u044C \u043E\u0434\u0438\u043D \u0438 \u0442\u043E\u0442 \u0436\u0435.",
+      troubleTitle: "\u0415\u0441\u043B\u0438 \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0430 \u043D\u0435 \u043D\u0430\u0447\u0438\u043D\u0430\u0435\u0442\u0441\u044F",
+      troubleBody: "\u041F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435, \u0447\u0442\u043E PortalGems \u043E\u0442\u043A\u0440\u044B\u0442 \u043D\u0430 \u043E\u0431\u043E\u0438\u0445 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430\u0445 \u0438 \u043E\u0431\u0430 \u0432 \u0441\u0435\u0442\u0438. \u0414\u043B\u044F \u0441\u0432\u044F\u0437\u0430\u043D\u043D\u044B\u0445 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432 \u0443\u0431\u0435\u0434\u0438\u0442\u0435\u0441\u044C, \u0447\u0442\u043E \u0447\u0430\u0441\u044B \u043D\u0430 \u043E\u0431\u043E\u0438\u0445 \u0438\u0434\u0443\u0442 \u0432\u0435\u0440\u043D\u043E - \u043F\u043E \u043D\u0438\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u043D\u0430\u0445\u043E\u0434\u044F\u0442 \u0434\u0440\u0443\u0433 \u0434\u0440\u0443\u0433\u0430. \u041E\u0434\u043D\u043E\u0440\u0430\u0437\u043E\u0432\u044B\u0439 \u043A\u043E\u0434 \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442 \u043E\u0434\u0438\u043D \u0440\u0430\u0437: \u0435\u0441\u043B\u0438 \u0447\u0442\u043E-\u0442\u043E \u043F\u043E\u0448\u043B\u043E \u043D\u0435 \u0442\u0430\u043A, \u043D\u0430\u0447\u043D\u0438\u0442\u0435 \u043E\u0442\u043F\u0440\u0430\u0432\u043A\u0443 \u0437\u0430\u043D\u043E\u0432\u043E, \u0447\u0442\u043E\u0431\u044B \u043F\u043E\u043B\u0443\u0447\u0438\u0442\u044C \u043D\u043E\u0432\u044B\u0439."
     },
     explain: {
       title: "\u041A\u0430\u043A \u044D\u0442\u043E \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442",
@@ -29522,7 +29648,8 @@
           onReceiveFrom: (device) => navigate({ name: "receive", device }),
           onPair: () => navigate({ name: "pair" }),
           onSettings: () => navigate({ name: "settings" }),
-          onExplain: () => navigate({ name: "explain" })
+          onExplain: () => navigate({ name: "explain" }),
+          onGuide: () => navigate({ name: "guide" })
         }
       ) : route.name === "send" ? /* @__PURE__ */ import_react14.default.createElement(
         Send,
@@ -29549,7 +29676,7 @@
           onHome: goBack,
           scrollToServer: route.scrollToServer
         }
-      ) : route.name === "explain" ? /* @__PURE__ */ import_react14.default.createElement(Explain, { c, onHome: goBack }) : /* @__PURE__ */ import_react14.default.createElement(
+      ) : route.name === "explain" ? /* @__PURE__ */ import_react14.default.createElement(Explain, { c, onHome: goBack }) : route.name === "guide" ? /* @__PURE__ */ import_react14.default.createElement(Guide, { c, onHome: goBack }) : /* @__PURE__ */ import_react14.default.createElement(
         Pair,
         {
           c,
@@ -29568,7 +29695,8 @@
     onReceiveFrom,
     onPair,
     onSettings,
-    onExplain
+    onExplain,
+    onGuide
   }) {
     const { t: t2, i18n } = useTranslation();
     const [code, setCode] = (0, import_react14.useState)("");
@@ -29658,6 +29786,13 @@
         style: { color: c.primary, fontWeight: 600, cursor: "pointer" }
       },
       t2("home.explainLink")
+    ), /* @__PURE__ */ import_react14.default.createElement(
+      "a",
+      {
+        onClick: onGuide,
+        style: { color: c.primary, fontWeight: 600, cursor: "pointer" }
+      },
+      t2("home.guideLink")
     ), /* @__PURE__ */ import_react14.default.createElement(
       "a",
       {
@@ -30569,6 +30704,19 @@
     ), !isCustomServerUsable(server) ? /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.danger, fontSize: fontSize.small } }, t2("settings.server.invalidUrl")) : null) : null)), /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.done"), onClick: onHome }));
   }
   var EXPLAIN_SECTIONS = ["codes", "e2e", "direct", "servers", "choosing", "pairing", "limits"];
+  var GUIDE_SECTIONS = [
+    "send",
+    "receive",
+    "pair",
+    "devices",
+    "drop",
+    "settings",
+    "trouble"
+  ];
+  function Guide({ c, onHome }) {
+    const { t: t2 } = useTranslation();
+    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("guide.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("guide.intro")), GUIDE_SECTIONS.map((key) => /* @__PURE__ */ import_react14.default.createElement(Card, { key, c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2(`guide.${key}Title`)), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2(`guide.${key}Body`)))), /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.done"), onClick: onHome }));
+  }
   function Explain({ c, onHome }) {
     const { t: t2 } = useTranslation();
     return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("explain.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("explain.intro")), EXPLAIN_SECTIONS.map((key) => /* @__PURE__ */ import_react14.default.createElement(Card, { key, c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2(`explain.${key}Title`)), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2(`explain.${key}Body`)))), /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.done"), onClick: onHome }));

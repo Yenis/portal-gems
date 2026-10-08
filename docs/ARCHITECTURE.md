@@ -332,6 +332,11 @@ recursive size.
   also falls back to Downloads rather than failing an already-completed
   transfer. `pg:statTarget` powers the pre-accept same-name warning;
   `pg:accept` (explicit dir, pairing handshake) is unchanged.
+- User guide: `Guide` (desktop) and `GuideScreen` (mobile) render the
+  `guide.*` strings as titled cards, the same shape as the explainer. The
+  section list is per app because two entries are platform-specific: `share`
+  on the phone, `drop` on the desktop. Symbian's equivalent is `KHelpText`
+  behind Options > Help.
 - Drag and drop: a file or folder dropped on a paired device's row sends it
   there. `preload.ts` `dropped(file)` resolves the path with
   `webUtils.getPathForFile` (a renderer no longer sees `File.path`) and

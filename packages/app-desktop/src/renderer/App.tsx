@@ -179,7 +179,8 @@ type Route =
   | { name: 'receive'; code?: string; device?: PairedDevice }
   | { name: 'pair' }
   | { name: 'settings'; scrollToServer?: boolean }
-  | { name: 'explain' };
+  | { name: 'explain' }
+  | { name: 'guide' };
 
 export default function App() {
   const [themeName, setThemeNameState] = useState<ThemeName>(loadThemeName());
@@ -243,6 +244,7 @@ export default function App() {
           onPair={() => navigate({ name: 'pair' })}
           onSettings={() => navigate({ name: 'settings' })}
           onExplain={() => navigate({ name: 'explain' })}
+          onGuide={() => navigate({ name: 'guide' })}
         />
       ) : route.name === 'send' ? (
         <Send
@@ -272,6 +274,8 @@ export default function App() {
         />
       ) : route.name === 'explain' ? (
         <Explain c={c} onHome={goBack} />
+      ) : route.name === 'guide' ? (
+        <Guide c={c} onHome={goBack} />
       ) : (
         <Pair
           c={c}
@@ -299,6 +303,7 @@ function Home({
   onPair,
   onSettings,
   onExplain,
+  onGuide,
 }: {
   c: Palette;
   onSend: (item: SendItem, device?: PairedDevice) => void;
@@ -308,6 +313,7 @@ function Home({
   onPair: () => void;
   onSettings: () => void;
   onExplain: () => void;
+  onGuide: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const [code, setCode] = useState('');
@@ -424,6 +430,11 @@ function Home({
           onClick={onExplain}
           style={{ color: c.primary, fontWeight: 600, cursor: 'pointer' }}>
           {t('home.explainLink')}
+        </a>
+        <a
+          onClick={onGuide}
+          style={{ color: c.primary, fontWeight: 600, cursor: 'pointer' }}>
+          {t('home.guideLink')}
         </a>
         <a
           onClick={onSettings}
@@ -1765,6 +1776,36 @@ function Settings({
 }
 
 const EXPLAIN_SECTIONS = ['codes', 'e2e', 'direct', 'servers', 'choosing', 'pairing', 'limits'] as const;
+
+// What the app can do, as opposed to Explain's how and why. A feature a user
+// could miss belongs here; 'drop' is this platform's own entry, where the
+// phone has 'share'.
+const GUIDE_SECTIONS = [
+  'send',
+  'receive',
+  'pair',
+  'devices',
+  'drop',
+  'settings',
+  'trouble',
+] as const;
+
+function Guide({ c, onHome }: { c: Palette; onHome: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <Title c={c} onBack={onHome}>{t('guide.title')}</Title>
+      <Muted c={c}>{t('guide.intro')}</Muted>
+      {GUIDE_SECTIONS.map((key) => (
+        <Card key={key} c={c}>
+          <Subtitle c={c}>{t(`guide.${key}Title`)}</Subtitle>
+          <Muted c={c}>{t(`guide.${key}Body`)}</Muted>
+        </Card>
+      ))}
+      <PrimaryButton c={c} label={t('common.done')} onClick={onHome} />
+    </>
+  );
+}
 
 function Explain({ c, onHome }: { c: Palette; onHome: () => void }) {
   const { t } = useTranslation();

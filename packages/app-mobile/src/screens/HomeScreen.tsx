@@ -42,6 +42,7 @@ export default function HomeScreen({
   onPair,
   onSettings,
   onExplain,
+  onGuide,
 }: {
   onSend: (item: SendItem, device?: PairedDevice) => void;
   onCompose: (device?: PairedDevice) => void;
@@ -50,6 +51,7 @@ export default function HomeScreen({
   onPair: () => void;
   onSettings: () => void;
   onExplain: () => void;
+  onGuide: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const c = useTheme();
@@ -166,6 +168,11 @@ export default function HomeScreen({
         <Pressable onPress={onExplain}>
           <Text style={{ color: c.primary, fontSize: fontSize.body, fontWeight: '600' }}>
             {t('home.explainLink')}
+          </Text>
+        </Pressable>
+        <Pressable onPress={onGuide}>
+          <Text style={{ color: c.primary, fontSize: fontSize.body, fontWeight: '600' }}>
+            {t('home.guideLink')}
           </Text>
         </Pressable>
         <Pressable onPress={onSettings}>

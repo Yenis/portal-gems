@@ -111,6 +111,7 @@ PortalGems takes a different approach, inherited from magic-wormhole:
 | Device pairing | Scan a QR once; from then on, transfers need only a confirmation tap |
 | Drag and drop | On the desktop, drop a file or folder on a paired device to send it there |
 | Share-sheet integration | "Share → PortalGems" from any Android app, then pick a paired device or a one-time code |
+| Built-in user guide | Every feature on one page, in the app, in your language |
 | 6 languages | English, Deutsch, Bosanski, Русский, Français, Español |
 | 5 gem themes | Diamond, Sapphire, Emerald, Ruby, Amethyst - each in light & dark |
 | No accounts | No backend of ours, no cloud, everything stored locally |

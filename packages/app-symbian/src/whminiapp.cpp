@@ -130,6 +130,7 @@ private:
     void CancelTransferL();
     void StartSendTextL();
     void ShowMessageL();
+    void ShowHelpL();
     void DynInitMenuPaneL(TInt aResourceId, CEikMenuPane* aMenuPane);
     void LaunchJobL();
     void StartPairHostL();
@@ -553,6 +554,43 @@ TInt CWhminiAppUi::Tick(TAny* aSelf)
             }
         }
     return 0;
+    }
+
+/* Everything the application can do, for someone who has not gone through
+ * every menu. The other apps have a User guide screen; this is the same
+ * list, in the scrolling dialog a received message uses. A feature added to
+ * the menus belongs here too. */
+_LIT(KHelpText,
+    "SEND\n"
+    "Options > Send file, Send folder or Send message. A code appears - "
+    "give it to the other person.\n\n"
+    "RECEIVE\n"
+    "Options > Receive file, then type the sender's code. Files are saved "
+    "to E:\\PortalGems.\n\n"
+    "PAIR\n"
+    "Options > Pair a device. One device shows a code and the other enters "
+    "it. After that the two need no codes.\n\n"
+    "PAIRED DEVICES\n"
+    "Options > Send to paired device, pick the device, then File, Folder or "
+    "Message; the other side chooses Receive from you. To get something, "
+    "use Receive from paired. PortalGems must be open on both. The device "
+    "used last is listed first.\n\n"
+    "RENAME, REMOVE\n"
+    "Options > Rename paired device, Remove paired device. A rename is "
+    "only seen on this phone.\n\n"
+    "SETTINGS\n"
+    "Server, device name and direct connections.\n\n"
+    "IF IT FAILS\n"
+    "Check that both apps are open and that this phone's clock is right - "
+    "paired devices find each other by the time.");
+
+void CWhminiAppUi::ShowHelpL()
+    {
+    HBufC* text = KHelpText().AllocLC();
+    TPtr ptr = text->Des();
+    CAknMessageQueryDialog* dlg = CAknMessageQueryDialog::NewL(ptr);
+    dlg->ExecuteLD(R_WHMINI_MESSAGE_QUERY);
+    CleanupStack::PopAndDestroy(text);
     }
 
 /* What to do with the device that was just paired. The order of the cases is
@@ -1177,6 +1215,9 @@ void CWhminiAppUi::HandleCommandL(TInt aCommand)
             break;
         case EWhminiCmdShowMessage:
             ShowMessageL();
+            break;
+        case EWhminiCmdHelp:
+            ShowHelpL();
             break;
         case EWhminiCmdPairHost:
             StartPairHostL();

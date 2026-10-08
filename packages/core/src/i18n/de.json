@@ -17,7 +17,8 @@
     "receiveHint": "Gib den Code ein, den dir der Absender gegeben hat.",
     "receivePlaceholder": "z. B. 7-crossover-clockwork",
     "receiveButton": "Empfangen",
-    "sendTextButton": "Nachricht schreiben und senden"
+    "sendTextButton": "Nachricht schreiben und senden",
+    "guideLink": "Anleitung"
   },
   "send": {
     "title": "Senden",
@@ -159,6 +160,26 @@
       "placeholder": "Name für dieses Gerät",
       "reset": "Standard verwenden"
     }
+  },
+  "guide": {
+    "title": "Anleitung",
+    "intro": "Alles, was PortalGems kann, an einem Ort.",
+    "sendTitle": "Eine Datei, einen Ordner oder eine Nachricht senden",
+    "sendBody": "Wähle unter Datei senden eine Datei, einen ganzen Ordner oder schreibe eine Nachricht. Die App zeigt einen Einmalcode - gib ihn der anderen Person. Die Übertragung beginnt, sobald sie ihn eingibt. Ein Ordner kommt als Ordner an, mit allen Unterordnern.",
+    "receiveTitle": "Mit einem Code empfangen",
+    "receiveBody": "Gib den Code ein, den du vom Absender bekommen hast, und tippe auf Empfangen. Du siehst zuerst Name und Größe und kannst annehmen oder ablehnen. Gibt es schon etwas mit diesem Namen, entscheidest du, ob es überschrieben wird oder beides bleibt. Eine Nachricht wird einfach angezeigt und lässt sich kopieren.",
+    "pairTitle": "Geräte koppeln, die du oft nutzt",
+    "pairBody": "Neues Gerät koppeln verbindet zwei Geräte einmalig, sodass du zwischen ihnen nie wieder einen Code eintippen musst. Zeige auf einem Gerät einen QR-Code und scanne ihn mit dem anderen, oder nutze einen Kopplungscode, wenn keine Kamera vorhanden ist. Direkt nach dem Koppeln kannst du dem Gerät einen eigenen Namen geben und eine erste Übertragung ausprobieren.",
+    "devicesTitle": "An ein gekoppeltes Gerät senden",
+    "devicesBody": "Jedes gekoppelte Gerät hat die Schaltflächen Senden und Empfangen: Einer tippt auf Senden, der andere auf Empfangen neben dem Namen des Absenders. PortalGems muss auf beiden geöffnet sein. Tippe auf den Gerätenamen für mehr - Ordner senden, Nachricht senden, umbenennen oder entfernen. Das zuletzt genutzte Gerät steht oben, mit dem Zeitpunkt der letzten Übertragung.",
+    "shareTitle": "Aus anderen Apps teilen",
+    "shareBody": "Wähle in der Galerie oder im Dateimanager Teilen und dann PortalGems. Du kannst die Datei an eines deiner gekoppelten Geräte senden oder mit einem Einmalcode an jeden.",
+    "dropTitle": "Ziehen und Ablegen",
+    "dropBody": "Ziehe eine Datei oder einen Ordner auf ein gekoppeltes Gerät in der Liste, um sie sofort dorthin zu senden.",
+    "settingsTitle": "Nach deinem Geschmack",
+    "settingsBody": "In den Einstellungen änderst du den Namen, den dieses Gerät beim Koppeln nennt, den Speicherort für empfangene Dateien, die Sprache und das Farbschema. Dort kannst du auch den Verbindungsserver wechseln - beide Geräte müssen denselben verwenden.",
+    "troubleTitle": "Wenn eine Übertragung nicht startet",
+    "troubleBody": "Prüfe, ob PortalGems auf beiden Geräten geöffnet ist und beide online sind. Bei gekoppelten Geräten müssen beide Uhren richtig gehen - die Geräte finden einander darüber. Ein Einmalcode funktioniert nur einmal: Ist etwas schiefgegangen, starte das Senden neu, um einen frischen zu bekommen."
   },
   "explain": {
     "title": "So funktioniert's",
