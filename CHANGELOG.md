@@ -5,6 +5,60 @@ All notable changes to PortalGems are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.5] - 2026-10-08
+
+Paired devices, without the detours.
+
+PortalGems Mini (Symbian) 0.10.0 catches up on the same ground: a paired
+device can be sent a folder or a message as well as a file, a finished
+pairing offers the first transfer and a rename, the paired menus list the
+device used last first, and Options > Help says what every menu does.
+
+### Added
+
+- **Send a folder or a message to a paired device.** Until now a paired
+  device only took a single file; folders and messages needed a one-time
+  code. Open a device's row on the desktop or Android and both are there. On
+  Symbian, choosing a device under Send to paired device now asks: File,
+  Folder or Message.
+
+- **Share to a paired device on Android.** "Share -> PortalGems" from the
+  gallery or a file manager used to go straight to a one-time code. With
+  paired devices it now asks where to send: one of them, or a code.
+
+- **Drag and drop on the desktop.** Drop a file or a folder on a paired
+  device to send it there.
+
+- **A pairing that ends somewhere useful.** "Paired!" is now followed by the
+  two things people do next: give the device a name of your own, and try a
+  first transfer, in either direction.
+
+- **Most recently used first.** Paired devices are listed by when you last
+  transferred with them, and the desktop and Android show that time under
+  the name.
+
+- **A user guide in every app.** Everything the app can do on one page,
+  linked from the home screen, in all six languages; Options > Help on
+  Symbian.
+
+### Changed
+
+- **Paired devices take less room.** Each one is a single row with Send and
+  Receive on it; the rest - send folder, send message, rename, remove - opens
+  from the device's name. On the desktop this also gives a long device name
+  the space the four buttons used to take.
+
+- **Removing a paired device on the desktop** is confirmed in the device's
+  own row, with the same question Android asks, instead of a bare system
+  dialog.
+
+### Fixed
+
+- **A file dropped on the desktop window no longer replaces the app** with
+  the file itself. Drops are refused everywhere except on a paired device.
+
+[1.3.5]: https://github.com/Yenis/portal-gems/releases/tag/v1.3.5
+
 ## [1.3.4] - 2026-09-18
 
 When a transfer goes wrong, the next one still works.

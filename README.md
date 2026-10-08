@@ -246,12 +246,16 @@ Avkon UI around it. The installable package is **52 KB**.
   under `wormhole receive` alike
 - Send and receive text messages, typed on the phone's keyboard
 - Enter a code on the keyboard, or generate one for the other side
+- Pair with another device over a one-time code, then send it a file, a
+  folder or a message - or receive from it - with no code at all
+- Rename and remove paired devices; the one used last is listed first
+- Options > Help lists everything the menus can do
 - Direct LAN connections, off by default and switchable in Settings
 
 **What it does not do**
 
-- No QR pairing (there is no camera API worth the name here, and pairing is
-  not implemented on this client yet), no themes, no translations
+- No QR pairing (there is no camera API worth the name here, so it pairs
+  over a typed code instead), no themes, no translations
 - **It needs a cleartext server.** Symbian's TLS is TLS 1.0 with a 2009 root
   store and cannot reach a modern `wss://` mailbox, so the phone talks to a
   cleartext `ws://` listener instead. Options > Settings > Server offers the
