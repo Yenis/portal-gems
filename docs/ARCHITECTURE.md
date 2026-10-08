@@ -520,8 +520,7 @@ folder E2E runs - and is the app's default choice; note the CLI examples and
 the reference CLI default to the PUBLIC server, so cross-testing needs
 explicit server flags on one side.
 
-Gaps: QR *camera* scan untested (needs real phone) - NOTE: "Show pairing code"
-currently crashes on device (react-native-svg suspected, unconfirmed);
+Gaps: QR *camera* scan untested (needs real phone);
 mobile server-picker UI + ubrn regen; 32-bit `armeabi-v7a` ABI (older phones
 get INSTALL_FAILED_NO_MATCHING_ABIS); paired-transfer UI buttons E2E (smoke
 modes exist); mid-transfer cancel; share-sheet multi-file intake
