@@ -89,6 +89,11 @@
     "renameHint": "Dieser Name gilt nur auf diesem Gerät. Leer lassen, um wieder {{name}} zu verwenden.",
     "renamePlaceholder": "Name für dieses Gerät"
   },
+  "shareTarget": {
+    "title": "Senden an",
+    "hint": "Wähle, wohin {{name}} gesendet werden soll.",
+    "oneTimeCode": "Jemand anderes - Einmalcode verwenden"
+  },
   "paired": {
     "sendWaiting": "Warte auf {{name}} - stelle sicher, dass PortalGems dort geöffnet ist…",
     "notOpen": "{{name}} scheint PortalGems nicht geöffnet zu haben. Bitte dort die App öffnen und erneut versuchen.",

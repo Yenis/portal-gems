@@ -14,6 +14,8 @@ import PairScreen from './src/screens/PairScreen';
 import ReceiveScreen from './src/screens/ReceiveScreen';
 import SendScreen from './src/screens/SendScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
+import ShareTargetScreen from './src/screens/ShareTargetScreen';
+import { loadDevices } from './src/pairing';
 import { ThemeProvider, useTheme } from './src/theme';
 import {
   clearIncomingDir,
@@ -36,6 +38,7 @@ clearIncomingDir().catch(() => undefined);
 type Route =
   | { name: 'home' }
   | { name: 'send'; item: SendItem; device?: PairedDevice }
+  | { name: 'shareTarget'; item: SendItem & { kind: 'file' }; devices: PairedDevice[] }
   | { name: 'compose'; device?: PairedDevice }
   | { name: 'receive'; code?: string; device?: PairedDevice }
   | { name: 'pair' }
@@ -77,17 +80,22 @@ function AppShell() {
   }, []);
 
   // "Share → PortalGems": pick up a shared file on launch and whenever the app
-  // returns to the foreground, and jump straight into the send flow (with home
-  // underneath, so back still works).
+  // returns to the foreground. With paired devices there is a choice to make
+  // first - one of them, or a one-time code; without any, it goes straight
+  // into the send flow. Home stays underneath either way, so back still works.
   useEffect(() => {
     const check = async () => {
       const uri = await consumePendingShare().catch(() => null);
       if (uri) {
         const file = await copyToCache(uri).catch(() => null);
         if (file) {
+          const item = { kind: 'file' as const, ...file };
+          const devices = await loadDevices().catch(() => []);
           setStack([
             { name: 'home' },
-            { name: 'send', item: { kind: 'file', ...file } },
+            devices.length > 0
+              ? { name: 'shareTarget', item, devices }
+              : { name: 'send', item },
           ]);
         }
       }
@@ -117,6 +125,20 @@ function AppShell() {
           device={route.device}
           onHome={goBack}
           onServerSettings={() => navigate({ name: 'settings', scrollToServer: true })}
+        />
+      ) : route.name === 'shareTarget' ? (
+        <ShareTargetScreen
+          name={route.item.name}
+          devices={route.devices}
+          onHome={goBack}
+          // Replaces this screen rather than stacking on it, so leaving the
+          // send lands on home and not back on a choice already made.
+          onChoose={(device) =>
+            setStack((s) => [
+              ...s.slice(0, -1),
+              { name: 'send', item: route.item, device },
+            ])
+          }
         />
       ) : route.name === 'compose' ? (
         <ComposeScreen

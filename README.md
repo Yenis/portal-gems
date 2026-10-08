@@ -109,7 +109,7 @@ PortalGems takes a different approach, inherited from magic-wormhole:
 | Direct LAN transfers | Same Wi-Fi → peer-to-peer at full speed, no relay |
 | CLI interop | Works with `wormhole` on servers, laptops, anything |
 | Device pairing | Scan a QR once; from then on, transfers need only a confirmation tap |
-| Share-sheet integration | "Share → PortalGems" from any Android app |
+| Share-sheet integration | "Share → PortalGems" from any Android app, then pick a paired device or a one-time code |
 | 6 languages | English, Deutsch, Bosanski, Русский, Français, Español |
 | 5 gem themes | Diamond, Sapphire, Emerald, Ruby, Amethyst - each in light & dark |
 | No accounts | No backend of ours, no cloud, everything stored locally |

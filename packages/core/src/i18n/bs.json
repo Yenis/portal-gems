@@ -89,6 +89,11 @@
     "renameHint": "Ovaj naziv vrijedi samo na ovom uređaju. Ostavite prazno da se vratite na {{name}}.",
     "renamePlaceholder": "Naziv za ovaj uređaj"
   },
+  "shareTarget": {
+    "title": "Pošalji na",
+    "hint": "Odaberi gdje poslati {{name}}.",
+    "oneTimeCode": "Neko drugi - koristi jednokratni kod"
+  },
   "paired": {
     "sendWaiting": "Čekam {{name}} - provjeri da li je PortalGems tamo otvoren…",
     "notOpen": "Izgleda da {{name}} nema otvoren PortalGems. Zamoli da se aplikacija otvori pa pokušaj ponovo.",
