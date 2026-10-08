@@ -315,6 +315,28 @@ function Home({
     });
   };
 
+  // One device open at a time, and none on launch: Send and Receive on the
+  // closed row are the common case, so there is nothing worth restoring.
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // What a device's row reveals when opened. A new per-device action is one
+  // more entry here; they line up under Send and Receive and wrap from there.
+  const moreActions = (
+    device: PairedDevice,
+  ): { key: string; label: string; danger?: boolean; onClick: () => void }[] => [
+    {
+      key: 'rename',
+      label: t('devices.rename'),
+      onClick: () => startRename(device),
+    },
+    {
+      key: 'remove',
+      label: t('devices.remove'),
+      danger: true,
+      onClick: () => remove(device),
+    },
+  ];
+
   return (
     <>
       <Title c={c}>{t('app.name')}</Title>
@@ -337,7 +359,12 @@ function Home({
         {devices.map((device) => (
           <div
             key={device.id}
-            style={{ display: 'flex', gap: spacing(2), alignItems: 'center' }}>
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: spacing(2),
+              alignItems: 'center',
+            }}>
             {renamingId === device.id ? (
               <>
                 <div style={{ flex: 1 }}>
@@ -366,11 +393,52 @@ function Home({
               </>
             ) : (
               <>
-                <span
-                  style={{ flex: 1, color: c.text, fontWeight: 600, overflow: 'hidden' }}
-                  title={device.label ? device.name : undefined}>
-                  {deviceLabel(device)}
-                </span>
+                <button
+                  onClick={() =>
+                    setExpandedId(expandedId === device.id ? null : device.id)
+                  }
+                  aria-expanded={expandedId === device.id}
+                  title={device.label ? device.name : undefined}
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: spacing(1),
+                    alignSelf: 'stretch',
+                    background: 'transparent',
+                    border: 'none',
+                    padding: 0,
+                    font: 'inherit',
+                    fontWeight: 600,
+                    color: c.text,
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                  }}>
+                  <svg
+                    width={18}
+                    height={18}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke={c.textMuted}
+                    strokeWidth={2.5}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{
+                      flexShrink: 0,
+                      transform: expandedId === device.id ? 'rotate(90deg)' : undefined,
+                    }}>
+                    <path d="M9 6l6 6-6 6" />
+                  </svg>
+                  <span
+                    style={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}>
+                    {deviceLabel(device)}
+                  </span>
+                </button>
                 <div style={{ width: 110 }}>
                   <PrimaryButton
                     c={c}
@@ -385,21 +453,27 @@ function Home({
                     onClick={() => onReceiveFrom(device)}
                   />
                 </div>
-                <div style={{ width: 110 }}>
-                  <GhostButton
-                    c={c}
-                    label={t('devices.rename')}
-                    onClick={() => startRename(device)}
-                  />
-                </div>
-                <div style={{ width: 100 }}>
-                  <GhostButton
-                    c={c}
-                    label={t('devices.remove')}
-                    danger
-                    onClick={() => remove(device)}
-                  />
-                </div>
+                {expandedId === device.id ? (
+                  <div
+                    style={{
+                      flexBasis: '100%',
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      justifyContent: 'flex-end',
+                      gap: spacing(2),
+                    }}>
+                    {moreActions(device).map((action) => (
+                      <div key={action.key} style={{ width: 110 }}>
+                        <GhostButton
+                          c={c}
+                          label={action.label}
+                          danger={action.danger}
+                          onClick={action.onClick}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
               </>
             )}
           </div>

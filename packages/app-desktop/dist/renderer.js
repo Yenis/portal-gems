@@ -29416,6 +29416,20 @@
         loadDevices().then(setDevices);
       });
     };
+    const [expandedId, setExpandedId] = (0, import_react14.useState)(null);
+    const moreActions = (device) => [
+      {
+        key: "rename",
+        label: t2("devices.rename"),
+        onClick: () => startRename(device)
+      },
+      {
+        key: "remove",
+        label: t2("devices.remove"),
+        danger: true,
+        onClick: () => remove(device)
+      }
+    ];
     return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c }, t2("app.name")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("home.tagline")), /* @__PURE__ */ import_react14.default.createElement("div", { style: { display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: spacing(2) } }, /* @__PURE__ */ import_react14.default.createElement(
       "a",
       {
@@ -29434,7 +29448,12 @@
       "div",
       {
         key: device.id,
-        style: { display: "flex", gap: spacing(2), alignItems: "center" }
+        style: {
+          display: "flex",
+          flexWrap: "wrap",
+          gap: spacing(2),
+          alignItems: "center"
+        }
       },
       renamingId === device.id ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ import_react14.default.createElement(
         TextInput,
@@ -29460,12 +29479,57 @@
           onClick: () => setRenamingId(null)
         }
       ))) : /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(
-        "span",
+        "button",
         {
-          style: { flex: 1, color: c.text, fontWeight: 600, overflow: "hidden" },
-          title: device.label ? device.name : void 0
+          onClick: () => setExpandedId(expandedId === device.id ? null : device.id),
+          "aria-expanded": expandedId === device.id,
+          title: device.label ? device.name : void 0,
+          style: {
+            flex: 1,
+            minWidth: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: spacing(1),
+            alignSelf: "stretch",
+            background: "transparent",
+            border: "none",
+            padding: 0,
+            font: "inherit",
+            fontWeight: 600,
+            color: c.text,
+            textAlign: "left",
+            cursor: "pointer"
+          }
         },
-        deviceLabel(device)
+        /* @__PURE__ */ import_react14.default.createElement(
+          "svg",
+          {
+            width: 18,
+            height: 18,
+            viewBox: "0 0 24 24",
+            fill: "none",
+            stroke: c.textMuted,
+            strokeWidth: 2.5,
+            strokeLinecap: "round",
+            strokeLinejoin: "round",
+            style: {
+              flexShrink: 0,
+              transform: expandedId === device.id ? "rotate(90deg)" : void 0
+            }
+          },
+          /* @__PURE__ */ import_react14.default.createElement("path", { d: "M9 6l6 6-6 6" })
+        ),
+        /* @__PURE__ */ import_react14.default.createElement(
+          "span",
+          {
+            style: {
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap"
+            }
+          },
+          deviceLabel(device)
+        )
       ), /* @__PURE__ */ import_react14.default.createElement("div", { style: { width: 110 } }, /* @__PURE__ */ import_react14.default.createElement(
         PrimaryButton,
         {
@@ -29480,22 +29544,27 @@
           label: t2("devices.receive"),
           onClick: () => onReceiveFrom(device)
         }
-      )), /* @__PURE__ */ import_react14.default.createElement("div", { style: { width: 110 } }, /* @__PURE__ */ import_react14.default.createElement(
-        GhostButton,
+      )), expandedId === device.id ? /* @__PURE__ */ import_react14.default.createElement(
+        "div",
         {
-          c,
-          label: t2("devices.rename"),
-          onClick: () => startRename(device)
-        }
-      )), /* @__PURE__ */ import_react14.default.createElement("div", { style: { width: 100 } }, /* @__PURE__ */ import_react14.default.createElement(
-        GhostButton,
-        {
-          c,
-          label: t2("devices.remove"),
-          danger: true,
-          onClick: () => remove(device)
-        }
-      )))
+          style: {
+            flexBasis: "100%",
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: "flex-end",
+            gap: spacing(2)
+          }
+        },
+        moreActions(device).map((action) => /* @__PURE__ */ import_react14.default.createElement("div", { key: action.key, style: { width: 110 } }, /* @__PURE__ */ import_react14.default.createElement(
+          GhostButton,
+          {
+            c,
+            label: action.label,
+            danger: action.danger,
+            onClick: action.onClick
+          }
+        )))
+      ) : null)
     )), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("home.pairNew"), onClick: onPair })), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("home.sendTitle")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("home.sendHint")), /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("home.sendButton"), onClick: () => pick() }), /* @__PURE__ */ import_react14.default.createElement(
       GhostButton,
       {
