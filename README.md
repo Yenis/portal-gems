@@ -204,7 +204,9 @@ devices effortless - with no server involved:
    pairing - the computer's hostname, the phone's own name - and you can
    change it in Settings. You can also rename any device you have paired
    with, which is a label kept on your device alone: renaming a phone to
-   "Kitchen tablet" changes nothing on the phone itself.
+   "Kitchen tablet" changes nothing on the phone itself. The moment a
+   pairing succeeds you are offered exactly that rename, along with a first
+   transfer to try the pairing out.
 3. **Transfer forever after:** when you tap *Send* / *Receive* on a paired
    device, both sides independently derive the same one-time wormhole code from
    the shared secret and the current time window - and connect automatically.

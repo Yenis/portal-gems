@@ -75,7 +75,12 @@
     "entryPlaceholder": "Unesi kod s drugog uređaja",
     "entryButton": "Upari",
     "notAnInvitation": "Taj kod nije sadržavao pozivnicu za uparivanje. Na drugom uređaju odaberi Upari pomoću koda.",
-    "codeSectionHint": "Drugi uređaj nema kameru, recimo računar? Onda uparite pomoću koda."
+    "codeSectionHint": "Drugi uređaj nema kameru, recimo računar? Onda uparite pomoću koda.",
+    "successHint": "Od sada je za slanje između ova dva uređaja dovoljan jedan dodir na svakoj strani.",
+    "renamePrompt": "Želiš ga nazvati drugačije? Ime se koristi samo na ovom uređaju.",
+    "sendFirst": "Pošalji fajl na {{name}}",
+    "receiveFirst": "Primi sa {{name}}",
+    "firstHint": "Da probaš odmah, jedno od vas dodirne Pošalji, a drugo Primi."
   },
   "devices": {
     "title": "Uređaji",

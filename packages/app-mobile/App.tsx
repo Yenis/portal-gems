@@ -154,7 +154,17 @@ function AppShell() {
       ) : route.name === 'explain' ? (
         <ExplainerScreen onHome={goBack} />
       ) : (
-        <PairScreen onHome={goBack} />
+        <PairScreen
+          onHome={goBack}
+          // A first transfer started from the "paired" card takes that
+          // screen's place, so leaving it lands on home.
+          onSend={(item, device) =>
+            setStack((s) => [...s.slice(0, -1), { name: 'send', item, device }])
+          }
+          onReceiveFrom={(device) =>
+            setStack((s) => [...s.slice(0, -1), { name: 'receive', device }])
+          }
+        />
       )}
     </View>
   );

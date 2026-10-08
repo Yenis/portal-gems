@@ -809,6 +809,11 @@ Things worth knowing:
   save), which is why a `server.txt` written before 0.9.1 - no
   `server_choice` line - loads with the right label anyway, and why typing a
   host by hand can never leave a stale "portalgems" on screen.
+- **A finished pairing offers the next step.** When a pairing job ends, the
+  polling timer shows a list query once (`OfferFirstStepL`): Send to it,
+  Receive from it, Rename it. Cancelling changes nothing - the same three
+  remain in the Options menu. The new pairing is the last one in
+  `pairs.txt`, because `WhminiAddPair` appends.
 - **A paired send asks what to send.** Options > Send to paired device picks
   the device, then a list query offers File, Folder or Message - the same
   three the other apps offer per device. The pickers are the ones an ordinary

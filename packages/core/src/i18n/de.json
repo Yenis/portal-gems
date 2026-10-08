@@ -75,7 +75,12 @@
     "entryPlaceholder": "Code vom anderen Gerät eingeben",
     "entryButton": "Koppeln",
     "notAnInvitation": "Dieser Code enthielt keine Kopplungseinladung. Wähle auf dem anderen Gerät „Mit einem Code koppeln“.",
-    "codeSectionHint": "Keine Kamera am anderen Gerät, etwa bei einem Computer? Dann koppelt ihr stattdessen mit einem Code."
+    "codeSectionHint": "Keine Kamera am anderen Gerät, etwa bei einem Computer? Dann koppelt ihr stattdessen mit einem Code.",
+    "successHint": "Ab jetzt genügt zum Senden zwischen diesen beiden Geräten ein Tippen auf jeder Seite.",
+    "renamePrompt": "Soll es anders heißen? Der Name wird nur auf diesem Gerät verwendet.",
+    "sendFirst": "Datei an {{name}} senden",
+    "receiveFirst": "Von {{name}} empfangen",
+    "firstHint": "Zum Ausprobieren tippt einer von euch auf Senden und der andere auf Empfangen."
   },
   "devices": {
     "title": "Geräte",

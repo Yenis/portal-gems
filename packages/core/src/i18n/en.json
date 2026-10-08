@@ -75,7 +75,12 @@
     "entryPlaceholder": "Enter the code from the other device",
     "entryButton": "Pair",
     "notAnInvitation": "That code didn't carry a pairing invitation. On the other device, choose Pair using a code.",
-    "codeSectionHint": "No camera on the other device - a computer, say? Pair with a code instead."
+    "codeSectionHint": "No camera on the other device - a computer, say? Pair with a code instead.",
+    "successHint": "From now on, sending between these two devices takes one tap on each side.",
+    "renamePrompt": "Want to call it something else? The name is only used on this device.",
+    "sendFirst": "Send a file to {{name}}",
+    "receiveFirst": "Receive from {{name}}",
+    "firstHint": "To try it now, one of you taps Send and the other taps Receive."
   },
   "devices": {
     "title": "Devices",

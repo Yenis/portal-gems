@@ -143,6 +143,7 @@ private:
     TBool PickFileL();
     TBool PickFolderL();
     TBool AskTextL();
+    void OfferFirstStepL();
     TInt StartWorker();
     TBool PrepareJobL();
     void AskForServerL();
@@ -163,6 +164,7 @@ private:
     TInt iStackSize;        /* what the worker actually got, in bytes */
     TJob iJob;
     TBool iMessageShown;
+    TBool iPairOffered;
     /* Reloaded whenever a paired-device menu opens, so a pairing made a
      * moment ago is there without restarting the app. */
     TWhminiPair iPairs[KMaxPairs];
@@ -530,8 +532,47 @@ TInt CWhminiAppUi::Tick(TAny* aSelf)
             self->iMessageShown = ETrue;
             TRAP_IGNORE(self->ShowMessageL());
             }
+        /* A pairing that has just succeeded is the moment to use it: offer
+         * the first transfer and the rename here, rather than leave them to
+         * be found in the menu. Once per pairing. */
+        if ((self->iJob.iKind == EJobKindPairHost ||
+             self->iJob.iKind == EJobKindPairJoin) &&
+            self->iJob.iState == EJobDone && !self->iPairOffered)
+            {
+            self->iPairOffered = ETrue;
+            TRAP_IGNORE(self->OfferFirstStepL());
+            }
         }
     return 0;
+    }
+
+/* What to do with the device that was just paired. The order of the cases is
+ * the order of r_whmini_paired_next_items; cancelling leaves everything where
+ * the menu has always had it. */
+void CWhminiAppUi::OfferFirstStepL()
+    {
+    iPairCount = WhminiLoadPairs(iPairs, KMaxPairs);
+    if (iPairCount == 0) return;
+    TInt index = iPairCount - 1;   /* WhminiAddPair appends */
+
+    TInt what = 0;
+    CAknListQueryDialog* dlg = new (ELeave) CAknListQueryDialog(&what);
+    if (!dlg->ExecuteLD(R_WHMINI_PAIRED_NEXT_QUERY)) return;
+
+    switch (what)
+        {
+        case 0:
+            StartPairedSendL(index);
+            break;
+        case 1:
+            StartPairedReceiveL(index);
+            break;
+        case 2:
+            RenamePairL(index);
+            break;
+        default:
+            break;
+        }
     }
 
 /* Display a received message. The wire carries UTF-8 and the screen wants
@@ -683,6 +724,7 @@ TBool CWhminiAppUi::PrepareJobL()
     iJob.iText[0] = '\0';
     iJob.iIsText = 0;
     iMessageShown = EFalse;
+    iPairOffered = EFalse;
     /* Reset every time: a transfer that inherited the last one's secret
      * would quietly go to the wrong device. */
     iJob.iPaired = 0;

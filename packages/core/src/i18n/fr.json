@@ -75,7 +75,12 @@
     "entryPlaceholder": "Saisissez le code de l'autre appareil",
     "entryButton": "Associer",
     "notAnInvitation": "Ce code ne contenait pas d'invitation d'association. Sur l'autre appareil, choisissez Associer avec un code.",
-    "codeSectionHint": "L'autre appareil n'a pas de caméra - un ordinateur, par exemple ? Associez-vous plutôt avec un code."
+    "codeSectionHint": "L'autre appareil n'a pas de caméra - un ordinateur, par exemple ? Associez-vous plutôt avec un code.",
+    "successHint": "Désormais, envoyer entre ces deux appareils ne demande qu'un appui de chaque côté.",
+    "renamePrompt": "Envie de lui donner un autre nom ? Il n'est utilisé que sur cet appareil.",
+    "sendFirst": "Envoyer un fichier à {{name}}",
+    "receiveFirst": "Recevoir de {{name}}",
+    "firstHint": "Pour essayer maintenant, l'un appuie sur Envoyer et l'autre sur Recevoir."
   },
   "devices": {
     "title": "Appareils",

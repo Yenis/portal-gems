@@ -271,7 +271,18 @@ export default function App() {
       ) : route.name === 'explain' ? (
         <Explain c={c} onHome={goBack} />
       ) : (
-        <Pair c={c} onHome={goBack} />
+        <Pair
+          c={c}
+          onHome={goBack}
+          // A first transfer started from the "paired" card takes that
+          // screen's place, so leaving it lands on home.
+          onSend={(item, device) =>
+            setStack((st) => [...st.slice(0, -1), { name: 'send', item, device }])
+          }
+          onReceiveFrom={(device) =>
+            setStack((st) => [...st.slice(0, -1), { name: 'receive', device }])
+          }
+        />
       )}
     </div>
   );
@@ -1111,14 +1122,25 @@ function Receive({
 
 type PairPhase = 'menu' | 'hosting' | 'showing' | 'working' | 'done' | 'error';
 
-function Pair({ c, onHome }: { c: Palette; onHome: () => void }) {
+function Pair({
+  c,
+  onHome,
+  onSend,
+  onReceiveFrom,
+}: {
+  c: Palette;
+  onHome: () => void;
+  onSend: (item: SendItem, device: PairedDevice) => void;
+  onReceiveFrom: (device: PairedDevice) => void;
+}) {
   const { t } = useTranslation();
   const [phase, setPhase] = useState<PairPhase>('menu');
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [payloadText, setPayloadText] = useState('');
   const [pairCode, setPairCode] = useState('');
   const [entry, setEntry] = useState('');
-  const [peerName, setPeerName] = useState('');
+  const [peer, setPeer] = useState<PairedDevice | null>(null);
+  const [label, setLabel] = useState('');
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const cancelledRef = useRef(false);
@@ -1131,9 +1153,36 @@ function Pair({ c, onHome }: { c: Palette; onHome: () => void }) {
     []
   );
 
-  const succeed = (name: string) => {
-    setPeerName(name);
+  const succeed = (device: PairedDevice) => {
+    setPeer(device);
     setPhase('done');
+  };
+
+  // The rename offered on the success card is saved as it is typed, so every
+  // way off this screen - Done, the back arrow, straight into a first
+  // transfer - keeps it. The saves are chained because each one rewrites the
+  // whole device list.
+  const saving = useRef<Promise<void>>(Promise.resolve());
+  const rename = (value: string) => {
+    setLabel(value);
+    if (!peer) return;
+    const id = peer.id;
+    saving.current = saving.current
+      .then(() => renameDevice(id, value))
+      .catch(() => undefined);
+  };
+  // The device as stored, rename included, for a transfer started from here.
+  const storedPeer = async (device: PairedDevice) => {
+    await saving.current;
+    return (await loadDevices()).find((d) => d.id === device.id) ?? device;
+  };
+  const shownName = peer ? label.trim() || peer.name : '';
+
+  const sendFirst = async (device: PairedDevice) => {
+    const file = await window.portalgems.pickFile(loadLastSendDir());
+    if (!file) return;
+    rememberSendLocation(file.path);
+    onSend({ kind: 'file', ...file }, await storedPeer(device));
   };
   const fail = (e: unknown) => {
     setError(friendlyError(t as any, e));
@@ -1151,7 +1200,7 @@ function Pair({ c, onHome }: { c: Palette; onHome: () => void }) {
     const id = nextId++;
     idRef.current = id;
     waitForPairingAsDisplayer(payload, id, () => cancelledRef.current).then(
-      (device) => succeed(deviceLabel(device)),
+      (device) => succeed(device),
       (e) => {
         if (!cancelledRef.current) fail(e);
       }
@@ -1212,7 +1261,7 @@ function Pair({ c, onHome }: { c: Palette; onHome: () => void }) {
     }, 60_000);
     completePairingAsScanner(payload, myName, id)
       .then(
-        (device) => succeed(deviceLabel(device)),
+        (device) => succeed(device),
         (e) => {
           if (timedOut) fail(new Error(t('paired.notOpen', { name: payload.name })));
           else if (!cancelledRef.current) fail(e);
@@ -1335,10 +1384,34 @@ function Pair({ c, onHome }: { c: Palette; onHome: () => void }) {
           <Muted c={c}>{t('pair.waiting')}</Muted>
         </Card>
       ) : null}
-      {phase === 'done' ? (
-        <Card c={c}>
-          <Subtitle c={c}>{t('pair.success', { name: peerName })}</Subtitle>
-        </Card>
+      {phase === 'done' && peer ? (
+        <>
+          <Card c={c}>
+            <Subtitle c={c}>{t('pair.success', { name: shownName })}</Subtitle>
+            <Muted c={c}>{t('pair.successHint')}</Muted>
+            <Muted c={c}>{t('pair.renamePrompt')}</Muted>
+            <TextInput
+              c={c}
+              value={label}
+              onChange={rename}
+              placeholder={peer.name}
+              monospace={false}
+            />
+          </Card>
+          <Card c={c}>
+            <Muted c={c}>{t('pair.firstHint')}</Muted>
+            <PrimaryButton
+              c={c}
+              label={t('pair.sendFirst', { name: shownName })}
+              onClick={() => void sendFirst(peer)}
+            />
+            <GhostButton
+              c={c}
+              label={t('pair.receiveFirst', { name: shownName })}
+              onClick={() => void storedPeer(peer).then(onReceiveFrom)}
+            />
+          </Card>
+        </>
       ) : null}
       {phase === 'error' ? (
         <Card c={c}>
@@ -1346,7 +1419,9 @@ function Pair({ c, onHome }: { c: Palette; onHome: () => void }) {
           <p style={{ color: c.danger, margin: 0 }}>{error}</p>
         </Card>
       ) : null}
-      {phase === 'done' || phase === 'error' ? (
+      {phase === 'done' ? (
+        <GhostButton c={c} label={t('common.done')} onClick={onHome} />
+      ) : phase === 'error' ? (
         <PrimaryButton c={c} label={t('common.done')} onClick={onHome} />
       ) : (
         <GhostButton c={c} label={t('common.cancel')} danger onClick={cancelAndBack} />

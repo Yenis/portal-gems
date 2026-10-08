@@ -3,9 +3,9 @@ import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Clipboard from '@react-native-clipboard/clipboard';
 import QRCode from 'react-native-qrcode-svg';
+import { pick } from '@react-native-documents/picker';
 import { sendText } from 'wormhole-rn';
 import {
-  deviceLabel,
   classifyPairingInput,
   createPairingPayload,
   encodePairingPayload,
@@ -13,6 +13,7 @@ import {
   parsePairingPayload,
   radius,
   spacing,
+  type PairedDevice,
   type PairingPayload,
 } from '@portalgems/core';
 import {
@@ -25,12 +26,14 @@ import {
   Title,
 } from '../components';
 import { friendlyError } from '../errors';
-import { scanQr } from '../native';
+import { copyToCache, scanQr, type SendItem } from '../native';
 import { myDeviceName } from '../devicename';
 import {
   completePairingAsScanner,
+  loadDevices,
   NotAnInvitationError,
   receivePairingInvitation,
+  renameDevice,
   waitForPairingAsDisplayer,
 } from '../pairing';
 import { currentServer } from '../server';
@@ -45,21 +48,65 @@ type Phase =
   | 'done'
   | 'error';
 
-export default function PairScreen({ onHome }: { onHome: () => void }) {
+export default function PairScreen({
+  onHome,
+  onSend,
+  onReceiveFrom,
+}: {
+  onHome: () => void;
+  onSend: (item: SendItem, device: PairedDevice) => void;
+  onReceiveFrom: (device: PairedDevice) => void;
+}) {
   const { t } = useTranslation();
   const c = useTheme();
   const [phase, setPhase] = useState<Phase>('menu');
   const [payload, setPayload] = useState<PairingPayload | null>(null);
   const [entry, setEntry] = useState('');
   const [pairCode, setPairCode] = useState('');
-  const [peerName, setPeerName] = useState('');
+  const [peer, setPeer] = useState<PairedDevice | null>(null);
+  const [label, setLabel] = useState('');
+  const [picking, setPicking] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
-  const succeed = (name: string) => {
-    setPeerName(name);
+  const succeed = (device: PairedDevice) => {
+    setPeer(device);
     setPhase('done');
+  };
+
+  // The rename offered on the success card is saved as it is typed, so every
+  // way off this screen - Done, the back arrow, the hardware back button,
+  // straight into a first transfer - keeps it. The saves are chained because
+  // each one rewrites the whole device list.
+  const saving = useRef<Promise<void>>(Promise.resolve());
+  const rename = (value: string) => {
+    setLabel(value);
+    if (!peer) return;
+    const id = peer.id;
+    saving.current = saving.current
+      .then(() => renameDevice(id, value))
+      .catch(() => undefined);
+  };
+  // The device as stored, rename included, for a transfer started from here.
+  const storedPeer = async (device: PairedDevice) => {
+    await saving.current;
+    return (await loadDevices()).find((d) => d.id === device.id) ?? device;
+  };
+  const shownName = peer ? label.trim() || peer.name : '';
+
+  const sendFirst = async (device: PairedDevice) => {
+    setPicking(true);
+    try {
+      const [result] = await pick();
+      const file = await copyToCache(result.uri);
+      onSend({ kind: 'file', ...file }, await storedPeer(device));
+    } catch {
+      // Closing the picker, or a file that cannot be read: stay here, the
+      // pairing itself is done and the button can simply be tapped again.
+    } finally {
+      setPicking(false);
+    }
   };
   const fail = (e: unknown) => {
     setError(friendlyError(t, e));
@@ -70,7 +117,7 @@ export default function PairScreen({ onHome }: { onHome: () => void }) {
   // over a code - this side waits for its handshake on the derived codes.
   const awaitHandshake = (p: PairingPayload, controller: AbortController) => {
     waitForPairingAsDisplayer(p, controller.signal).then(
-      (device) => succeed(deviceLabel(device)),
+      (device) => succeed(device),
       (e) => {
         if (!controller.signal.aborted) fail(e);
       }
@@ -126,7 +173,7 @@ export default function PairScreen({ onHome }: { onHome: () => void }) {
     }, 60_000);
     completePairingAsScanner(p, myName, controller.signal)
       .then(
-        (device) => succeed(deviceLabel(device)),
+        (device) => succeed(device),
         (e) => {
           if (timedOut) fail(new Error(t('paired.notOpen', { name: p.name })));
           else if (!controller.signal.aborted) fail(e);
@@ -272,10 +319,43 @@ export default function PairScreen({ onHome }: { onHome: () => void }) {
         </Card>
       ) : null}
 
-      {phase === 'done' ? (
-        <Card>
-          <Subtitle>{t('pair.success', { name: peerName })}</Subtitle>
-        </Card>
+      {phase === 'done' && peer ? (
+        <>
+          <Card>
+            <Subtitle>{t('pair.success', { name: shownName })}</Subtitle>
+            <Muted>{t('pair.successHint')}</Muted>
+            <Muted>{t('pair.renamePrompt')}</Muted>
+            <TextInput
+              style={[
+                styles.nameInput,
+                {
+                  borderColor: c.border,
+                  color: c.text,
+                  backgroundColor: c.background,
+                },
+              ]}
+              value={label}
+              onChangeText={rename}
+              placeholder={peer.name}
+              placeholderTextColor={c.textMuted}
+              autoCapitalize="words"
+              autoCorrect={false}
+            />
+          </Card>
+          <Card>
+            <Muted>{t('pair.firstHint')}</Muted>
+            <PrimaryButton
+              label={t('pair.sendFirst', { name: shownName })}
+              onPress={() => void sendFirst(peer)}
+              busy={picking}
+            />
+            <GhostButton
+              label={t('pair.receiveFirst', { name: shownName })}
+              onPress={() => void storedPeer(peer).then(onReceiveFrom)}
+              disabled={picking}
+            />
+          </Card>
+        </>
       ) : null}
 
       {phase === 'error' ? (
@@ -285,7 +365,9 @@ export default function PairScreen({ onHome }: { onHome: () => void }) {
         </Card>
       ) : null}
 
-      {phase === 'done' || phase === 'error' ? (
+      {phase === 'done' ? (
+        <GhostButton label={t('common.done')} onPress={onHome} />
+      ) : phase === 'error' ? (
         <PrimaryButton label={t('common.done')} onPress={onHome} />
       ) : (
         <GhostButton label={t('common.cancel')} danger onPress={cancelAndBack} />
@@ -307,6 +389,13 @@ const styles = StyleSheet.create({
     paddingVertical: spacing(3),
     fontSize: fontSize.small,
     fontFamily: 'monospace',
+  },
+  nameInput: {
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing(3),
+    paddingVertical: spacing(2),
+    fontSize: fontSize.body,
   },
   qrWrap: { alignItems: 'center' },
   qrBox: { backgroundColor: '#FFFFFF', padding: spacing(3), borderRadius: radius.md },

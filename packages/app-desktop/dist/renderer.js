@@ -27610,7 +27610,12 @@
       entryPlaceholder: "Unesi kod s drugog ure\u0111aja",
       entryButton: "Upari",
       notAnInvitation: "Taj kod nije sadr\u017Eavao pozivnicu za uparivanje. Na drugom ure\u0111aju odaberi Upari pomo\u0107u koda.",
-      codeSectionHint: "Drugi ure\u0111aj nema kameru, recimo ra\u010Dunar? Onda uparite pomo\u0107u koda."
+      codeSectionHint: "Drugi ure\u0111aj nema kameru, recimo ra\u010Dunar? Onda uparite pomo\u0107u koda.",
+      successHint: "Od sada je za slanje izme\u0111u ova dva ure\u0111aja dovoljan jedan dodir na svakoj strani.",
+      renamePrompt: "\u017Deli\u0161 ga nazvati druga\u010Dije? Ime se koristi samo na ovom ure\u0111aju.",
+      sendFirst: "Po\u0161alji fajl na {{name}}",
+      receiveFirst: "Primi sa {{name}}",
+      firstHint: "Da proba\u0161 odmah, jedno od vas dodirne Po\u0161alji, a drugo Primi."
     },
     devices: {
       title: "Ure\u0111aji",
@@ -27818,7 +27823,12 @@
       entryPlaceholder: "Code vom anderen Ger\xE4t eingeben",
       entryButton: "Koppeln",
       notAnInvitation: "Dieser Code enthielt keine Kopplungseinladung. W\xE4hle auf dem anderen Ger\xE4t \u201EMit einem Code koppeln\u201C.",
-      codeSectionHint: "Keine Kamera am anderen Ger\xE4t, etwa bei einem Computer? Dann koppelt ihr stattdessen mit einem Code."
+      codeSectionHint: "Keine Kamera am anderen Ger\xE4t, etwa bei einem Computer? Dann koppelt ihr stattdessen mit einem Code.",
+      successHint: "Ab jetzt gen\xFCgt zum Senden zwischen diesen beiden Ger\xE4ten ein Tippen auf jeder Seite.",
+      renamePrompt: "Soll es anders hei\xDFen? Der Name wird nur auf diesem Ger\xE4t verwendet.",
+      sendFirst: "Datei an {{name}} senden",
+      receiveFirst: "Von {{name}} empfangen",
+      firstHint: "Zum Ausprobieren tippt einer von euch auf Senden und der andere auf Empfangen."
     },
     devices: {
       title: "Ger\xE4te",
@@ -28026,7 +28036,12 @@
       entryPlaceholder: "Enter the code from the other device",
       entryButton: "Pair",
       notAnInvitation: "That code didn't carry a pairing invitation. On the other device, choose Pair using a code.",
-      codeSectionHint: "No camera on the other device - a computer, say? Pair with a code instead."
+      codeSectionHint: "No camera on the other device - a computer, say? Pair with a code instead.",
+      successHint: "From now on, sending between these two devices takes one tap on each side.",
+      renamePrompt: "Want to call it something else? The name is only used on this device.",
+      sendFirst: "Send a file to {{name}}",
+      receiveFirst: "Receive from {{name}}",
+      firstHint: "To try it now, one of you taps Send and the other taps Receive."
     },
     devices: {
       title: "Devices",
@@ -28234,7 +28249,12 @@
       entryPlaceholder: "Introduce el c\xF3digo del otro dispositivo",
       entryButton: "Emparejar",
       notAnInvitation: "Ese c\xF3digo no conten\xEDa una invitaci\xF3n de emparejamiento. En el otro dispositivo, elige Emparejar con un c\xF3digo.",
-      codeSectionHint: "\xBFEl otro dispositivo no tiene c\xE1mara, como un ordenador? Empareja con un c\xF3digo en su lugar."
+      codeSectionHint: "\xBFEl otro dispositivo no tiene c\xE1mara, como un ordenador? Empareja con un c\xF3digo en su lugar.",
+      successHint: "A partir de ahora, enviar entre estos dos dispositivos solo requiere un toque en cada lado.",
+      renamePrompt: "\xBFQuieres llamarlo de otra forma? El nombre solo se usa en este dispositivo.",
+      sendFirst: "Enviar un archivo a {{name}}",
+      receiveFirst: "Recibir de {{name}}",
+      firstHint: "Para probarlo ahora, uno pulsa Enviar y el otro pulsa Recibir."
     },
     devices: {
       title: "Dispositivos",
@@ -28442,7 +28462,12 @@
       entryPlaceholder: "Saisissez le code de l'autre appareil",
       entryButton: "Associer",
       notAnInvitation: "Ce code ne contenait pas d'invitation d'association. Sur l'autre appareil, choisissez Associer avec un code.",
-      codeSectionHint: "L'autre appareil n'a pas de cam\xE9ra - un ordinateur, par exemple ? Associez-vous plut\xF4t avec un code."
+      codeSectionHint: "L'autre appareil n'a pas de cam\xE9ra - un ordinateur, par exemple ? Associez-vous plut\xF4t avec un code.",
+      successHint: "D\xE9sormais, envoyer entre ces deux appareils ne demande qu'un appui de chaque c\xF4t\xE9.",
+      renamePrompt: "Envie de lui donner un autre nom ? Il n'est utilis\xE9 que sur cet appareil.",
+      sendFirst: "Envoyer un fichier \xE0 {{name}}",
+      receiveFirst: "Recevoir de {{name}}",
+      firstHint: "Pour essayer maintenant, l'un appuie sur Envoyer et l'autre sur Recevoir."
     },
     devices: {
       title: "Appareils",
@@ -28650,7 +28675,12 @@
       entryPlaceholder: "\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u043A\u043E\u0434 \u0441 \u0434\u0440\u0443\u0433\u043E\u0433\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430",
       entryButton: "\u0421\u0432\u044F\u0437\u0430\u0442\u044C",
       notAnInvitation: "\u042D\u0442\u043E\u0442 \u043A\u043E\u0434 \u043D\u0435 \u0441\u043E\u0434\u0435\u0440\u0436\u0430\u043B \u043F\u0440\u0438\u0433\u043B\u0430\u0448\u0435\u043D\u0438\u044F \u0434\u043B\u044F \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u044F. \u041D\u0430 \u0434\u0440\u0443\u0433\u043E\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0435 \u0432\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \xAB\u0421\u0432\u044F\u0437\u0430\u0442\u044C \u043F\u043E \u043A\u043E\u0434\u0443\xBB.",
-      codeSectionHint: "\u041D\u0430 \u0434\u0440\u0443\u0433\u043E\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0435 \u043D\u0435\u0442 \u043A\u0430\u043C\u0435\u0440\u044B - \u043D\u0430\u043F\u0440\u0438\u043C\u0435\u0440, \u044D\u0442\u043E \u043A\u043E\u043C\u043F\u044C\u044E\u0442\u0435\u0440? \u0422\u043E\u0433\u0434\u0430 \u0441\u0432\u044F\u0436\u0438\u0442\u0435\u0441\u044C \u043F\u043E \u043A\u043E\u0434\u0443."
+      codeSectionHint: "\u041D\u0430 \u0434\u0440\u0443\u0433\u043E\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0435 \u043D\u0435\u0442 \u043A\u0430\u043C\u0435\u0440\u044B - \u043D\u0430\u043F\u0440\u0438\u043C\u0435\u0440, \u044D\u0442\u043E \u043A\u043E\u043C\u043F\u044C\u044E\u0442\u0435\u0440? \u0422\u043E\u0433\u0434\u0430 \u0441\u0432\u044F\u0436\u0438\u0442\u0435\u0441\u044C \u043F\u043E \u043A\u043E\u0434\u0443.",
+      successHint: "\u0422\u0435\u043F\u0435\u0440\u044C \u0434\u043B\u044F \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0438 \u043C\u0435\u0436\u0434\u0443 \u044D\u0442\u0438\u043C\u0438 \u0434\u0432\u0443\u043C\u044F \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430\u043C\u0438 \u0434\u043E\u0441\u0442\u0430\u0442\u043E\u0447\u043D\u043E \u043E\u0434\u043D\u043E\u0433\u043E \u043D\u0430\u0436\u0430\u0442\u0438\u044F \u043D\u0430 \u043A\u0430\u0436\u0434\u043E\u043C.",
+      renamePrompt: "\u0425\u043E\u0442\u0438\u0442\u0435 \u043D\u0430\u0437\u0432\u0430\u0442\u044C \u0435\u0433\u043E \u0438\u043D\u0430\u0447\u0435? \u0418\u043C\u044F \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0435\u0442\u0441\u044F \u0442\u043E\u043B\u044C\u043A\u043E \u043D\u0430 \u044D\u0442\u043E\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0435.",
+      sendFirst: "\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u0444\u0430\u0439\u043B \u043D\u0430 {{name}}",
+      receiveFirst: "\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C \u043E\u0442 {{name}}",
+      firstHint: "\u0427\u0442\u043E\u0431\u044B \u043F\u043E\u043F\u0440\u043E\u0431\u043E\u0432\u0430\u0442\u044C \u0441\u0435\u0439\u0447\u0430\u0441, \u043E\u0434\u0438\u043D \u043D\u0430\u0436\u0438\u043C\u0430\u0435\u0442 \xAB\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C\xBB, \u0430 \u0434\u0440\u0443\u0433\u043E\u0439 - \xAB\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C\xBB."
     },
     devices: {
       title: "\u0423\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430",
@@ -29439,7 +29469,15 @@
           onHome: goBack,
           scrollToServer: route.scrollToServer
         }
-      ) : route.name === "explain" ? /* @__PURE__ */ import_react14.default.createElement(Explain, { c, onHome: goBack }) : /* @__PURE__ */ import_react14.default.createElement(Pair, { c, onHome: goBack })
+      ) : route.name === "explain" ? /* @__PURE__ */ import_react14.default.createElement(Explain, { c, onHome: goBack }) : /* @__PURE__ */ import_react14.default.createElement(
+        Pair,
+        {
+          c,
+          onHome: goBack,
+          onSend: (item, device) => setStack((st) => [...st.slice(0, -1), { name: "send", item, device }]),
+          onReceiveFrom: (device) => setStack((st) => [...st.slice(0, -1), { name: "receive", device }])
+        }
+      )
     );
   }
   function Home({
@@ -29984,14 +30022,20 @@
       }
     ), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.decline"), onClick: decline })) : null, phase === "transferring" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, offer?.folder ? t2("receive.receivingFolder") : t2("receive.receiving")), direct !== null ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, direct ? t2("transfer.direct") : t2("transfer.relay")) : null, /* @__PURE__ */ import_react14.default.createElement(ProgressBar, { c, pct }), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("transfer.progress", { pct }))) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, offer?.folder ? t2("receive.successFolder") : t2("receive.success")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.success, margin: 0 } }, downloadDirRef.current && !usedFallback ? t2("receive.savedAsIn", { name: savedName, folder: savedDir }) : t2("receive.savedAs", { name: savedName })), usedFallback ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.folderFallback")) : null) : null, phase === "declined" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.declined")) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "cancelled" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("errors.cancelled")) : null), busy ? /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancel }) : phase === "confirm" || phase === "conflict" ? null : /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.done"), onClick: onHome }));
   }
-  function Pair({ c, onHome }) {
+  function Pair({
+    c,
+    onHome,
+    onSend,
+    onReceiveFrom
+  }) {
     const { t: t2 } = useTranslation();
     const [phase, setPhase] = (0, import_react14.useState)("menu");
     const [qrDataUrl, setQrDataUrl] = (0, import_react14.useState)("");
     const [payloadText, setPayloadText] = (0, import_react14.useState)("");
     const [pairCode, setPairCode] = (0, import_react14.useState)("");
     const [entry, setEntry] = (0, import_react14.useState)("");
-    const [peerName, setPeerName] = (0, import_react14.useState)("");
+    const [peer, setPeer] = (0, import_react14.useState)(null);
+    const [label, setLabel] = (0, import_react14.useState)("");
     const [error, setError] = (0, import_react14.useState)("");
     const [copied, setCopied] = (0, import_react14.useState)(false);
     const cancelledRef = (0, import_react14.useRef)(false);
@@ -30002,9 +30046,27 @@
       },
       []
     );
-    const succeed = (name) => {
-      setPeerName(name);
+    const succeed = (device) => {
+      setPeer(device);
       setPhase("done");
+    };
+    const saving = (0, import_react14.useRef)(Promise.resolve());
+    const rename = (value) => {
+      setLabel(value);
+      if (!peer) return;
+      const id = peer.id;
+      saving.current = saving.current.then(() => renameDevice(id, value)).catch(() => void 0);
+    };
+    const storedPeer = async (device) => {
+      await saving.current;
+      return (await loadDevices()).find((d) => d.id === device.id) ?? device;
+    };
+    const shownName = peer ? label.trim() || peer.name : "";
+    const sendFirst = async (device) => {
+      const file = await window.portalgems.pickFile(loadLastSendDir());
+      if (!file) return;
+      rememberSendLocation(file.path);
+      onSend({ kind: "file", ...file }, await storedPeer(device));
     };
     const fail = (e2) => {
       setError(friendlyError(t2, e2));
@@ -30018,7 +30080,7 @@
       const id = nextId++;
       idRef.current = id;
       waitForPairingAsDisplayer(payload, id, () => cancelledRef.current).then(
-        (device) => succeed(deviceLabel(device)),
+        (device) => succeed(device),
         (e2) => {
           if (!cancelledRef.current) fail(e2);
         }
@@ -30069,7 +30131,7 @@
         window.portalgems.cancel(id);
       }, 6e4);
       completePairingAsScanner(payload, myName, id).then(
-        (device) => succeed(deviceLabel(device)),
+        (device) => succeed(device),
         (e2) => {
           if (timedOut) fail(new Error(t2("paired.notOpen", { name: payload.name })));
           else if (!cancelledRef.current) fail(e2);
@@ -30155,7 +30217,30 @@
         label: copied ? t2("pair.copied") : t2("pair.copyPayload"),
         onClick: () => copy2(payloadText)
       }
-    ), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("pair.waiting"))) : null, phase === "working" ? /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("pair.waiting"))) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("pair.success", { name: peerName }))) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "done" || phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.done"), onClick: onHome }) : /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancelAndBack }));
+    ), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("pair.waiting"))) : null, phase === "working" ? /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("pair.waiting"))) : null, phase === "done" && peer ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("pair.success", { name: shownName })), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("pair.successHint")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("pair.renamePrompt")), /* @__PURE__ */ import_react14.default.createElement(
+      TextInput,
+      {
+        c,
+        value: label,
+        onChange: rename,
+        placeholder: peer.name,
+        monospace: false
+      }
+    )), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("pair.firstHint")), /* @__PURE__ */ import_react14.default.createElement(
+      PrimaryButton,
+      {
+        c,
+        label: t2("pair.sendFirst", { name: shownName }),
+        onClick: () => void sendFirst(peer)
+      }
+    ), /* @__PURE__ */ import_react14.default.createElement(
+      GhostButton,
+      {
+        c,
+        label: t2("pair.receiveFirst", { name: shownName }),
+        onClick: () => void storedPeer(peer).then(onReceiveFrom)
+      }
+    ))) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.done"), onClick: onHome }) : phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.done"), onClick: onHome }) : /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancelAndBack }));
   }
   var LANGUAGE_LABELS = {
     en: "English",

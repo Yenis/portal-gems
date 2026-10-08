@@ -75,7 +75,12 @@
     "entryPlaceholder": "Introduce el código del otro dispositivo",
     "entryButton": "Emparejar",
     "notAnInvitation": "Ese código no contenía una invitación de emparejamiento. En el otro dispositivo, elige Emparejar con un código.",
-    "codeSectionHint": "¿El otro dispositivo no tiene cámara, como un ordenador? Empareja con un código en su lugar."
+    "codeSectionHint": "¿El otro dispositivo no tiene cámara, como un ordenador? Empareja con un código en su lugar.",
+    "successHint": "A partir de ahora, enviar entre estos dos dispositivos solo requiere un toque en cada lado.",
+    "renamePrompt": "¿Quieres llamarlo de otra forma? El nombre solo se usa en este dispositivo.",
+    "sendFirst": "Enviar un archivo a {{name}}",
+    "receiveFirst": "Recibir de {{name}}",
+    "firstHint": "Para probarlo ahora, uno pulsa Enviar y el otro pulsa Recibir."
   },
   "devices": {
     "title": "Dispositivos",
