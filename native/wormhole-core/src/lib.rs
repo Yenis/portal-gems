@@ -1206,6 +1206,74 @@ mod tests {
         }
     }
 
+    /// What the pairing handshake does: receive a tiny file and read it back
+    /// the moment `receive_file` returns. The caller is handed a path, so the
+    /// bytes have to be on disk by then - a small payload that never filled a
+    /// buffer is exactly the case where they might not be.
+    ///
+    /// Run with `cargo test -- --ignored` when online.
+    #[test]
+    #[ignore]
+    fn a_tiny_file_is_readable_the_instant_receive_returns() {
+        futures_lite::future::block_on(async {
+            let dir = std::env::temp_dir().join(format!("pg-tiny-{}", std::process::id()));
+            std::fs::remove_dir_all(&dir).ok();
+            let src_dir = dir.join("src");
+            let recv_dir = dir.join("recv");
+            std::fs::create_dir_all(&src_dir).unwrap();
+            std::fs::create_dir_all(&recv_dir).unwrap();
+            // The shape and size of a real pairing handshake.
+            let body = br#"{"v":1,"name":"Nokia E72"}"#;
+            let src = src_dir.join("pg-pair-handshake.json");
+            std::fs::write(&src, body).unwrap();
+
+            let code = format!(
+                "9{}-tiny-integration-test",
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .subsec_nanos()
+                    % 1_000_000
+            );
+            let send_code = code.clone();
+            let src_clone = src.clone();
+            let sender = std::thread::spawn(move || {
+                futures_lite::future::block_on(send_file(
+                    &src_clone,
+                    Some(&send_code),
+                    &test_server(),
+                    |_| {},
+                    |_| {},
+                    |_, _| {},
+                    pending::<()>(),
+                ))
+            });
+            std::thread::sleep(std::time::Duration::from_secs(2));
+
+            let saved = receive_file(
+                &code,
+                &recv_dir,
+                &test_server(),
+                |_| {},
+                |_, _| {},
+                pending::<()>(),
+            )
+            .await
+            .unwrap();
+            // No sleep, no retry: read it exactly as the caller would.
+            let got = std::fs::read(&saved).unwrap();
+            sender.join().unwrap().unwrap();
+            assert_eq!(
+                got,
+                body,
+                "read back {} of {} bytes from {saved:?}",
+                got.len(),
+                body.len()
+            );
+            std::fs::remove_dir_all(&dir).ok();
+        });
+    }
+
     /// A receive that is cancelled must leave nothing staged: a partial file
     /// left in the destination pushes the next transfer of that name to
     /// `name (1).ext`, which is the name the caller ends up saving under.
