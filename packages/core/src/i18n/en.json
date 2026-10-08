@@ -97,7 +97,15 @@
     "renamePlaceholder": "Name for this device",
     "dropHint": "Drop a file or folder on a device to send it there.",
     "dropOne": "Drop one file or folder at a time.",
-    "dropFailed": "That could not be read. Try choosing it with the Send button."
+    "dropFailed": "That could not be read. Try choosing it with the Send button.",
+    "lastUsed": "Last transfer {{when}}",
+    "lastUsedOn": "Last transfer on {{date}}"
+  },
+  "time": {
+    "now": "just now",
+    "minutes": "{{n}} min ago",
+    "hours": "{{n}} h ago",
+    "days": "{{n}} d ago"
   },
   "shareTarget": {
     "title": "Send to",

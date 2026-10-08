@@ -14,6 +14,7 @@ import { pick } from '@react-native-documents/picker';
 import {
   deviceLabel,
   fontSize,
+  lastTransferText,
   radius,
   spacing,
   type PairedDevice,
@@ -50,7 +51,7 @@ export default function HomeScreen({
   onSettings: () => void;
   onExplain: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const c = useTheme();
   const [code, setCode] = useState('');
   const [picking, setPicking] = useState(false);
@@ -239,11 +240,20 @@ export default function HomeScreen({
                       }>
                       <Path d="M9 6l6 6-6 6" />
                     </Svg>
-                    <Text
-                      numberOfLines={1}
-                      style={[styles.deviceNameText, { color: c.text }]}>
-                      {deviceLabel(device)}
-                    </Text>
+                    <View style={styles.deviceNameLines}>
+                      <Text
+                        numberOfLines={1}
+                        style={[styles.deviceNameText, { color: c.text }]}>
+                        {deviceLabel(device)}
+                      </Text>
+                      {lastTransferText(t as any, device, i18n.language) ? (
+                        <Text
+                          numberOfLines={1}
+                          style={[styles.deviceLastUsed, { color: c.textMuted }]}>
+                          {lastTransferText(t as any, device, i18n.language)}
+                        </Text>
+                      ) : null}
+                    </View>
                   </Pressable>
                   <View style={styles.quickActions}>
                     <View style={styles.quickAction}>
@@ -384,7 +394,9 @@ const styles = StyleSheet.create({
     gap: spacing(1),
     minHeight: 40,
   },
-  deviceNameText: { flexShrink: 1, fontSize: fontSize.body, fontWeight: '600' },
+  deviceNameLines: { flexShrink: 1 },
+  deviceNameText: { fontSize: fontSize.body, fontWeight: '600' },
+  deviceLastUsed: { fontSize: fontSize.small },
   quickActions: { flexGrow: 1, flexDirection: 'row', gap: spacing(2) },
   quickAction: { flexGrow: 1 },
   // Two to a line, wrapping as actions are added; an odd one out takes the

@@ -97,7 +97,15 @@
     "renamePlaceholder": "Nom de cet appareil",
     "dropHint": "Déposez un fichier ou un dossier sur un appareil pour le lui envoyer.",
     "dropOne": "Déposez un seul fichier ou dossier à la fois.",
-    "dropFailed": "Impossible de le lire. Essayez de le choisir avec le bouton Envoyer."
+    "dropFailed": "Impossible de le lire. Essayez de le choisir avec le bouton Envoyer.",
+    "lastUsed": "Dernier transfert {{when}}",
+    "lastUsedOn": "Dernier transfert le {{date}}"
+  },
+  "time": {
+    "now": "à l'instant",
+    "minutes": "il y a {{n}} min",
+    "hours": "il y a {{n}} h",
+    "days": "il y a {{n}} j"
   },
   "shareTarget": {
     "title": "Envoyer à",

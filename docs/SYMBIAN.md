@@ -812,8 +812,14 @@ Things worth knowing:
 - **A finished pairing offers the next step.** When a pairing job ends, the
   polling timer shows a list query once (`OfferFirstStepL`): Send to it,
   Receive from it, Rename it. Cancelling changes nothing - the same three
-  remain in the Options menu. The new pairing is the last one in
-  `pairs.txt`, because `WhminiAddPair` appends.
+  remain in the Options menu. The new pairing is the first one in
+  `pairs.txt`, because `WhminiAddPair` puts it there.
+- **Most recently used first.** The paired menus list devices in the order
+  of `pairs.txt`, and a completed paired transfer moves its device to the
+  top (`WhminiTouchPair`, called from the UI thread when the job ends). The
+  other apps store a `lastUsedAt` timestamp and sort on it; here the file
+  order is the whole mechanism, so the format is unchanged and there is no
+  "last transfer" time to show - a menu item has one line.
 - **A paired send asks what to send.** Options > Send to paired device picks
   the device, then a list query offers File, Folder or Message - the same
   three the other apps offer per device. The pickers are the ones an ordinary

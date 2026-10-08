@@ -97,7 +97,15 @@
     "renamePlaceholder": "Naziv za ovaj uređaj",
     "dropHint": "Prevuci fajl ili folder na uređaj da ga pošalješ tamo.",
     "dropOne": "Prevuci samo jedan fajl ili folder odjednom.",
-    "dropFailed": "To se nije moglo pročitati. Pokušaj ga odabrati dugmetom Pošalji."
+    "dropFailed": "To se nije moglo pročitati. Pokušaj ga odabrati dugmetom Pošalji.",
+    "lastUsed": "Zadnji prijenos {{when}}",
+    "lastUsedOn": "Zadnji prijenos {{date}}"
+  },
+  "time": {
+    "now": "upravo sada",
+    "minutes": "prije {{n}} min",
+    "hours": "prije {{n}} h",
+    "days": "prije {{n}} d"
   },
   "shareTarget": {
     "title": "Pošalji na",

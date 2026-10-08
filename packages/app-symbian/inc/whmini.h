@@ -82,6 +82,7 @@ const char* WhminiPairLabel(const TWhminiPair& aPair);
 /* Returns how many were loaded, 0 if there is no file yet. */
 TInt WhminiLoadPairs(TWhminiPair* aPairs, TInt aMax);
 TInt WhminiAddPair(const char* aName, const unsigned char aSecret[32]);
+TInt WhminiTouchPair(const unsigned char aSecret[32]);
 TInt WhminiRenamePair(TInt aIndex, const char* aLabel);
 TInt WhminiRemovePair(TInt aIndex);
 

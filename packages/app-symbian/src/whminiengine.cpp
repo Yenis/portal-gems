@@ -418,14 +418,38 @@ static void CopyClean(char* aDst, TInt aCap, const char* aSrc)
     aDst[i] = '\0';
 }
 
+/* pairs.txt is kept most recently used first, and that order is the order
+ * of every paired-device menu - the other apps sort on a stored timestamp,
+ * here the file's own order does the job with no change to its format. A
+ * new pairing therefore goes in at the top. */
 TInt WhminiAddPair(const char* aName, const unsigned char aSecret[32])
 {
     TInt count = WhminiLoadPairs(gPairs, KMaxPairs);
+    TInt i;
     if (count >= KMaxPairs) return KErrOverflow;
-    CopyClean(gPairs[count].iName, sizeof(gPairs[count].iName), aName);
-    gPairs[count].iLabel[0] = '\0';
-    Mem::Copy(gPairs[count].iSecret, aSecret, 32);
+    for (i = count; i > 0; i--) gPairs[i] = gPairs[i - 1];
+    CopyClean(gPairs[0].iName, sizeof(gPairs[0].iName), aName);
+    gPairs[0].iLabel[0] = '\0';
+    Mem::Copy(gPairs[0].iSecret, aSecret, 32);
     return SavePairs(gPairs, count + 1);
+}
+
+/* A transfer with this pairing has just completed: move it to the top. The
+ * pairing is found by its secret, since an index may be stale by now. */
+TInt WhminiTouchPair(const unsigned char aSecret[32])
+{
+    TInt count = WhminiLoadPairs(gPairs, KMaxPairs);
+    TInt at, i;
+    TWhminiPair used;
+    for (at = 0; at < count; at++) {
+        if (Mem::Compare(gPairs[at].iSecret, 32, aSecret, 32) == 0) break;
+    }
+    if (at >= count) return KErrNotFound;
+    if (at == 0) return KErrNone;
+    used = gPairs[at];
+    for (i = at; i > 0; i--) gPairs[i] = gPairs[i - 1];
+    gPairs[0] = used;
+    return SavePairs(gPairs, count);
 }
 
 /* Rename a pairing locally. An empty label clears the rename, and the device

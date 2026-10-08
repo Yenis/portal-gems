@@ -14,6 +14,8 @@ import {
   PAIRED_RECEIVE_TIMEOUT_MS,
   parsePairingPayload,
   sanitizeDeviceName,
+  sortByRecent,
+  withDeviceUsed,
   type PairedDevice,
   type PairingPayload,
 } from '@portalgems/core';
@@ -32,7 +34,8 @@ import { currentServer } from './server';
 export async function loadDevices(): Promise<PairedDevice[]> {
   try {
     const parsed = JSON.parse(await getPairedDevicesJson());
-    return Array.isArray(parsed) ? parsed : [];
+    // Most recently used first, which is the order every list shows them in.
+    return Array.isArray(parsed) ? sortByRecent(parsed) : [];
   } catch {
     return [];
   }
@@ -68,6 +71,11 @@ export async function renameDevice(id: string, label: string): Promise<void> {
       d.id === id ? { ...d, label: clean.length > 0 ? clean : undefined } : d
     )
   );
+}
+
+/** Note that a transfer with this device has just completed. */
+export async function markDeviceUsed(id: string): Promise<void> {
+  await saveDevices(withDeviceUsed(await loadDevices(), id));
 }
 
 export async function removeDevice(id: string): Promise<void> {

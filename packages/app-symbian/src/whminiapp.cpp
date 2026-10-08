@@ -532,6 +532,15 @@ TInt CWhminiAppUi::Tick(TAny* aSelf)
             self->iMessageShown = ETrue;
             TRAP_IGNORE(self->ShowMessageL());
             }
+        /* A paired transfer that completed moves its device to the top of
+         * the paired menus. Done here rather than on the worker, which has
+         * finished and can no longer be reading the same file. */
+        if (self->iJob.iPaired && self->iJob.iState == EJobDone &&
+            self->iJob.iKind != EJobKindPairHost &&
+            self->iJob.iKind != EJobKindPairJoin)
+            {
+            WhminiTouchPair(self->iJob.iSecret);
+            }
         /* A pairing that has just succeeded is the moment to use it: offer
          * the first transfer and the rename here, rather than leave them to
          * be found in the menu. Once per pairing. */
@@ -553,7 +562,7 @@ void CWhminiAppUi::OfferFirstStepL()
     {
     iPairCount = WhminiLoadPairs(iPairs, KMaxPairs);
     if (iPairCount == 0) return;
-    TInt index = iPairCount - 1;   /* WhminiAddPair appends */
+    TInt index = 0;   /* WhminiAddPair puts a new pairing first */
 
     TInt what = 0;
     CAknListQueryDialog* dlg = new (ELeave) CAknListQueryDialog(&what);

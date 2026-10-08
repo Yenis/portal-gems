@@ -40,6 +40,7 @@ import {
   type ZippedFolder,
 } from '../native';
 import { currentServer } from '../server';
+import { markDeviceUsed } from '../pairing';
 import { useTheme } from '../theme';
 
 type Phase =
@@ -185,6 +186,7 @@ export default function SendScreen({
             SEND_ATTEMPTS_KEY,
             JSON.stringify(withSendFinished(attempts, device.id))
           ).catch(() => undefined);
+          await markDeviceUsed(device.id).catch(() => undefined);
         }
         setPhase('done');
       },

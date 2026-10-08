@@ -97,7 +97,15 @@
     "renamePlaceholder": "Nombre de este dispositivo",
     "dropHint": "Suelta un archivo o una carpeta sobre un dispositivo para enviarlo allí.",
     "dropOne": "Suelta solo un archivo o una carpeta cada vez.",
-    "dropFailed": "No se pudo leer. Prueba a elegirlo con el botón Enviar."
+    "dropFailed": "No se pudo leer. Prueba a elegirlo con el botón Enviar.",
+    "lastUsed": "Última transferencia {{when}}",
+    "lastUsedOn": "Última transferencia el {{date}}"
+  },
+  "time": {
+    "now": "ahora mismo",
+    "minutes": "hace {{n}} min",
+    "hours": "hace {{n}} h",
+    "days": "hace {{n}} d"
   },
   "shareTarget": {
     "title": "Enviar a",

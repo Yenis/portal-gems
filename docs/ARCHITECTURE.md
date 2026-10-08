@@ -191,6 +191,14 @@ Consumed by both apps as **npm `file:` symlinks** (see §5 build gotchas).
     `DEVICE_NAME_MAX_BYTES` = 60 **bytes** on a character boundary), because
     a name crosses the wire into fixed C buffers. Renaming later reaches
     nobody: the peer keeps the name it learned, and renames its own end.
+  - **Most recently used first.** `PairedDevice.lastUsedAt` is set by each
+    app's `markDeviceUsed` when a transfer with that device completes, in
+    either direction (a received message counts at the offer, which is when
+    it is complete). `loadDevices` returns the list through `sortByRecent`
+    (`lastUsedAt`, else `addedAt`), so every list is in that order, and
+    `lastTransferText` builds the "Last transfer 5 min ago" line under a
+    device. Local only, like `label`. Symbian keeps `pairs.txt` itself in
+    that order instead - see `docs/SYMBIAN.md`.
   - **Getting the payload across.** Three ways, one payload: a QR code,
     copy/paste, or *pairing over a code* - the displayer allocates an ordinary
     wormhole code and sends the encoded payload through it as a text message

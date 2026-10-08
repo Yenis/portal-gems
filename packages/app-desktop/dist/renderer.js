@@ -24391,6 +24391,35 @@
     const label = device.label?.trim();
     return label && label.length > 0 ? label : device.name;
   }
+  function withDeviceUsed(devices, id, nowMs = Date.now()) {
+    return devices.map((d) => d.id === id ? { ...d, lastUsedAt: nowMs } : d);
+  }
+  function sortByRecent(devices) {
+    const when = (d) => d.lastUsedAt ?? d.addedAt ?? 0;
+    return devices.map((device, index) => ({ device, index })).sort((a, b) => when(b.device) - when(a.device) || a.index - b.index).map(({ device }) => device);
+  }
+  function timeAgo(thenMs, nowMs = Date.now()) {
+    const minutes = Math.floor((nowMs - thenMs) / 6e4);
+    if (minutes < 1) return { unit: "now" };
+    if (minutes < 60) return { unit: "minutes", n: minutes };
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return { unit: "hours", n: hours };
+    const days = Math.floor(hours / 24);
+    if (days <= 30) return { unit: "days", n: days };
+    return { unit: "date" };
+  }
+  function lastTransferText(t2, device, locale, nowMs = Date.now()) {
+    if (device.lastUsedAt == null) return null;
+    const ago = timeAgo(device.lastUsedAt, nowMs);
+    if (ago.unit === "date") {
+      return t2("devices.lastUsedOn", {
+        date: new Date(device.lastUsedAt).toLocaleDateString(locale)
+      });
+    }
+    return t2("devices.lastUsed", {
+      when: ago.unit === "now" ? t2("time.now") : t2(`time.${ago.unit}`, { n: ago.n })
+    });
+  }
   function newDeviceId() {
     return toBase64Url(randomBytes(9));
   }
@@ -27632,7 +27661,15 @@
       renamePlaceholder: "Naziv za ovaj ure\u0111aj",
       dropHint: "Prevuci fajl ili folder na ure\u0111aj da ga po\u0161alje\u0161 tamo.",
       dropOne: "Prevuci samo jedan fajl ili folder odjednom.",
-      dropFailed: "To se nije moglo pro\u010Ditati. Poku\u0161aj ga odabrati dugmetom Po\u0161alji."
+      dropFailed: "To se nije moglo pro\u010Ditati. Poku\u0161aj ga odabrati dugmetom Po\u0161alji.",
+      lastUsed: "Zadnji prijenos {{when}}",
+      lastUsedOn: "Zadnji prijenos {{date}}"
+    },
+    time: {
+      now: "upravo sada",
+      minutes: "prije {{n}} min",
+      hours: "prije {{n}} h",
+      days: "prije {{n}} d"
     },
     shareTarget: {
       title: "Po\u0161alji na",
@@ -27845,7 +27882,15 @@
       renamePlaceholder: "Name f\xFCr dieses Ger\xE4t",
       dropHint: "Ziehe eine Datei oder einen Ordner auf ein Ger\xE4t, um sie dorthin zu senden.",
       dropOne: "Bitte nur eine Datei oder einen Ordner auf einmal ablegen.",
-      dropFailed: "Das konnte nicht gelesen werden. W\xE4hle es stattdessen \xFCber Senden aus."
+      dropFailed: "Das konnte nicht gelesen werden. W\xE4hle es stattdessen \xFCber Senden aus.",
+      lastUsed: "Letzte \xDCbertragung {{when}}",
+      lastUsedOn: "Letzte \xDCbertragung am {{date}}"
+    },
+    time: {
+      now: "gerade eben",
+      minutes: "vor {{n}} Min.",
+      hours: "vor {{n}} Std.",
+      days: "vor {{n}} T."
     },
     shareTarget: {
       title: "Senden an",
@@ -28058,7 +28103,15 @@
       renamePlaceholder: "Name for this device",
       dropHint: "Drop a file or folder on a device to send it there.",
       dropOne: "Drop one file or folder at a time.",
-      dropFailed: "That could not be read. Try choosing it with the Send button."
+      dropFailed: "That could not be read. Try choosing it with the Send button.",
+      lastUsed: "Last transfer {{when}}",
+      lastUsedOn: "Last transfer on {{date}}"
+    },
+    time: {
+      now: "just now",
+      minutes: "{{n}} min ago",
+      hours: "{{n}} h ago",
+      days: "{{n}} d ago"
     },
     shareTarget: {
       title: "Send to",
@@ -28271,7 +28324,15 @@
       renamePlaceholder: "Nombre de este dispositivo",
       dropHint: "Suelta un archivo o una carpeta sobre un dispositivo para enviarlo all\xED.",
       dropOne: "Suelta solo un archivo o una carpeta cada vez.",
-      dropFailed: "No se pudo leer. Prueba a elegirlo con el bot\xF3n Enviar."
+      dropFailed: "No se pudo leer. Prueba a elegirlo con el bot\xF3n Enviar.",
+      lastUsed: "\xDAltima transferencia {{when}}",
+      lastUsedOn: "\xDAltima transferencia el {{date}}"
+    },
+    time: {
+      now: "ahora mismo",
+      minutes: "hace {{n}} min",
+      hours: "hace {{n}} h",
+      days: "hace {{n}} d"
     },
     shareTarget: {
       title: "Enviar a",
@@ -28484,7 +28545,15 @@
       renamePlaceholder: "Nom de cet appareil",
       dropHint: "D\xE9posez un fichier ou un dossier sur un appareil pour le lui envoyer.",
       dropOne: "D\xE9posez un seul fichier ou dossier \xE0 la fois.",
-      dropFailed: "Impossible de le lire. Essayez de le choisir avec le bouton Envoyer."
+      dropFailed: "Impossible de le lire. Essayez de le choisir avec le bouton Envoyer.",
+      lastUsed: "Dernier transfert {{when}}",
+      lastUsedOn: "Dernier transfert le {{date}}"
+    },
+    time: {
+      now: "\xE0 l'instant",
+      minutes: "il y a {{n}} min",
+      hours: "il y a {{n}} h",
+      days: "il y a {{n}} j"
     },
     shareTarget: {
       title: "Envoyer \xE0",
@@ -28697,7 +28766,15 @@
       renamePlaceholder: "\u0418\u043C\u044F \u044D\u0442\u043E\u0433\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430",
       dropHint: "\u041F\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u0442\u0435 \u0444\u0430\u0439\u043B \u0438\u043B\u0438 \u043F\u0430\u043F\u043A\u0443 \u043D\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E, \u0447\u0442\u043E\u0431\u044B \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C.",
       dropOne: "\u041F\u0435\u0440\u0435\u0442\u0430\u0441\u043A\u0438\u0432\u0430\u0439\u0442\u0435 \u043F\u043E \u043E\u0434\u043D\u043E\u043C\u0443 \u0444\u0430\u0439\u043B\u0443 \u0438\u043B\u0438 \u043F\u0430\u043F\u043A\u0435.",
-      dropFailed: "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u0442\u044C. \u041F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0432\u044B\u0431\u0440\u0430\u0442\u044C \u0447\u0435\u0440\u0435\u0437 \u043A\u043D\u043E\u043F\u043A\u0443 \xAB\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C\xBB."
+      dropFailed: "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u0442\u044C. \u041F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0432\u044B\u0431\u0440\u0430\u0442\u044C \u0447\u0435\u0440\u0435\u0437 \u043A\u043D\u043E\u043F\u043A\u0443 \xAB\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C\xBB.",
+      lastUsed: "\u041F\u043E\u0441\u043B\u0435\u0434\u043D\u044F\u044F \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0430 {{when}}",
+      lastUsedOn: "\u041F\u043E\u0441\u043B\u0435\u0434\u043D\u044F\u044F \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0430 {{date}}"
+    },
+    time: {
+      now: "\u0442\u043E\u043B\u044C\u043A\u043E \u0447\u0442\u043E",
+      minutes: "{{n}} \u043C\u0438\u043D \u043D\u0430\u0437\u0430\u0434",
+      hours: "{{n}} \u0447 \u043D\u0430\u0437\u0430\u0434",
+      days: "{{n}} \u0434\u043D. \u043D\u0430\u0437\u0430\u0434"
     },
     shareTarget: {
       title: "\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u043D\u0430",
@@ -28881,7 +28958,7 @@
   async function loadDevices() {
     try {
       const parsed = JSON.parse(await pg().pairsGet());
-      return Array.isArray(parsed) ? parsed : [];
+      return Array.isArray(parsed) ? sortByRecent(parsed) : [];
     } catch {
       return [];
     }
@@ -28904,6 +28981,9 @@
         (d) => d.id === id ? { ...d, label: clean2.length > 0 ? clean2 : void 0 } : d
       )
     );
+  }
+  async function markDeviceUsed(id) {
+    await saveDevices(withDeviceUsed(await loadDevices(), id));
   }
   async function removeDevice(id) {
     const devices = await loadDevices();
@@ -29490,7 +29570,7 @@
     onSettings,
     onExplain
   }) {
-    const { t: t2 } = useTranslation();
+    const { t: t2, i18n } = useTranslation();
     const [code, setCode] = (0, import_react14.useState)("");
     const [devices, setDevices] = (0, import_react14.useState)([]);
     (0, import_react14.useEffect)(() => {
@@ -29675,7 +29755,7 @@
           },
           /* @__PURE__ */ import_react14.default.createElement("path", { d: "M9 6l6 6-6 6" })
         ),
-        /* @__PURE__ */ import_react14.default.createElement(
+        /* @__PURE__ */ import_react14.default.createElement("span", { style: { minWidth: 0, display: "flex", flexDirection: "column" } }, /* @__PURE__ */ import_react14.default.createElement(
           "span",
           {
             style: {
@@ -29685,7 +29765,20 @@
             }
           },
           deviceLabel(device)
-        )
+        ), lastTransferText(t2, device, i18n.language) ? /* @__PURE__ */ import_react14.default.createElement(
+          "span",
+          {
+            style: {
+              color: c.textMuted,
+              fontSize: fontSize.small,
+              fontWeight: 400,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap"
+            }
+          },
+          lastTransferText(t2, device, i18n.language)
+        ) : null)
       ), /* @__PURE__ */ import_react14.default.createElement("div", { style: { width: 110 } }, /* @__PURE__ */ import_react14.default.createElement(
         PrimaryButton,
         {
@@ -29837,6 +29930,7 @@
               SEND_ATTEMPTS_KEY,
               JSON.stringify(withSendFinished(attempts, device.id))
             );
+            markDeviceUsed(device.id).catch(() => void 0);
           }
           setPhase("done");
         },
@@ -29918,6 +30012,7 @@
       });
       const gotOffer = (o) => {
         setOffer(o);
+        if (o.text != null && device) markDeviceUsed(device.id).catch(() => void 0);
         setPhase(o.text != null ? "message" : "confirm");
       };
       const failed = (e2) => {
@@ -29956,6 +30051,7 @@
           setSavedName(name);
           setSavedDir(dir2);
           setUsedFallback(fallback);
+          if (device) markDeviceUsed(device.id).catch(() => void 0);
           setPhase("done");
         },
         (e2) => {

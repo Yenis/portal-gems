@@ -97,7 +97,15 @@
     "renamePlaceholder": "Name für dieses Gerät",
     "dropHint": "Ziehe eine Datei oder einen Ordner auf ein Gerät, um sie dorthin zu senden.",
     "dropOne": "Bitte nur eine Datei oder einen Ordner auf einmal ablegen.",
-    "dropFailed": "Das konnte nicht gelesen werden. Wähle es stattdessen über Senden aus."
+    "dropFailed": "Das konnte nicht gelesen werden. Wähle es stattdessen über Senden aus.",
+    "lastUsed": "Letzte Übertragung {{when}}",
+    "lastUsedOn": "Letzte Übertragung am {{date}}"
+  },
+  "time": {
+    "now": "gerade eben",
+    "minutes": "vor {{n}} Min.",
+    "hours": "vor {{n}} Std.",
+    "days": "vor {{n}} T."
   },
   "shareTarget": {
     "title": "Senden an",

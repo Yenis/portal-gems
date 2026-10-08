@@ -34,7 +34,7 @@ import {
   withTransferService,
   type PickedDirectory,
 } from '../native';
-import { withAttemptBound } from '../pairing';
+import { markDeviceUsed, withAttemptBound } from '../pairing';
 import { currentServer } from '../server';
 import { useTheme } from '../theme';
 
@@ -102,6 +102,7 @@ export default function ReceiveScreen({
       const text = incoming.text();
       if (text !== undefined) {
         setMessage(text);
+        if (device) markDeviceUsed(device.id).catch(() => undefined);
         setPhase('message');
         return;
       }
@@ -228,6 +229,7 @@ export default function ReceiveScreen({
     }).then(
       (finalName) => {
         setSavedName(finalName);
+        if (device) markDeviceUsed(device.id).catch(() => undefined);
         setPhase('done');
       },
       (e) => {

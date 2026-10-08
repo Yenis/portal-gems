@@ -21,6 +21,10 @@ import {
   deviceLabel,
   sanitizeDeviceName,
   DEVICE_NAME_MAX_BYTES,
+  lastTransferText,
+  sortByRecent,
+  timeAgo,
+  withDeviceUsed,
 } from '../pairing';
 
 describe('base64url + utf8', () => {
@@ -312,5 +316,81 @@ describe('device names and local renames', () => {
     const payload = createPairingPayload(name);
     const back = parsePairingPayload(encodePairingPayload(payload));
     expect(back?.name).toBe(name);
+  });
+});
+
+describe('recently used devices', () => {
+  const device = (id: string, addedAt: number, lastUsedAt?: number) => ({
+    id,
+    name: id,
+    secret: 's',
+    addedAt,
+    lastUsedAt,
+  });
+
+  it('marks only the device that was used', () => {
+    const out = withDeviceUsed([device('a', 1), device('b', 2)], 'b', 500);
+    expect(out.map((d) => d.lastUsedAt)).toEqual([undefined, 500]);
+  });
+
+  it('puts the most recently used first', () => {
+    const out = sortByRecent([device('a', 1, 100), device('b', 2, 300), device('c', 3, 200)]);
+    expect(out.map((d) => d.id)).toEqual(['b', 'c', 'a']);
+  });
+
+  it('counts a device never used from when it was paired', () => {
+    // 'new' was paired after 'old' was last used, so it leads.
+    const out = sortByRecent([device('old', 1, 100), device('new', 200)]);
+    expect(out.map((d) => d.id)).toEqual(['new', 'old']);
+  });
+
+  it('keeps the stored order between equals', () => {
+    const out = sortByRecent([device('a', 5), device('b', 5), device('c', 5)]);
+    expect(out.map((d) => d.id)).toEqual(['a', 'b', 'c']);
+  });
+});
+
+describe('timeAgo', () => {
+  const MIN = 60_000;
+  const HOUR = 60 * MIN;
+  const DAY = 24 * HOUR;
+  const now = 100 * DAY;
+
+  it('picks the coarsest unit that fits', () => {
+    expect(timeAgo(now - 30_000, now)).toEqual({ unit: 'now' });
+    expect(timeAgo(now - 5 * MIN, now)).toEqual({ unit: 'minutes', n: 5 });
+    expect(timeAgo(now - 59 * MIN, now)).toEqual({ unit: 'minutes', n: 59 });
+    expect(timeAgo(now - HOUR, now)).toEqual({ unit: 'hours', n: 1 });
+    expect(timeAgo(now - 23 * HOUR, now)).toEqual({ unit: 'hours', n: 23 });
+    expect(timeAgo(now - DAY, now)).toEqual({ unit: 'days', n: 1 });
+    expect(timeAgo(now - 30 * DAY, now)).toEqual({ unit: 'days', n: 30 });
+    expect(timeAgo(now - 31 * DAY, now)).toEqual({ unit: 'date' });
+  });
+
+  it('reads a time in the future as now', () => {
+    expect(timeAgo(now + HOUR, now)).toEqual({ unit: 'now' });
+  });
+});
+
+describe('lastTransferText', () => {
+  const t = (key: string, options?: Record<string, unknown>) =>
+    `${key}${options ? JSON.stringify(options) : ''}`;
+
+  it('says nothing for a device never used', () => {
+    expect(lastTransferText(t, {})).toBeNull();
+  });
+
+  it('nests the age inside the sentence', () => {
+    expect(lastTransferText(t, { lastUsedAt: 0 }, 'en', 5 * 60_000)).toBe(
+      'devices.lastUsed{"when":"time.minutes{\\"n\\":5}"}'
+    );
+    expect(lastTransferText(t, { lastUsedAt: 0 }, 'en', 1000)).toBe(
+      'devices.lastUsed{"when":"time.now"}'
+    );
+  });
+
+  it('falls back to the date past a month', () => {
+    const out = lastTransferText(t, { lastUsedAt: 0 }, 'en', 40 * 24 * 3_600_000);
+    expect(out).toMatch(/^devices\.lastUsedOn\{"date":".+"\}$/);
   });
 });

@@ -12,6 +12,7 @@ import {
   fontSize,
   friendlyError,
   isServerUnreachableError,
+  lastTransferText,
   nextSendAttempt,
   parsePairingPayload,
   parseSendAttempts,
@@ -42,6 +43,7 @@ import {
 import {
   completePairingAsScanner,
   loadDevices,
+  markDeviceUsed,
   removeDevice,
   renameDevice,
   requestReceiveBounded,
@@ -307,7 +309,7 @@ function Home({
   onSettings: () => void;
   onExplain: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [code, setCode] = useState('');
   const [devices, setDevices] = useState<PairedDevice[]>([]);
 
@@ -520,13 +522,28 @@ function Home({
                     }}>
                     <path d="M9 6l6 6-6 6" />
                   </svg>
-                  <span
-                    style={{
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}>
-                    {deviceLabel(device)}
+                  <span style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                    <span
+                      style={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}>
+                      {deviceLabel(device)}
+                    </span>
+                    {lastTransferText(t as any, device, i18n.language) ? (
+                      <span
+                        style={{
+                          color: c.textMuted,
+                          fontSize: fontSize.small,
+                          fontWeight: 400,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}>
+                        {lastTransferText(t as any, device, i18n.language)}
+                      </span>
+                    ) : null}
                   </span>
                 </button>
                 <div style={{ width: 110 }}>
@@ -739,6 +756,7 @@ function Send({
             SEND_ATTEMPTS_KEY,
             JSON.stringify(withSendFinished(attempts, device.id))
           );
+          markDeviceUsed(device.id).catch(() => undefined);
         }
         setPhase('done');
       },
@@ -915,6 +933,7 @@ function Receive({
       setOffer(o);
       // Text is delivered by the time the offer reaches us - the engine
       // acknowledged it - so there is nothing to accept and no reason to ask.
+      if (o.text != null && device) markDeviceUsed(device.id).catch(() => undefined);
       setPhase(o.text != null ? 'message' : 'confirm');
     };
     const failed = (e: unknown) => {
@@ -959,6 +978,7 @@ function Receive({
         setSavedName(name);
         setSavedDir(dir);
         setUsedFallback(fallback);
+        if (device) markDeviceUsed(device.id).catch(() => undefined);
         setPhase('done');
       },
       (e) => {
