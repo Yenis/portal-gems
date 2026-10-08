@@ -74,11 +74,13 @@ export function PrimaryButton({
   onPress,
   disabled,
   busy,
+  compact,
 }: {
   label: string;
   onPress: () => void;
   disabled?: boolean;
   busy?: boolean;
+  compact?: boolean;
 }) {
   const c = useTheme();
   return (
@@ -87,6 +89,7 @@ export function PrimaryButton({
       disabled={disabled || busy}
       style={({ pressed }) => [
         styles.button,
+        compact && styles.compact,
         {
           backgroundColor: c.primary,
           opacity: disabled || busy ? 0.45 : pressed ? 0.8 : 1,
@@ -106,11 +109,13 @@ export function GhostButton({
   onPress,
   danger,
   disabled,
+  compact,
 }: {
   label: string;
   onPress: () => void;
   danger?: boolean;
   disabled?: boolean;
+  compact?: boolean;
 }) {
   const c = useTheme();
   return (
@@ -120,6 +125,7 @@ export function GhostButton({
       style={({ pressed }) => [
         styles.button,
         styles.ghost,
+        compact && styles.compact,
         { borderColor: c.border, opacity: disabled ? 0.45 : pressed ? 0.7 : 1 },
       ]}>
       <Text style={[styles.buttonLabel, { color: danger ? c.danger : c.text }]}>
@@ -188,6 +194,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   ghost: { borderWidth: 1, backgroundColor: 'transparent' },
+  // For buttons that share a row with other content, like a paired device's
+  // quick actions.
+  compact: { paddingVertical: spacing(2.5), paddingHorizontal: spacing(3.5) },
   buttonLabel: { fontSize: fontSize.body, fontWeight: '600' },
   progressTrack: {
     height: 10,

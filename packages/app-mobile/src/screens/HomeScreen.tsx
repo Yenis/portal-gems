@@ -8,6 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { useTranslation } from 'react-i18next';
 import { pick } from '@react-native-documents/picker';
 import {
@@ -119,6 +120,28 @@ export default function HomeScreen({
     ]);
   };
 
+  // One device open at a time, and none on launch: the quick actions on the
+  // closed row are the common case, so there is nothing worth restoring.
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // What a device's row reveals when opened. A new per-device action is one
+  // more entry here; the grid below wraps to fit however many there are.
+  const moreActions = (
+    device: PairedDevice,
+  ): { key: string; label: string; danger?: boolean; onPress: () => void }[] => [
+    {
+      key: 'rename',
+      label: t('devices.rename'),
+      onPress: () => startRename(device),
+    },
+    {
+      key: 'remove',
+      label: t('devices.remove'),
+      danger: true,
+      onPress: () => confirmRemove(device),
+    },
+  ];
+
   const codeOk = CODE_RE.test(code.trim());
 
   return (
@@ -145,7 +168,9 @@ export default function HomeScreen({
         <Subtitle>{t('home.devicesTitle')}</Subtitle>
         {devices.length === 0 ? <Muted>{t('home.devicesEmpty')}</Muted> : null}
         {devices.map((device) => (
-          <View key={device.id} style={styles.device}>
+          <View
+            key={device.id}
+            style={[styles.device, { borderTopColor: c.border }]}>
             {renamingId === device.id ? (
               <>
                 <TextInput
@@ -179,41 +204,69 @@ export default function HomeScreen({
               </>
             ) : (
               <>
-                <Text
-                  numberOfLines={1}
-                  style={{ color: c.text, fontSize: fontSize.body, fontWeight: '600' }}>
-                  {deviceLabel(device)}
-                </Text>
-                <View style={styles.deviceRow}>
-                  <View style={styles.deviceButton}>
-                    <PrimaryButton
-                      label={t('devices.send')}
-                      onPress={() => pickFile(device)}
-                      disabled={picking}
-                    />
-                  </View>
-                  <View style={styles.deviceButton}>
-                    <GhostButton
-                      label={t('devices.receive')}
-                      onPress={() => onReceiveFrom(device)}
-                    />
+                <View style={styles.deviceHeader}>
+                  <Pressable
+                    style={styles.deviceName}
+                    onPress={() =>
+                      setExpandedId(expandedId === device.id ? null : device.id)
+                    }
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityState={{ expanded: expandedId === device.id }}>
+                    <Svg
+                      width={18}
+                      height={18}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke={c.textMuted}
+                      strokeWidth={2.5}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      style={
+                        expandedId === device.id
+                          ? { transform: [{ rotate: '90deg' }] }
+                          : undefined
+                      }>
+                      <Path d="M9 6l6 6-6 6" />
+                    </Svg>
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.deviceNameText, { color: c.text }]}>
+                      {deviceLabel(device)}
+                    </Text>
+                  </Pressable>
+                  <View style={styles.quickActions}>
+                    <View style={styles.quickAction}>
+                      <PrimaryButton
+                        compact
+                        label={t('devices.send')}
+                        onPress={() => pickFile(device)}
+                        disabled={picking}
+                      />
+                    </View>
+                    <View style={styles.quickAction}>
+                      <GhostButton
+                        compact
+                        label={t('devices.receive')}
+                        onPress={() => onReceiveFrom(device)}
+                      />
+                    </View>
                   </View>
                 </View>
-                <View style={styles.deviceRow}>
-                  <View style={styles.deviceButton}>
-                    <GhostButton
-                      label={t('devices.rename')}
-                      onPress={() => startRename(device)}
-                    />
+                {expandedId === device.id ? (
+                  <View style={styles.moreActions}>
+                    {moreActions(device).map((action) => (
+                      <View key={action.key} style={styles.moreAction}>
+                        <GhostButton
+                          compact
+                          label={action.label}
+                          danger={action.danger}
+                          onPress={action.onPress}
+                        />
+                      </View>
+                    ))}
                   </View>
-                  <View style={styles.deviceButton}>
-                    <GhostButton
-                      label={t('devices.remove')}
-                      danger
-                      onPress={() => confirmRemove(device)}
-                    />
-                  </View>
-                </View>
+                ) : null}
               </>
             )}
           </View>
@@ -297,7 +350,37 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing(2),
   },
-  device: { gap: spacing(2) },
+  device: {
+    gap: spacing(2),
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: spacing(3),
+  },
+  // Name and quick actions share a line when they fit. When they do not (a
+  // narrow phone, a long translation) the actions wrap below the name, and the
+  // lopsided grow factors let them fill that line without stealing room from
+  // the name while they sit beside it.
+  deviceHeader: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: spacing(2),
+  },
+  deviceName: {
+    flexGrow: 1000,
+    flexShrink: 1,
+    flexBasis: 110,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing(1),
+    minHeight: 40,
+  },
+  deviceNameText: { flexShrink: 1, fontSize: fontSize.body, fontWeight: '600' },
+  quickActions: { flexGrow: 1, flexDirection: 'row', gap: spacing(2) },
+  quickAction: { flexGrow: 1 },
+  // Two to a line, wrapping as actions are added; an odd one out takes the
+  // full width.
+  moreActions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing(2) },
+  moreAction: { flexGrow: 1, flexBasis: '40%' },
   renameInput: {
     borderWidth: 1,
     borderRadius: radius.md,
