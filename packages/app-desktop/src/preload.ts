@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 
 export interface PgEvent {
   id: number;
@@ -30,6 +30,16 @@ contextBridge.exposeInMainWorld('portalgems', {
     fileCount: number;
     totalBytes: number;
   } | null> => ipcRenderer.invoke('pg:pickFolder', defaultDir),
+  // What a file or folder dropped onto the window is, in the shape the two
+  // pickers return. The path has to be read here: a renderer no longer sees
+  // File.path, and webUtils only exists on this side of the bridge.
+  dropped: (
+    file: File
+  ): Promise<
+    | { kind: 'file'; path: string; name: string; size: number }
+    | { kind: 'folder'; path: string; name: string; fileCount: number; totalBytes: number }
+    | null
+  > => ipcRenderer.invoke('pg:statDropped', webUtils.getPathForFile(file)),
   send: (
     id: number,
     path: string,

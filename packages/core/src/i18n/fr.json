@@ -89,7 +89,10 @@
     "rename": "Renommer",
     "renameTitle": "Renommer {{name}}",
     "renameHint": "Ce nom ne sert que sur cet appareil. Laissez vide pour revenir à {{name}}.",
-    "renamePlaceholder": "Nom de cet appareil"
+    "renamePlaceholder": "Nom de cet appareil",
+    "dropHint": "Déposez un fichier ou un dossier sur un appareil pour le lui envoyer.",
+    "dropOne": "Déposez un seul fichier ou dossier à la fois.",
+    "dropFailed": "Impossible de le lire. Essayez de le choisir avec le bouton Envoyer."
   },
   "shareTarget": {
     "title": "Envoyer à",

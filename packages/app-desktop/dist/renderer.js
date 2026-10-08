@@ -27624,7 +27624,10 @@
       rename: "Preimenuj",
       renameTitle: "Preimenuj {{name}}",
       renameHint: "Ovaj naziv vrijedi samo na ovom ure\u0111aju. Ostavite prazno da se vratite na {{name}}.",
-      renamePlaceholder: "Naziv za ovaj ure\u0111aj"
+      renamePlaceholder: "Naziv za ovaj ure\u0111aj",
+      dropHint: "Prevuci fajl ili folder na ure\u0111aj da ga po\u0161alje\u0161 tamo.",
+      dropOne: "Prevuci samo jedan fajl ili folder odjednom.",
+      dropFailed: "To se nije moglo pro\u010Ditati. Poku\u0161aj ga odabrati dugmetom Po\u0161alji."
     },
     shareTarget: {
       title: "Po\u0161alji na",
@@ -27829,7 +27832,10 @@
       rename: "Umbenennen",
       renameTitle: "{{name}} umbenennen",
       renameHint: "Dieser Name gilt nur auf diesem Ger\xE4t. Leer lassen, um wieder {{name}} zu verwenden.",
-      renamePlaceholder: "Name f\xFCr dieses Ger\xE4t"
+      renamePlaceholder: "Name f\xFCr dieses Ger\xE4t",
+      dropHint: "Ziehe eine Datei oder einen Ordner auf ein Ger\xE4t, um sie dorthin zu senden.",
+      dropOne: "Bitte nur eine Datei oder einen Ordner auf einmal ablegen.",
+      dropFailed: "Das konnte nicht gelesen werden. W\xE4hle es stattdessen \xFCber Senden aus."
     },
     shareTarget: {
       title: "Senden an",
@@ -28034,7 +28040,10 @@
       rename: "Rename",
       renameTitle: "Rename {{name}}",
       renameHint: "This name is only used on this device. Leave it empty to go back to {{name}}.",
-      renamePlaceholder: "Name for this device"
+      renamePlaceholder: "Name for this device",
+      dropHint: "Drop a file or folder on a device to send it there.",
+      dropOne: "Drop one file or folder at a time.",
+      dropFailed: "That could not be read. Try choosing it with the Send button."
     },
     shareTarget: {
       title: "Send to",
@@ -28239,7 +28248,10 @@
       rename: "Cambiar nombre",
       renameTitle: "Cambiar el nombre de {{name}}",
       renameHint: "Este nombre solo se usa en este dispositivo. D\xE9jalo vac\xEDo para volver a {{name}}.",
-      renamePlaceholder: "Nombre de este dispositivo"
+      renamePlaceholder: "Nombre de este dispositivo",
+      dropHint: "Suelta un archivo o una carpeta sobre un dispositivo para enviarlo all\xED.",
+      dropOne: "Suelta solo un archivo o una carpeta cada vez.",
+      dropFailed: "No se pudo leer. Prueba a elegirlo con el bot\xF3n Enviar."
     },
     shareTarget: {
       title: "Enviar a",
@@ -28444,7 +28456,10 @@
       rename: "Renommer",
       renameTitle: "Renommer {{name}}",
       renameHint: "Ce nom ne sert que sur cet appareil. Laissez vide pour revenir \xE0 {{name}}.",
-      renamePlaceholder: "Nom de cet appareil"
+      renamePlaceholder: "Nom de cet appareil",
+      dropHint: "D\xE9posez un fichier ou un dossier sur un appareil pour le lui envoyer.",
+      dropOne: "D\xE9posez un seul fichier ou dossier \xE0 la fois.",
+      dropFailed: "Impossible de le lire. Essayez de le choisir avec le bouton Envoyer."
     },
     shareTarget: {
       title: "Envoyer \xE0",
@@ -28649,7 +28664,10 @@
       rename: "\u041F\u0435\u0440\u0435\u0438\u043C\u0435\u043D\u043E\u0432\u0430\u0442\u044C",
       renameTitle: "\u041F\u0435\u0440\u0435\u0438\u043C\u0435\u043D\u043E\u0432\u0430\u0442\u044C {{name}}",
       renameHint: "\u042D\u0442\u043E \u0438\u043C\u044F \u0432\u0438\u0434\u043D\u043E \u0442\u043E\u043B\u044C\u043A\u043E \u043D\u0430 \u044D\u0442\u043E\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0435. \u041E\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u043F\u0443\u0441\u0442\u044B\u043C, \u0447\u0442\u043E\u0431\u044B \u0432\u0435\u0440\u043D\u0443\u0442\u044C {{name}}.",
-      renamePlaceholder: "\u0418\u043C\u044F \u044D\u0442\u043E\u0433\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430"
+      renamePlaceholder: "\u0418\u043C\u044F \u044D\u0442\u043E\u0433\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430",
+      dropHint: "\u041F\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u0442\u0435 \u0444\u0430\u0439\u043B \u0438\u043B\u0438 \u043F\u0430\u043F\u043A\u0443 \u043D\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E, \u0447\u0442\u043E\u0431\u044B \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C.",
+      dropOne: "\u041F\u0435\u0440\u0435\u0442\u0430\u0441\u043A\u0438\u0432\u0430\u0439\u0442\u0435 \u043F\u043E \u043E\u0434\u043D\u043E\u043C\u0443 \u0444\u0430\u0439\u043B\u0443 \u0438\u043B\u0438 \u043F\u0430\u043F\u043A\u0435.",
+      dropFailed: "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u0442\u044C. \u041F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0432\u044B\u0431\u0440\u0430\u0442\u044C \u0447\u0435\u0440\u0435\u0437 \u043A\u043D\u043E\u043F\u043A\u0443 \xAB\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C\xBB."
     },
     shareTarget: {
       title: "\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u043D\u0430",
@@ -29350,6 +29368,19 @@
         if (!valid) saveDownloadDir(null);
       });
     }, []);
+    (0, import_react14.useEffect)(() => {
+      const refuse = (e2) => {
+        if (e2.defaultPrevented) return;
+        e2.preventDefault();
+        if (e2.dataTransfer) e2.dataTransfer.dropEffect = "none";
+      };
+      window.addEventListener("dragover", refuse);
+      window.addEventListener("drop", refuse);
+      return () => {
+        window.removeEventListener("dragover", refuse);
+        window.removeEventListener("drop", refuse);
+      };
+    }, []);
     const [stack, setStack] = (0, import_react14.useState)([{ name: "home" }]);
     const route = stack[stack.length - 1];
     const navigate = (r) => setStack((s) => [...s, r]);
@@ -29458,6 +29489,26 @@
         loadDevices().then(setDevices);
       });
     };
+    const [dropId, setDropId] = (0, import_react14.useState)(null);
+    const [dropError, setDropError] = (0, import_react14.useState)(null);
+    const carriesFiles = (e2) => e2.dataTransfer.types.includes("Files");
+    const dropOn = async (e2, device) => {
+      if (!carriesFiles(e2)) return;
+      e2.preventDefault();
+      setDropId(null);
+      const files = Array.from(e2.dataTransfer.files);
+      if (files.length !== 1) {
+        setDropError(t2("devices.dropOne"));
+        return;
+      }
+      const item = await window.portalgems.dropped(files[0]).catch(() => null);
+      if (!item) {
+        setDropError(t2("devices.dropFailed"));
+        return;
+      }
+      setDropError(null);
+      onSend(item, device);
+    };
     const [expandedId, setExpandedId] = (0, import_react14.useState)(null);
     const moreActions = (device) => [
       {
@@ -29500,11 +29551,26 @@
       "div",
       {
         key: device.id,
+        onDragOver: (e2) => {
+          if (!carriesFiles(e2)) return;
+          e2.preventDefault();
+          e2.dataTransfer.dropEffect = "copy";
+          setDropId(device.id);
+        },
+        onDragLeave: (e2) => {
+          if (!e2.currentTarget.contains(e2.relatedTarget)) {
+            setDropId(null);
+          }
+        },
+        onDrop: (e2) => dropOn(e2, device),
         style: {
           display: "flex",
           flexWrap: "wrap",
           gap: spacing(2),
-          alignItems: "center"
+          alignItems: "center",
+          borderRadius: radius.md,
+          outline: dropId === device.id ? `2px dashed ${c.primary}` : "none",
+          outlineOffset: spacing(1)
         }
       },
       renamingId === device.id ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ import_react14.default.createElement(
@@ -29617,7 +29683,7 @@
           }
         )))
       ) : null)
-    )), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("home.pairNew"), onClick: onPair })), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("home.sendTitle")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("home.sendHint")), /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("home.sendButton"), onClick: () => pick() }), /* @__PURE__ */ import_react14.default.createElement(
+    )), devices.length > 0 ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("devices.dropHint")) : null, dropError ? /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.danger, fontSize: fontSize.small } }, dropError) : null, /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("home.pairNew"), onClick: onPair })), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("home.sendTitle")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("home.sendHint")), /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("home.sendButton"), onClick: () => pick() }), /* @__PURE__ */ import_react14.default.createElement(
       GhostButton,
       {
         c,

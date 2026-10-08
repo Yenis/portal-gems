@@ -89,7 +89,10 @@
     "rename": "Cambiar nombre",
     "renameTitle": "Cambiar el nombre de {{name}}",
     "renameHint": "Este nombre solo se usa en este dispositivo. Déjalo vacío para volver a {{name}}.",
-    "renamePlaceholder": "Nombre de este dispositivo"
+    "renamePlaceholder": "Nombre de este dispositivo",
+    "dropHint": "Suelta un archivo o una carpeta sobre un dispositivo para enviarlo allí.",
+    "dropOne": "Suelta solo un archivo o una carpeta cada vez.",
+    "dropFailed": "No se pudo leer. Prueba a elegirlo con el botón Enviar."
   },
   "shareTarget": {
     "title": "Enviar a",

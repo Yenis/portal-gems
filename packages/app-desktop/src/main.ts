@@ -189,6 +189,24 @@ ipcMain.handle('pg:pickFolder', async (_e, defaultDir?: string | null) => {
   };
 });
 
+// A file or folder dropped onto the window, described the way the pickers
+// describe what they return. Null for anything that is neither, or that has
+// gone by the time it is looked at.
+ipcMain.handle('pg:statDropped', async (_e, dropped: string) => {
+  if (!dropped) return null;
+  try {
+    const stat = await fs.promises.stat(dropped);
+    const name = path.basename(dropped);
+    if (stat.isDirectory()) {
+      const stats = await walkStats(dropped);
+      return { kind: 'folder', path: dropped, name, ...stats };
+    }
+    return stat.isFile() ? { kind: 'file', path: dropped, name, size: stat.size } : null;
+  } catch {
+    return null;
+  }
+});
+
 ipcMain.handle(
   'pg:send',
   (_e, id: number, filePath: string, code?: string, server?: ServerConfig) =>

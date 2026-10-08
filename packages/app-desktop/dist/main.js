@@ -5198,6 +5198,20 @@ import_electron.ipcMain.handle("pg:pickFolder", async (_e, defaultDir) => {
     totalBytes: stats.totalBytes
   };
 });
+import_electron.ipcMain.handle("pg:statDropped", async (_e, dropped) => {
+  if (!dropped) return null;
+  try {
+    const stat = await fs.promises.stat(dropped);
+    const name = path2.basename(dropped);
+    if (stat.isDirectory()) {
+      const stats = await walkStats(dropped);
+      return { kind: "folder", path: dropped, name, ...stats };
+    }
+    return stat.isFile() ? { kind: "file", path: dropped, name, size: stat.size } : null;
+  } catch {
+    return null;
+  }
+});
 import_electron.ipcMain.handle(
   "pg:send",
   (_e, id, filePath, code, server) => engine.sendFile(id, filePath, code ?? null, server ?? {}, forward(id))

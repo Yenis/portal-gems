@@ -89,7 +89,10 @@
     "rename": "Preimenuj",
     "renameTitle": "Preimenuj {{name}}",
     "renameHint": "Ovaj naziv vrijedi samo na ovom uređaju. Ostavite prazno da se vratite na {{name}}.",
-    "renamePlaceholder": "Naziv za ovaj uređaj"
+    "renamePlaceholder": "Naziv za ovaj uređaj",
+    "dropHint": "Prevuci fajl ili folder na uređaj da ga pošalješ tamo.",
+    "dropOne": "Prevuci samo jedan fajl ili folder odjednom.",
+    "dropFailed": "To se nije moglo pročitati. Pokušaj ga odabrati dugmetom Pošalji."
   },
   "shareTarget": {
     "title": "Pošalji na",

@@ -15,6 +15,7 @@ import {
   nextSendAttempt,
   parsePairingPayload,
   parseSendAttempts,
+  radius,
   spacing,
   withSendFinished,
   withSendStarted,
@@ -80,6 +81,17 @@ declare global {
       pickFile(
         defaultDir?: string | null
       ): Promise<{ path: string; name: string; size: number } | null>;
+      dropped(file: File): Promise<
+        | { kind: 'file'; path: string; name: string; size: number }
+        | {
+            kind: 'folder';
+            path: string;
+            name: string;
+            fileCount: number;
+            totalBytes: number;
+          }
+        | null
+      >;
       pickFolder(defaultDir?: string | null): Promise<{
         path: string;
         name: string;
@@ -180,6 +192,23 @@ export default function App() {
     window.portalgems.downloadDirValid(stored).then((valid) => {
       if (!valid) saveDownloadDir(null);
     });
+  }, []);
+  // A file dropped anywhere that does not ask for it would otherwise be opened
+  // by the window, replacing the app with the file. Places that do take a
+  // drop (a paired device's row) have already claimed the event by the time
+  // it gets here.
+  useEffect(() => {
+    const refuse = (e: DragEvent) => {
+      if (e.defaultPrevented) return;
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'none';
+    };
+    window.addEventListener('dragover', refuse);
+    window.addEventListener('drop', refuse);
+    return () => {
+      window.removeEventListener('dragover', refuse);
+      window.removeEventListener('drop', refuse);
+    };
   }, []);
   // History stack so the back arrow pops one page at a time.
   const [stack, setStack] = useState<Route[]>([{ name: 'home' }]);
@@ -315,6 +344,29 @@ function Home({
     });
   };
 
+  // Dropping a file or folder on a device's row sends it there - the desktop's
+  // answer to a phone's share sheet. One thing at a time, because a send is.
+  const [dropId, setDropId] = useState<string | null>(null);
+  const [dropError, setDropError] = useState<string | null>(null);
+  const carriesFiles = (e: React.DragEvent) => e.dataTransfer.types.includes('Files');
+  const dropOn = async (e: React.DragEvent, device: PairedDevice) => {
+    if (!carriesFiles(e)) return;
+    e.preventDefault();
+    setDropId(null);
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length !== 1) {
+      setDropError(t('devices.dropOne'));
+      return;
+    }
+    const item = await window.portalgems.dropped(files[0]).catch(() => null);
+    if (!item) {
+      setDropError(t('devices.dropFailed'));
+      return;
+    }
+    setDropError(null);
+    onSend(item, device);
+  };
+
   // One device open at a time, and none on launch: Send and Receive on the
   // closed row are the common case, so there is nothing worth restoring.
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -369,11 +421,28 @@ function Home({
         {devices.map((device) => (
           <div
             key={device.id}
+            onDragOver={(e) => {
+              if (!carriesFiles(e)) return;
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'copy';
+              setDropId(device.id);
+            }}
+            onDragLeave={(e) => {
+              // Crossing onto a child fires this too; only leaving the row
+              // itself ends the highlight.
+              if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+                setDropId(null);
+              }
+            }}
+            onDrop={(e) => dropOn(e, device)}
             style={{
               display: 'flex',
               flexWrap: 'wrap',
               gap: spacing(2),
               alignItems: 'center',
+              borderRadius: radius.md,
+              outline: dropId === device.id ? `2px dashed ${c.primary}` : 'none',
+              outlineOffset: spacing(1),
             }}>
             {renamingId === device.id ? (
               <>
@@ -488,6 +557,10 @@ function Home({
             )}
           </div>
         ))}
+        {devices.length > 0 ? <Muted c={c}>{t('devices.dropHint')}</Muted> : null}
+        {dropError ? (
+          <span style={{ color: c.danger, fontSize: fontSize.small }}>{dropError}</span>
+        ) : null}
         <GhostButton c={c} label={t('home.pairNew')} onClick={onPair} />
       </Card>
       <Card c={c}>

@@ -89,7 +89,10 @@
     "rename": "Umbenennen",
     "renameTitle": "{{name}} umbenennen",
     "renameHint": "Dieser Name gilt nur auf diesem Gerät. Leer lassen, um wieder {{name}} zu verwenden.",
-    "renamePlaceholder": "Name für dieses Gerät"
+    "renamePlaceholder": "Name für dieses Gerät",
+    "dropHint": "Ziehe eine Datei oder einen Ordner auf ein Gerät, um sie dorthin zu senden.",
+    "dropOne": "Bitte nur eine Datei oder einen Ordner auf einmal ablegen.",
+    "dropFailed": "Das konnte nicht gelesen werden. Wähle es stattdessen über Senden aus."
   },
   "shareTarget": {
     "title": "Senden an",

@@ -21,6 +21,10 @@ import_electron.contextBridge.exposeInMainWorld("portalgems", {
   locale: () => import_electron.ipcRenderer.invoke("pg:locale"),
   pickFile: (defaultDir) => import_electron.ipcRenderer.invoke("pg:pickFile", defaultDir),
   pickFolder: (defaultDir) => import_electron.ipcRenderer.invoke("pg:pickFolder", defaultDir),
+  // What a file or folder dropped onto the window is, in the shape the two
+  // pickers return. The path has to be read here: a renderer no longer sees
+  // File.path, and webUtils only exists on this side of the bridge.
+  dropped: (file) => import_electron.ipcRenderer.invoke("pg:statDropped", import_electron.webUtils.getPathForFile(file)),
   send: (id, path, code, server) => import_electron.ipcRenderer.invoke("pg:send", id, path, code, server),
   sendFolder: (id, path, code, server) => import_electron.ipcRenderer.invoke("pg:sendFolder", id, path, code, server),
   sendText: (id, text, code, server) => import_electron.ipcRenderer.invoke("pg:sendText", id, text, code, server),

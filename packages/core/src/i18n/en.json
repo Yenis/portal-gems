@@ -89,7 +89,10 @@
     "rename": "Rename",
     "renameTitle": "Rename {{name}}",
     "renameHint": "This name is only used on this device. Leave it empty to go back to {{name}}.",
-    "renamePlaceholder": "Name for this device"
+    "renamePlaceholder": "Name for this device",
+    "dropHint": "Drop a file or folder on a device to send it there.",
+    "dropOne": "Drop one file or folder at a time.",
+    "dropFailed": "That could not be read. Try choosing it with the Send button."
   },
   "shareTarget": {
     "title": "Send to",

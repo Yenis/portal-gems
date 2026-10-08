@@ -324,6 +324,11 @@ recursive size.
   also falls back to Downloads rather than failing an already-completed
   transfer. `pg:statTarget` powers the pre-accept same-name warning;
   `pg:accept` (explicit dir, pairing handshake) is unchanged.
+- Drag and drop: a file or folder dropped on a paired device's row sends it
+  there. `preload.ts` `dropped(file)` resolves the path with
+  `webUtils.getPathForFile` (a renderer no longer sees `File.path`) and
+  `pg:statDropped` returns it in the pickers' shape; `App` refuses every other
+  drop on the window, which would otherwise navigate to the file.
 - The send picker remembers its last-used folder: the renderer persists the
   parent dir of a picked file/folder in localStorage `pg-last-send-dir`
   (`sendlocation.ts`) and passes it to `pg:pickFile`/`pg:pickFolder`, which set
