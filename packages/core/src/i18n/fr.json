@@ -80,6 +80,8 @@
   "devices": {
     "title": "Appareils",
     "send": "Envoyer",
+    "sendFolder": "Envoyer un dossier",
+    "sendText": "Envoyer un message",
     "receive": "Recevoir",
     "remove": "Retirer",
     "removeConfirm": "Retirer cet appareil ? Vous pourrez l'associer à nouveau plus tard.",

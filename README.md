@@ -207,7 +207,8 @@ devices effortless - with no server involved:
 3. **Transfer forever after:** when you tap *Send* / *Receive* on a paired
    device, both sides independently derive the same one-time wormhole code from
    the shared secret and the current time window - and connect automatically.
-   You just confirm the incoming file.
+   You just confirm the incoming file. A paired device takes anything a
+   one-time code does: a file, a whole folder, or a text message.
 4. **Both apps must be open.** There is no background service and no push
    server. If the other device isn't listening, the transfer times out with a
    clear message.

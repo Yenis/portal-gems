@@ -80,6 +80,8 @@
   "devices": {
     "title": "Dispositivos",
     "send": "Enviar",
+    "sendFolder": "Enviar carpeta",
+    "sendText": "Enviar mensaje",
     "receive": "Recibir",
     "remove": "Quitar",
     "removeConfirm": "¿Quitar este dispositivo? Puedes volver a emparejarlo más tarde.",

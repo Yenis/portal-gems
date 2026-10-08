@@ -216,6 +216,39 @@ RESOURCE DIALOG r_whmini_message_query
         };
     }
 
+// What to send to a paired device, asked once the device is chosen. The
+// order here is the order StartPairedSendL switches on.
+RESOURCE AVKON_LIST_QUERY r_whmini_send_kind_query
+    {
+    flags = EGeneralQueryFlags;
+    softkeys = R_AVKON_SOFTKEYS_OK_CANCEL;
+    items =
+        {
+        AVKON_LIST_QUERY_DLG_LINE
+            {
+            control = AVKON_LIST_QUERY_CONTROL
+                {
+                listtype = EAknCtSinglePopupMenuListBox;
+                listbox = AVKON_LIST_QUERY_LIST
+                    {
+                    array_id = r_whmini_send_kind_items;
+                    };
+                heading = "Send";
+                };
+            }
+        };
+    }
+
+RESOURCE ARRAY r_whmini_send_kind_items
+    {
+    items =
+        {
+        LBUF { txt = "File"; },
+        LBUF { txt = "Folder"; },
+        LBUF { txt = "Message"; }
+        };
+    }
+
 // Yes / No, for removing a paired device.
 RESOURCE DIALOG r_whmini_confirm_query
     {

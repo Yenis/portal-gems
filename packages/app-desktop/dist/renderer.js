@@ -27615,6 +27615,8 @@
     devices: {
       title: "Ure\u0111aji",
       send: "Po\u0161alji",
+      sendFolder: "Po\u0161alji folder",
+      sendText: "Po\u0161alji poruku",
       receive: "Primi",
       remove: "Ukloni",
       removeConfirm: "Ukloniti ovaj ure\u0111aj? Mo\u017Ee\u0161 ga ponovo upariti kad god \u017Eeli\u0161.",
@@ -27623,6 +27625,11 @@
       renameTitle: "Preimenuj {{name}}",
       renameHint: "Ovaj naziv vrijedi samo na ovom ure\u0111aju. Ostavite prazno da se vratite na {{name}}.",
       renamePlaceholder: "Naziv za ovaj ure\u0111aj"
+    },
+    shareTarget: {
+      title: "Po\u0161alji na",
+      hint: "Odaberi gdje poslati {{name}}.",
+      oneTimeCode: "Neko drugi - koristi jednokratni kod"
     },
     paired: {
       sendWaiting: "\u010Cekam {{name}} - provjeri da li je PortalGems tamo otvoren\u2026",
@@ -27813,6 +27820,8 @@
     devices: {
       title: "Ger\xE4te",
       send: "Senden",
+      sendFolder: "Ordner senden",
+      sendText: "Nachricht senden",
       receive: "Empfangen",
       remove: "Entfernen",
       removeConfirm: "Dieses Ger\xE4t entfernen? Du kannst es sp\xE4ter wieder koppeln.",
@@ -27821,6 +27830,11 @@
       renameTitle: "{{name}} umbenennen",
       renameHint: "Dieser Name gilt nur auf diesem Ger\xE4t. Leer lassen, um wieder {{name}} zu verwenden.",
       renamePlaceholder: "Name f\xFCr dieses Ger\xE4t"
+    },
+    shareTarget: {
+      title: "Senden an",
+      hint: "W\xE4hle, wohin {{name}} gesendet werden soll.",
+      oneTimeCode: "Jemand anderes - Einmalcode verwenden"
     },
     paired: {
       sendWaiting: "Warte auf {{name}} - stelle sicher, dass PortalGems dort ge\xF6ffnet ist\u2026",
@@ -28011,6 +28025,8 @@
     devices: {
       title: "Devices",
       send: "Send",
+      sendFolder: "Send folder",
+      sendText: "Send message",
       receive: "Receive",
       remove: "Remove",
       removeConfirm: "Unpair this device? You can pair with it again later.",
@@ -28019,6 +28035,11 @@
       renameTitle: "Rename {{name}}",
       renameHint: "This name is only used on this device. Leave it empty to go back to {{name}}.",
       renamePlaceholder: "Name for this device"
+    },
+    shareTarget: {
+      title: "Send to",
+      hint: "Choose where to send {{name}}.",
+      oneTimeCode: "Someone else - use a one-time code"
     },
     paired: {
       sendWaiting: "Waiting for {{name}} - make sure PortalGems is open there\u2026",
@@ -28209,6 +28230,8 @@
     devices: {
       title: "Dispositivos",
       send: "Enviar",
+      sendFolder: "Enviar carpeta",
+      sendText: "Enviar mensaje",
       receive: "Recibir",
       remove: "Quitar",
       removeConfirm: "\xBFQuitar este dispositivo? Puedes volver a emparejarlo m\xE1s tarde.",
@@ -28217,6 +28240,11 @@
       renameTitle: "Cambiar el nombre de {{name}}",
       renameHint: "Este nombre solo se usa en este dispositivo. D\xE9jalo vac\xEDo para volver a {{name}}.",
       renamePlaceholder: "Nombre de este dispositivo"
+    },
+    shareTarget: {
+      title: "Enviar a",
+      hint: "Elige a d\xF3nde enviar {{name}}.",
+      oneTimeCode: "Otra persona - usar un c\xF3digo de un solo uso"
     },
     paired: {
       sendWaiting: "Esperando a {{name}} - aseg\xFArate de que PortalGems est\xE9 abierto all\xED\u2026",
@@ -28407,6 +28435,8 @@
     devices: {
       title: "Appareils",
       send: "Envoyer",
+      sendFolder: "Envoyer un dossier",
+      sendText: "Envoyer un message",
       receive: "Recevoir",
       remove: "Retirer",
       removeConfirm: "Retirer cet appareil ? Vous pourrez l'associer \xE0 nouveau plus tard.",
@@ -28415,6 +28445,11 @@
       renameTitle: "Renommer {{name}}",
       renameHint: "Ce nom ne sert que sur cet appareil. Laissez vide pour revenir \xE0 {{name}}.",
       renamePlaceholder: "Nom de cet appareil"
+    },
+    shareTarget: {
+      title: "Envoyer \xE0",
+      hint: "Choisissez o\xF9 envoyer {{name}}.",
+      oneTimeCode: "Quelqu'un d'autre - utiliser un code \xE0 usage unique"
     },
     paired: {
       sendWaiting: "En attente de {{name}} - v\xE9rifiez que PortalGems y est ouvert\u2026",
@@ -28605,6 +28640,8 @@
     devices: {
       title: "\u0423\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430",
       send: "\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C",
+      sendFolder: "\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u043F\u0430\u043F\u043A\u0443",
+      sendText: "\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435",
       receive: "\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C",
       remove: "\u0423\u0434\u0430\u043B\u0438\u0442\u044C",
       removeConfirm: "\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u044D\u0442\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E? \u041F\u043E\u0437\u0436\u0435 \u0435\u0433\u043E \u043C\u043E\u0436\u043D\u043E \u0441\u0432\u044F\u0437\u0430\u0442\u044C \u0441\u043D\u043E\u0432\u0430.",
@@ -28613,6 +28650,11 @@
       renameTitle: "\u041F\u0435\u0440\u0435\u0438\u043C\u0435\u043D\u043E\u0432\u0430\u0442\u044C {{name}}",
       renameHint: "\u042D\u0442\u043E \u0438\u043C\u044F \u0432\u0438\u0434\u043D\u043E \u0442\u043E\u043B\u044C\u043A\u043E \u043D\u0430 \u044D\u0442\u043E\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0435. \u041E\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u043F\u0443\u0441\u0442\u044B\u043C, \u0447\u0442\u043E\u0431\u044B \u0432\u0435\u0440\u043D\u0443\u0442\u044C {{name}}.",
       renamePlaceholder: "\u0418\u043C\u044F \u044D\u0442\u043E\u0433\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430"
+    },
+    shareTarget: {
+      title: "\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u043D\u0430",
+      hint: "\u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435, \u043A\u0443\u0434\u0430 \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C {{name}}.",
+      oneTimeCode: "\u041A\u043E\u043C\u0443-\u0442\u043E \u0434\u0440\u0443\u0433\u043E\u043C\u0443 - \u043E\u0434\u043D\u043E\u0440\u0430\u0437\u043E\u0432\u044B\u0439 \u043A\u043E\u0434"
     },
     paired: {
       sendWaiting: "\u041E\u0436\u0438\u0434\u0430\u043D\u0438\u0435 {{name}} - \u0443\u0431\u0435\u0434\u0438\u0442\u0435\u0441\u044C, \u0447\u0442\u043E \u0442\u0430\u043C \u043E\u0442\u043A\u0440\u044B\u0442 PortalGems\u2026",
@@ -29419,6 +29461,16 @@
     const [expandedId, setExpandedId] = (0, import_react14.useState)(null);
     const moreActions = (device) => [
       {
+        key: "sendFolder",
+        label: t2("devices.sendFolder"),
+        onClick: () => pickFolder(device)
+      },
+      {
+        key: "sendText",
+        label: t2("devices.sendText"),
+        onClick: () => onCompose(device)
+      },
+      {
         key: "rename",
         label: t2("devices.rename"),
         onClick: () => startRename(device)
@@ -29555,7 +29607,7 @@
             gap: spacing(2)
           }
         },
-        moreActions(device).map((action) => /* @__PURE__ */ import_react14.default.createElement("div", { key: action.key, style: { width: 110 } }, /* @__PURE__ */ import_react14.default.createElement(
+        moreActions(device).map((action) => /* @__PURE__ */ import_react14.default.createElement("div", { key: action.key, style: { minWidth: 110 } }, /* @__PURE__ */ import_react14.default.createElement(
           GhostButton,
           {
             c,

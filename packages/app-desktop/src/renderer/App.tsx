@@ -325,6 +325,16 @@ function Home({
     device: PairedDevice,
   ): { key: string; label: string; danger?: boolean; onClick: () => void }[] => [
     {
+      key: 'sendFolder',
+      label: t('devices.sendFolder'),
+      onClick: () => pickFolder(device),
+    },
+    {
+      key: 'sendText',
+      label: t('devices.sendText'),
+      onClick: () => onCompose(device),
+    },
+    {
       key: 'rename',
       label: t('devices.rename'),
       onClick: () => startRename(device),
@@ -463,7 +473,7 @@ function Home({
                       gap: spacing(2),
                     }}>
                     {moreActions(device).map((action) => (
-                      <div key={action.key} style={{ width: 110 }}>
+                      <div key={action.key} style={{ minWidth: 110 }}>
                         <GhostButton
                           c={c}
                           label={action.label}

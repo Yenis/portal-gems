@@ -17,6 +17,7 @@
 #include <akndoc.h>
 #include <aknappui.h>
 #include <aknquerydialog.h>
+#include <aknlistquerydialog.h>
 #include <aknmessagequerydialog.h>
 #include <aknnotewrappers.h>
 #include <AknCommonDialogsDynMem.h>
@@ -139,6 +140,9 @@ private:
     void RenamePairL(TInt aIndex);
     void EditDeviceNameL();
     TBool UsePairL(TInt aIndex);
+    TBool PickFileL();
+    TBool PickFolderL();
+    TBool AskTextL();
     TInt StartWorker();
     TBool PrepareJobL();
     void AskForServerL();
@@ -689,14 +693,12 @@ TBool CWhminiAppUi::PrepareJobL()
     return ETrue;
     }
 
-/* Type a message and send it. The text is converted to UTF-8 here rather
+/* Type a message into the job. The text is converted to UTF-8 here rather
  * than copied byte-wise: a phone keyboard produces the whole Latin-2 range,
  * and a naive narrowing turns every accented character into rubbish on the
- * other side. */
-void CWhminiAppUi::StartSendTextL()
+ * other side. EFalse if there is nothing to send. */
+TBool CWhminiAppUi::AskTextL()
     {
-    if (!PrepareJobL()) return;
-
     HBufC* text = HBufC::NewLC(KMaxMessageChars);
     TPtr ptr = text->Des();
     CAknTextQueryDialog* dlg = CAknTextQueryDialog::NewL(ptr);
@@ -704,7 +706,7 @@ void CWhminiAppUi::StartSendTextL()
     if (!dlg->ExecuteLD(R_WHMINI_TEXT_QUERY) || ptr.Length() == 0)
         {
         CleanupStack::PopAndDestroy(text);
-        return;
+        return EFalse;
         }
 
     TBuf8<1024> utf8;
@@ -714,66 +716,37 @@ void CWhminiAppUi::StartSendTextL()
         CleanupStack::PopAndDestroy(text);
         CAknErrorNote* note = new (ELeave) CAknErrorNote(ETrue);
         note->ExecuteLD(_L("That message is too long"));
-        return;
+        return EFalse;
         }
     Mem::Copy(iJob.iText, utf8.Ptr(), utf8.Length());
     iJob.iText[utf8.Length()] = '\0';
     CleanupStack::PopAndDestroy(text);
-
-    iJob.iKind = EJobKindSendText;
-
-    TInt err = StartWorker();
-    if (err != KErrNone)
-        {
-        TBuf<64> line;
-        line.Format(_L("Could not start the transfer (%d)"), err);
-        CAknErrorNote* note = new (ELeave) CAknErrorNote(ETrue);
-        note->ExecuteLD(line);
-        return;
-        }
-    Refresh();
+    return ETrue;
     }
 
-void CWhminiAppUi::StartSendL()
+/* Browse for a file and put its path in the job. EFalse if none was chosen. */
+TBool CWhminiAppUi::PickFileL()
     {
-    if (!PrepareJobL()) return;
-
     TFileName path;
     if (!AknCommonDialogsDynMem::RunSelectDlgLD(
             AknCommonDialogsDynMem::EMemoryTypePhone |
                 AknCommonDialogsDynMem::EMemoryTypeMMC,
             path, R_WHMINI_MEMORY_SELECTION))
         {
-        return;
+        return EFalse;
         }
-    if (path.Length() == 0) return;
+    if (path.Length() == 0) return EFalse;
 
     TInt i;
     for (i = 0; i < path.Length() && i < (TInt)sizeof(iJob.iPath) - 1; i++)
         iJob.iPath[i] = (char)path[i];
     iJob.iPath[i] = '\0';
-
-    iJob.iKind = EJobKindSend;
-
-    TInt err = StartWorker();
-    if (err != KErrNone)
-        {
-        /* The code matters: -4 is out of memory, -11 means a worker is
-         * still alive from a previous transfer. A bare "could not start"
-         * says nothing anyone can act on. */
-        TBuf<64> msg;
-        msg.Format(_L("Could not start the transfer (%d)"), err);
-        CAknErrorNote* note = new (ELeave) CAknErrorNote(ETrue);
-        note->ExecuteLD(msg);
-        return;
-        }
-    Refresh();
+    return ETrue;
     }
 
-void CWhminiAppUi::StartSendFolderL()
+/* The same, for a folder. */
+TBool CWhminiAppUi::PickFolderL()
     {
-    if (!PrepareJobL()) return;
-
     TFileName path;
     if (!AknCommonDialogsDynMem::RunFolderSelectDlgLD(
             AknCommonDialogsDynMem::EMemoryTypePhone |
@@ -781,30 +754,39 @@ void CWhminiAppUi::StartSendFolderL()
             path, KNullDesC, R_WHMINI_MEMORY_SELECTION,
             R_WHMINI_FILE_SELECTION, _L("Select folder")))
         {
-        return;
+        return EFalse;
         }
-    if (path.Length() == 0) return;
+    if (path.Length() == 0) return EFalse;
 
     TInt i;
     for (i = 0; i < path.Length() && i < (TInt)sizeof(iJob.iPath) - 1; i++)
         iJob.iPath[i] = (char)path[i];
     iJob.iPath[i] = '\0';
+    return ETrue;
+    }
 
+void CWhminiAppUi::StartSendTextL()
+    {
+    if (!PrepareJobL()) return;
+    if (!AskTextL()) return;
+    iJob.iKind = EJobKindSendText;
+    LaunchJobL();
+    }
+
+void CWhminiAppUi::StartSendL()
+    {
+    if (!PrepareJobL()) return;
+    if (!PickFileL()) return;
+    iJob.iKind = EJobKindSend;
+    LaunchJobL();
+    }
+
+void CWhminiAppUi::StartSendFolderL()
+    {
+    if (!PrepareJobL()) return;
+    if (!PickFolderL()) return;
     iJob.iKind = EJobKindSendFolder;
-
-    TInt err = StartWorker();
-    if (err != KErrNone)
-        {
-        /* The code matters: -4 is out of memory, -11 means a worker is
-         * still alive from a previous transfer. A bare "could not start"
-         * says nothing anyone can act on. */
-        TBuf<64> msg;
-        msg.Format(_L("Could not start the transfer (%d)"), err);
-        CAknErrorNote* note = new (ELeave) CAknErrorNote(ETrue);
-        note->ExecuteLD(msg);
-        return;
-        }
-    Refresh();
+    LaunchJobL();
     }
 
 void CWhminiAppUi::StartReceiveL()
@@ -896,6 +878,9 @@ void CWhminiAppUi::LaunchJobL()
     TInt err = StartWorker();
     if (err != KErrNone)
         {
+        /* The code matters: -4 is out of memory, -11 means a worker is
+         * still alive from a previous transfer. A bare "could not start"
+         * says nothing anyone can act on. */
         TBuf<64> msg;
         msg.Format(_L("Could not start the transfer (%d)"), err);
         CAknErrorNote* note = new (ELeave) CAknErrorNote(ETrue);
@@ -970,29 +955,33 @@ void CWhminiAppUi::StartPairJoinL()
     LaunchJobL();
     }
 
-/* The same file picker as a normal send; only the way the wormhole is
- * opened differs, and the engine handles that. */
+/* Ask what to send, then the same pickers as a normal send; only the way
+ * the wormhole is opened differs, and the engine handles that. The order of
+ * the cases is the order of r_whmini_send_kind_items. */
 void CWhminiAppUi::StartPairedSendL(TInt aIndex)
     {
     if (!PrepareJobL()) return;
     if (!UsePairL(aIndex)) return;
 
-    TFileName path;
-    if (!AknCommonDialogsDynMem::RunSelectDlgLD(
-            AknCommonDialogsDynMem::EMemoryTypePhone |
-                AknCommonDialogsDynMem::EMemoryTypeMMC,
-            path, R_WHMINI_MEMORY_SELECTION))
+    TInt what = 0;
+    CAknListQueryDialog* dlg = new (ELeave) CAknListQueryDialog(&what);
+    if (!dlg->ExecuteLD(R_WHMINI_SEND_KIND_QUERY)) return;
+
+    switch (what)
         {
-        return;
+        case 1:
+            if (!PickFolderL()) return;
+            iJob.iKind = EJobKindSendFolder;
+            break;
+        case 2:
+            if (!AskTextL()) return;
+            iJob.iKind = EJobKindSendText;
+            break;
+        default:
+            if (!PickFileL()) return;
+            iJob.iKind = EJobKindSend;
+            break;
         }
-    if (path.Length() == 0) return;
-
-    TInt i;
-    for (i = 0; i < path.Length() && i < (TInt)sizeof(iJob.iPath) - 1; i++)
-        iJob.iPath[i] = (char)path[i];
-    iJob.iPath[i] = '\0';
-
-    iJob.iKind = EJobKindSend;
     LaunchJobL();
     }
 

@@ -80,6 +80,8 @@
   "devices": {
     "title": "Uređaji",
     "send": "Pošalji",
+    "sendFolder": "Pošalji folder",
+    "sendText": "Pošalji poruku",
     "receive": "Primi",
     "remove": "Ukloni",
     "removeConfirm": "Ukloniti ovaj uređaj? Možeš ga ponovo upariti kad god želiš.",

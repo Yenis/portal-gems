@@ -80,6 +80,8 @@
   "devices": {
     "title": "Geräte",
     "send": "Senden",
+    "sendFolder": "Ordner senden",
+    "sendText": "Nachricht senden",
     "receive": "Empfangen",
     "remove": "Entfernen",
     "removeConfirm": "Dieses Gerät entfernen? Du kannst es später wieder koppeln.",

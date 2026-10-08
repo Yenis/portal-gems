@@ -986,39 +986,58 @@ static void RunSendTextJob(TJob* aJob)
     aJob->iState = EJobConnecting;
     wh_mailbox_init(&mailbox, &gMailboxBufs);
 
-    if (wh_mailbox_connect(&mailbox, gSettings.iMailboxHost, gSettings.iMailboxPort,
-                           gSettings.iMailboxPath, KAppId) != 0) {
-        Finish(aJob, EJobFailed, "Could not reach the server");
-        return;
-    }
+    if (aJob->iPaired) {
+        /* As in RunSendJob: a derived code, so nothing to show and only a
+         * peer to wait for. */
+        wh_paired_server srv;
+        char pcode[WH_PAIR_CODE_MAX];
+        ServerOf(srv);
+        aJob->iState = EJobWaitingForPeer;
+        rc = wh_paired_open_sender(&mailbox, &srv, aJob->iSecret, pcode);
+        if (rc != 0) {
+            Finish(aJob, EJobFailed,
+                   rc == -3 ? "They did not pick it up - is PortalGems open there?" :
+                   rc == -2 ? "That device holds a different pairing" :
+                   wh_net_cancelled() ? "Cancelled" : "Could not reach the server");
+            return;
+        }
+        CopyCStr(aJob->iCode, sizeof(aJob->iCode), pcode);
+        CopyCStr(aJob->iNameplate, sizeof(aJob->iNameplate), mailbox.nameplate);
+    } else {
+        if (wh_mailbox_connect(&mailbox, gSettings.iMailboxHost, gSettings.iMailboxPort,
+                               gSettings.iMailboxPath, KAppId) != 0) {
+            Finish(aJob, EJobFailed, "Could not reach the server");
+            return;
+        }
 
-    if (wh_mailbox_allocate(&mailbox, code, sizeof(code)) != 0) {
-        Finish(aJob, EJobFailed, "Could not get a code");
-        wh_mailbox_close(&mailbox, "errory");
-        return;
-    }
+        if (wh_mailbox_allocate(&mailbox, code, sizeof(code)) != 0) {
+            Finish(aJob, EJobFailed, "Could not get a code");
+            wh_mailbox_close(&mailbox, "errory");
+            return;
+        }
 
-    CopyCStr(aJob->iCode, sizeof(aJob->iCode), code);
-    CopyCStr(aJob->iNameplate, sizeof(aJob->iNameplate), mailbox.nameplate);
-    aJob->iCodeReady = 1;
-    aJob->iState = EJobShowingCode;
+        CopyCStr(aJob->iCode, sizeof(aJob->iCode), code);
+        CopyCStr(aJob->iNameplate, sizeof(aJob->iNameplate), mailbox.nameplate);
+        aJob->iCodeReady = 1;
+        aJob->iState = EJobShowingCode;
 
-    if (wh_mailbox_pake(&mailbox, KAppId, code) != 0) {
-        Finish(aJob, EJobFailed, "Handshake failed");
-        wh_mailbox_close(&mailbox, "errory");
-        return;
-    }
+        if (wh_mailbox_pake(&mailbox, KAppId, code) != 0) {
+            Finish(aJob, EJobFailed, "Handshake failed");
+            wh_mailbox_close(&mailbox, "errory");
+            return;
+        }
 
-    rc = wh_mailbox_version(&mailbox);
-    if (rc == -2) {
-        Finish(aJob, EJobFailed, "The other side used a wrong code");
-        wh_mailbox_close(&mailbox, "scary");
-        return;
-    }
-    if (rc != 0) {
-        Finish(aJob, EJobFailed, "Handshake failed");
-        wh_mailbox_close(&mailbox, "errory");
-        return;
+        rc = wh_mailbox_version(&mailbox);
+        if (rc == -2) {
+            Finish(aJob, EJobFailed, "The other side used a wrong code");
+            wh_mailbox_close(&mailbox, "scary");
+            return;
+        }
+        if (rc != 0) {
+            Finish(aJob, EJobFailed, "Handshake failed");
+            wh_mailbox_close(&mailbox, "errory");
+            return;
+        }
     }
 
     aJob->iState = EJobSending;

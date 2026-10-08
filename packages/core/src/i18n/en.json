@@ -80,6 +80,8 @@
   "devices": {
     "title": "Devices",
     "send": "Send",
+    "sendFolder": "Send folder",
+    "sendText": "Send message",
     "receive": "Receive",
     "remove": "Remove",
     "removeConfirm": "Unpair this device? You can pair with it again later.",

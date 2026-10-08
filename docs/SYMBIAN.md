@@ -809,6 +809,12 @@ Things worth knowing:
   save), which is why a `server.txt` written before 0.9.1 - no
   `server_choice` line - loads with the right label anyway, and why typing a
   host by hand can never leave a stale "portalgems" on screen.
+- **A paired send asks what to send.** Options > Send to paired device picks
+  the device, then a list query offers File, Folder or Message - the same
+  three the other apps offer per device. The pickers are the ones an ordinary
+  send uses (`PickFileL`, `PickFolderL`, `AskTextL`); the only paired-specific
+  code is in the engine, where `RunSendJob` and `RunSendTextJob` open the
+  wormhole with `wh_paired_open_sender` instead of allocating a code.
 - **Names.** Options > Settings > Device name is what this phone calls
   itself when pairing (default "Symbian phone"), and Options > Rename paired
   device relabels one that is already paired - a local label only, cleared by

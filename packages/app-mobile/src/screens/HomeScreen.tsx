@@ -130,6 +130,16 @@ export default function HomeScreen({
     device: PairedDevice,
   ): { key: string; label: string; danger?: boolean; onPress: () => void }[] => [
     {
+      key: 'sendFolder',
+      label: t('devices.sendFolder'),
+      onPress: () => pickFolder(device),
+    },
+    {
+      key: 'sendText',
+      label: t('devices.sendText'),
+      onPress: () => onCompose(device),
+    },
+    {
       key: 'rename',
       label: t('devices.rename'),
       onPress: () => startRename(device),
