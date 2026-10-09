@@ -298,9 +298,13 @@ pub(super) fn wrap_tcp_connection(
 
     let info = TransitInfo {
         conn_type,
-        peer_addr: socket
-            .peer_addr()
-            .expect("Internal error: socket must be IP"),
+        // PORTALGEMS: was `.expect("Internal error: socket must be IP")`.
+        // The peer can be gone by the time we get here - the other side
+        // cancelling mid-handshake is enough, and `peer_addr` then fails with
+        // ENOTCONN. That is an ordinary dead connection, not a broken
+        // invariant, and panicking in a worker thread is a far worse outcome
+        // than the transit error every caller already handles.
+        peer_addr: socket.peer_addr()?,
     };
 
     Ok((Box::new(socket), info))

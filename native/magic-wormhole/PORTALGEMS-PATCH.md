@@ -94,6 +94,27 @@ No other files were modified. Local additions to this directory:
 this file. Registry metadata (`.cargo_vcs_info.json`, `Cargo.toml.orig`,
 `Cargo.lock`, `.github/`, dotfiles) was not copied.
 
+## The third patch: a panic when the peer leaves mid-handshake
+
+`src/transit/transport.rs`, in `wrap_tcp_connection`:
+
+```rust
+peer_addr: socket.peer_addr().expect("Internal error: socket must be IP"),
+```
+
+became `socket.peer_addr()?`.
+
+Nothing guarantees the peer is still there when transit finishes negotiating.
+If the other side cancels - or its own attempt is cut short - the socket is
+already gone, `peer_addr` fails with `ENOTCONN`, and stock 0.8.1 panics in
+whatever worker thread it happens to be on. That is reachable from ordinary
+use: it fires every time a pairing handshake is interrupted while transit is
+coming up. Returning the error instead costs nothing, because the connection
+is dead either way and every caller already handles a transit failure; a
+panic crossing the FFI is a far worse outcome, and on Android worse still.
+
+Observed as `Panic in async function` through the napi addon before the fix.
+
 ## Upgrading
 
 To move to a newer upstream release: re-vendor the new version and re-apply

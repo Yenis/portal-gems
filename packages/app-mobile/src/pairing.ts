@@ -3,14 +3,17 @@
 // transfers. The protocol logic lives in @portalgems/core.
 
 import {
-  candidateBuckets,
+  candidateCodes,
   currentBucket,
   deriveCode,
   encodeHandshake,
+  isTransitFailure,
   newDeviceId,
   parseHandshake,
   PAIRING_HANDSHAKE_FILE,
   PAIRED_ATTEMPT_TIMEOUT_MS,
+  PAIRED_CODE_ATTEMPTS,
+  PAIRED_POLL_PAUSE_MS,
   PAIRED_RECEIVE_TIMEOUT_MS,
   parsePairingPayload,
   sanitizeDeviceName,
@@ -19,7 +22,7 @@ import {
   type PairedDevice,
   type PairingPayload,
 } from '@portalgems/core';
-import { receiveFile, requestReceive, sendFile } from 'wormhole-rn';
+import { requestReceive, sendFile } from 'wormhole-rn';
 import {
   cacheDir,
   deleteFile,
@@ -155,10 +158,29 @@ export async function completePairingAsScanner(
     encodeHandshake(myName)
   );
   try {
-    const code = deriveCode(payload.secret, currentBucket());
     const server = await currentServer();
-    await sendFile(path, code, server, quietListener, { signal });
-    return await addDevice(payload.name, payload.secret);
+    let lastError: unknown = null;
+    // A handshake that fails after the two sides have met cannot be retried
+    // on the code it failed on: the nameplate was released when they met, so
+    // it is gone. The usual reason is transit - the first connection between
+    // two devices often needs a hole punched or the relay brought in, and it
+    // can lose that race. Moving to the next code gives it another go without
+    // asking the user for one, and the other side is already watching there.
+    for (let attempt = 0; attempt < PAIRED_CODE_ATTEMPTS; attempt += 1) {
+      if (signal.aborted) break;
+      try {
+        const code = deriveCode(payload.secret, currentBucket(), attempt);
+        await sendFile(path, code, server, quietListener, { signal });
+        return await addDevice(payload.name, payload.secret);
+      } catch (e) {
+        lastError = e;
+        // Only transit is worth another code. Any other failure may have
+        // happened after the handshake landed - the peer could be paired
+        // already - and a retry would just talk to nobody.
+        if (!isTransitFailure(e)) throw e;
+      }
+    }
+    throw lastError ?? new Error('pairing cancelled');
   } finally {
     deleteFile(path).catch(() => undefined);
   }
@@ -174,26 +196,44 @@ export async function waitForPairingAsDisplayer(
 ): Promise<PairedDevice> {
   const server = await currentServer();
   const deadline = Date.now() + PAIRED_RECEIVE_TIMEOUT_MS;
-  let lastError: unknown = new Error('pairing timed out');
+  // Only a failure from after the peer was found is worth reporting. The
+  // rest of the loop is unclaimed codes, which only ever mean "not yet".
+  let realError: unknown = null;
   while (Date.now() < deadline && !signal.aborted) {
-    for (const bucket of candidateBuckets()) {
+    for (const code of candidateCodes(payload.secret)) {
       if (signal.aborted) break;
+      let incoming;
       try {
-        const code = deriveCode(payload.secret, bucket);
-        const saved = await withAttemptBound(signal, (attempt) =>
-          receiveFile(code, incomingDir, server, quietListener, { signal: attempt })
+        // The bound belongs on the wait for the peer and nowhere else. A
+        // nameplate still held by a sender that died would otherwise hold
+        // the loop open - but the transfer that follows must be left alone,
+        // because by then the two sides have met and the nameplate is
+        // already released. Cutting that off strands both of them with
+        // nothing left to find.
+        incoming = await withAttemptBound(signal, (attempt) =>
+          requestReceive(code, server, { signal: attempt })
         );
+      } catch {
+        continue;
+      }
+      try {
+        const saved = await incoming.accept(incomingDir, quietListener, { signal });
         const message = parseHandshake(await readTextFile(saved));
         deleteFile(saved).catch(() => undefined);
         if (message) {
           return await addDevice(message.name, payload.secret);
         }
-        lastError = new Error('malformed handshake');
+        realError = new Error('malformed handshake');
       } catch (e) {
-        lastError = e;
-        // Unclaimed nameplate is the expected "not yet" case - keep polling.
+        // The peer was here and the handshake failed - transit, usually. It
+        // moves on to its next code, which this loop already covers.
+        realError = e;
       }
     }
+    if (signal.aborted) break;
+    await new Promise<void>((resolve) => {
+      setTimeout(() => resolve(), PAIRED_POLL_PAUSE_MS);
+    });
   }
-  throw lastError;
+  throw realError ?? new Error('pairing timed out');
 }

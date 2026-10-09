@@ -220,6 +220,7 @@
     "invalidCode": "Cela ne ressemble pas à un code valide. Les codes ressemblent à : 7-mot-mot",
     "wrongCode": "Aucun fichier n'est proposé sous ce code. Vérifiez le code et assurez-vous que l'application de l'expéditeur est toujours ouverte et en attente.",
     "network": "Problème réseau - vérifiez votre connexion Internet et réessayez.",
+    "transit": "Les deux appareils n'ont pas pu établir de connexion entre eux. Réessayez - si cela échoue encore, vérifiez que les deux appareils sont en ligne.",
     "peerGone": "L'autre partie a disparu avant la fin du transfert.",
     "declinedBySender": "Le transfert a été refusé ou annulé par l'autre partie.",
     "transferFailed": "Le transfert a échoué : {{message}}",

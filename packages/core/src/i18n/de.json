@@ -220,6 +220,7 @@
     "invalidCode": "Das sieht nicht nach einem gültigen Code aus. Codes sehen so aus: 7-wort-wort",
     "wrongCode": "Unter diesem Code wird keine Datei angeboten. Prüfe den Code und stelle sicher, dass die App des Absenders noch geöffnet ist und wartet.",
     "network": "Netzwerkproblem - prüfe deine Internetverbindung und versuche es erneut.",
+    "transit": "Die beiden Geräte konnten keine Verbindung zueinander aufbauen. Versuchen Sie es erneut - wenn es weiterhin fehlschlägt, prüfen Sie, ob beide Geräte online sind.",
     "peerGone": "Die Gegenseite ist verschwunden, bevor die Übertragung abgeschlossen war.",
     "declinedBySender": "Die Übertragung wurde von der Gegenseite abgelehnt oder abgebrochen.",
     "transferFailed": "Die Übertragung ist fehlgeschlagen: {{message}}",

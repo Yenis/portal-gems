@@ -5,6 +5,20 @@ All notable changes to PortalGems are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **A pairing that fails now says so, instead of leaving both devices
+  waiting.** Pairing a computer with a phone for the first time could leave
+  both sides on "Waiting for the other device" until they gave up, with
+  nothing to explain it, and then work on the second try. The handshake
+  travels over a connection the two devices open to each other, and the first
+  time they meet that connection is often the thing that fails. Now it is
+  named as such on both sides, the two of them move on to a fresh code
+  together rather than waiting on one that can no longer work, and a phone no
+  longer cuts the handshake short while that connection is still being made.
+
 ## [1.3.5] - 2026-10-08
 
 Paired devices, without the detours.

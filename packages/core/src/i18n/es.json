@@ -220,6 +220,7 @@
     "invalidCode": "Eso no parece un código válido. Los códigos son así: 7-palabra-palabra",
     "wrongCode": "Nadie ofrece un archivo con este código. Comprueba el código y asegúrate de que la aplicación del remitente siga abierta y esperando.",
     "network": "Problema de red - comprueba tu conexión a Internet e inténtalo de nuevo.",
+    "transit": "Los dos dispositivos no pudieron establecer una conexión entre sí. Vuelve a intentarlo: si sigue fallando, comprueba que ambos dispositivos estén conectados.",
     "peerGone": "La otra parte desapareció antes de terminar la transferencia.",
     "declinedBySender": "La otra parte rechazó o canceló la transferencia.",
     "transferFailed": "La transferencia falló: {{message}}",

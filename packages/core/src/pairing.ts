@@ -84,6 +84,16 @@ export const PAIRED_ATTEMPT_TIMEOUT_MS = 10_000;
  */
 export const PAIRED_CODE_ATTEMPTS = 3;
 
+/**
+ * How long a receiver waits between passes over its candidate codes.
+ *
+ * An unclaimed code fails in milliseconds, so without a pause the loop is a
+ * reconnect storm - tens of fresh rendezvous connections a second, each one a
+ * TLS handshake, for as long as the peer takes to appear. The pause costs a
+ * little latency on the pass that finds the sender and nothing else.
+ */
+export const PAIRED_POLL_PAUSE_MS = 500;
+
 /** Where both apps keep their in-flight send markers. */
 export const SEND_ATTEMPTS_KEY = 'pg-paired-send-attempts';
 
@@ -222,10 +232,12 @@ export function candidateBuckets(nowMs: number = Date.now()): number[] {
  * cost little; the expensive one is a nameplate a dead sender still holds,
  * and that is bounded per attempt by `PAIRED_ATTEMPT_TIMEOUT_MS`.
  *
- * The pairing handshake deliberately keeps to `candidateBuckets` and attempt
- * 0. Its secret is one-shot: a pairing that fails is retried by showing a new
- * payload, which derives entirely new codes, so there is no stale claim to
- * route around and no reason to make that side poll three times as much.
+ * The pairing handshake uses these too. Its secret is one-shot, so it has no
+ * stale claims to route around, but it has the same need to move on: once the
+ * two sides have met, the nameplate is released, and a handshake that then
+ * fails - transit not coming up, most often, the first time two devices meet -
+ * cannot be retried on the code it failed on. The sender moves to the next
+ * attempt and the receiver is already looking there.
  */
 export function candidateCodes(secretB64: string, nowMs: number = Date.now()): string[] {
   const codes: string[] = [];

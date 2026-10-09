@@ -24207,6 +24207,7 @@
   var PAIRED_RECEIVE_TIMEOUT_MS = 6e4;
   var PAIRED_ATTEMPT_TIMEOUT_MS = 1e4;
   var PAIRED_CODE_ATTEMPTS = 3;
+  var PAIRED_POLL_PAUSE_MS = 500;
   var SEND_ATTEMPTS_KEY = "pg-paired-send-attempts";
   var PAIRING_HANDSHAKE_FILE = "pg-pair-handshake.json";
   var B64URL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
@@ -27784,6 +27785,7 @@
       invalidCode: "Ovo ne li\u010Di na va\u017Ee\u0107i kod. Kodovi izgledaju ovako: 7-rije\u010D-rije\u010D",
       wrongCode: "Pod ovim kodom se ne nudi nijedna datoteka. Provjeri kod i da li je aplikacija po\u0161iljaoca jo\u0161 otvorena i \u010Deka.",
       network: "Problem s mre\u017Eom - provjeri internet vezu i poku\u0161aj ponovo.",
+      transit: "Dva ure\u0111aja nisu mogla uspostaviti vezu me\u0111usobno. Poku\u0161ajte ponovo - ako i dalje ne uspijeva, provjerite jesu li oba ure\u0111aja na mre\u017Ei.",
       peerGone: "Druga strana je nestala prije zavr\u0161etka prijenosa.",
       declinedBySender: "Druga strana je odbila ili otkazala prijenos.",
       transferFailed: "Prijenos nije uspio: {{message}}",
@@ -28026,6 +28028,7 @@
       invalidCode: "Das sieht nicht nach einem g\xFCltigen Code aus. Codes sehen so aus: 7-wort-wort",
       wrongCode: "Unter diesem Code wird keine Datei angeboten. Pr\xFCfe den Code und stelle sicher, dass die App des Absenders noch ge\xF6ffnet ist und wartet.",
       network: "Netzwerkproblem - pr\xFCfe deine Internetverbindung und versuche es erneut.",
+      transit: "Die beiden Ger\xE4te konnten keine Verbindung zueinander aufbauen. Versuchen Sie es erneut - wenn es weiterhin fehlschl\xE4gt, pr\xFCfen Sie, ob beide Ger\xE4te online sind.",
       peerGone: "Die Gegenseite ist verschwunden, bevor die \xDCbertragung abgeschlossen war.",
       declinedBySender: "Die \xDCbertragung wurde von der Gegenseite abgelehnt oder abgebrochen.",
       transferFailed: "Die \xDCbertragung ist fehlgeschlagen: {{message}}",
@@ -28268,6 +28271,7 @@
       invalidCode: "That does not look like a valid code. Codes look like: 7-word-word",
       wrongCode: "No file is being offered under this code. Double-check the code and make sure the sender's app is still open and waiting.",
       network: "Network problem - check your internet connection and try again.",
+      transit: "The two devices could not open a connection to each other. Try again - if it keeps failing, check that both devices are online.",
       peerGone: "The other side went away before the transfer finished.",
       declinedBySender: "The transfer was declined or cancelled by the other side.",
       transferFailed: "The transfer failed: {{message}}",
@@ -28510,6 +28514,7 @@
       invalidCode: "Eso no parece un c\xF3digo v\xE1lido. Los c\xF3digos son as\xED: 7-palabra-palabra",
       wrongCode: "Nadie ofrece un archivo con este c\xF3digo. Comprueba el c\xF3digo y aseg\xFArate de que la aplicaci\xF3n del remitente siga abierta y esperando.",
       network: "Problema de red - comprueba tu conexi\xF3n a Internet e int\xE9ntalo de nuevo.",
+      transit: "Los dos dispositivos no pudieron establecer una conexi\xF3n entre s\xED. Vuelve a intentarlo: si sigue fallando, comprueba que ambos dispositivos est\xE9n conectados.",
       peerGone: "La otra parte desapareci\xF3 antes de terminar la transferencia.",
       declinedBySender: "La otra parte rechaz\xF3 o cancel\xF3 la transferencia.",
       transferFailed: "La transferencia fall\xF3: {{message}}",
@@ -28752,6 +28757,7 @@
       invalidCode: "Cela ne ressemble pas \xE0 un code valide. Les codes ressemblent \xE0 : 7-mot-mot",
       wrongCode: "Aucun fichier n'est propos\xE9 sous ce code. V\xE9rifiez le code et assurez-vous que l'application de l'exp\xE9diteur est toujours ouverte et en attente.",
       network: "Probl\xE8me r\xE9seau - v\xE9rifiez votre connexion Internet et r\xE9essayez.",
+      transit: "Les deux appareils n'ont pas pu \xE9tablir de connexion entre eux. R\xE9essayez - si cela \xE9choue encore, v\xE9rifiez que les deux appareils sont en ligne.",
       peerGone: "L'autre partie a disparu avant la fin du transfert.",
       declinedBySender: "Le transfert a \xE9t\xE9 refus\xE9 ou annul\xE9 par l'autre partie.",
       transferFailed: "Le transfert a \xE9chou\xE9 : {{message}}",
@@ -28994,6 +29000,7 @@
       invalidCode: "\u042D\u0442\u043E \u043D\u0435 \u043F\u043E\u0445\u043E\u0436\u0435 \u043D\u0430 \u0434\u0435\u0439\u0441\u0442\u0432\u0438\u0442\u0435\u043B\u044C\u043D\u044B\u0439 \u043A\u043E\u0434. \u041A\u043E\u0434\u044B \u0432\u044B\u0433\u043B\u044F\u0434\u044F\u0442 \u0442\u0430\u043A: 7-\u0441\u043B\u043E\u0432\u043E-\u0441\u043B\u043E\u0432\u043E",
       wrongCode: "\u041F\u043E\u0434 \u044D\u0442\u0438\u043C \u043A\u043E\u0434\u043E\u043C \u043D\u0438\u043A\u0442\u043E \u043D\u0435 \u043F\u0440\u0435\u0434\u043B\u0430\u0433\u0430\u0435\u0442 \u0444\u0430\u0439\u043B. \u041F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u043A\u043E\u0434 \u0438 \u0443\u0431\u0435\u0434\u0438\u0442\u0435\u0441\u044C, \u0447\u0442\u043E \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435 \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u0435\u043B\u044F \u0432\u0441\u0451 \u0435\u0449\u0451 \u043E\u0442\u043A\u0440\u044B\u0442\u043E \u0438 \u0436\u0434\u0451\u0442.",
       network: "\u041F\u0440\u043E\u0431\u043B\u0435\u043C\u0430 \u0441 \u0441\u0435\u0442\u044C\u044E - \u043F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435 \u043A \u0438\u043D\u0442\u0435\u0440\u043D\u0435\u0442\u0443 \u0438 \u043F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0441\u043D\u043E\u0432\u0430.",
+      transit: "\u0423\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430\u043C \u043D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0442\u044C \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u0435 \u0434\u0440\u0443\u0433 \u0441 \u0434\u0440\u0443\u0433\u043E\u043C. \u041F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0435\u0449\u0451 \u0440\u0430\u0437 - \u0435\u0441\u043B\u0438 \u043D\u0435 \u043F\u043E\u043B\u0443\u0447\u0430\u0435\u0442\u0441\u044F, \u043F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435, \u0447\u0442\u043E \u043E\u0431\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u0432 \u0441\u0435\u0442\u0438.",
       peerGone: "\u0414\u0440\u0443\u0433\u0430\u044F \u0441\u0442\u043E\u0440\u043E\u043D\u0430 \u043F\u0440\u043E\u043F\u0430\u043B\u0430 \u0434\u043E \u0437\u0430\u0432\u0435\u0440\u0448\u0435\u043D\u0438\u044F \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0438.",
       declinedBySender: "\u0414\u0440\u0443\u0433\u0430\u044F \u0441\u0442\u043E\u0440\u043E\u043D\u0430 \u043E\u0442\u043A\u043B\u043E\u043D\u0438\u043B\u0430 \u0438\u043B\u0438 \u043E\u0442\u043C\u0435\u043D\u0438\u043B\u0430 \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0443.",
       transferFailed: "\u041F\u0435\u0440\u0435\u0434\u0430\u0447\u0430 \u043D\u0435 \u0443\u0434\u0430\u043B\u0430\u0441\u044C: {{message}}",
@@ -29049,6 +29056,10 @@
   function isServerUnreachableError(error) {
     return SERVER_UNREACHABLE_RE.test(rawMessage(error));
   }
+  var TRANSIT_RE = /transit/i;
+  function isTransitFailure(error) {
+    return TRANSIT_RE.test(rawMessage(error));
+  }
   function friendlyError(t2, error) {
     const raw = rawMessage(error);
     if (/nameplate is unclaimed/i.test(raw)) return t2("errors.wrongCode");
@@ -29056,6 +29067,7 @@
     if (/transfer was rejected|rejected the transfer|TransferRejected/i.test(raw))
       return t2("errors.declinedBySender");
     if (isServerUnreachableError(raw)) return t2("errors.serverUnreachable");
+    if (isTransitFailure(raw)) return t2("errors.transit");
     if (/peer|reset by peer|connection was lost|closed the connection/i.test(raw))
       return t2("errors.peerGone");
     if (/websocket|dns|network|timed? ?out|unreachable|io error/i.test(raw))
@@ -29122,9 +29134,18 @@
   async function completePairingAsScanner(payload, myName, transferId) {
     const path = await pg().writeTemp(PAIRING_HANDSHAKE_FILE, encodeHandshake(myName));
     try {
-      const code = deriveCode(payload.secret, currentBucket());
-      await pg().send(transferId, path, code, currentServer());
-      return await addDevice(payload.name, payload.secret);
+      let lastError = null;
+      for (let attempt = 0; attempt < PAIRED_CODE_ATTEMPTS; attempt += 1) {
+        try {
+          const code = deriveCode(payload.secret, currentBucket(), attempt);
+          await pg().send(transferId, path, code, currentServer());
+          return await addDevice(payload.name, payload.secret);
+        } catch (e2) {
+          lastError = e2;
+          if (!isTransitFailure(e2)) throw e2;
+        }
+      }
+      throw lastError ?? new Error("pairing failed");
     } finally {
       pg().deleteFile(path).catch(() => void 0);
     }
@@ -29132,24 +29153,31 @@
   async function waitForPairingAsDisplayer(payload, transferId, isCancelled) {
     const tempDir = await pg().tempDir();
     const deadline = Date.now() + PAIRED_RECEIVE_TIMEOUT_MS;
-    let lastError = new Error("pairing timed out");
+    let realError = null;
     while (Date.now() < deadline && !isCancelled()) {
-      for (const bucket of candidateBuckets()) {
+      for (const code of candidateCodes(payload.secret)) {
         if (isCancelled()) break;
         try {
-          const code = deriveCode(payload.secret, bucket);
           await requestReceiveBounded(transferId, code);
+        } catch {
+          continue;
+        }
+        try {
           const saved = await pg().accept(transferId, tempDir);
           const message = parseHandshake(await pg().readText(saved));
           pg().deleteFile(saved).catch(() => void 0);
           if (message) return await addDevice(message.name, payload.secret);
-          lastError = new Error("malformed handshake");
+          realError = new Error("malformed handshake");
         } catch (e2) {
-          lastError = e2;
+          realError = e2;
         }
       }
+      if (isCancelled()) break;
+      await new Promise((resolve) => {
+        setTimeout(() => resolve(), PAIRED_POLL_PAUSE_MS);
+      });
     }
-    throw lastError;
+    throw realError ?? new Error("pairing timed out");
   }
 
   // src/renderer/devicename.ts

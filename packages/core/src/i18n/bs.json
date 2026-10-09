@@ -220,6 +220,7 @@
     "invalidCode": "Ovo ne liči na važeći kod. Kodovi izgledaju ovako: 7-riječ-riječ",
     "wrongCode": "Pod ovim kodom se ne nudi nijedna datoteka. Provjeri kod i da li je aplikacija pošiljaoca još otvorena i čeka.",
     "network": "Problem s mrežom - provjeri internet vezu i pokušaj ponovo.",
+    "transit": "Dva uređaja nisu mogla uspostaviti vezu međusobno. Pokušajte ponovo - ako i dalje ne uspijeva, provjerite jesu li oba uređaja na mreži.",
     "peerGone": "Druga strana je nestala prije završetka prijenosa.",
     "declinedBySender": "Druga strana je odbila ili otkazala prijenos.",
     "transferFailed": "Prijenos nije uspio: {{message}}",
