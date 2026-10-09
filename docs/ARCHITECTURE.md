@@ -171,6 +171,20 @@ Consumed by both apps as **npm `file:` symlinks** (see §5 build gotchas).
   `candidateCodes()` is the receiver's side of that: every bucket × attempt,
   likeliest first. Attempt 0 staying byte-identical is what lets an updated
   device still meet one that knows nothing of attempts.
+  - **The handshake is a message, not a file** (since 1.4.0). A file offer
+    needs transit - a connection the two devices open to each other - and on
+    first contact that is the step most likely to fail: a laptop and a phone
+    typically cannot reach each other until something has opened the way, and
+    `transit.rs` waits a full 60 s before saying so, which is also the whole
+    pairing window. Both sides sat waiting, and only the user's second attempt
+    worked, on the mappings the first one opened. `send_text` builds no relay
+    hints and negotiates no transit, so the handshake is now one mailbox round
+    trip and typically lands in under a second. Receivers still accept a file
+    handshake, which is what a 1.3.x peer sends; a 1.3.x *receiver* cannot
+    read the message form, which is why 1.4.0 is a breaking release for
+    pairing. `native/wormhole-mini` rejects text offers outright
+    (`receive_handshake`), so Symbian needs the same change before it can be
+    paired with from 1.4.0.
   Timeouts: sender 45 s, receiver poll 60 s, **each poll attempt 10 s**
   (`PAIRED_ATTEMPT_TIMEOUT_MS`). A frozen test vector pins the
   derivation - **changing it breaks pairing between app versions**. The

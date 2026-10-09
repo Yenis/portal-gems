@@ -24209,7 +24209,6 @@
   var PAIRED_CODE_ATTEMPTS = 3;
   var PAIRED_POLL_PAUSE_MS = 500;
   var SEND_ATTEMPTS_KEY = "pg-paired-send-attempts";
-  var PAIRING_HANDSHAKE_FILE = "pg-pair-handshake.json";
   var B64URL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
   function utf8Encode(s) {
     const out = [];
@@ -29132,23 +29131,18 @@
     return pg().requestReceive(transferId, code, currentServer()).finally(() => clearTimeout(timer));
   }
   async function completePairingAsScanner(payload, myName, transferId) {
-    const path = await pg().writeTemp(PAIRING_HANDSHAKE_FILE, encodeHandshake(myName));
-    try {
-      let lastError = null;
-      for (let attempt = 0; attempt < PAIRED_CODE_ATTEMPTS; attempt += 1) {
-        try {
-          const code = deriveCode(payload.secret, currentBucket(), attempt);
-          await pg().send(transferId, path, code, currentServer());
-          return await addDevice(payload.name, payload.secret);
-        } catch (e2) {
-          lastError = e2;
-          if (!isTransitFailure(e2)) throw e2;
-        }
+    let lastError = null;
+    for (let attempt = 0; attempt < PAIRED_CODE_ATTEMPTS; attempt += 1) {
+      try {
+        const code = deriveCode(payload.secret, currentBucket(), attempt);
+        await pg().sendText(transferId, encodeHandshake(myName), code, currentServer());
+        return await addDevice(payload.name, payload.secret);
+      } catch (e2) {
+        lastError = e2;
+        if (!isTransitFailure(e2)) throw e2;
       }
-      throw lastError ?? new Error("pairing failed");
-    } finally {
-      pg().deleteFile(path).catch(() => void 0);
     }
+    throw lastError ?? new Error("pairing failed");
   }
   async function waitForPairingAsDisplayer(payload, transferId, isCancelled) {
     const tempDir = await pg().tempDir();
@@ -29157,9 +29151,16 @@
     while (Date.now() < deadline && !isCancelled()) {
       for (const code of candidateCodes(payload.secret)) {
         if (isCancelled()) break;
+        let offer;
         try {
-          await requestReceiveBounded(transferId, code);
+          offer = await requestReceiveBounded(transferId, code);
         } catch {
+          continue;
+        }
+        if (offer.text != null) {
+          const message = parseHandshake(offer.text);
+          if (message) return await addDevice(message.name, payload.secret);
+          realError = new Error("malformed handshake");
           continue;
         }
         try {

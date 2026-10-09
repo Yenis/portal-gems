@@ -48,6 +48,14 @@ through until the bucket rolled over.
 
 What that does **not** cover, in the order it is worth doing:
 
+- **The Symbian client needs the message handshake.** Since 1.4.0 the
+  handshake crosses as a wormhole message; `receive_handshake` in
+  `native/wormhole-mini/cli/wh-mini.c` rejects any text offer outright
+  (`offer.is_text` is treated as "not a pairing handshake"), so a 1.4.0 device
+  cannot pair with Symbian in that direction. The C client already parses
+  text offers for the invitation, so this is small - and it has to happen
+  before Symbian pairing can work at all.
+
 - **The Symbian client derives attempt 0 only.** `wh_pair_derive_code` in
   `native/wormhole-mini` takes a bucket and nothing else, so a sender that
   moved past its first code is invisible to a Symbian peer. Normal transfers

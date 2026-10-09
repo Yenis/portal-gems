@@ -9,7 +9,6 @@ import {
   isTransitFailure,
   newDeviceId,
   parseHandshake,
-  PAIRING_HANDSHAKE_FILE,
   PAIRED_ATTEMPT_TIMEOUT_MS,
   PAIRED_CODE_ATTEMPTS,
   PAIRED_POLL_PAUSE_MS,
@@ -88,38 +87,37 @@ export function requestReceiveBounded(
     .finally(() => clearTimeout(timer));
 }
 
-/** Scanner/paster side: send our device name over the derived code. */
+/**
+ * Scanner/paster side: send our device name over the derived code.
+ *
+ * The name travels as a wormhole *message*, not a file. A file needs transit
+ * - a connection the two devices open to each other - and the first time two
+ * devices meet that is exactly what tends to fail, which used to strand both
+ * sides of a pairing. A message rides inside the offer itself, so pairing now
+ * asks nothing of the network beyond reaching the mailbox, which both devices
+ * have already done by this point.
+ */
 export async function completePairingAsScanner(
   payload: PairingPayload,
   myName: string,
   transferId: number
 ): Promise<PairedDevice> {
-  const path = await pg().writeTemp(PAIRING_HANDSHAKE_FILE, encodeHandshake(myName));
-  try {
-    let lastError: unknown = null;
-    // A handshake that fails after the two sides have met cannot be retried
-    // on the code it failed on: the nameplate was released when they met, so
-    // it is gone. The usual reason is transit - the first connection between
-    // two devices often needs a hole punched or the relay brought in, and it
-    // can lose that race. Moving to the next code gives it another go without
-    // asking the user for one, and the other side is already watching there.
-    for (let attempt = 0; attempt < PAIRED_CODE_ATTEMPTS; attempt += 1) {
-      try {
-        const code = deriveCode(payload.secret, currentBucket(), attempt);
-        await pg().send(transferId, path, code, currentServer());
-        return await addDevice(payload.name, payload.secret);
-      } catch (e) {
-        lastError = e;
-        // Only transit is worth another code. Any other failure may have
-        // happened after the handshake landed - the peer could be paired
-        // already - and a retry would just talk to nobody.
-        if (!isTransitFailure(e)) throw e;
-      }
+  let lastError: unknown = null;
+  for (let attempt = 0; attempt < PAIRED_CODE_ATTEMPTS; attempt += 1) {
+    try {
+      const code = deriveCode(payload.secret, currentBucket(), attempt);
+      await pg().sendText(transferId, encodeHandshake(myName), code, currentServer());
+      return await addDevice(payload.name, payload.secret);
+    } catch (e) {
+      lastError = e;
+      // A message needs no transit, so this should not happen for that reason
+      // any more - but if it somehow does, the code it failed on is spent (the
+      // nameplate goes the moment the two sides meet) and the next one is
+      // where the other side is already looking.
+      if (!isTransitFailure(e)) throw e;
     }
-    throw lastError ?? new Error('pairing failed');
-  } finally {
-    pg().deleteFile(path).catch(() => undefined);
   }
+  throw lastError ?? new Error('pairing failed');
 }
 
 /** Displayer side: poll derived codes until the peer's handshake arrives. */
@@ -136,17 +134,28 @@ export async function waitForPairingAsDisplayer(
   while (Date.now() < deadline && !isCancelled()) {
     for (const code of candidateCodes(payload.secret)) {
       if (isCancelled()) break;
+      let offer;
       try {
         // Bounded: a nameplate still held by a sender that died would hold
         // the loop open otherwise.
-        await requestReceiveBounded(transferId, code);
+        offer = await requestReceiveBounded(transferId, code);
       } catch {
         continue;
       }
+      // A handshake sent as a message is already here - the engine
+      // acknowledged it as it arrived, so there is nothing to accept.
+      if (offer.text != null) {
+        const message = parseHandshake(offer.text);
+        if (message) return await addDevice(message.name, payload.secret);
+        realError = new Error('malformed handshake');
+        continue;
+      }
       try {
-        // Not bounded, deliberately. The two sides have met by now and the
-        // nameplate is already released, so cutting the transfer off would
-        // strand both of them with nothing left to find.
+        // A peer on 1.3.x still sends the handshake as a file; take it the
+        // old way so pairing with one keeps working. Not bounded,
+        // deliberately: the two sides have met by now and the nameplate is
+        // already released, so cutting the transfer off would strand both of
+        // them with nothing left to find.
         const saved = await pg().accept(transferId, tempDir);
         const message = parseHandshake(await pg().readText(saved));
         pg().deleteFile(saved).catch(() => undefined);

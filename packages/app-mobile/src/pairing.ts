@@ -10,7 +10,6 @@ import {
   isTransitFailure,
   newDeviceId,
   parseHandshake,
-  PAIRING_HANDSHAKE_FILE,
   PAIRED_ATTEMPT_TIMEOUT_MS,
   PAIRED_CODE_ATTEMPTS,
   PAIRED_POLL_PAUSE_MS,
@@ -22,15 +21,13 @@ import {
   type PairedDevice,
   type PairingPayload,
 } from '@portalgems/core';
-import { requestReceive, sendFile } from 'wormhole-rn';
+import { requestReceive, sendText } from 'wormhole-rn';
 import {
-  cacheDir,
   deleteFile,
   getPairedDevicesJson,
   incomingDir,
   readTextFile,
   setPairedDevicesJson,
-  writeTextFile,
 } from './native';
 import { currentServer } from './server';
 
@@ -146,44 +143,39 @@ const quietListener = {
 /**
  * Scanner side of the handshake: send our device name over the derived code.
  * On success the displayer has stored us; we store them (payload.name).
+ *
+ * The name travels as a wormhole *message*, not a file. A file needs transit
+ * - a connection the two devices open to each other - and the first time two
+ * devices meet that is exactly what tends to fail, which used to strand both
+ * sides of a pairing. A message rides inside the offer itself, so pairing now
+ * asks nothing of the network beyond reaching the mailbox, which both devices
+ * have already done by this point.
  */
 export async function completePairingAsScanner(
   payload: PairingPayload,
   myName: string,
   signal: AbortSignal
 ): Promise<PairedDevice> {
-  const path = await writeTextFile(
-    cacheDir,
-    PAIRING_HANDSHAKE_FILE,
-    encodeHandshake(myName)
-  );
-  try {
-    const server = await currentServer();
-    let lastError: unknown = null;
-    // A handshake that fails after the two sides have met cannot be retried
-    // on the code it failed on: the nameplate was released when they met, so
-    // it is gone. The usual reason is transit - the first connection between
-    // two devices often needs a hole punched or the relay brought in, and it
-    // can lose that race. Moving to the next code gives it another go without
-    // asking the user for one, and the other side is already watching there.
-    for (let attempt = 0; attempt < PAIRED_CODE_ATTEMPTS; attempt += 1) {
-      if (signal.aborted) break;
-      try {
-        const code = deriveCode(payload.secret, currentBucket(), attempt);
-        await sendFile(path, code, server, quietListener, { signal });
-        return await addDevice(payload.name, payload.secret);
-      } catch (e) {
-        lastError = e;
-        // Only transit is worth another code. Any other failure may have
-        // happened after the handshake landed - the peer could be paired
-        // already - and a retry would just talk to nobody.
-        if (!isTransitFailure(e)) throw e;
-      }
+  const server = await currentServer();
+  let lastError: unknown = null;
+  for (let attempt = 0; attempt < PAIRED_CODE_ATTEMPTS; attempt += 1) {
+    if (signal.aborted) break;
+    try {
+      const code = deriveCode(payload.secret, currentBucket(), attempt);
+      await sendText(encodeHandshake(myName), code, server, quietListener, {
+        signal,
+      });
+      return await addDevice(payload.name, payload.secret);
+    } catch (e) {
+      lastError = e;
+      // A message needs no transit, so this should not happen for that
+      // reason any more - but if it somehow does, the code it failed on is
+      // spent (the nameplate goes the moment the two sides meet) and the
+      // next one is where the other side is already looking.
+      if (!isTransitFailure(e)) throw e;
     }
-    throw lastError ?? new Error('pairing cancelled');
-  } finally {
-    deleteFile(path).catch(() => undefined);
   }
+  throw lastError ?? new Error('pairing cancelled');
 }
 
 /**
@@ -216,7 +208,20 @@ export async function waitForPairingAsDisplayer(
       } catch {
         continue;
       }
+      // A handshake sent as a message is already here - the engine
+      // acknowledged it as it arrived, so there is nothing to accept.
+      const sent = incoming.text();
+      if (sent !== undefined) {
+        const message = parseHandshake(sent);
+        if (message) {
+          return await addDevice(message.name, payload.secret);
+        }
+        realError = new Error('malformed handshake');
+        continue;
+      }
       try {
+        // A peer on 1.3.x still sends the handshake as a file; take it the
+        // old way so pairing with one keeps working.
         const saved = await incoming.accept(incomingDir, quietListener, { signal });
         const message = parseHandshake(await readTextFile(saved));
         deleteFile(saved).catch(() => undefined);
@@ -225,8 +230,8 @@ export async function waitForPairingAsDisplayer(
         }
         realError = new Error('malformed handshake');
       } catch (e) {
-        // The peer was here and the handshake failed - transit, usually. It
-        // moves on to its next code, which this loop already covers.
+        // The peer was here and the file handshake failed - transit, most
+        // likely. It moves on to its next code, which this loop covers.
         realError = e;
       }
     }

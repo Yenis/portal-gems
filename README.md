@@ -200,7 +200,10 @@ devices effortless - with no server involved:
    them. Either way the same thing crosses - a device name and a random
    256-bit secret - and both devices store it locally (Keystore/keychain). A
    typed code carries the secret through an encrypted wormhole rather than
-   across the room on a screen, and it works once.
+   across the room on a screen, and it works once. Pairing asks nothing of
+   your network beyond the meeting point both devices have already reached -
+   they never have to connect to each other directly - so it works the first
+   time, even between a laptop and a phone that have never met.
 2. **Name things how you like.** Each device has a name it gives out when
    pairing - the computer's hostname, the phone's own name - and you can
    change it in Settings. You can also rename any device you have paired

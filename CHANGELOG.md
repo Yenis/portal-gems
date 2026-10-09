@@ -5,19 +5,56 @@ All notable changes to PortalGems are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.4.0] - 2026-10-09
+
+Pairing, finally dependable.
+
+### Changed
+
+- **Pairing no longer needs the two devices to reach each other.** This is
+  the fix for a bug worth describing, because it was the worst kind: pairing a
+  computer with a phone for the first time left both sides waiting on
+  "Waiting for the other device" until they gave up - and then worked on the
+  second try, every time.
+
+  The reason: the last step of pairing, where each device learns the other's
+  name, was sent as a file. A file travels over a connection the two devices
+  open directly to each other, and the first time two devices meet that
+  connection is the thing most likely to fail - a laptop and a phone usually
+  cannot reach each other until something opens the way. Your second attempt
+  worked because the first one had opened it.
+
+  That step is now a message, which travels through the same meeting point
+  that carried the code - no connection between the devices required. Pairing
+  two devices that have never met is now one round trip, and typically
+  finishes in well under a second.
+
+### Breaking
+
+- **Both devices must be on 1.4.0 to pair.** A device on 1.3.x expects that
+  last step as a file and will not recognise a message, so pairing between
+  1.4.0 and 1.3.x fails. This release still *accepts* the old form, so a
+  1.4.0 device can be paired with by a 1.3.x one - but to pair reliably,
+  update both. Devices already paired are unaffected: existing pairings keep
+  working, and nothing needs to be set up again.
+
+- PortalGems Mini (Symbian) cannot pair with a 1.4.0 device until it learns
+  the new form; it is not yet able to complete a pairing in any case.
 
 ### Fixed
 
 - **A pairing that fails now says so, instead of leaving both devices
-  waiting.** Pairing a computer with a phone for the first time could leave
-  both sides on "Waiting for the other device" until they gave up, with
-  nothing to explain it, and then work on the second try. The handshake
-  travels over a connection the two devices open to each other, and the first
-  time they meet that connection is often the thing that fails. Now it is
-  named as such on both sides, the two of them move on to a fresh code
-  together rather than waiting on one that can no longer work, and a phone no
-  longer cuts the handshake short while that connection is still being made.
+  waiting.** When the two sides do lose each other, both say what happened
+  rather than sitting until a timeout, and they move on to a fresh code
+  together instead of waiting on one that can no longer work. A phone no
+  longer cuts a pairing short while the connection is still being made, and a
+  connection that cannot be made is now named as that rather than reported as
+  a mysterious failure.
+
+- A device that disappeared at the wrong moment could crash the engine's
+  worker thread instead of reporting an error.
+
+[1.4.0]: https://github.com/Yenis/portal-gems/releases/tag/v1.4.0
 
 ## [1.3.5] - 2026-10-08
 
