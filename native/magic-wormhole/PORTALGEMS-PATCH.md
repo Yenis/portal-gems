@@ -124,7 +124,11 @@ the offer carries one extra member:
 
     {"offer":{"directory":{"dirname":...,"mode":"zipfile/deflated",
         "zipsize":...,"numbytes":...,"numfiles":...,
-        "portalgems":{"loose":true}}}}
+        "portalgems":{"loose":true,"files":7,"folders":2}}}}
+
+`files` and `folders` count the top-level entries of the archive - what will
+appear in the receive folder - so the receiver can say "7 files and 2
+folders" before accepting. `numfiles` keeps its standard meaning.
 
 A receiver that does not know it ignores it and saves a folder called
 `dirname`: the Python client reads the five standard members by name, and
@@ -138,15 +142,18 @@ its reasoning are in `docs/MULTI-FILE-DESIGN.md`.
   serialises byte for byte as before. It is a raw value on purpose: a
   malformed or newer extension must never make an otherwise valid directory
   offer fail to parse.
-- New `loose_marker()` and `directory_is_loose()`: the one place that writes
+- New public `LooseBundle { files, folders }`.
+- New `loose_marker()` and `directory_loose()`: the one place that writes
   the member and the one place that reads it. Only an object with
-  `"loose": true` counts.
-- `send_zipped_directory` takes `loose: bool`; `DirectoryOfferInfo` gains
-  `loose: bool`.
+  `"loose": true` counts; without two usable counts it is still loose, with
+  `numfiles` standing in for the files and no folders.
+- `send_zipped_directory` takes `loose: Option<LooseBundle>`;
+  `DirectoryOfferInfo` gains `loose: Option<LooseBundle>`.
 
 `src/transfer.rs`:
 
-- `offer_directory_v1` and the public `send_zipped_directory` take `loose`.
+- `offer_directory_v1` and the public `send_zipped_directory` take `loose`;
+  `LooseBundle` is re-exported.
 - Tests: the marked offer pinned byte for byte
   (`test_offer_directory_loose`), every shape the member can arrive in
   (`test_offer_directory_loose_parsing`), and the pre-extension enum parsing

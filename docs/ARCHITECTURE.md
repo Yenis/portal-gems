@@ -57,15 +57,19 @@ cancel must cover more than the transfer phase):
   transfer. Zips the selection (each path a top-level entry, a folder as a
   tree, same-name items told apart as `name (1).ext`, compared without
   regard to case) and sends it as a directory offer carrying the loose
-  marker `"portalgems":{"loose":true}`. For two or more items only: one file
+  marker `"portalgems":{"loose":true,"files":7,"folders":2}` - the counts
+  are the top-level entries, what the receiver will see arrive, while
+  `numfiles` still counts every file. For two or more items only: one file
   or one folder goes through `send_file`/`send_folder` so it reaches other
   clients as exactly that. Design: `docs/MULTI-FILE-DESIGN.md`.
 - `send_zip_as_folder(zip_path, dir_name, num_files, num_bytes, loose, ...)`
   - sends an app-staged zip as a directory offer; the Android path (Kotlin
-  zips the SAF tree, Rust can't read `content://`). `loose` adds the marker.
+  zips the SAF tree, Rust can't read `content://`). `loose:
+  Option<LooseBundle{files, folders}>` adds the marker.
 - `request_receive(code, cancel) -> PendingReceive { file_name, file_size,
   folder: Option<FolderOffer{dir_name, num_files, num_bytes, loose}> }`
-  - `loose` says the sender offered a selection of files, not one folder.
+  - `loose` is set when the sender offered a selection, not one folder, and
+  carries its top-level file and folder counts for the prompt.
   `accept` does the same either way and returns the unpacked directory; the
   app moves its children into the receive folder instead of the directory.
   - connects and waits for the offer WITHOUT accepting: powers confirmation

@@ -36,7 +36,7 @@ mod v2;
 #[doc(hidden)]
 pub use v1::ReceiveRequest as ReceiveRequestV1;
 
-pub use v1::DirectoryOfferInfo;
+pub use v1::{DirectoryOfferInfo, LooseBundle};
 pub use v1::IncomingOffer;
 
 #[cfg(not(feature = "experimental-transfer-v2"))]
@@ -289,7 +289,7 @@ impl PeerMessage {
         compressed_size: u64,
         numbytes: u64,
         numfiles: u64,
-        loose: bool,
+        loose: Option<v1::LooseBundle>,
     ) -> Self {
         PeerMessage::Offer(v1::OfferMessage::Directory {
             dirname: name.into(),
@@ -297,7 +297,7 @@ impl PeerMessage {
             zipsize: compressed_size,
             numbytes,
             numfiles,
-            portalgems: loose.then(v1::loose_marker),
+            portalgems: loose.map(v1::loose_marker),
         })
     }
 
@@ -518,9 +518,9 @@ where
 /// zip archive (and for its `num_bytes`/`num_files` bookkeeping).
 ///
 /// `loose` adds the PortalGems extension that tells a receiver the archive
-/// holds loose files for its receive folder rather than one folder; a
-/// receiver without the extension ignores it and unpacks a folder named
-/// `dir_name`.
+/// holds loose items for its receive folder rather than one folder, and how
+/// many files and folders that is; a receiver without the extension ignores
+/// it and unpacks a folder named `dir_name`.
 ///
 /// You must ensure that the reader contains exactly as many bytes as
 /// advertised in `zip_size`.
@@ -532,7 +532,7 @@ pub async fn send_zipped_directory<F, N, G, H>(
     zip_size: u64,
     num_bytes: u64,
     num_files: u64,
-    loose: bool,
+    loose: Option<LooseBundle>,
     transit_abilities: transit::Abilities,
     transit_handler: G,
     progress_handler: H,
@@ -803,7 +803,7 @@ mod test {
     #[test]
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
     fn test_offer_directory() {
-        let d1 = PeerMessage::offer_directory_v1("somedirectory", "zipped", 45, 1234, 10, false);
+        let d1 = PeerMessage::offer_directory_v1("somedirectory", "zipped", 45, 1234, 10, None);
         assert_eq!(
             serde_json::json!(d1).to_string(),
             "{\"offer\":{\"directory\":{\"dirname\":\"somedirectory\",\"mode\":\"zipped\",\"numbytes\":1234,\"numfiles\":10,\"zipsize\":45}}}"
@@ -816,15 +816,24 @@ mod test {
     #[test]
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
     fn test_offer_directory_loose() {
-        let d1 =
-            PeerMessage::offer_directory_v1("5 files", "zipfile/deflated", 45, 1234, 5, true);
+        let d1 = PeerMessage::offer_directory_v1(
+            "7 files and 2 folders",
+            "zipfile/deflated",
+            45,
+            1234,
+            23,
+            Some(v1::LooseBundle {
+                files: 7,
+                folders: 2,
+            }),
+        );
         assert_eq!(
             serde_json::json!(d1).to_string(),
-            "{\"offer\":{\"directory\":{\"dirname\":\"5 files\",\"mode\":\"zipfile/deflated\",\"numbytes\":1234,\"numfiles\":5,\"portalgems\":{\"loose\":true},\"zipsize\":45}}}"
+            "{\"offer\":{\"directory\":{\"dirname\":\"7 files and 2 folders\",\"mode\":\"zipfile/deflated\",\"numbytes\":1234,\"numfiles\":23,\"portalgems\":{\"files\":7,\"folders\":2,\"loose\":true},\"zipsize\":45}}}"
         );
     }
 
-    fn parse_directory_loose(directory_json: &str) -> bool {
+    fn parse_directory_loose(directory_json: &str) -> Option<v1::LooseBundle> {
         let raw = format!("{{\"offer\":{{\"directory\":{directory_json}}}}}");
         match serde_json::from_str::<PeerMessage>(&raw).expect("offer must parse") {
             PeerMessage::Offer(v1::OfferMessage::Directory {
@@ -834,8 +843,8 @@ mod test {
                 ..
             }) => {
                 assert_eq!(dirname, "d");
-                assert_eq!(numfiles, 2);
-                v1::directory_is_loose(portalgems.as_ref())
+                assert_eq!(numfiles, 23);
+                v1::directory_loose(portalgems.as_ref(), numfiles)
             },
             other => panic!("not a directory offer: {other:?}"),
         }
@@ -847,24 +856,60 @@ mod test {
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
     fn test_offer_directory_loose_parsing() {
         const BASE: &str =
-            "\"dirname\":\"d\",\"mode\":\"zipfile/deflated\",\"zipsize\":1,\"numbytes\":1,\"numfiles\":2";
+            "\"dirname\":\"d\",\"mode\":\"zipfile/deflated\",\"zipsize\":1,\"numbytes\":1,\"numfiles\":23";
         let with = |ext: &str| parse_directory_loose(&format!("{{{BASE}{ext}}}"));
+        let bundle = |files, folders| Some(v1::LooseBundle { files, folders });
 
-        assert!(with(",\"portalgems\":{\"loose\":true}"));
-        // A later version may add members beside it.
-        assert!(with(",\"portalgems\":{\"loose\":true,\"names\":[\"a\"]}"));
+        assert_eq!(
+            with(",\"portalgems\":{\"loose\":true,\"files\":7,\"folders\":2}"),
+            bundle(7, 2)
+        );
+        assert_eq!(
+            with(",\"portalgems\":{\"loose\":true,\"files\":5,\"folders\":0}"),
+            bundle(5, 0)
+        );
+        assert_eq!(
+            with(",\"portalgems\":{\"loose\":true,\"files\":0,\"folders\":3}"),
+            bundle(0, 3)
+        );
+        // A later version may add members beside them.
+        assert_eq!(
+            with(",\"portalgems\":{\"loose\":true,\"files\":7,\"folders\":2,\"names\":[\"a\"]}"),
+            bundle(7, 2)
+        );
 
-        assert!(!with(""));
-        assert!(!with(",\"portalgems\":{\"loose\":false}"));
-        assert!(!with(",\"portalgems\":{}"));
-        assert!(!with(",\"portalgems\":{\"loose\":\"yes\"}"));
-        assert!(!with(",\"portalgems\":{\"loose\":1}"));
-        assert!(!with(",\"portalgems\":true"));
-        assert!(!with(",\"portalgems\":\"loose\""));
-        assert!(!with(",\"portalgems\":null"));
-        assert!(!with(",\"portalgems\":[true]"));
-        // Unknown members elsewhere in the offer are ignored as well.
-        assert!(!with(",\"somebody_elses\":{\"loose\":true}"));
+        // Loose, but the counts are missing or unusable: still loose, with
+        // `numfiles` standing in. Both counts or neither - half of a claim
+        // is not a claim.
+        for ext in [
+            ",\"portalgems\":{\"loose\":true}",
+            ",\"portalgems\":{\"loose\":true,\"files\":7}",
+            ",\"portalgems\":{\"loose\":true,\"folders\":2}",
+            ",\"portalgems\":{\"loose\":true,\"files\":\"7\",\"folders\":2}",
+            ",\"portalgems\":{\"loose\":true,\"files\":-1,\"folders\":2}",
+            ",\"portalgems\":{\"loose\":true,\"files\":7.5,\"folders\":2}",
+            ",\"portalgems\":{\"loose\":true,\"files\":null,\"folders\":null}",
+        ] {
+            assert_eq!(with(ext), bundle(23, 0), "{ext}");
+        }
+
+        // Not loose at all.
+        for ext in [
+            "",
+            ",\"portalgems\":{\"loose\":false,\"files\":7,\"folders\":2}",
+            ",\"portalgems\":{\"files\":7,\"folders\":2}",
+            ",\"portalgems\":{}",
+            ",\"portalgems\":{\"loose\":\"yes\"}",
+            ",\"portalgems\":{\"loose\":1}",
+            ",\"portalgems\":true",
+            ",\"portalgems\":\"loose\"",
+            ",\"portalgems\":null",
+            ",\"portalgems\":[true]",
+            // Unknown members elsewhere in the offer are ignored as well.
+            ",\"somebody_elses\":{\"loose\":true}",
+        ] {
+            assert_eq!(with(ext), None, "{ext}");
+        }
     }
 
     /// What a receiver from before the extension does with a marked offer.
@@ -904,7 +949,10 @@ mod test {
             45,
             1234,
             5,
-            true
+            Some(v1::LooseBundle {
+                files: 5,
+                folders: 0,
+            })
         ))
         .to_string();
         assert_eq!(

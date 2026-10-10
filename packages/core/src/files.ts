@@ -6,8 +6,8 @@
 // folder, and any other client saves a folder (docs/MULTI-FILE-DESIGN.md).
 //
 // What lives here is what both apps must decide the same way: which of the
-// three send paths a selection takes, what the bundle is called, and how a
-// count of files is put into words.
+// three send paths a selection takes, what the bundle is called, and how
+// "7 files and 2 folders" is put into words.
 
 /** What a picker, a share sheet or a drop hands over. */
 export interface PickedItem {
@@ -31,44 +31,76 @@ export function planSend(items: readonly PickedItem[]): SendPlan {
   return items[0].isFolder ? 'folder' : 'file';
 }
 
+/**
+ * What a bundle puts into the receive folder: the files and the folders at
+ * its top level. A file inside one of those folders is not counted - this is
+ * what the receiver will see arrive, and it travels in the offer's marker.
+ */
+export interface BundleCounts {
+  files: number;
+  folders: number;
+}
+
+export function countBundle(items: readonly PickedItem[]): BundleCounts {
+  const folders = items.filter((item) => item.isFolder).length;
+  return { files: items.length - folders, folders };
+}
+
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 
-/** The strings under `files.` that carry a count, and so have a `One` twin. */
-export type FilesCountKey =
-  | 'name'
-  | 'summary'
-  | 'sending'
-  | 'sent'
-  | 'receiving'
-  | 'saved'
-  | 'savedIn';
+/** One counted noun: `key` for any number, `keyOne` for exactly one. */
+function counted(t: Translate, key: 'count' | 'folderCount', n: number): string {
+  return t(`files.${n === 1 ? `${key}One` : key}`, { n });
+}
 
 /**
- * A `files.*` string for `n` files.
+ * "7 files and 2 folders", "5 files", "3 folders", "1 file and 1 folder".
  *
- * Every counted string exists twice, `key` and `keyOne`, and exactly one file
- * takes the second. That is the whole of the plural handling, on purpose: the
- * languages whose nouns change with the number beyond that (Russian, Bosnian)
- * word the general form so that it does not - "Files: 5" rather than
- * "5 files" - which keeps every language to the same two keys and needs no
- * plural rules from the JavaScript engine, which the phone's does not have.
+ * A kind that is absent is left out rather than counted as zero. The two
+ * nouns each exist twice - for exactly one, and for any other number - and
+ * that is the whole of the plural handling, on purpose: the languages whose
+ * nouns change with the number beyond that (Russian, Bosnian) word the
+ * general form so that it does not - "файлы (5)" rather than "5 файлов" -
+ * which keeps every language to the same keys and needs no plural rules from
+ * the JavaScript engine, which the phone's does not have.
  *
- * A bundle of one file is rare but real: a file picked together with an
- * empty folder is two items and one file.
+ * Every sentence about a bundle takes this phrase whole, as `{{items}}`, so
+ * no sentence has to agree with a number either.
  */
-export function filesText(
+export function itemsText(t: Translate, counts: BundleCounts): string {
+  const files = counted(t, 'count', counts.files);
+  const folders = counted(t, 'folderCount', counts.folders);
+  if (counts.folders === 0) return files;
+  if (counts.files === 0) return folders;
+  return t('files.both', { files, folders });
+}
+
+/** The strings under `files.` that are built around `{{items}}`. */
+export type BundleTextKey = 'summary' | 'sending' | 'sent' | 'receiving' | 'saved' | 'savedIn';
+
+/**
+ * A sentence about a bundle. The phrase can open the sentence, and in the
+ * languages where it starts with a word rather than a digit that word needs
+ * its capital - the phrase itself is lower case because it also appears
+ * mid-sentence.
+ */
+export function bundleText(
   t: Translate,
-  key: FilesCountKey,
-  n: number,
+  key: BundleTextKey,
+  counts: BundleCounts,
   options: Record<string, unknown> = {}
 ): string {
-  return t(`files.${n === 1 ? `${key}One` : key}`, { ...options, n });
+  return capitalize(t(`files.${key}`, { ...options, items: itemsText(t, counts) }));
+}
+
+function capitalize(text: string): string {
+  return text.charAt(0).toLocaleUpperCase() + text.slice(1);
 }
 
 const pad = (value: number): string => String(value).padStart(2, '0');
 
 /**
- * The name a bundle travels under: "5 files - 2026-10-10 14.32".
+ * The name a bundle travels under: "7 files and 2 folders - 2026-10-10 14.32".
  *
  * A PortalGems receiver never shows it. It is the folder name for everyone
  * else - an older PortalGems, the command-line client - which is why it says
@@ -76,11 +108,11 @@ const pad = (value: number): string => String(value).padStart(2, '0');
  * must be a legal file name everywhere: a dot between hours and minutes
  * because Windows refuses a colon, and nothing else Windows refuses either.
  */
-export function bundleName(t: Translate, fileCount: number, now: Date = new Date()): string {
+export function bundleName(t: Translate, counts: BundleCounts, now: Date = new Date()): string {
   const stamp =
     `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ` +
     `${pad(now.getHours())}.${pad(now.getMinutes())}`;
-  return sanitizeBundleName(`${filesText(t, 'name', fileCount)} - ${stamp}`);
+  return sanitizeBundleName(`${capitalize(itemsText(t, counts))} - ${stamp}`);
 }
 
 /**
@@ -101,20 +133,22 @@ export function sanitizeBundleName(raw: string): string {
 /**
  * The line a receiver ends on after a bundle.
  *
- * `saved` is how many of the `total` top-level items made it into the receive
- * folder. The transfer itself is all or nothing, but that last step is item
- * by item, and a disk that fills during it leaves some behind: then the line
- * says so in numbers instead of claiming either success or failure.
- * `folder` is the chosen download folder's name; without one the files went
+ * `saved` is what actually landed in the receive folder - counted there, not
+ * taken from the sender's claim - and `expected` is how many top-level items
+ * the bundle held. The transfer itself is all or nothing, but that last step
+ * is item by item, and a disk that fills during it leaves some behind: then
+ * the line says so in numbers instead of claiming either success or failure.
+ * `folder` is the chosen download folder's name; without one the items went
  * to the system's Downloads.
  */
-export function savedFilesText(
+export function savedBundleText(
   t: Translate,
-  result: { saved: number; total: number; folder?: string | null }
+  result: { saved: BundleCounts; expected: number; folder?: string | null }
 ): string {
-  const { saved, total, folder } = result;
-  if (saved < total) return t('files.savedSome', { saved, n: total });
+  const { saved, expected, folder } = result;
+  const landed = saved.files + saved.folders;
+  if (landed < expected) return t('files.savedSome', { saved: landed, n: expected });
   return folder
-    ? filesText(t, 'savedIn', total, { folder })
-    : filesText(t, 'saved', total);
+    ? bundleText(t, 'savedIn', saved, { folder })
+    : bundleText(t, 'saved', saved);
 }

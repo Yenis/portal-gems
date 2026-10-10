@@ -13,6 +13,7 @@ uniffi::setup_scaffolding!();
 
 mod ffi;
 pub use ffi::{create_test_file, FolderOfferInfo, IncomingFile, TransferListener};
+pub use magic_wormhole::transfer::LooseBundle;
 use std::borrow::Cow;
 
 use magic_wormhole::{
@@ -249,9 +250,8 @@ where
         .into_owned();
 
     send_staged_zip(
-        move |zip_path, abort| zip_folder_sync(&path, zip_path, abort),
+        move |zip_path, abort| Ok((zip_folder_sync(&path, zip_path, abort)?, None)),
         &dir_name,
-        false,
         code,
         server,
         on_code,
@@ -293,9 +293,11 @@ where
     ensure_crypto_provider();
     let paths = paths.to_vec();
     send_staged_zip(
-        move |zip_path, abort| zip_items_sync(&paths, zip_path, abort),
+        move |zip_path, abort| {
+            let (stats, bundle) = zip_items_sync(&paths, zip_path, abort)?;
+            Ok((stats, Some(bundle)))
+        },
         bundle_name,
-        true,
         code,
         server,
         on_code,
@@ -307,13 +309,13 @@ where
 }
 
 /// The part [`send_folder`] and [`send_files`] share: run `build` to write the
-/// archive into a private temp workspace, send it under a directory offer,
-/// and clean the workspace up on every exit path. Nothing is offered - no
+/// archive into a private temp workspace, send it under a directory offer -
+/// loose, if `build` says what the bundle holds - and clean the workspace up
+/// on every exit path. Nothing is offered - no
 /// code is even allocated - until the archive is complete.
 async fn send_staged_zip<B, F, G, H>(
     build: B,
     dir_name: &str,
-    loose: bool,
     code: Option<&str>,
     server: &ServerConfig,
     on_code: F,
@@ -322,7 +324,10 @@ async fn send_staged_zip<B, F, G, H>(
     cancel: impl std::future::Future<Output = ()>,
 ) -> Result<(), Error>
 where
-    B: FnOnce(&Path, &std::sync::atomic::AtomicBool) -> Result<FolderStats, Error>
+    B: FnOnce(
+            &Path,
+            &std::sync::atomic::AtomicBool,
+        ) -> Result<(FolderStats, Option<LooseBundle>), Error>
         + Send
         + 'static,
     F: FnOnce(String),
@@ -348,7 +353,7 @@ where
 
         let abort = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
         let _abort_guard = AbortOnDrop(abort.clone());
-        let stats = {
+        let (stats, loose) = {
             let dest = zip_path.clone();
             blocking::unblock(move || build(&dest, &abort)).await?
         };
@@ -380,14 +385,15 @@ where
 /// stats it counted while doing so. The zip must contain paths relative to the
 /// folder root (no top-level folder-name entry), matching the reference CLI.
 ///
-/// `loose` marks the archive as a selection of loose files rather than one
-/// folder - see [`send_files`], whose archive the app builds itself here.
+/// `loose` marks the archive as a selection of loose items rather than one
+/// folder, and says how many files and folders are at its top level - see
+/// [`send_files`], whose archive the app builds itself here.
 pub async fn send_zip_as_folder<F, G, H>(
     zip_path: impl AsRef<Path>,
     dir_name: &str,
     num_files: u64,
     num_bytes: u64,
-    loose: bool,
+    loose: Option<LooseBundle>,
     code: Option<&str>,
     server: &ServerConfig,
     on_code: F,
@@ -427,7 +433,7 @@ async fn send_zip_inner<F, G, H>(
     dir_name: &str,
     num_files: u64,
     num_bytes: u64,
-    loose: bool,
+    loose: Option<LooseBundle>,
     code: Option<&str>,
     server: &ServerConfig,
     on_code: F,
@@ -488,12 +494,15 @@ pub struct FolderOffer {
     pub num_files: u64,
     /// Total unpacked size in bytes, as claimed by the sender
     pub num_bytes: u64,
-    /// The sender offered a selection of loose files, not one folder: what
-    /// `accept` unpacks belongs directly in the receive folder, and `dir_name`
-    /// is only the name a client without this extension would have given it.
+    /// Set when the sender offered a selection of loose items, not one
+    /// folder: what `accept` unpacks belongs directly in the receive folder,
+    /// and `dir_name` is only the name a client without this extension would
+    /// have given it. The counts are the files and folders at the top level,
+    /// sender-claimed like everything else here; they word the prompt ("7
+    /// files and 2 folders") and nothing is enforced against them.
     /// `accept` itself does the same either way - it returns the unpacked
     /// directory - because moving things out of staging is the app's step.
-    pub loose: bool,
+    pub loose: Option<LooseBundle>,
 }
 
 /// A file (or folder) offer that has been received but not yet accepted: the
@@ -922,7 +931,9 @@ pub(crate) fn zip_folder_sync(
 /// of a loose bundle - see [`send_files`].
 ///
 /// Items come from anywhere, so two can share a name; the later one is
-/// renamed (see [`unique_entry_name`]). A symlink in the selection is
+/// renamed (see [`unique_entry_name`]). Beside the usual totals it returns
+/// how many files and folders ended up at the top level, which is what the
+/// receiver is told to expect. A symlink in the selection is
 /// skipped, as one inside a folder is. A selection that leaves nothing to
 /// send is an error rather than an empty transfer, and a path that cannot be
 /// read fails the whole bundle: sending "most of" what was picked would be
@@ -931,7 +942,7 @@ pub(crate) fn zip_items_sync(
     items: &[PathBuf],
     dest_zip: &Path,
     abort: &std::sync::atomic::AtomicBool,
-) -> Result<FolderStats, Error> {
+) -> Result<(FolderStats, LooseBundle), Error> {
     let nothing_to_send = || {
         Error::Io(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
@@ -941,7 +952,12 @@ pub(crate) fn zip_items_sync(
 
     let mut sink = ZipSink::create(dest_zip)?;
     let mut taken = std::collections::HashSet::new();
-    let mut added = 0u32;
+    // What ends up at the top level, which is what the receiver is told to
+    // expect - not what was picked: a skipped symlink is in neither count.
+    let mut bundle = LooseBundle {
+        files: 0,
+        folders: 0,
+    };
     for item in items {
         if abort.load(std::sync::atomic::Ordering::Relaxed) {
             return Err(Error::Cancelled);
@@ -962,18 +978,18 @@ pub(crate) fn zip_items_sync(
             let entry_name = unique_entry_name(&mut taken, &name, true);
             sink.add_dir(&entry_name)?;
             sink.add_tree(item, &entry_name, abort)?;
+            bundle.folders += 1;
         } else if meta.is_file() {
             let entry_name = unique_entry_name(&mut taken, &name, false);
             sink.add_file(item, &entry_name, meta.len())?;
-        } else {
-            continue; // a socket, a device: nothing that can be sent
+            bundle.files += 1;
         }
-        added += 1;
+        // Anything else - a socket, a device - is nothing that can be sent.
     }
-    if added == 0 {
+    if bundle.files + bundle.folders == 0 {
         return Err(nothing_to_send());
     }
-    sink.finish()
+    Ok((sink.finish()?, bundle))
 }
 
 /// A top-level name for a bundle entry that no earlier entry has: `name`
@@ -1213,7 +1229,7 @@ mod tests {
     /// Build a bundle from `items` and unpack it the way a receiver does.
     fn bundle_roundtrip(root: &Path, items: &[PathBuf]) -> (FolderStats, PathBuf) {
         let zip = root.join("bundle.zip");
-        let stats = zip_items_sync(items, &zip, &no_abort()).unwrap();
+        let (stats, _) = zip_items_sync(items, &zip, &no_abort()).unwrap();
         let out = root.join("out");
         std::fs::create_dir_all(&out).unwrap();
         unzip_into_sync(&zip, &out, unpack_cap(stats.num_bytes)).unwrap();
@@ -1282,6 +1298,47 @@ mod tests {
         assert_eq!(stats.num_bytes, 0);
         assert!(out.join("hollow").is_dir());
         assert!(out.join("also-hollow").is_dir());
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    /// The two counts are what lands at the top level of the receive folder,
+    /// because that is the sentence the receiver reads: "7 files and 2
+    /// folders". Files inside a picked folder belong to `num_files` only.
+    #[test]
+    fn bundle_counts_what_lands_at_the_top_level() {
+        let root = scratch("bundle-counts");
+        let counts = |items: &[PathBuf]| {
+            let (stats, bundle) =
+                zip_items_sync(items, &root.join("bundle.zip"), &no_abort()).unwrap();
+            (bundle.files, bundle.folders, stats.num_files)
+        };
+        let file = |name: &str| {
+            let path = root.join("files").join(name);
+            write(&path, b"x");
+            path
+        };
+        let folder = |name: &str, inside: usize| {
+            let path = root.join("folders").join(name);
+            std::fs::create_dir_all(&path).unwrap();
+            for i in 0..inside {
+                write(&path.join(format!("sub/{i}.txt")), b"y");
+            }
+            path
+        };
+
+        // Files only: both numbers agree.
+        assert_eq!(counts(&[file("a"), file("b"), file("c")]), (3, 0, 3));
+        // Files and folders: 2 + 5 + 3 files in all, 2 and 2 at the top.
+        assert_eq!(
+            counts(&[file("a"), folder("one", 5), file("b"), folder("two", 3)]),
+            (2, 2, 10)
+        );
+        // Folders only, one of them empty.
+        assert_eq!(counts(&[folder("one", 5), folder("hollow", 0)]), (0, 2, 5));
+        // Same-name items are renamed, not merged: each still counts.
+        let twin = root.join("elsewhere/a");
+        write(&twin, b"z");
+        assert_eq!(counts(&[file("a"), twin]), (2, 0, 2));
         std::fs::remove_dir_all(&root).ok();
     }
 
@@ -1434,9 +1491,17 @@ mod tests {
         std::os::unix::fs::symlink("/etc/passwd", folder.join("inner-link")).unwrap();
 
         let zip = root.join("bundle.zip");
-        let stats =
+        let (stats, bundle) =
             zip_items_sync(&[real, link.clone(), folder], &zip, &no_abort()).unwrap();
         assert_eq!(stats.num_files, 2);
+        // Three were picked; the receiver is told about the two that went in.
+        assert_eq!(
+            bundle,
+            LooseBundle {
+                files: 1,
+                folders: 1
+            }
+        );
         assert_eq!(entry_names(&zip), ["folder/", "folder/kept.txt", "real.txt"]);
 
         let err = zip_items_sync(&[link], &zip, &no_abort()).unwrap_err();
@@ -1701,7 +1766,7 @@ mod tests {
             let offer = pending_receive.folder.clone().expect("folder offer");
             // A real folder carries no loose marker: it must arrive as a
             // folder, here and in every other client.
-            assert!(!offer.loose);
+            assert_eq!(offer.loose, None);
             assert_eq!(offer.dir_name, "shared-folder");
             assert_eq!(offer.num_files, 2);
             assert_eq!(offer.num_bytes, 10 + 32 * 1024);
@@ -1814,7 +1879,16 @@ mod tests {
                 .await
                 .unwrap();
             let offer = pending_receive.folder.clone().expect("a directory offer");
-            assert!(offer.loose, "the loose marker did not survive the wire");
+            // Two files and one folder at the top level; the third file is
+            // inside the folder and shows only in `num_files`.
+            assert_eq!(
+                offer.loose,
+                Some(LooseBundle {
+                    files: 2,
+                    folders: 1
+                }),
+                "the loose marker did not survive the wire"
+            );
             assert_eq!(offer.dir_name, "3 files - 2026-10-10 14.32");
             assert_eq!(offer.num_files, 3);
             assert_eq!(offer.num_bytes, 48 * 1024 + 19 + 1024);
@@ -1861,10 +1935,10 @@ mod tests {
             write(&a, b"a");
             write(&b, b"bb");
             let zip = dir.join("staged.zip");
-            let stats = zip_items_sync(&[a, b], &zip, &no_abort()).unwrap();
+            let (stats, bundle) = zip_items_sync(&[a, b], &zip, &no_abort()).unwrap();
 
-            for loose in [true, false] {
-                let code = test_code(if loose { "marked" } else { "unmarked" });
+            for loose in [Some(bundle), None] {
+                let code = test_code(if loose.is_some() { "marked" } else { "unmarked" });
                 let (send_code, zip_path) = (code.clone(), zip.clone());
                 let (on_code, wait_for_sender) = code_claimed();
                 let sender = std::thread::spawn(move || {

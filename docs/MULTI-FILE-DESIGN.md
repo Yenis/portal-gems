@@ -8,8 +8,8 @@ build from; once the feature ships, the lasting parts move into
 
 - Select several files - in the app's picker, in Android's share sheet, or by
   dropping them on the desktop - and send them as one transfer.
-- The receiver is asked once: "5 files - 12 MB". One accept, and all of them
-  arrive.
+- The receiver is asked once: "5 files - 12 MB", or "7 files and 2 folders -
+  40 MB" when folders were sent along. One accept, and all of it arrives.
 - The files land directly in the receive folder, next to everything else.
   Send five, then five more, and there are ten files there - not two folders
   of five.
@@ -37,18 +37,27 @@ offer is the only interoperable container.
 A multi-file send is a standard directory offer with one extra member:
 
     {"offer": {"directory": {
-        "dirname":  "5 files - 2026-10-10 14.32",
+        "dirname":  "7 files and 2 folders - 2026-10-10 14.32",
         "mode":     "zipfile/deflated",
         "zipsize":  1234567,
         "numbytes": 1300000,
-        "numfiles": 5,
-        "portalgems": {"loose": true}
+        "numfiles": 23,
+        "portalgems": {"loose": true, "files": 7, "folders": 2}
     }}}
 
-- `portalgems.loose` means: these are loose files, unpack them into the
+- `portalgems.loose` means: these are loose items, unpack them into the
   receive folder itself instead of into a folder called `dirname`.
-- It is an object and not a bare flag so that later additions have somewhere
-  to go without another top-level name.
+- `files` and `folders` are how many of each sit at the top level of the
+  bundle - what will appear in the receive folder. `numfiles` keeps its
+  standard meaning, every file including those inside the folders, so here
+  7 loose files and 2 folders holding 16 more make 23.
+- The two counts exist so the receiver can be told the truth before it
+  accepts: "7 files and 2 folders", not "23 files" followed by seven files
+  and two folders. They word a sentence and are not enforced; a marker
+  without usable counts is still loose, with `numfiles` standing in for the
+  files and no folders assumed.
+- It is an object so that later additions have somewhere to go without
+  another top-level name.
 - A receiver that does not know the member ignores it and saves a folder
   called `dirname`. That is the fallback, and the reason `dirname` is still a
   name worth reading.
@@ -63,8 +72,9 @@ Why an extra member is safe:
   To be confirmed by test against a 1.3.5 build, not assumed (section 9).
 - `wormhole-mini` looks members up by name (`wh_json_get`).
 
-The fallback name is `<N> files - <YYYY-MM-DD HH.MM>` in the sender's local
-time, with "files" in the sender's language. A dot separates hours and
+The fallback name is what the bundle holds and when:
+`7 files and 2 folders - 2026-10-10 14.32`, `5 files - ...`, `3 folders -
+...`, in the sender's language and local time. A dot separates hours and
 minutes because a colon is not a legal file name character on Windows.
 
 ## 4. Sender rules
@@ -87,7 +97,8 @@ Building the bundle:
 - Every selected item becomes a top-level entry in the zip. A selected
   folder goes in as a tree under its own name.
 - `numfiles` counts files, including those inside selected folders;
-  `numbytes` is their total size.
+  `numbytes` is their total size. The marker's `files` and `folders` count
+  the top-level entries only.
 - Two top-level items with the same name are renamed inside the zip:
   `name (1).ext`, `name (2).ext`; folders `name (1)`.
 - An empty selection sends nothing. A selection that cannot be read fails
@@ -129,15 +140,19 @@ them out, so the renaming above stays:
 
 When the offer carries `portalgems.loose`:
 
-- The prompt says "N files - size" and asks once. No folder name is shown.
+- The prompt says what will arrive and asks once: "7 files - 12 MB",
+  "7 files and 2 folders - 40 MB", "3 folders - 28 MB". No bundle name is
+  shown.
 - Nothing is saved until the whole bundle has arrived and unpacked in the
   staging area. A transfer that is cancelled or fails leaves nothing.
 - Each top-level entry is then moved into the receive folder. A name already
   taken gets `name (1).ext`; nothing is ever overwritten and nothing is
   asked. The "overwrite or keep both" prompt cannot apply, because the names
   are not known until the bundle is down.
-- The success screen says "N files saved to <folder>". Single files and
-  folders keep their current wording.
+- The success screen says the same phrase: "7 files and 2 folders saved to
+  <folder>". It counts what was actually moved into the receive folder, not
+  what the sender claimed. Single files and folders keep their current
+  wording.
 - The zip-slip checks and the unpack size cap apply unchanged.
 
 When the offer has no marker, nothing changes: a folder is a folder.
@@ -167,7 +182,7 @@ Per platform:
     and sends it loose. Used by the desktop.
   - `send_zip_as_folder` gains a `loose` argument. Used by Android, which
     zips from `content://` URIs in Kotlin because Rust cannot read them.
-  - `FolderOffer` gains `loose: bool`.
+  - `FolderOffer` gains `loose: Option<LooseBundle { files, folders }>`.
   - `accept` is unchanged: it returns the unpacked directory, and the app
     moves the children. The apps already own the "staging to receive folder"
     step, so the flattening belongs there.
@@ -184,7 +199,10 @@ Per platform:
 New strings, all six languages:
 
 - Home: "Choose files to send" (replaces the singular).
-- Send: "Preparing files...", "Sending N files...", "N files sent."
+- The phrase itself - "7 files", "3 folders", "7 files and 2 folders" - from
+  two counted nouns and a joiner (`itemsText`). Every sentence below takes
+  it whole.
+- Send: "Preparing files...", "Sending <phrase>...", "<phrase> sent."
 - Receive: "Incoming files", "Do you want to receive these files?",
   "Receiving N files...", "N files saved to <folder>.", and the partial-save
   message from section 5.
@@ -321,3 +339,14 @@ cannot receive:
   so the noun never follows the number ("Файлов: 5"). The phone's JavaScript
   engine has no plural rules to lean on, and this keeps all six languages to
   the same keys, which the completeness test requires.
+- Mixed selections changed the wording (decided 2026-10-10, after steps 1
+  and 2): the marker carries `files` and `folders`, and every string says
+  "7 files and 2 folders" where it said "N files". The engine and
+  `packages/core` were reworked for it in one change: `LooseBundle` in the
+  vendored crate and the engine, `countBundle`, `itemsText`, `bundleText`
+  and `savedBundleText` in core. The `One` twins are now only on the two
+  nouns; sentences are built around the phrase.
+- On the desktop a mix of files and folders, or several folders, can only
+  be dropped. "Choose folder to send" stays a single-folder picker and
+  "Choose files to send" picks files - two plain buttons, by decision.
+

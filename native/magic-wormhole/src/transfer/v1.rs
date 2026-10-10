@@ -25,7 +25,7 @@ pub enum OfferMessage {
         /// PortalGems extension, absent from the standard offer. Kept as a
         /// raw value on purpose: an offer whose extension is malformed, or
         /// from a later version, is still an ordinary directory offer and
-        /// must not fail to parse. Read it through [`directory_is_loose`].
+        /// must not fail to parse. Read it through [`directory_loose`].
         #[serde(default, skip_serializing_if = "Option::is_none")]
         portalgems: Option<serde_json::Value>,
     },
@@ -33,20 +33,51 @@ pub enum OfferMessage {
     Unknown,
 }
 
-/// The `portalgems` member of a directory offer that marks its contents as
-/// loose files: unpack them into the receive folder itself, not into a
-/// folder named after the offer.
-pub(crate) fn loose_marker() -> serde_json::Value {
-    serde_json::json!({ "loose": true })
+/// What a loose bundle puts into the receive folder: how many files and how
+/// many folders sit at its top level. A file inside one of those folders is
+/// not counted here - `numfiles` counts those - because this is what the
+/// receiver will see arrive: "7 files and 2 folders".
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LooseBundle {
+    /// Top-level files, as claimed by the sender
+    pub files: u64,
+    /// Top-level folders, as claimed by the sender
+    pub folders: u64,
 }
 
-/// Whether a directory offer's `portalgems` member carries the loose marker.
-/// Anything other than an object with `"loose": true` is not one.
-pub(crate) fn directory_is_loose(portalgems: Option<&serde_json::Value>) -> bool {
-    portalgems
-        .and_then(|ext| ext.get("loose"))
-        .and_then(serde_json::Value::as_bool)
-        .unwrap_or(false)
+/// The `portalgems` member of a directory offer that marks its contents as
+/// loose items: unpack them into the receive folder itself, not into a
+/// folder named after the offer.
+pub(crate) fn loose_marker(bundle: LooseBundle) -> serde_json::Value {
+    serde_json::json!({
+        "loose": true,
+        "files": bundle.files,
+        "folders": bundle.folders,
+    })
+}
+
+/// The loose marker of a directory offer's `portalgems` member, if it has
+/// one. Anything other than an object with `"loose": true` is not one.
+///
+/// The counts only word the receiver's prompt, so a marker without usable
+/// ones is still a marker: `numfiles` stands in for the files and the
+/// folders are taken to be none, which is at worst an imprecise sentence.
+pub(crate) fn directory_loose(
+    portalgems: Option<&serde_json::Value>,
+    numfiles: u64,
+) -> Option<LooseBundle> {
+    let ext = portalgems?;
+    if ext.get("loose").and_then(serde_json::Value::as_bool) != Some(true) {
+        return None;
+    }
+    let count = |key: &str| ext.get(key).and_then(serde_json::Value::as_u64);
+    Some(match (count("files"), count("folders")) {
+        (Some(files), Some(folders)) => LooseBundle { files, folders },
+        _ => LooseBundle {
+            files: numfiles,
+            folders: 0,
+        },
+    })
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -199,7 +230,7 @@ pub(crate) async fn send_zipped_directory<F, G, H>(
     zip_size: u64,
     num_bytes: u64,
     num_files: u64,
-    loose: bool,
+    loose: Option<LooseBundle>,
     transit_abilities: transit::Abilities,
     transit_handler: G,
     progress_handler: H,
@@ -566,10 +597,11 @@ pub struct DirectoryOfferInfo {
     pub num_files: u64,
     /// Total unpacked size in bytes, as claimed by the sender
     pub num_bytes: u64,
-    /// The sender marked the contents as loose files (the PortalGems
-    /// extension): they belong directly in the receive folder, and `dir_name`
-    /// is only what a receiver without the extension would call the folder.
-    pub loose: bool,
+    /// Set when the sender marked the contents as loose items (the
+    /// PortalGems extension): they belong directly in the receive folder,
+    /// and `dir_name` is only what a receiver without the extension would
+    /// call the folder.
+    pub loose: Option<LooseBundle>,
 }
 
 /// What the peer offered.
@@ -666,7 +698,7 @@ pub async fn request(
                             dir_name: dirname,
                             num_files: numfiles,
                             num_bytes: numbytes,
-                            loose: v1::directory_is_loose(portalgems.as_ref()),
+                            loose: v1::directory_loose(portalgems.as_ref(), numfiles),
                         };
                         (filename, zipsize, Some(directory))
                     },
