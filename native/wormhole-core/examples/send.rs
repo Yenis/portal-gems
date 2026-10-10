@@ -1,6 +1,10 @@
 //! Phase 0 test harness: send a file, folder or text, printing machine-readable
 //! lines.
 //! Usage: send <path> [code] | send --text <message> [code]
+//!      | send --files <bundle name> <path> <path>...
+//! `--files` sends its paths - files and folders - as one loose bundle, the
+//! way the apps send a multi-file selection; the code comes from PG_CODE
+//! there, since every argument is a path.
 //! Optional env: PG_RENDEZVOUS_URL, PG_TRANSIT_URL to override servers.
 
 use std::io::Write;
@@ -30,6 +34,35 @@ fn main() -> anyhow::Result<()> {
                 code.as_deref(),
                 &server_from_env(),
                 |code: String| out(format!("CODE:{code}")),
+                std::future::pending::<()>(),
+            )
+            .await
+        })?;
+        out("SEND-OK".to_string());
+        return Ok(());
+    }
+    if first == "--files" {
+        let usage = "usage: send --files BUNDLE-NAME PATH PATH...";
+        let bundle_name = args.next().expect(usage);
+        let paths: Vec<std::path::PathBuf> = args.map(Into::into).collect();
+        assert!(!paths.is_empty(), "{usage}");
+        let code = std::env::var("PG_CODE").ok();
+        async_io::block_on(async move {
+            let mut last_pct = 0u64;
+            wormhole_core::send_files(
+                &paths,
+                &bundle_name,
+                code.as_deref(),
+                &server_from_env(),
+                |code: String| out(format!("CODE:{code}")),
+                |transit: String| out(format!("TRANSIT:{transit}")),
+                move |sent: u64, total: u64| {
+                    let pct = if total == 0 { 100 } else { sent * 100 / total };
+                    if pct == 100 || pct >= last_pct + 25 {
+                        last_pct = pct;
+                        out(format!("PROGRESS:{pct}"));
+                    }
+                },
                 std::future::pending::<()>(),
             )
             .await

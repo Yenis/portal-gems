@@ -54,7 +54,8 @@
     "receiving": "Primam: {{items}}…",
     "saved": "Sačuvano u Downloads: {{items}}.",
     "savedIn": "Sačuvano u {{folder}}: {{items}}.",
-    "savedSome": "Sačuvano: {{saved}} od {{n}}. Provjeri slobodan prostor u folderu za preuzimanja."
+    "savedSome": "Sačuvano: {{saved}} od {{n}}. Provjeri slobodan prostor u folderu za preuzimanja.",
+    "folderFallback": "Odabrani folder za preuzimanja nije bio dostupan, pa je sve sačuvano u Downloads."
   },
   "receive": {
     "title": "Primanje",

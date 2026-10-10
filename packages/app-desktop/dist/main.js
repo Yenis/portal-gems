@@ -1669,9 +1669,9 @@ var require_shim = __commonJS({
 
 // src/main.ts
 var import_electron = require("electron");
-var fs = __toESM(require("node:fs"));
+var fs2 = __toESM(require("node:fs"));
 var os = __toESM(require("node:os"));
-var path2 = __toESM(require("node:path"));
+var path3 = __toESM(require("node:path"));
 
 // ../core/src/tokens.ts
 var light = { success: "#2E7D32", danger: "#C62828" };
@@ -2314,8 +2314,8 @@ var copy = (a, s, t2) => {
 var lastOfPathSeparatorRegExp = /###/g;
 var cleanKey = (key) => key && key.includes("###") ? key.replace(lastOfPathSeparatorRegExp, ".") : key;
 var canNotTraverseDeeper = (object) => !object || isString(object);
-var getLastOfPath = (object, path3, Empty) => {
-  const stack = !isString(path3) ? path3 : path3.split(".");
+var getLastOfPath = (object, path4, Empty) => {
+  const stack = !isString(path4) ? path4 : path4.split(".");
   let stackIndex = 0;
   while (stackIndex < stack.length - 1) {
     if (canNotTraverseDeeper(object)) return {};
@@ -2334,17 +2334,17 @@ var getLastOfPath = (object, path3, Empty) => {
     k: cleanKey(stack[stackIndex])
   };
 };
-var setPath = (object, path3, newValue) => {
+var setPath = (object, path4, newValue) => {
   const {
     obj,
     k
-  } = getLastOfPath(object, path3, Object);
-  if (obj !== void 0 || path3.length === 1) {
+  } = getLastOfPath(object, path4, Object);
+  if (obj !== void 0 || path4.length === 1) {
     obj[k] = newValue;
     return;
   }
-  let e = path3[path3.length - 1];
-  let p = path3.slice(0, path3.length - 1);
+  let e = path4[path4.length - 1];
+  let p = path4.slice(0, path4.length - 1);
   let last = getLastOfPath(object, p, Object);
   while (last.obj === void 0 && p.length) {
     e = `${p[p.length - 1]}.${e}`;
@@ -2356,19 +2356,19 @@ var setPath = (object, path3, newValue) => {
   }
   last.obj[`${last.k}.${e}`] = newValue;
 };
-var pushPath = (object, path3, newValue, concat) => {
+var pushPath = (object, path4, newValue, concat) => {
   const {
     obj,
     k
-  } = getLastOfPath(object, path3, Object);
+  } = getLastOfPath(object, path4, Object);
   obj[k] = obj[k] || [];
   obj[k].push(newValue);
 };
-var getPath = (object, path3) => {
+var getPath = (object, path4) => {
   const {
     obj,
     k
-  } = getLastOfPath(object, path3);
+  } = getLastOfPath(object, path4);
   if (!obj) return void 0;
   if (!Object.prototype.hasOwnProperty.call(obj, k)) return void 0;
   return obj[k];
@@ -2448,13 +2448,13 @@ var looksLikeObjectPath = (key, nsSeparator, keySeparator) => {
   }
   return matched;
 };
-var deepFind = (obj, path3, keySeparator = ".") => {
+var deepFind = (obj, path4, keySeparator = ".") => {
   if (!obj) return void 0;
-  if (obj[path3]) {
-    if (!Object.prototype.hasOwnProperty.call(obj, path3)) return void 0;
-    return obj[path3];
+  if (obj[path4]) {
+    if (!Object.prototype.hasOwnProperty.call(obj, path4)) return void 0;
+    return obj[path4];
   }
-  const tokens = path3.split(keySeparator);
+  const tokens = path4.split(keySeparator);
   let current = obj;
   for (let i = 0; i < tokens.length; ) {
     if (!current || typeof current !== "object") {
@@ -2615,26 +2615,26 @@ var ResourceStore = class extends EventEmitter {
   getResource(lng, ns, key, options = {}) {
     const keySeparator = options.keySeparator !== void 0 ? options.keySeparator : this.options.keySeparator;
     const ignoreJSONStructure = options.ignoreJSONStructure !== void 0 ? options.ignoreJSONStructure : this.options.ignoreJSONStructure;
-    let path3;
+    let path4;
     if (lng.includes(".")) {
-      path3 = lng.split(".");
+      path4 = lng.split(".");
     } else {
-      path3 = [lng, ns];
+      path4 = [lng, ns];
       if (key) {
         if (Array.isArray(key)) {
-          path3.push(...key);
+          path4.push(...key);
         } else if (isString(key) && keySeparator) {
-          path3.push(...key.split(keySeparator));
+          path4.push(...key.split(keySeparator));
         } else {
-          path3.push(key);
+          path4.push(key);
         }
       }
     }
-    const result = getPath(this.data, path3);
+    const result = getPath(this.data, path4);
     if (!result && !ns && !key && lng.includes(".")) {
-      lng = path3[0];
-      ns = path3[1];
-      key = path3.slice(2).join(".");
+      lng = path4[0];
+      ns = path4[1];
+      key = path4.slice(2).join(".");
     }
     if (result || !ignoreJSONStructure || !isString(key)) return result;
     return deepFind(this.data?.[lng]?.[ns], key, keySeparator);
@@ -2643,15 +2643,15 @@ var ResourceStore = class extends EventEmitter {
     silent: false
   }) {
     const keySeparator = options.keySeparator !== void 0 ? options.keySeparator : this.options.keySeparator;
-    let path3 = [lng, ns];
-    if (key) path3 = path3.concat(keySeparator ? key.split(keySeparator) : key);
+    let path4 = [lng, ns];
+    if (key) path4 = path4.concat(keySeparator ? key.split(keySeparator) : key);
     if (lng.includes(".")) {
-      path3 = lng.split(".");
+      path4 = lng.split(".");
       value = ns;
-      ns = path3[1];
+      ns = path4[1];
     }
     this.addNamespaces(ns);
-    setPath(this.data, path3, value);
+    setPath(this.data, path4, value);
     if (!options.silent) this.emit("added", lng, ns, key, value);
   }
   addResources(lng, ns, resources, options = {
@@ -2668,15 +2668,15 @@ var ResourceStore = class extends EventEmitter {
     silent: false,
     skipCopy: false
   }) {
-    let path3 = [lng, ns];
+    let path4 = [lng, ns];
     if (lng.includes(".")) {
-      path3 = lng.split(".");
+      path4 = lng.split(".");
       deep = resources;
       resources = ns;
-      ns = path3[1];
+      ns = path4[1];
     }
     this.addNamespaces(ns);
-    let pack = getPath(this.data, path3) || {};
+    let pack = getPath(this.data, path4) || {};
     if (!options.skipCopy) resources = JSON.parse(JSON.stringify(resources));
     if (deep) {
       deepExtend(pack, resources, overwrite);
@@ -2686,7 +2686,7 @@ var ResourceStore = class extends EventEmitter {
         ...resources
       };
     }
-    setPath(this.data, path3, pack);
+    setPath(this.data, path4, pack);
     if (!options.silent) this.emit("added", lng, ns, resources);
   }
   removeResourceBundle(lng, ns) {
@@ -2743,22 +2743,22 @@ function createProxy() {
 }
 function keysFromSelector(selector, opts) {
   const {
-    [PATH_KEY]: path3
+    [PATH_KEY]: path4
   } = selector(createProxy());
   const keySeparator = opts?.keySeparator ?? ".";
   const nsSeparator = opts?.nsSeparator ?? ":";
   const strict = opts?.enableSelector === "strict";
-  if (path3.length > 1 && nsSeparator) {
+  if (path4.length > 1 && nsSeparator) {
     const ns = opts?.ns;
     const nsList = strict ? Array.isArray(ns) ? ns : ns ? [ns] : null : Array.isArray(ns) ? ns : null;
     if (nsList) {
       const candidates = strict ? nsList : nsList.length > 1 ? nsList.slice(1) : [];
-      if (candidates.includes(path3[0])) {
-        return `${path3[0]}${nsSeparator}${path3.slice(1).join(keySeparator)}`;
+      if (candidates.includes(path4[0])) {
+        return `${path4[0]}${nsSeparator}${path4.slice(1).join(keySeparator)}`;
       }
     }
   }
-  return path3.join(keySeparator);
+  return path4.join(keySeparator);
 }
 var shouldHandleAsObject = (res) => !isString(res) && typeof res !== "boolean" && typeof res !== "number";
 var Translator = class _Translator extends EventEmitter {
@@ -3382,12 +3382,12 @@ var PluralResolver = class {
   }
 };
 var deepFindWithDefaults = (data, defaultData, key, keySeparator = ".", ignoreJSONStructure = true) => {
-  let path3 = getPathWithDefaults(data, defaultData, key);
-  if (!path3 && ignoreJSONStructure && isString(key)) {
-    path3 = deepFind(data, key, keySeparator);
-    if (path3 === void 0) path3 = deepFind(defaultData, key, keySeparator);
+  let path4 = getPathWithDefaults(data, defaultData, key);
+  if (!path4 && ignoreJSONStructure && isString(key)) {
+    path4 = deepFind(data, key, keySeparator);
+    if (path4 === void 0) path4 = deepFind(defaultData, key, keySeparator);
   }
-  return path3;
+  return path4;
 };
 var regexSafe = (val) => val.replace(/\$/g, "$$$$");
 var Interpolator = class {
@@ -3457,12 +3457,12 @@ var Interpolator = class {
     const defaultData = this.options && this.options.interpolation && this.options.interpolation.defaultVariables || {};
     const handleFormat = (key) => {
       if (!key.includes(this.formatSeparator)) {
-        const path3 = deepFindWithDefaults(data, defaultData, key, this.options.keySeparator, this.options.ignoreJSONStructure);
-        return this.alwaysFormat ? this.format(path3, void 0, lng, {
+        const path4 = deepFindWithDefaults(data, defaultData, key, this.options.keySeparator, this.options.ignoreJSONStructure);
+        return this.alwaysFormat ? this.format(path4, void 0, lng, {
           ...options,
           ...data,
           interpolationkey: key
-        }) : path3;
+        }) : path4;
       }
       const p = key.split(this.formatSeparator);
       const k = p.shift().trim();
@@ -5075,47 +5075,9 @@ function loadAddon() {
 var native = loadAddon();
 var engine = native;
 
-// src/main.ts
-var win = null;
-if (!import_electron.app.isPackaged) {
-  const smoke = Object.keys(process.env).some((k) => k.startsWith("PG_SMOKE_"));
-  const dir2 = smoke ? process.env.PG_SMOKE_PROFILE ?? path2.join(os.tmpdir(), "portalgems-smoke") : path2.join(import_electron.app.getPath("appData"), "portalgems-desktop-dev");
-  fs.mkdirSync(dir2, { recursive: true });
-  import_electron.app.setPath("userData", dir2);
-}
-var pairsPath = () => path2.join(import_electron.app.getPath("userData"), "paired-devices.bin");
-function readPairs() {
-  try {
-    const raw = fs.readFileSync(pairsPath());
-    if (import_electron.safeStorage.isEncryptionAvailable()) {
-      return import_electron.safeStorage.decryptString(raw);
-    }
-    return raw.toString("utf8");
-  } catch {
-    return "[]";
-  }
-}
-function writePairs(json) {
-  const data = import_electron.safeStorage.isEncryptionAvailable() ? import_electron.safeStorage.encryptString(json) : Buffer.from(json, "utf8");
-  fs.writeFileSync(pairsPath(), data);
-}
-var forward = (id) => (ev) => {
-  win?.webContents.send("pg:event", { id, ...ev });
-};
-function safeFileName(name) {
-  const base = path2.basename(name.replace(/\\/g, "/"));
-  return base === "" || base === "." || base === ".." ? "received.bin" : base;
-}
-function isTempDownloadDir(dir2) {
-  const target = path2.resolve(dir2);
-  const bases = [os.tmpdir(), import_electron.app.getPath("temp"), "/tmp"];
-  return bases.some((base) => {
-    const b = path2.resolve(base);
-    return target === b || target.startsWith(b + path2.sep);
-  });
-}
-var isValidDownloadDir = (dir2) => !!dir2 && dir2.trim() !== "" && !isTempDownloadDir(dir2);
-var resolveDownloadDir = (dir2) => isValidDownloadDir(dir2) ? dir2 : import_electron.app.getPath("downloads");
+// src/landing.ts
+var fs = __toESM(require("node:fs"));
+var path2 = __toESM(require("node:path"));
 function dedupPath(dir2, name, isFolder = false) {
   const dot = isFolder ? -1 : name.lastIndexOf(".");
   const stem = dot > 0 ? name.slice(0, dot) : name;
@@ -5132,31 +5094,95 @@ async function moveEntry(src, dest) {
   } catch (e) {
     if (e.code !== "EXDEV") throw e;
     const part = `${dest}.pgpart`;
-    const st = await fs.promises.stat(src);
-    if (st.isDirectory()) {
-      await fs.promises.cp(src, part, { recursive: true });
-    } else {
-      await fs.promises.copyFile(src, part);
+    try {
+      const st = await fs.promises.stat(src);
+      if (st.isDirectory()) {
+        await fs.promises.cp(src, part, { recursive: true });
+      } else {
+        await fs.promises.copyFile(src, part);
+      }
+      await fs.promises.rename(part, dest);
+    } catch (copyError) {
+      await fs.promises.rm(part, { recursive: true, force: true }).catch(() => void 0);
+      throw copyError;
     }
-    await fs.promises.rename(part, dest);
     await fs.promises.rm(src, { recursive: true, force: true });
   }
 }
+async function landBundle(stagedDir, destDir) {
+  const entries = (await fs.promises.readdir(stagedDir, { withFileTypes: true })).filter((entry) => entry.isFile() || entry.isDirectory()).sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
+  const landing = { files: 0, folders: 0, expected: entries.length };
+  for (const entry of entries) {
+    const isFolder = entry.isDirectory();
+    try {
+      await moveEntry(
+        path2.join(stagedDir, entry.name),
+        dedupPath(destDir, entry.name, isFolder)
+      );
+      if (isFolder) landing.folders++;
+      else landing.files++;
+    } catch {
+    }
+  }
+  return landing;
+}
+
+// src/main.ts
+var win = null;
+if (!import_electron.app.isPackaged) {
+  const smoke = Object.keys(process.env).some((k) => k.startsWith("PG_SMOKE_"));
+  const dir2 = smoke ? process.env.PG_SMOKE_PROFILE ?? path3.join(os.tmpdir(), "portalgems-smoke") : path3.join(import_electron.app.getPath("appData"), "portalgems-desktop-dev");
+  fs2.mkdirSync(dir2, { recursive: true });
+  import_electron.app.setPath("userData", dir2);
+}
+var pairsPath = () => path3.join(import_electron.app.getPath("userData"), "paired-devices.bin");
+function readPairs() {
+  try {
+    const raw = fs2.readFileSync(pairsPath());
+    if (import_electron.safeStorage.isEncryptionAvailable()) {
+      return import_electron.safeStorage.decryptString(raw);
+    }
+    return raw.toString("utf8");
+  } catch {
+    return "[]";
+  }
+}
+function writePairs(json) {
+  const data = import_electron.safeStorage.isEncryptionAvailable() ? import_electron.safeStorage.encryptString(json) : Buffer.from(json, "utf8");
+  fs2.writeFileSync(pairsPath(), data);
+}
+var forward = (id) => (ev) => {
+  win?.webContents.send("pg:event", { id, ...ev });
+};
+function safeFileName(name) {
+  const base = path3.basename(name.replace(/\\/g, "/"));
+  return base === "" || base === "." || base === ".." ? "received.bin" : base;
+}
+function isTempDownloadDir(dir2) {
+  const target = path3.resolve(dir2);
+  const bases = [os.tmpdir(), import_electron.app.getPath("temp"), "/tmp"];
+  return bases.some((base) => {
+    const b = path3.resolve(base);
+    return target === b || target.startsWith(b + path3.sep);
+  });
+}
+var isValidDownloadDir = (dir2) => !!dir2 && dir2.trim() !== "" && !isTempDownloadDir(dir2);
+var resolveDownloadDir = (dir2) => isValidDownloadDir(dir2) ? dir2 : import_electron.app.getPath("downloads");
 async function walkStats(dir2) {
   let fileCount = 0;
   let totalBytes = 0;
   const stack = [dir2];
   while (stack.length > 0) {
     const current = stack.pop();
-    const entries = await fs.promises.readdir(current, { withFileTypes: true });
+    const entries = await fs2.promises.readdir(current, { withFileTypes: true });
     for (const entry of entries) {
-      const p = path2.join(current, entry.name);
+      const p = path3.join(current, entry.name);
       if (entry.isSymbolicLink()) continue;
       if (entry.isDirectory()) {
         stack.push(p);
       } else if (entry.isFile()) {
         fileCount += 1;
-        totalBytes += (await fs.promises.stat(p)).size;
+        totalBytes += (await fs2.promises.stat(p)).size;
       }
     }
   }
@@ -5166,7 +5192,7 @@ import_electron.ipcMain.handle("pg:locale", () => import_electron.app.getLocale(
 async function pickerDefault(dir2) {
   if (!dir2 || dir2.trim() === "") return void 0;
   try {
-    return (await fs.promises.stat(dir2)).isDirectory() ? dir2 : void 0;
+    return (await fs2.promises.stat(dir2)).isDirectory() ? dir2 : void 0;
   } catch {
     return void 0;
   }
@@ -5179,8 +5205,8 @@ import_electron.ipcMain.handle("pg:pickFile", async (_e, defaultDir) => {
   });
   if (result.canceled || result.filePaths.length === 0) return null;
   const filePath = result.filePaths[0];
-  const stat = await fs.promises.stat(filePath);
-  return { path: filePath, name: path2.basename(filePath), size: stat.size };
+  const stat = await fs2.promises.stat(filePath);
+  return { path: filePath, name: path3.basename(filePath), size: stat.size };
 });
 import_electron.ipcMain.handle("pg:pickFolder", async (_e, defaultDir) => {
   if (!win) return null;
@@ -5193,7 +5219,7 @@ import_electron.ipcMain.handle("pg:pickFolder", async (_e, defaultDir) => {
   const stats = await walkStats(folderPath);
   return {
     path: folderPath,
-    name: path2.basename(folderPath),
+    name: path3.basename(folderPath),
     fileCount: stats.fileCount,
     totalBytes: stats.totalBytes
   };
@@ -5201,8 +5227,8 @@ import_electron.ipcMain.handle("pg:pickFolder", async (_e, defaultDir) => {
 import_electron.ipcMain.handle("pg:statDropped", async (_e, dropped) => {
   if (!dropped) return null;
   try {
-    const stat = await fs.promises.stat(dropped);
-    const name = path2.basename(dropped);
+    const stat = await fs2.promises.stat(dropped);
+    const name = path3.basename(dropped);
     if (stat.isDirectory()) {
       const stats = await walkStats(dropped);
       return { kind: "folder", path: dropped, name, ...stats };
@@ -5224,52 +5250,63 @@ import_electron.ipcMain.handle(
   "pg:sendFolder",
   (_e, id, folderPath, code, server) => engine.sendFolder(id, folderPath, code ?? null, server ?? {}, forward(id))
 );
+var looseReceives = /* @__PURE__ */ new Set();
 import_electron.ipcMain.handle(
   "pg:requestReceive",
   async (_e, id, code, server) => {
-    if (!process.env.PG_SMOKE_TRACE) return engine.requestReceive(id, code, server ?? {});
-    const t0 = Date.now();
-    const where = `${server?.rendezvousUrl ?? "(public default)"} ${code.split("-")[0]}`;
-    console.log(`TRACE:requestReceive:start ${where}`);
-    try {
-      const offer = await engine.requestReceive(id, code, server ?? {});
-      console.log(`TRACE:requestReceive:offer ${where} ${Date.now() - t0}ms`);
-      return offer;
-    } catch (e) {
-      console.log(`TRACE:requestReceive:error ${where} ${Date.now() - t0}ms ${String(e).slice(0, 80)}`);
-      throw e;
-    }
+    const offer = await requestReceive(id, code, server);
+    if (offer.folder?.loose) looseReceives.add(id);
+    return offer;
   }
 );
+async function requestReceive(id, code, server) {
+  if (!process.env.PG_SMOKE_TRACE) return engine.requestReceive(id, code, server ?? {});
+  const t0 = Date.now();
+  const where = `${server?.rendezvousUrl ?? "(public default)"} ${code.split("-")[0]}`;
+  console.log(`TRACE:requestReceive:start ${where}`);
+  try {
+    const offer = await engine.requestReceive(id, code, server ?? {});
+    console.log(`TRACE:requestReceive:offer ${where} ${Date.now() - t0}ms`);
+    return offer;
+  } catch (e) {
+    console.log(`TRACE:requestReceive:error ${where} ${Date.now() - t0}ms ${String(e).slice(0, 80)}`);
+    throw e;
+  }
+}
 import_electron.ipcMain.handle("pg:accept", async (_e, id, destDir) => {
   return engine.acceptReceive(id, destDir, forward(id));
 });
 import_electron.ipcMain.handle(
   "pg:acceptDownload",
   async (_e, id, dir2, overwrite) => {
-    const staging = path2.join(import_electron.app.getPath("userData"), "incoming", String(id));
-    await fs.promises.mkdir(staging, { recursive: true });
+    const loose = looseReceives.delete(id);
+    const staging = path3.join(import_electron.app.getPath("userData"), "incoming", String(id));
+    await fs2.promises.mkdir(staging, { recursive: true });
     try {
       const saved = await engine.acceptReceive(id, staging, forward(id));
-      const isFolder = (await fs.promises.stat(saved)).isDirectory();
+      const isFolder = (await fs2.promises.stat(saved)).isDirectory();
       let destDir = resolveDownloadDir(dir2);
       let fallback = !!dir2 && dir2.trim() !== "" && destDir !== dir2;
       try {
-        await fs.promises.mkdir(destDir, { recursive: true });
+        await fs2.promises.mkdir(destDir, { recursive: true });
       } catch {
         destDir = import_electron.app.getPath("downloads");
         fallback = true;
-        await fs.promises.mkdir(destDir, { recursive: true });
+        await fs2.promises.mkdir(destDir, { recursive: true });
       }
-      const name = path2.basename(saved);
-      const dest = overwrite ? path2.join(destDir, name) : dedupPath(destDir, name, isFolder);
+      if (loose) {
+        const bundle = await landBundle(saved, destDir);
+        return { name: "", dir: destDir, fallback, bundle };
+      }
+      const name = path3.basename(saved);
+      const dest = overwrite ? path3.join(destDir, name) : dedupPath(destDir, name, isFolder);
       if (overwrite) {
-        await fs.promises.rm(dest, { recursive: true, force: true });
+        await fs2.promises.rm(dest, { recursive: true, force: true });
       }
       await moveEntry(saved, dest);
-      return { name: path2.basename(dest), dir: destDir, fallback };
+      return { name: path3.basename(dest), dir: destDir, fallback };
     } finally {
-      await fs.promises.rm(staging, { recursive: true, force: true }).catch(() => void 0);
+      await fs2.promises.rm(staging, { recursive: true, force: true }).catch(() => void 0);
     }
   }
 );
@@ -5285,9 +5322,9 @@ import_electron.ipcMain.handle("pg:pickDirectory", async () => {
   return result.canceled || result.filePaths.length === 0 ? null : result.filePaths[0];
 });
 import_electron.ipcMain.handle("pg:statTarget", async (_e, dir2, fileName) => {
-  const target = path2.join(resolveDownloadDir(dir2), safeFileName(fileName));
+  const target = path3.join(resolveDownloadDir(dir2), safeFileName(fileName));
   try {
-    const st = await fs.promises.stat(target);
+    const st = await fs2.promises.stat(target);
     if (st.isDirectory()) {
       const stats = await walkStats(target);
       return { exists: true, size: stats.totalBytes, isFolder: true };
@@ -5302,16 +5339,19 @@ import_electron.ipcMain.handle("pg:tempDir", () => import_electron.app.getPath("
 import_electron.ipcMain.handle("pg:pairs:get", () => readPairs());
 import_electron.ipcMain.handle("pg:pairs:set", (_e, json) => writePairs(json));
 import_electron.ipcMain.handle("pg:writeTemp", async (_e, name, content) => {
-  const file = path2.join(import_electron.app.getPath("temp"), name);
-  await fs.promises.writeFile(file, content, "utf8");
+  const file = path3.join(import_electron.app.getPath("temp"), name);
+  await fs2.promises.writeFile(file, content, "utf8");
   return file;
 });
-import_electron.ipcMain.handle("pg:readText", (_e, p) => fs.promises.readFile(p, "utf8"));
+import_electron.ipcMain.handle("pg:readText", (_e, p) => fs2.promises.readFile(p, "utf8"));
 import_electron.ipcMain.handle(
   "pg:deleteFile",
-  (_e, p) => fs.promises.unlink(p).catch(() => void 0)
+  (_e, p) => fs2.promises.unlink(p).catch(() => void 0)
 );
-import_electron.ipcMain.handle("pg:reject", (_e, id) => engine.rejectReceive(id));
+import_electron.ipcMain.handle("pg:reject", (_e, id) => {
+  looseReceives.delete(id);
+  return engine.rejectReceive(id);
+});
 import_electron.ipcMain.handle("pg:cancel", (_e, id) => engine.cancelTransfer(id));
 import_electron.app.whenReady().then(async () => {
   win = new import_electron.BrowserWindow({
@@ -5320,14 +5360,14 @@ import_electron.app.whenReady().then(async () => {
     minWidth: 480,
     minHeight: 560,
     title: "PortalGems",
-    icon: path2.join(__dirname, "..", "build", "icon.png"),
+    icon: path3.join(__dirname, "..", "build", "icon.png"),
     autoHideMenuBar: true,
     webPreferences: {
-      preload: path2.join(__dirname, "preload.js"),
+      preload: path3.join(__dirname, "preload.js"),
       contextIsolation: true
     }
   });
-  await win.loadFile(path2.join(__dirname, "..", "src", "renderer", "index.html"));
+  await win.loadFile(path3.join(__dirname, "..", "src", "renderer", "index.html"));
   const smokeReceive = process.env.PG_SMOKE_RECEIVE;
   const smokeCancel = process.env.PG_SMOKE_RECEIVE_CANCEL;
   if (smokeReceive || smokeCancel) {

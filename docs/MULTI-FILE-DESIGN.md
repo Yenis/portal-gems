@@ -349,4 +349,8 @@ cannot receive:
 - On the desktop a mix of files and folders, or several folders, can only
   be dropped. "Choose folder to send" stays a single-folder picker and
   "Choose files to send" picks files - two plain buttons, by decision.
-
+- Step 3 (desktop receive) is built: the addon reports `loose`, main lands
+  a bundle through `landBundle`, and the receive screen has the bundle's
+  prompt, progress and saved line. `npm test` in `packages/app-desktop` is
+  new and covers the landing. Until the apps can send a bundle, the engine
+  example can: `cargo run --example send -- --files "<name>" <paths...>`.

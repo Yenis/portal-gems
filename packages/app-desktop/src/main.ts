@@ -8,6 +8,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { candidateCodes, currentBucket, deriveCode } from '@portalgems/core';
 import { engine, type NativeTransferEvent, type ServerConfig } from './engine';
+import { dedupPath, landBundle, moveEntry, type BundleLanding } from './landing';
 
 let win: BrowserWindow | null = null;
 
@@ -89,38 +90,6 @@ const isValidDownloadDir = (dir?: string | null): boolean =>
 /** The folder received files should land in: the user's choice, else Downloads. */
 const resolveDownloadDir = (dir?: string | null) =>
   isValidDownloadDir(dir) ? (dir as string) : app.getPath('downloads');
-
-/** First free `name`, `name (1)`, `name (2)`, … inside `dir` (engine
- * convention). Folder names never get extension-split (`my.stuff (1)`). */
-function dedupPath(dir: string, name: string, isFolder = false): string {
-  const dot = isFolder ? -1 : name.lastIndexOf('.');
-  const stem = dot > 0 ? name.slice(0, dot) : name;
-  const ext = dot > 0 ? name.slice(dot) : '';
-  let dest = path.join(dir, name);
-  for (let n = 1; fs.existsSync(dest); n++) {
-    dest = path.join(dir, `${stem} (${n})${ext}`);
-  }
-  return dest;
-}
-
-/** Move across filesystems if needed; lands at `dest` via an atomic rename.
- * Handles both files and directories (a received folder is a directory). */
-async function moveEntry(src: string, dest: string): Promise<void> {
-  try {
-    await fs.promises.rename(src, dest);
-  } catch (e) {
-    if ((e as NodeJS.ErrnoException).code !== 'EXDEV') throw e;
-    const part = `${dest}.pgpart`;
-    const st = await fs.promises.stat(src);
-    if (st.isDirectory()) {
-      await fs.promises.cp(src, part, { recursive: true });
-    } else {
-      await fs.promises.copyFile(src, part);
-    }
-    await fs.promises.rename(part, dest);
-    await fs.promises.rm(src, { recursive: true, force: true });
-  }
-}
 
 /** File count and total size of a directory tree (symlinks skipped, matching
  * what the engine will actually zip and send). */
@@ -225,26 +194,37 @@ ipcMain.handle(
     engine.sendFolder(id, folderPath, code ?? null, server ?? {}, forward(id))
 );
 
+// Receives whose offer was a loose bundle. `pg:acceptDownload` unpacks those
+// into the download folder itself; it is decided here, from the offer the
+// engine parsed, and not by anything the renderer passes back.
+const looseReceives = new Set<number>();
+
 ipcMain.handle(
   'pg:requestReceive',
   async (_e, id: number, code: string, server?: ServerConfig) => {
-    // PG_SMOKE_TRACE=1 logs every attempt - which server, which nameplate,
-    // how it ended and how long it took. A paired receive is a polling loop
-    // over three codes, and without this a stall inside it is invisible.
-    if (!process.env.PG_SMOKE_TRACE) return engine.requestReceive(id, code, server ?? {});
-    const t0 = Date.now();
-    const where = `${server?.rendezvousUrl ?? '(public default)'} ${code.split('-')[0]}`;
-    console.log(`TRACE:requestReceive:start ${where}`);
-    try {
-      const offer = await engine.requestReceive(id, code, server ?? {});
-      console.log(`TRACE:requestReceive:offer ${where} ${Date.now() - t0}ms`);
-      return offer;
-    } catch (e) {
-      console.log(`TRACE:requestReceive:error ${where} ${Date.now() - t0}ms ${String(e).slice(0, 80)}`);
-      throw e;
-    }
+    const offer = await requestReceive(id, code, server);
+    if (offer.folder?.loose) looseReceives.add(id);
+    return offer;
   }
 );
+
+async function requestReceive(id: number, code: string, server?: ServerConfig) {
+  // PG_SMOKE_TRACE=1 logs every attempt - which server, which nameplate,
+  // how it ended and how long it took. A paired receive is a polling loop
+  // over three codes, and without this a stall inside it is invisible.
+  if (!process.env.PG_SMOKE_TRACE) return engine.requestReceive(id, code, server ?? {});
+  const t0 = Date.now();
+  const where = `${server?.rendezvousUrl ?? '(public default)'} ${code.split('-')[0]}`;
+  console.log(`TRACE:requestReceive:start ${where}`);
+  try {
+    const offer = await engine.requestReceive(id, code, server ?? {});
+    console.log(`TRACE:requestReceive:offer ${where} ${Date.now() - t0}ms`);
+    return offer;
+  } catch (e) {
+    console.log(`TRACE:requestReceive:error ${where} ${Date.now() - t0}ms ${String(e).slice(0, 80)}`);
+    throw e;
+  }
+}
 
 // Plain accept into an explicit directory; used by the pairing handshake.
 ipcMain.handle('pg:accept', async (_e, id: number, destDir: string) => {
@@ -257,7 +237,13 @@ ipcMain.handle('pg:accept', async (_e, id: number, destDir: string) => {
 // or cancelled transfer leaves the existing file untouched.
 ipcMain.handle(
   'pg:acceptDownload',
-  async (_e, id: number, dir: string | null, overwrite: boolean) => {
+  async (
+    _e,
+    id: number,
+    dir: string | null,
+    overwrite: boolean
+  ): Promise<{ name: string; dir: string; fallback: boolean; bundle?: BundleLanding }> => {
+    const loose = looseReceives.delete(id);
     const staging = path.join(app.getPath('userData'), 'incoming', String(id));
     await fs.promises.mkdir(staging, { recursive: true });
     try {
@@ -277,6 +263,13 @@ ipcMain.handle(
         destDir = app.getPath('downloads');
         fallback = true;
         await fs.promises.mkdir(destDir, { recursive: true });
+      }
+      if (loose) {
+        // A bundle has no name of its own on this side: its contents go
+        // into the download folder directly, and `overwrite` does not apply
+        // - nothing was asked, so nothing is replaced.
+        const bundle = await landBundle(saved, destDir);
+        return { name: '', dir: destDir, fallback, bundle };
       }
       const name = path.basename(saved);
       const dest = overwrite
@@ -345,7 +338,10 @@ ipcMain.handle('pg:deleteFile', (_e, p: string) =>
   fs.promises.unlink(p).catch(() => undefined)
 );
 
-ipcMain.handle('pg:reject', (_e, id: number) => engine.rejectReceive(id));
+ipcMain.handle('pg:reject', (_e, id: number) => {
+  looseReceives.delete(id);
+  return engine.rejectReceive(id);
+});
 
 ipcMain.handle('pg:cancel', (_e, id: number) => engine.cancelTransfer(id));
 

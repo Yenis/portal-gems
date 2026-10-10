@@ -11,11 +11,13 @@ import {
   encodePairingPayload,
   fontSize,
   friendlyError,
+  bundleText,
   isServerUnreachableError,
   lastTransferText,
   nextSendAttempt,
   parsePairingPayload,
   parseSendAttempts,
+  savedBundleText,
   radius,
   spacing,
   withSendFinished,
@@ -27,6 +29,7 @@ import {
   SEND_ATTEMPTS_KEY,
   availableServerChoices,
   isCustomServerUsable,
+  type BundleCounts,
   type PairedDevice,
   type Palette,
   type ServerChoice,
@@ -128,7 +131,12 @@ declare global {
         id: number,
         dir: string | null,
         overwrite: boolean
-      ): Promise<{ name: string; dir: string; fallback: boolean }>;
+      ): Promise<{
+        name: string;
+        dir: string;
+        fallback: boolean;
+        bundle?: { files: number; folders: number; expected: number };
+      }>;
       pickDirectory(): Promise<string | null>;
       downloadDirValid(dir: string | null): Promise<boolean>;
       statTarget(
@@ -161,7 +169,13 @@ type SendItem =
 interface ReceiveOffer {
   fileName: string;
   fileSize: number;
-  folder?: { dirName: string; numFiles: number; numBytes: number } | null;
+  folder?: {
+    dirName: string;
+    numFiles: number;
+    numBytes: number;
+    /** A selection of loose items rather than one folder - see `files.ts`. */
+    loose?: BundleCounts | null;
+  } | null;
   text?: string | null;
 }
 
@@ -981,6 +995,8 @@ function Receive({
   // rejected (blank/temp path) or unavailable, in which case it is Downloads.
   const [savedDir, setSavedDir] = useState('');
   const [usedFallback, setUsedFallback] = useState(false);
+  // For a loose bundle: what reached the download folder, counted there.
+  const [landed, setLanded] = useState<{ saved: BundleCounts; expected: number } | null>(null);
   const [existingSize, setExistingSize] = useState(0);
   const [copiedText, setCopiedText] = useState(false);
   const [error, setError] = useState('');
@@ -1045,10 +1061,16 @@ function Receive({
   const startTransfer = (overwrite: boolean) => {
     setPhase('transferring');
     window.portalgems.acceptDownload(idRef.current, downloadDirRef.current, overwrite).then(
-      ({ name, dir, fallback }) => {
+      ({ name, dir, fallback, bundle }) => {
         setSavedName(name);
         setSavedDir(dir);
         setUsedFallback(fallback);
+        if (bundle) {
+          setLanded({
+            saved: { files: bundle.files, folders: bundle.folders },
+            expected: bundle.expected,
+          });
+        }
         if (device) markDeviceUsed(device.id).catch(() => undefined);
         setPhase('done');
       },
@@ -1066,10 +1088,21 @@ function Receive({
   // for directory offers, the file name otherwise (both engine-sanitized).
   const targetName = offer ? offer.folder?.dirName ?? offer.fileName : '';
 
+  // Several files and folders sent as one: they land in the download folder
+  // themselves, under their own names, so there is no single name to show
+  // and none to check for a clash before accepting.
+  const loose = offer?.folder?.loose ?? null;
+
   // A same-named entry in the download folder gets a warning first; the
   // engine sanitizes the offered name, so it is exactly the name saved.
   const accept = async () => {
     if (!offer) return;
+    if (loose) {
+      // Names inside a bundle are only known once it has arrived, and by
+      // then nothing is asked: a taken name is kept beside, never replaced.
+      startTransfer(false);
+      return;
+    }
     const target = await window.portalgems
       .statTarget(downloadDirRef.current, targetName)
       .catch(() => ({ exists: false, size: 0, isFolder: false }));
@@ -1124,10 +1157,18 @@ function Receive({
         {phase === 'confirm' && offer ? (
           <>
             <Subtitle c={c}>
-              {offer.folder ? t('receive.incomingFolder') : t('receive.incoming')}
+              {loose
+                ? t('files.incoming')
+                : offer.folder
+                  ? t('receive.incomingFolder')
+                  : t('receive.incoming')}
             </Subtitle>
             <p style={{ color: c.text, margin: 0 }}>
-              {offer.folder
+              {loose
+                ? bundleText(t as any, 'summary', loose, {
+                    size: formatSize(offer.folder?.numBytes ?? 0),
+                  })
+                : offer.folder
                 ? t('folder.summary', {
                     name: offer.folder.dirName,
                     count: offer.folder.numFiles,
@@ -1136,9 +1177,11 @@ function Receive({
                 : `${offer.fileName} · ${formatSize(offer.fileSize)}`}
             </p>
             <Muted c={c}>
-              {offer.folder
-                ? t('receive.acceptQuestionFolder')
-                : t('receive.acceptQuestion')}
+              {loose
+                ? t('files.acceptQuestion')
+                : offer.folder
+                  ? t('receive.acceptQuestionFolder')
+                  : t('receive.acceptQuestion')}
             </Muted>
             <PrimaryButton c={c} label={t('common.accept')} onClick={accept} />
             <GhostButton c={c} label={t('common.decline')} danger onClick={decline} />
@@ -1172,13 +1215,39 @@ function Receive({
         {phase === 'transferring' ? (
           <>
             <Subtitle c={c}>
-              {offer?.folder ? t('receive.receivingFolder') : t('receive.receiving')}
+              {loose
+                ? bundleText(t as any, 'receiving', loose)
+                : offer?.folder
+                  ? t('receive.receivingFolder')
+                  : t('receive.receiving')}
             </Subtitle>
             <ProgressBar c={c} pct={pct} />
             <Muted c={c}>{t('transfer.progress', { pct })}</Muted>
           </>
         ) : null}
-        {phase === 'done' ? (
+        {phase === 'done' && landed ? (
+          <>
+            {/* One line says it all for a bundle: what was saved, and where.
+                If the disk filled during the last step it says how many made
+                it, in the colour of a problem and not of a success. */}
+            <p
+              style={{
+                color:
+                  landed.saved.files + landed.saved.folders < landed.expected
+                    ? c.danger
+                    : c.success,
+                margin: 0,
+              }}>
+              {savedBundleText(t as any, {
+                saved: landed.saved,
+                expected: landed.expected,
+                folder: downloadDirRef.current && !usedFallback ? savedDir : null,
+              })}
+            </p>
+            {usedFallback ? <Muted c={c}>{t('files.folderFallback')}</Muted> : null}
+          </>
+        ) : null}
+        {phase === 'done' && !landed ? (
           <>
             <Subtitle c={c}>
               {offer?.folder ? t('receive.successFolder') : t('receive.success')}

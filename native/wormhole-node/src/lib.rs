@@ -60,6 +60,19 @@ pub struct FolderOffer {
     pub dir_name: String,
     pub num_files: f64,
     pub num_bytes: f64,
+    /// Set when the sender offered a selection of loose items rather than
+    /// one folder: what `accept_receive` unpacks belongs directly in the
+    /// download folder, and `dir_name` is not shown.
+    pub loose: Option<LooseBundle>,
+}
+
+/// How many files and folders a loose bundle puts at the top level of the
+/// download folder (sender-claimed; it words the prompt, nothing more).
+#[napi(object)]
+#[derive(Clone)]
+pub struct LooseBundle {
+    pub files: f64,
+    pub folders: f64,
 }
 
 /// Which servers a transfer should use; empty/missing fields fall back to the
@@ -224,6 +237,10 @@ pub async fn request_receive(id: u32, code: String, server: ServerConfig) -> Res
             dir_name: f.dir_name.clone(),
             num_files: f.num_files as f64,
             num_bytes: f.num_bytes as f64,
+            loose: f.loose.map(|b| LooseBundle {
+                files: b.files as f64,
+                folders: b.folders as f64,
+            }),
         }),
         text: pending.text.clone(),
     };

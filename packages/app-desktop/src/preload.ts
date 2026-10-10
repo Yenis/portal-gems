@@ -65,7 +65,12 @@ contextBridge.exposeInMainWorld('portalgems', {
   ): Promise<{
     fileName: string;
     fileSize: number;
-    folder?: { dirName: string; numFiles: number; numBytes: number } | null;
+    folder?: {
+      dirName: string;
+      numFiles: number;
+      numBytes: number;
+      loose?: { files: number; folders: number } | null;
+    } | null;
     text?: string | null;
   }> => ipcRenderer.invoke('pg:requestReceive', id, code, server),
   accept: (id: number, destDir: string): Promise<string> =>
@@ -77,8 +82,14 @@ contextBridge.exposeInMainWorld('portalgems', {
     id: number,
     dir: string | null,
     overwrite: boolean
-  ): Promise<{ name: string; dir: string; fallback: boolean }> =>
-    ipcRenderer.invoke('pg:acceptDownload', id, dir, overwrite),
+  ): Promise<{
+    name: string;
+    dir: string;
+    fallback: boolean;
+    // Set for a loose bundle, which has no single name: what reached the
+    // download folder, out of how many top-level items it held.
+    bundle?: { files: number; folders: number; expected: number };
+  }> => ipcRenderer.invoke('pg:acceptDownload', id, dir, overwrite),
   pickDirectory: (): Promise<string | null> => ipcRenderer.invoke('pg:pickDirectory'),
   downloadDirValid: (dir: string | null): Promise<boolean> =>
     ipcRenderer.invoke('pg:downloadDirValid', dir),

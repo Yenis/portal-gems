@@ -18,6 +18,10 @@ export interface FolderOffer {
   dirName: string;
   numFiles: number;
   numBytes: number;
+  /// Set when the sender offered a selection of loose items rather than one
+  /// folder: the files and folders it puts at the top level of the download
+  /// folder. `dirName` is then not a name to show.
+  loose?: { files: number; folders: number } | null;
 }
 
 /// For folder (directory) offers `folder` is set and fileName/fileSize

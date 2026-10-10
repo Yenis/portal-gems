@@ -54,7 +54,8 @@
     "receiving": "Recibiendo {{items}}…",
     "saved": "Guardado en Descargas: {{items}}.",
     "savedIn": "Guardado en {{folder}}: {{items}}.",
-    "savedSome": "Solo se pudieron guardar {{saved}} de {{n}} elementos. Comprueba el espacio libre en tu carpeta de descargas."
+    "savedSome": "Solo se pudieron guardar {{saved}} de {{n}} elementos. Comprueba el espacio libre en tu carpeta de descargas.",
+    "folderFallback": "La carpeta de descargas elegida no estaba disponible, así que todo se guardó en Descargas."
   },
   "receive": {
     "title": "Recibiendo",

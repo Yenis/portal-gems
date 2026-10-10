@@ -24458,6 +24458,30 @@
     return null;
   }
 
+  // ../core/src/files.ts
+  function counted(t2, key, n) {
+    return t2(`files.${n === 1 ? `${key}One` : key}`, { n });
+  }
+  function itemsText(t2, counts) {
+    const files = counted(t2, "count", counts.files);
+    const folders = counted(t2, "folderCount", counts.folders);
+    if (counts.folders === 0) return files;
+    if (counts.files === 0) return folders;
+    return t2("files.both", { files, folders });
+  }
+  function bundleText(t2, key, counts, options = {}) {
+    return capitalize(t2(`files.${key}`, { ...options, items: itemsText(t2, counts) }));
+  }
+  function capitalize(text) {
+    return text.charAt(0).toLocaleUpperCase() + text.slice(1);
+  }
+  function savedBundleText(t2, result) {
+    const { saved, expected, folder } = result;
+    const landed = saved.files + saved.folders;
+    if (landed < expected) return t2("files.savedSome", { saved: landed, n: expected });
+    return folder ? bundleText(t2, "savedIn", saved, { folder }) : bundleText(t2, "saved", saved);
+  }
+
   // ../core/src/servers.ts
   var PORTALGEMS_RENDEZVOUS_URL = "wss://be-my-guest.io/v1";
   var PORTALGEMS_TRANSIT_URL = "tcp://be-my-guest.io:4001";
@@ -27632,7 +27656,8 @@
       receiving: "Primam: {{items}}\u2026",
       saved: "Sa\u010Duvano u Downloads: {{items}}.",
       savedIn: "Sa\u010Duvano u {{folder}}: {{items}}.",
-      savedSome: "Sa\u010Duvano: {{saved}} od {{n}}. Provjeri slobodan prostor u folderu za preuzimanja."
+      savedSome: "Sa\u010Duvano: {{saved}} od {{n}}. Provjeri slobodan prostor u folderu za preuzimanja.",
+      folderFallback: "Odabrani folder za preuzimanja nije bio dostupan, pa je sve sa\u010Duvano u Downloads."
     },
     receive: {
       title: "Primanje",
@@ -27902,7 +27927,8 @@
       receiving: "Empfange {{items}}\u2026",
       saved: "In Downloads gespeichert: {{items}}.",
       savedIn: "In {{folder}} gespeichert: {{items}}.",
-      savedSome: "Nur {{saved}} von {{n}} Elementen konnten gespeichert werden. Pr\xFCfe den freien Speicherplatz in deinem Download-Ordner."
+      savedSome: "Nur {{saved}} von {{n}} Elementen konnten gespeichert werden. Pr\xFCfe den freien Speicherplatz in deinem Download-Ordner.",
+      folderFallback: "Der gew\xE4hlte Download-Ordner war nicht verf\xFCgbar, alles wurde stattdessen in Downloads gespeichert."
     },
     receive: {
       title: "Empfangen",
@@ -28172,7 +28198,8 @@
       receiving: "Receiving {{items}}\u2026",
       saved: "{{items}} saved to Downloads.",
       savedIn: "{{items}} saved in {{folder}}.",
-      savedSome: "Only {{saved}} of {{n}} items could be saved. Check the free space in your download folder."
+      savedSome: "Only {{saved}} of {{n}} items could be saved. Check the free space in your download folder.",
+      folderFallback: "The chosen download folder was not available, so everything was saved to Downloads."
     },
     receive: {
       title: "Receiving",
@@ -28442,7 +28469,8 @@
       receiving: "Recibiendo {{items}}\u2026",
       saved: "Guardado en Descargas: {{items}}.",
       savedIn: "Guardado en {{folder}}: {{items}}.",
-      savedSome: "Solo se pudieron guardar {{saved}} de {{n}} elementos. Comprueba el espacio libre en tu carpeta de descargas."
+      savedSome: "Solo se pudieron guardar {{saved}} de {{n}} elementos. Comprueba el espacio libre en tu carpeta de descargas.",
+      folderFallback: "La carpeta de descargas elegida no estaba disponible, as\xED que todo se guard\xF3 en Descargas."
     },
     receive: {
       title: "Recibiendo",
@@ -28712,7 +28740,8 @@
       receiving: "R\xE9ception de {{items}}\u2026",
       saved: "Enregistr\xE9 dans T\xE9l\xE9chargements : {{items}}.",
       savedIn: "Enregistr\xE9 dans {{folder}} : {{items}}.",
-      savedSome: "Seuls {{saved}} \xE9l\xE9ments sur {{n}} ont pu \xEAtre enregistr\xE9s. V\xE9rifiez l'espace libre dans votre dossier de t\xE9l\xE9chargement."
+      savedSome: "Seuls {{saved}} \xE9l\xE9ments sur {{n}} ont pu \xEAtre enregistr\xE9s. V\xE9rifiez l'espace libre dans votre dossier de t\xE9l\xE9chargement.",
+      folderFallback: "Le dossier de t\xE9l\xE9chargement choisi n'\xE9tait pas disponible, tout a donc \xE9t\xE9 enregistr\xE9 dans T\xE9l\xE9chargements."
     },
     receive: {
       title: "R\xE9ception",
@@ -28982,7 +29011,8 @@
       receiving: "\u041F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u0435: {{items}}\u2026",
       saved: "\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E \u0432 \xAB\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0438\xBB: {{items}}.",
       savedIn: "\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E \u0432 {{folder}}: {{items}}.",
-      savedSome: "\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E: {{saved}} \u0438\u0437 {{n}}. \u041F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u0441\u0432\u043E\u0431\u043E\u0434\u043D\u043E\u0435 \u043C\u0435\u0441\u0442\u043E \u0432 \u043F\u0430\u043F\u043A\u0435 \u0437\u0430\u0433\u0440\u0443\u0437\u043E\u043A."
+      savedSome: "\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E: {{saved}} \u0438\u0437 {{n}}. \u041F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u0441\u0432\u043E\u0431\u043E\u0434\u043D\u043E\u0435 \u043C\u0435\u0441\u0442\u043E \u0432 \u043F\u0430\u043F\u043A\u0435 \u0437\u0430\u0433\u0440\u0443\u0437\u043E\u043A.",
+      folderFallback: "\u0412\u044B\u0431\u0440\u0430\u043D\u043D\u0430\u044F \u043F\u0430\u043F\u043A\u0430 \u0437\u0430\u0433\u0440\u0443\u0437\u043E\u043A \u0431\u044B\u043B\u0430 \u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u043D\u0430, \u043F\u043E\u044D\u0442\u043E\u043C\u0443 \u0432\u0441\u0451 \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E \u0432 \xAB\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0438\xBB."
     },
     receive: {
       title: "\u041F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u0435",
@@ -30370,6 +30400,7 @@
     const [savedName, setSavedName] = (0, import_react14.useState)("");
     const [savedDir, setSavedDir] = (0, import_react14.useState)("");
     const [usedFallback, setUsedFallback] = (0, import_react14.useState)(false);
+    const [landed, setLanded] = (0, import_react14.useState)(null);
     const [existingSize, setExistingSize] = (0, import_react14.useState)(0);
     const [copiedText, setCopiedText] = (0, import_react14.useState)(false);
     const [error, setError] = (0, import_react14.useState)("");
@@ -30423,10 +30454,16 @@
     const startTransfer = (overwrite) => {
       setPhase("transferring");
       window.portalgems.acceptDownload(idRef.current, downloadDirRef.current, overwrite).then(
-        ({ name, dir: dir2, fallback }) => {
+        ({ name, dir: dir2, fallback, bundle }) => {
           setSavedName(name);
           setSavedDir(dir2);
           setUsedFallback(fallback);
+          if (bundle) {
+            setLanded({
+              saved: { files: bundle.files, folders: bundle.folders },
+              expected: bundle.expected
+            });
+          }
           if (device) markDeviceUsed(device.id).catch(() => void 0);
           setPhase("done");
         },
@@ -30440,8 +30477,13 @@
       );
     };
     const targetName = offer ? offer.folder?.dirName ?? offer.fileName : "";
+    const loose = offer?.folder?.loose ?? null;
     const accept = async () => {
       if (!offer) return;
+      if (loose) {
+        startTransfer(false);
+        return;
+      }
       const target = await window.portalgems.statTarget(downloadDirRef.current, targetName).catch(() => ({ exists: false, size: 0, isFolder: false }));
       if (target.exists) {
         setExistingSize(target.size);
@@ -30470,11 +30512,13 @@
           setTimeout(() => setCopiedText(false), 1500);
         }
       }
-    )) : null, phase === "confirm" && offer ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, offer.folder ? t2("receive.incomingFolder") : t2("receive.incoming")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.text, margin: 0 } }, offer.folder ? t2("folder.summary", {
+    )) : null, phase === "confirm" && offer ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, loose ? t2("files.incoming") : offer.folder ? t2("receive.incomingFolder") : t2("receive.incoming")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.text, margin: 0 } }, loose ? bundleText(t2, "summary", loose, {
+      size: formatSize(offer.folder?.numBytes ?? 0)
+    }) : offer.folder ? t2("folder.summary", {
       name: offer.folder.dirName,
       count: offer.folder.numFiles,
       size: formatSize(offer.folder.numBytes)
-    }) : `${offer.fileName} \xB7 ${formatSize(offer.fileSize)}`), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, offer.folder ? t2("receive.acceptQuestionFolder") : t2("receive.acceptQuestion")), /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.accept"), onClick: accept }), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.decline"), danger: true, onClick: decline })) : null, phase === "conflict" && offer ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, offer.folder ? t2("receive.existsTitleFolder") : t2("receive.existsTitle")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.text, margin: 0 } }, t2(offer.folder ? "receive.existsBodyFolder" : "receive.existsBody", {
+    }) : `${offer.fileName} \xB7 ${formatSize(offer.fileSize)}`), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, loose ? t2("files.acceptQuestion") : offer.folder ? t2("receive.acceptQuestionFolder") : t2("receive.acceptQuestion")), /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.accept"), onClick: accept }), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.decline"), danger: true, onClick: decline })) : null, phase === "conflict" && offer ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, offer.folder ? t2("receive.existsTitleFolder") : t2("receive.existsTitle")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.text, margin: 0 } }, t2(offer.folder ? "receive.existsBodyFolder" : "receive.existsBody", {
       name: targetName,
       size: formatSize(existingSize)
     })), /* @__PURE__ */ import_react14.default.createElement(
@@ -30492,7 +30536,20 @@
         danger: true,
         onClick: () => startTransfer(true)
       }
-    ), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.decline"), onClick: decline })) : null, phase === "transferring" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, offer?.folder ? t2("receive.receivingFolder") : t2("receive.receiving")), /* @__PURE__ */ import_react14.default.createElement(ProgressBar, { c, pct }), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("transfer.progress", { pct }))) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, offer?.folder ? t2("receive.successFolder") : t2("receive.success")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.success, margin: 0 } }, downloadDirRef.current && !usedFallback ? t2("receive.savedAsIn", { name: savedName, folder: savedDir }) : t2("receive.savedAs", { name: savedName })), usedFallback ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.folderFallback")) : null) : null, phase === "declined" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.declined")) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "cancelled" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("errors.cancelled")) : null), busy ? /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancel }) : phase === "confirm" || phase === "conflict" ? null : /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.done"), onClick: onHome }));
+    ), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.decline"), onClick: decline })) : null, phase === "transferring" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, loose ? bundleText(t2, "receiving", loose) : offer?.folder ? t2("receive.receivingFolder") : t2("receive.receiving")), /* @__PURE__ */ import_react14.default.createElement(ProgressBar, { c, pct }), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("transfer.progress", { pct }))) : null, phase === "done" && landed ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(
+      "p",
+      {
+        style: {
+          color: landed.saved.files + landed.saved.folders < landed.expected ? c.danger : c.success,
+          margin: 0
+        }
+      },
+      savedBundleText(t2, {
+        saved: landed.saved,
+        expected: landed.expected,
+        folder: downloadDirRef.current && !usedFallback ? savedDir : null
+      })
+    ), usedFallback ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("files.folderFallback")) : null) : null, phase === "done" && !landed ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, offer?.folder ? t2("receive.successFolder") : t2("receive.success")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.success, margin: 0 } }, downloadDirRef.current && !usedFallback ? t2("receive.savedAsIn", { name: savedName, folder: savedDir }) : t2("receive.savedAs", { name: savedName })), usedFallback ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.folderFallback")) : null) : null, phase === "declined" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.declined")) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "cancelled" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("errors.cancelled")) : null), busy ? /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancel }) : phase === "confirm" || phase === "conflict" ? null : /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.done"), onClick: onHome }));
   }
   function Pair({
     c,

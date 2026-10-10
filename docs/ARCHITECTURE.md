@@ -373,6 +373,14 @@ recursive size.
   section list is per app because two entries are platform-specific: `share`
   on the phone, `drop` on the desktop. Symbian's equivalent is `KHelpText`
   behind Options > Help.
+- Receiving a loose bundle: `pg:requestReceive` notes the id when the offer
+  carries `folder.loose`, and `pg:acceptDownload` then calls `landBundle`
+  (`src/landing.ts`) instead of moving one entry: each top-level child of
+  the unpacked directory goes into the download folder under its own name,
+  `dedupPath` keeping both on a clash, never overwriting. It returns
+  `bundle: {files, folders, expected}`, counted on disk, and the renderer
+  words it with `savedBundleText`. `landing.ts` has no Electron in it so
+  that `npm test` (esbuild, then `node --test`) can run it.
 - Drag and drop: a file or folder dropped on a paired device's row sends it
   there. `preload.ts` `dropped(file)` resolves the path with
   `webUtils.getPathForFile` (a renderer no longer sees `File.path`) and
@@ -415,8 +423,10 @@ recursive size.
   fallback, not the requested folder. The receive
   smoke handles file and folder offers (it waits on the shared "Do you want
   to receive this" prefix). Counterpart CLI harnesses:
-  `cargo run --example send <path> [code]` sends a file OR folder
-  (`--example recv` prints `OFFER-FOLDER:name:files:bytes`); both take
+  `cargo run --example send <path> [code]` sends a file OR folder, and
+  `send --files <bundle name> <path> <path>...` a loose bundle (code from
+  `PG_CODE`); `--example recv` prints `OFFER-FOLDER:name:files:bytes` and,
+  for a bundle, `OFFER-LOOSE:files:folders`. Both take
   `PG_RENDEZVOUS_URL`/`PG_TRANSIT_URL` - remember the app defaults to the
   PortalGems server, so point the examples there or they meet nothing. Receive
   add-ons: `PG_SMOKE_DL_DIR=<dir>` (seed the download-folder setting; cleared

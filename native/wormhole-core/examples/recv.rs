@@ -35,10 +35,17 @@ fn main() -> anyhow::Result<()> {
             return Ok(std::path::PathBuf::new());
         }
         match &pending.folder {
-            Some(f) => out(format!(
-                "OFFER-FOLDER:{}:{}:{}",
-                f.dir_name, f.num_files, f.num_bytes
-            )),
+            Some(f) => {
+                out(format!(
+                    "OFFER-FOLDER:{}:{}:{}",
+                    f.dir_name, f.num_files, f.num_bytes
+                ));
+                // A loose bundle is still unpacked into a folder here: this
+                // harness has no receive folder to spread it over.
+                if let Some(loose) = f.loose {
+                    out(format!("OFFER-LOOSE:{}:{}", loose.files, loose.folders));
+                }
+            },
             None => out(format!("OFFER-FILE:{}:{}", pending.file_name, pending.file_size)),
         }
         let mut last_pct = 0u64;

@@ -54,7 +54,8 @@
     "receiving": "Receiving {{items}}…",
     "saved": "{{items}} saved to Downloads.",
     "savedIn": "{{items}} saved in {{folder}}.",
-    "savedSome": "Only {{saved}} of {{n}} items could be saved. Check the free space in your download folder."
+    "savedSome": "Only {{saved}} of {{n}} items could be saved. Check the free space in your download folder.",
+    "folderFallback": "The chosen download folder was not available, so everything was saved to Downloads."
   },
   "receive": {
     "title": "Receiving",

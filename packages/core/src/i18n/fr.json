@@ -54,7 +54,8 @@
     "receiving": "Réception de {{items}}…",
     "saved": "Enregistré dans Téléchargements : {{items}}.",
     "savedIn": "Enregistré dans {{folder}} : {{items}}.",
-    "savedSome": "Seuls {{saved}} éléments sur {{n}} ont pu être enregistrés. Vérifiez l'espace libre dans votre dossier de téléchargement."
+    "savedSome": "Seuls {{saved}} éléments sur {{n}} ont pu être enregistrés. Vérifiez l'espace libre dans votre dossier de téléchargement.",
+    "folderFallback": "Le dossier de téléchargement choisi n'était pas disponible, tout a donc été enregistré dans Téléchargements."
   },
   "receive": {
     "title": "Réception",
