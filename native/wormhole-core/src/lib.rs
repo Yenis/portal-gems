@@ -248,17 +248,99 @@ where
         .to_string_lossy()
         .into_owned();
 
+    send_staged_zip(
+        move |zip_path, abort| zip_folder_sync(&path, zip_path, abort),
+        &dir_name,
+        false,
+        code,
+        server,
+        on_code,
+        on_transit,
+        progress,
+        cancel,
+    )
+    .await
+}
+
+/// Send several files and folders as one transfer that the receiver accepts
+/// once.
+///
+/// The protocol has no offer for "several files", so the selection is zipped
+/// and sent under a `directory` offer carrying the loose marker: a receiver
+/// that knows it unpacks the items into its receive folder itself, and any
+/// other client saves a folder called `bundle_name`. Every path becomes a
+/// top-level entry - a folder goes in as a tree under its own name - and two
+/// items of the same name are told apart as `name (1).ext`.
+///
+/// One file or one folder should go through [`send_file`] / [`send_folder`]
+/// instead, so that it reaches other clients as exactly that; this is for a
+/// selection of two or more.
+pub async fn send_files<F, G, H>(
+    paths: &[PathBuf],
+    bundle_name: &str,
+    code: Option<&str>,
+    server: &ServerConfig,
+    on_code: F,
+    on_transit: G,
+    progress: H,
+    cancel: impl std::future::Future<Output = ()>,
+) -> Result<(), Error>
+where
+    F: FnOnce(String),
+    G: FnOnce(String),
+    H: FnMut(u64, u64) + 'static,
+{
+    ensure_crypto_provider();
+    let paths = paths.to_vec();
+    send_staged_zip(
+        move |zip_path, abort| zip_items_sync(&paths, zip_path, abort),
+        bundle_name,
+        true,
+        code,
+        server,
+        on_code,
+        on_transit,
+        progress,
+        cancel,
+    )
+    .await
+}
+
+/// The part [`send_folder`] and [`send_files`] share: run `build` to write the
+/// archive into a private temp workspace, send it under a directory offer,
+/// and clean the workspace up on every exit path. Nothing is offered - no
+/// code is even allocated - until the archive is complete.
+async fn send_staged_zip<B, F, G, H>(
+    build: B,
+    dir_name: &str,
+    loose: bool,
+    code: Option<&str>,
+    server: &ServerConfig,
+    on_code: F,
+    on_transit: G,
+    progress: H,
+    cancel: impl std::future::Future<Output = ()>,
+) -> Result<(), Error>
+where
+    B: FnOnce(&Path, &std::sync::atomic::AtomicBool) -> Result<FolderStats, Error>
+        + Send
+        + 'static,
+    F: FnOnce(String),
+    G: FnOnce(String),
+    H: FnMut(u64, u64) + 'static,
+{
     let work = async {
-        // Zip into a private temp workspace, cleaned up on every exit path.
         // If `cancel` fires mid-zip, dropping this future sets the abort flag
         // (via the guard) and the zipping thread bails at the next entry.
+        static WORKSPACES: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
         let work_dir = std::env::temp_dir().join(format!(
-            "pg-sendfolder-{}-{}",
+            "pg-sendfolder-{}-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .map(|d| d.subsec_nanos())
-                .unwrap_or(0)
+                .unwrap_or(0),
+            WORKSPACES.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
         ));
         std::fs::create_dir_all(&work_dir)?;
         let _workspace = RemoveDirOnDrop(work_dir.clone());
@@ -267,15 +349,16 @@ where
         let abort = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
         let _abort_guard = AbortOnDrop(abort.clone());
         let stats = {
-            let (src, dest) = (path.clone(), zip_path.clone());
-            blocking::unblock(move || zip_folder_sync(&src, &dest, &abort)).await?
+            let dest = zip_path.clone();
+            blocking::unblock(move || build(&dest, &abort)).await?
         };
 
         send_zip_inner(
             &zip_path,
-            &dir_name,
+            dir_name,
             stats.num_files,
             stats.num_bytes,
+            loose,
             code,
             server,
             on_code,
@@ -296,11 +379,15 @@ where
 /// (Android SAF): the app zips the tree into a real file first and passes the
 /// stats it counted while doing so. The zip must contain paths relative to the
 /// folder root (no top-level folder-name entry), matching the reference CLI.
+///
+/// `loose` marks the archive as a selection of loose files rather than one
+/// folder - see [`send_files`], whose archive the app builds itself here.
 pub async fn send_zip_as_folder<F, G, H>(
     zip_path: impl AsRef<Path>,
     dir_name: &str,
     num_files: u64,
     num_bytes: u64,
+    loose: bool,
     code: Option<&str>,
     server: &ServerConfig,
     on_code: F,
@@ -319,6 +406,7 @@ where
         dir_name,
         num_files,
         num_bytes,
+        loose,
         code,
         server,
         on_code,
@@ -332,13 +420,14 @@ where
     .await
 }
 
-/// Shared sending half of [`send_folder`] / [`send_zip_as_folder`]. Callers
-/// race this against their cancel future.
+/// Shared sending half of [`send_staged_zip`] / [`send_zip_as_folder`].
+/// Callers race this against their cancel future.
 async fn send_zip_inner<F, G, H>(
     zip_path: &Path,
     dir_name: &str,
     num_files: u64,
     num_bytes: u64,
+    loose: bool,
     code: Option<&str>,
     server: &ServerConfig,
     on_code: F,
@@ -361,6 +450,7 @@ where
         zip_size,
         num_bytes,
         num_files,
+        loose,
         Abilities::ALL,
         |info| on_transit(describe_transit(&info)),
         progress,
@@ -398,6 +488,12 @@ pub struct FolderOffer {
     pub num_files: u64,
     /// Total unpacked size in bytes, as claimed by the sender
     pub num_bytes: u64,
+    /// The sender offered a selection of loose files, not one folder: what
+    /// `accept` unpacks belongs directly in the receive folder, and `dir_name`
+    /// is only the name a client without this extension would have given it.
+    /// `accept` itself does the same either way - it returns the unpacked
+    /// directory - because moving things out of staging is the app's step.
+    pub loose: bool,
 }
 
 /// A file (or folder) offer that has been received but not yet accepted: the
@@ -461,6 +557,7 @@ pub async fn request_receive(
             dir_name: sanitize_dir_name(&d.dir_name),
             num_files: d.num_files,
             num_bytes: d.num_bytes,
+            loose: d.loose,
         });
         Ok(PendingReceive {
             file_name: sanitize_file_name(&request.file_name()),
@@ -700,78 +797,214 @@ pub struct FolderStats {
     pub num_bytes: u64,
 }
 
+/// A zip archive being written, with the running totals a directory offer
+/// reports. Shared by the two things that get zipped: one folder's contents,
+/// and a selection of loose items.
+struct ZipSink {
+    writer: zip::ZipWriter<std::io::BufWriter<std::fs::File>>,
+    stats: FolderStats,
+    buf: Vec<u8>,
+}
+
+impl ZipSink {
+    fn create(dest_zip: &Path) -> Result<Self, Error> {
+        let file = std::fs::File::create(dest_zip)?;
+        Ok(Self {
+            writer: zip::ZipWriter::new(std::io::BufWriter::new(file)),
+            stats: FolderStats {
+                num_files: 0,
+                num_bytes: 0,
+            },
+            buf: vec![0u8; 64 * 1024],
+        })
+    }
+
+    fn options() -> zip::write::SimpleFileOptions {
+        zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Deflated)
+    }
+
+    /// Directories are stored so that empty ones survive.
+    fn add_dir(&mut self, entry_name: &str) -> Result<(), Error> {
+        self.writer
+            .add_directory(format!("{entry_name}/"), Self::options())?;
+        Ok(())
+    }
+
+    fn add_file(&mut self, path: &Path, entry_name: &str, len: u64) -> Result<(), Error> {
+        use std::io::{Read, Write};
+        const ZIP64_THRESHOLD: u64 = 0xFFFF_FFFF;
+
+        let opts = if len >= ZIP64_THRESHOLD {
+            Self::options().large_file(true)
+        } else {
+            Self::options()
+        };
+        self.writer.start_file(entry_name, opts)?;
+        let mut src = std::fs::File::open(path)?;
+        loop {
+            let n = src.read(&mut self.buf)?;
+            if n == 0 {
+                break;
+            }
+            self.writer.write_all(&self.buf[..n])?;
+            self.stats.num_bytes += n as u64;
+        }
+        self.stats.num_files += 1;
+        Ok(())
+    }
+
+    /// Everything under `root`, with entry paths starting at `prefix` (empty
+    /// for the archive root). Depth-first with sorted entries, for a
+    /// deterministic archive. Symlinks are skipped: they cannot be
+    /// represented portably and could point outside the tree. Checks `abort`
+    /// between entries so a cancelled send stops promptly.
+    fn add_tree(
+        &mut self,
+        root: &Path,
+        prefix: &str,
+        abort: &std::sync::atomic::AtomicBool,
+    ) -> Result<(), Error> {
+        let mut stack: Vec<(PathBuf, String)> = vec![(root.to_path_buf(), prefix.to_string())];
+        while let Some((dir, rel)) = stack.pop() {
+            if abort.load(std::sync::atomic::Ordering::Relaxed) {
+                return Err(Error::Cancelled);
+            }
+            let mut entries: Vec<_> = std::fs::read_dir(&dir)?.collect::<Result<_, _>>()?;
+            entries.sort_by_key(|e| e.file_name());
+            for entry in entries {
+                if abort.load(std::sync::atomic::Ordering::Relaxed) {
+                    return Err(Error::Cancelled);
+                }
+                let name = entry.file_name().to_string_lossy().into_owned();
+                let entry_rel = if rel.is_empty() {
+                    name
+                } else {
+                    format!("{rel}/{name}")
+                };
+                let meta = std::fs::symlink_metadata(entry.path())?;
+                if meta.file_type().is_symlink() {
+                    continue;
+                }
+                if meta.is_dir() {
+                    self.add_dir(&entry_rel)?;
+                    stack.push((entry.path(), entry_rel));
+                } else if meta.is_file() {
+                    self.add_file(&entry.path(), &entry_rel, meta.len())?;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn finish(self) -> Result<FolderStats, Error> {
+        use std::io::Write;
+        self.writer.finish()?.flush()?;
+        Ok(self.stats)
+    }
+}
+
 /// Zip the contents of `src_dir` into `dest_zip` (deflate). Entry paths are
 /// relative to `src_dir` - no top-level folder-name component - matching what
-/// the reference CLI produces. Directories are stored so empty ones survive;
-/// symlinks are skipped (they cannot be represented portably and could point
-/// outside the tree). Checks `abort` between entries so a cancelled send
-/// stops promptly.
+/// the reference CLI produces.
 pub(crate) fn zip_folder_sync(
     src_dir: &Path,
     dest_zip: &Path,
     abort: &std::sync::atomic::AtomicBool,
 ) -> Result<FolderStats, Error> {
-    use std::io::{Read, Write};
-    use zip::{write::SimpleFileOptions, CompressionMethod, ZipWriter};
+    let mut sink = ZipSink::create(dest_zip)?;
+    sink.add_tree(src_dir, "", abort)?;
+    sink.finish()
+}
 
-    const ZIP64_THRESHOLD: u64 = 0xFFFF_FFFF;
-
-    let file = std::fs::File::create(dest_zip)?;
-    let mut writer = ZipWriter::new(std::io::BufWriter::new(file));
-    let base_opts = SimpleFileOptions::default().compression_method(CompressionMethod::Deflated);
-
-    let mut stats = FolderStats {
-        num_files: 0,
-        num_bytes: 0,
+/// Zip a selection of files and folders into `dest_zip`, each as a top-level
+/// entry under its own name; a folder goes in as a tree. This is the archive
+/// of a loose bundle - see [`send_files`].
+///
+/// Items come from anywhere, so two can share a name; the later one is
+/// renamed (see [`unique_entry_name`]). A symlink in the selection is
+/// skipped, as one inside a folder is. A selection that leaves nothing to
+/// send is an error rather than an empty transfer, and a path that cannot be
+/// read fails the whole bundle: sending "most of" what was picked would be
+/// worse than sending none of it.
+pub(crate) fn zip_items_sync(
+    items: &[PathBuf],
+    dest_zip: &Path,
+    abort: &std::sync::atomic::AtomicBool,
+) -> Result<FolderStats, Error> {
+    let nothing_to_send = || {
+        Error::Io(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "nothing to send",
+        ))
     };
-    // Depth-first walk with sorted entries for a deterministic archive.
-    let mut stack: Vec<(PathBuf, String)> = vec![(src_dir.to_path_buf(), String::new())];
-    let mut buf = vec![0u8; 64 * 1024];
-    while let Some((dir, rel)) = stack.pop() {
+
+    let mut sink = ZipSink::create(dest_zip)?;
+    let mut taken = std::collections::HashSet::new();
+    let mut added = 0u32;
+    for item in items {
         if abort.load(std::sync::atomic::Ordering::Relaxed) {
             return Err(Error::Cancelled);
         }
-        let mut entries: Vec<_> = std::fs::read_dir(&dir)?.collect::<Result<_, _>>()?;
-        entries.sort_by_key(|e| e.file_name());
-        for entry in entries {
-            if abort.load(std::sync::atomic::Ordering::Relaxed) {
-                return Err(Error::Cancelled);
-            }
-            let name = entry.file_name().to_string_lossy().into_owned();
-            let entry_rel = if rel.is_empty() {
-                name
-            } else {
-                format!("{rel}/{name}")
-            };
-            let meta = std::fs::symlink_metadata(entry.path())?;
-            if meta.file_type().is_symlink() {
-                continue;
-            }
-            if meta.is_dir() {
-                writer.add_directory(format!("{entry_rel}/"), base_opts)?;
-                stack.push((entry.path(), entry_rel));
-            } else if meta.is_file() {
-                let opts = if meta.len() >= ZIP64_THRESHOLD {
-                    base_opts.large_file(true)
-                } else {
-                    base_opts
-                };
-                writer.start_file(&entry_rel, opts)?;
-                let mut src = std::fs::File::open(entry.path())?;
-                loop {
-                    let n = src.read(&mut buf)?;
-                    if n == 0 {
-                        break;
-                    }
-                    writer.write_all(&buf[..n])?;
-                    stats.num_bytes += n as u64;
-                }
-                stats.num_files += 1;
-            }
+        let meta = std::fs::symlink_metadata(item)?;
+        if meta.file_type().is_symlink() {
+            continue;
         }
+        // `file_name` is None for `/` and for paths ending in `..`; neither is
+        // something a picker hands over, and neither has a name to send under.
+        let Some(name) = item.file_name().map(|n| n.to_string_lossy().into_owned()) else {
+            return Err(Error::Io(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!("path has no name: {}", item.display()),
+            )));
+        };
+        if meta.is_dir() {
+            let entry_name = unique_entry_name(&mut taken, &name, true);
+            sink.add_dir(&entry_name)?;
+            sink.add_tree(item, &entry_name, abort)?;
+        } else if meta.is_file() {
+            let entry_name = unique_entry_name(&mut taken, &name, false);
+            sink.add_file(item, &entry_name, meta.len())?;
+        } else {
+            continue; // a socket, a device: nothing that can be sent
+        }
+        added += 1;
     }
-    writer.finish()?.flush()?;
-    Ok(stats)
+    if added == 0 {
+        return Err(nothing_to_send());
+    }
+    sink.finish()
+}
+
+/// A top-level name for a bundle entry that no earlier entry has: `name`
+/// itself, else `name (1).ext`, `name (2).ext`... - or `name (1)` for a
+/// folder, whose dots are not an extension. The same shapes `create_unique`
+/// and `create_unique_dir` give a file on disk.
+///
+/// Names are compared without regard to case. `Photo.JPG` and `photo.jpg`
+/// are two files where they were picked, but the receiver may well be a
+/// Windows disk or a memory card where they are one.
+pub(crate) fn unique_entry_name(
+    taken: &mut std::collections::HashSet<String>,
+    name: &str,
+    is_dir: bool,
+) -> String {
+    let (stem, ext) = match name.rsplit_once('.') {
+        Some((s, e)) if !is_dir && !s.is_empty() => (s, format!(".{e}")),
+        _ => (name, String::new()),
+    };
+    let mut n = 0u32;
+    loop {
+        let candidate = if n == 0 {
+            name.to_string()
+        } else {
+            format!("{stem} ({n}){ext}")
+        };
+        if taken.insert(candidate.to_lowercase()) {
+            return candidate;
+        }
+        n += 1;
+    }
 }
 
 /// Unpack a received folder archive into `dest` (which must already exist).
@@ -956,6 +1189,304 @@ mod tests {
         let zip = root.join("out.zip");
         let stats = zip_folder_sync(&src, &zip, &no_abort()).unwrap();
         assert_eq!(stats.num_files, 1);
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    /// A fresh scratch directory for one test.
+    fn scratch(tag: &str) -> PathBuf {
+        let root = std::env::temp_dir().join(format!("pg-{tag}-{}", std::process::id()));
+        std::fs::remove_dir_all(&root).ok();
+        std::fs::create_dir_all(&root).unwrap();
+        root
+    }
+
+    /// Entry names of an archive, sorted, directories with their slash.
+    fn entry_names(zip_path: &Path) -> Vec<String> {
+        let mut archive = zip::ZipArchive::new(std::fs::File::open(zip_path).unwrap()).unwrap();
+        let mut names: Vec<String> = (0..archive.len())
+            .map(|i| archive.by_index(i).unwrap().name().to_string())
+            .collect();
+        names.sort();
+        names
+    }
+
+    /// Build a bundle from `items` and unpack it the way a receiver does.
+    fn bundle_roundtrip(root: &Path, items: &[PathBuf]) -> (FolderStats, PathBuf) {
+        let zip = root.join("bundle.zip");
+        let stats = zip_items_sync(items, &zip, &no_abort()).unwrap();
+        let out = root.join("out");
+        std::fs::create_dir_all(&out).unwrap();
+        unzip_into_sync(&zip, &out, unpack_cap(stats.num_bytes)).unwrap();
+        (stats, out)
+    }
+
+    #[test]
+    fn bundle_puts_each_file_at_the_top_level() {
+        let root = scratch("bundle-flat");
+        let a = root.join("from/here/a.txt");
+        let b = root.join("from/there/b.bin");
+        let c = root.join("elsewhere/c");
+        write(&a, b"alpha");
+        write(&b, &[9u8; 70_000]); // spans several copy buffers
+        write(&c, b"");
+
+        let (stats, out) = bundle_roundtrip(&root, &[a, b, c]);
+        assert_eq!(stats.num_files, 3);
+        assert_eq!(stats.num_bytes, 5 + 70_000);
+        assert_eq!(
+            entry_names(&root.join("bundle.zip")),
+            ["a.txt", "b.bin", "c"]
+        );
+        assert_eq!(std::fs::read(out.join("a.txt")).unwrap(), b"alpha");
+        assert_eq!(std::fs::read(out.join("b.bin")).unwrap(), [9u8; 70_000]);
+        assert_eq!(std::fs::read(out.join("c")).unwrap(), b"");
+        // Nothing of where the files came from survives.
+        assert!(!out.join("from").exists());
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn bundle_takes_a_folder_as_a_tree_beside_the_files() {
+        let root = scratch("bundle-mixed");
+        let file = root.join("pick/notes.txt");
+        let folder = root.join("pick/album");
+        write(&file, b"notes");
+        write(&folder.join("one.jpg"), b"1");
+        write(&folder.join("deep/er/two.jpg"), b"22");
+        std::fs::create_dir_all(folder.join("empty")).unwrap();
+
+        let (stats, out) = bundle_roundtrip(&root, &[file, folder]);
+        // Files inside the folder count; the folders themselves do not.
+        assert_eq!(stats.num_files, 3);
+        assert_eq!(stats.num_bytes, 5 + 1 + 2);
+        assert_eq!(std::fs::read(out.join("notes.txt")).unwrap(), b"notes");
+        assert_eq!(std::fs::read(out.join("album/one.jpg")).unwrap(), b"1");
+        assert_eq!(
+            std::fs::read(out.join("album/deep/er/two.jpg")).unwrap(),
+            b"22"
+        );
+        assert!(out.join("album/empty").is_dir());
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn bundle_of_only_an_empty_folder_still_carries_it() {
+        let root = scratch("bundle-emptydir");
+        let a = root.join("pick/hollow");
+        let b = root.join("pick/also-hollow");
+        std::fs::create_dir_all(&a).unwrap();
+        std::fs::create_dir_all(&b).unwrap();
+
+        let (stats, out) = bundle_roundtrip(&root, &[a, b]);
+        assert_eq!(stats.num_files, 0);
+        assert_eq!(stats.num_bytes, 0);
+        assert!(out.join("hollow").is_dir());
+        assert!(out.join("also-hollow").is_dir());
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn bundle_keeps_same_name_files_apart() {
+        let root = scratch("bundle-clash");
+        let one = root.join("camera/IMG_0001.jpg");
+        let two = root.join("screenshots/IMG_0001.jpg");
+        let three = root.join("downloads/IMG_0001.jpg");
+        write(&one, b"camera");
+        write(&two, b"screenshot");
+        write(&three, b"download");
+
+        let (stats, out) = bundle_roundtrip(&root, &[one, two, three]);
+        assert_eq!(stats.num_files, 3);
+        // In the order they were picked: the first keeps its name.
+        assert_eq!(std::fs::read(out.join("IMG_0001.jpg")).unwrap(), b"camera");
+        assert_eq!(
+            std::fs::read(out.join("IMG_0001 (1).jpg")).unwrap(),
+            b"screenshot"
+        );
+        assert_eq!(
+            std::fs::read(out.join("IMG_0001 (2).jpg")).unwrap(),
+            b"download"
+        );
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn bundle_keeps_a_file_and_a_folder_of_one_name_apart() {
+        let root = scratch("bundle-clash-kinds");
+        let file = root.join("a/report");
+        let folder = root.join("b/report");
+        write(&file, b"a file called report");
+        write(&folder.join("inside.txt"), b"in the folder");
+
+        let (_, out) = bundle_roundtrip(&root, &[file, folder]);
+        assert_eq!(
+            std::fs::read(out.join("report")).unwrap(),
+            b"a file called report"
+        );
+        assert_eq!(
+            std::fs::read(out.join("report (1)/inside.txt")).unwrap(),
+            b"in the folder"
+        );
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn bundle_names_that_differ_only_in_case_are_a_clash() {
+        let root = scratch("bundle-clash-case");
+        let lower = root.join("a/photo.jpg");
+        let upper = root.join("b/Photo.JPG");
+        write(&lower, b"lower");
+        write(&upper, b"upper");
+
+        let zip = root.join("bundle.zip");
+        zip_items_sync(&[lower, upper], &zip, &no_abort()).unwrap();
+        assert_eq!(entry_names(&zip), ["Photo (1).JPG", "photo.jpg"]);
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn unique_entry_name_shapes() {
+        let mut taken = std::collections::HashSet::new();
+        let mut name = |n: &str, is_dir: bool| unique_entry_name(&mut taken, n, is_dir);
+
+        assert_eq!(name("a.txt", false), "a.txt");
+        assert_eq!(name("a.txt", false), "a (1).txt");
+        assert_eq!(name("a.txt", false), "a (2).txt");
+        // A picked file that is itself called "a (1).txt" does not collide
+        // silently with the one that was renamed to it.
+        assert_eq!(name("a (1).txt", false), "a (1) (1).txt");
+
+        // No extension, and a dot-file whose whole name is its "extension".
+        assert_eq!(name("noext", false), "noext");
+        assert_eq!(name("noext", false), "noext (1)");
+        assert_eq!(name(".hidden", false), ".hidden");
+        assert_eq!(name(".hidden", false), ".hidden (1)");
+
+        // Only the last dot is an extension.
+        assert_eq!(name("b.tar.gz", false), "b.tar.gz");
+        assert_eq!(name("b.tar.gz", false), "b.tar (1).gz");
+
+        // A folder's dots are part of its name.
+        assert_eq!(name("my.stuff", true), "my.stuff");
+        assert_eq!(name("my.stuff", true), "my.stuff (1)");
+    }
+
+    /// The bundle's renaming and the receiver's on-disk renaming must agree,
+    /// or the same clash would read differently depending on which side
+    /// happened to resolve it.
+    #[test]
+    fn unique_entry_name_matches_what_create_unique_does_on_disk() {
+        futures_lite::future::block_on(async {
+            let dir = scratch("bundle-naming-agrees");
+            let mut taken = std::collections::HashSet::new();
+            for name in ["a.txt", "a.txt", "a.txt", "noext", "noext", "b.tar.gz", "b.tar.gz"] {
+                let (on_disk, _) = create_unique(&dir, name).await.unwrap();
+                assert_eq!(
+                    on_disk.file_name().unwrap().to_string_lossy(),
+                    unique_entry_name(&mut taken, name, false)
+                );
+            }
+            for name in ["photos", "photos", "my.stuff", "my.stuff"] {
+                let on_disk = create_unique_dir(&dir, name).await.unwrap();
+                assert_eq!(
+                    on_disk.file_name().unwrap().to_string_lossy(),
+                    unique_entry_name(&mut taken, name, true)
+                );
+            }
+            std::fs::remove_dir_all(&dir).ok();
+        });
+    }
+
+    #[test]
+    fn bundle_refuses_an_empty_selection() {
+        let root = scratch("bundle-empty");
+        let zip = root.join("bundle.zip");
+        let err = zip_items_sync(&[], &zip, &no_abort()).unwrap_err();
+        assert!(matches!(err, Error::Io(_)), "got: {err}");
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    /// A file that was there when it was picked and is gone when it is read:
+    /// the bundle fails as a whole instead of going out one file short.
+    #[test]
+    fn bundle_fails_when_a_picked_path_is_gone() {
+        let root = scratch("bundle-gone");
+        let here = root.join("here.txt");
+        write(&here, b"present");
+        let gone = root.join("gone.txt");
+
+        let zip = root.join("bundle.zip");
+        let err = zip_items_sync(&[here, gone], &zip, &no_abort()).unwrap_err();
+        assert!(matches!(err, Error::Io(_)), "got: {err}");
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn bundle_skips_symlinks_and_refuses_a_selection_of_nothing_else() {
+        let root = scratch("bundle-sym");
+        let real = root.join("real.txt");
+        write(&real, b"data");
+        let link = root.join("link");
+        std::os::unix::fs::symlink("/etc/passwd", &link).unwrap();
+        // A symlink inside a picked folder is skipped as well.
+        let folder = root.join("folder");
+        write(&folder.join("kept.txt"), b"kept");
+        std::os::unix::fs::symlink("/etc/passwd", folder.join("inner-link")).unwrap();
+
+        let zip = root.join("bundle.zip");
+        let stats =
+            zip_items_sync(&[real, link.clone(), folder], &zip, &no_abort()).unwrap();
+        assert_eq!(stats.num_files, 2);
+        assert_eq!(entry_names(&zip), ["folder/", "folder/kept.txt", "real.txt"]);
+
+        let err = zip_items_sync(&[link], &zip, &no_abort()).unwrap_err();
+        assert!(matches!(err, Error::Io(_)), "got: {err}");
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn bundle_stops_when_aborted() {
+        let root = scratch("bundle-abort");
+        let a = root.join("a.txt");
+        write(&a, b"a");
+        let aborted = std::sync::atomic::AtomicBool::new(true);
+        let err = zip_items_sync(&[a], &root.join("bundle.zip"), &aborted).unwrap_err();
+        assert!(matches!(err, Error::Cancelled), "got: {err}");
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    /// A bundle is unpacked by the same code as a folder, so the same two
+    /// guards stand: a sender cannot claim five small files and deliver a
+    /// disk-filler, and cannot write outside the staging directory.
+    #[test]
+    fn bundle_unpack_is_capped_like_a_folder() {
+        let root = scratch("bundle-cap");
+        let big = root.join("big.bin");
+        let small = root.join("small.txt");
+        write(&big, &vec![0u8; 1_000_000]);
+        write(&small, b"x");
+
+        let zip = root.join("bundle.zip");
+        zip_items_sync(&[small, big], &zip, &no_abort()).unwrap();
+        let out = root.join("out");
+        std::fs::create_dir_all(&out).unwrap();
+        // The offer claimed far less than the archive holds.
+        let err = unzip_into_sync(&zip, &out, 1024).unwrap_err();
+        assert!(matches!(err, Error::Archive(_)), "got: {err}");
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    /// The folder archive is what it always was: this refactor moved its
+    /// writer, and a real "Send folder" must not have changed shape with it.
+    #[test]
+    fn folder_archive_has_no_top_level_folder_entry() {
+        let root = scratch("zip-shape");
+        let src = root.join("my-folder");
+        write(&src.join("a.txt"), b"a");
+        write(&src.join("sub/b.txt"), b"b");
+        let zip = root.join("out.zip");
+        zip_folder_sync(&src, &zip, &no_abort()).unwrap();
+        assert_eq!(entry_names(&zip), ["a.txt", "sub/", "sub/b.txt"]);
         std::fs::remove_dir_all(&root).ok();
     }
 
@@ -1168,6 +1699,9 @@ mod tests {
             .await
             .unwrap();
             let offer = pending_receive.folder.clone().expect("folder offer");
+            // A real folder carries no loose marker: it must arrive as a
+            // folder, here and in every other client.
+            assert!(!offer.loose);
             assert_eq!(offer.dir_name, "shared-folder");
             assert_eq!(offer.num_files, 2);
             assert_eq!(offer.num_bytes, 10 + 32 * 1024);
@@ -1194,6 +1728,279 @@ mod tests {
             assert!(!recv_dir.join("shared-folder.zip").exists());
             std::fs::remove_dir_all(&dir).ok();
         });
+    }
+
+    /// A code no other run of these tests will be using.
+    fn test_code(tag: &str) -> String {
+        format!(
+            "9{}-{tag}-integration-test",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .subsec_nanos()
+                % 1_000_000
+        )
+    }
+
+    /// Bytes that do not compress, so an archive of them is as large as they
+    /// are and a transfer of it lasts long enough to be interrupted.
+    fn noise(len: usize, seed: u32) -> Vec<u8> {
+        let mut state = seed | 1;
+        (0..len)
+            .map(|_| {
+                state ^= state << 13;
+                state ^= state >> 17;
+                state ^= state << 5;
+                (state >> 8) as u8
+            })
+            .collect()
+    }
+
+    /// Several files and a folder in one transfer (a loose bundle) against
+    /// the mailbox server; run with `cargo test -- --ignored` when online.
+    #[test]
+    #[ignore]
+    fn files_roundtrip_over_public_server() {
+        futures_lite::future::block_on(async {
+            let dir = scratch("files-rt");
+            let one = dir.join("camera/IMG_0001.jpg");
+            let two = dir.join("screenshots/IMG_0001.jpg");
+            let album = dir.join("pick/album");
+            let one_bytes = noise(48 * 1024, 1);
+            write(&one, &one_bytes);
+            write(&two, b"second of that name");
+            write(&album.join("nested/three.bin"), &[3u8; 1024]);
+            std::fs::create_dir_all(album.join("hollow")).unwrap();
+            let recv_dir = dir.join("recv");
+            std::fs::create_dir_all(&recv_dir).unwrap();
+
+            let code = test_code("files");
+            let send_code = code.clone();
+            let items = vec![one, two, album];
+            let sender = std::thread::spawn(move || {
+                futures_lite::future::block_on(send_files(
+                    &items,
+                    "3 files - 2026-10-10 14.32",
+                    Some(&send_code),
+                    &test_server(),
+                    |_| {},
+                    |_| {},
+                    |_, _| {},
+                    pending::<()>(),
+                ))
+            });
+            std::thread::sleep(std::time::Duration::from_secs(2));
+
+            let pending_receive = request_receive(&code, &test_server(), pending::<()>())
+                .await
+                .unwrap();
+            let offer = pending_receive.folder.clone().expect("a directory offer");
+            assert!(offer.loose, "the loose marker did not survive the wire");
+            assert_eq!(offer.dir_name, "3 files - 2026-10-10 14.32");
+            assert_eq!(offer.num_files, 3);
+            assert_eq!(offer.num_bytes, 48 * 1024 + 19 + 1024);
+
+            let staged = pending_receive
+                .accept(&recv_dir, |_| {}, |_, _| {}, pending::<()>())
+                .await
+                .unwrap();
+            sender.join().unwrap().unwrap();
+
+            // `accept` hands back the unpacked directory; its children are
+            // what the app moves into the receive folder.
+            assert_eq!(std::fs::read(staged.join("IMG_0001.jpg")).unwrap(), one_bytes);
+            assert_eq!(
+                std::fs::read(staged.join("IMG_0001 (1).jpg")).unwrap(),
+                b"second of that name"
+            );
+            assert_eq!(
+                std::fs::read(staged.join("album/nested/three.bin")).unwrap(),
+                [3u8; 1024]
+            );
+            assert!(staged.join("album/hollow").is_dir());
+            // Only the unpacked directory is left: the staged zip is gone.
+            let left: Vec<_> = std::fs::read_dir(&recv_dir)
+                .unwrap()
+                .map(|e| e.unwrap().path())
+                .collect();
+            assert_eq!(left, [staged.clone()]);
+            std::fs::remove_dir_all(&dir).ok();
+        });
+    }
+
+    /// A bundle built by the app itself (the Android path) carries the marker
+    /// only when asked to: the same archive sent without it is a folder.
+    ///
+    /// Run with `cargo test -- --ignored` when online.
+    #[test]
+    #[ignore]
+    fn app_staged_zip_is_loose_only_when_marked() {
+        futures_lite::future::block_on(async {
+            let dir = scratch("staged-zip");
+            let a = dir.join("a.txt");
+            let b = dir.join("b.txt");
+            write(&a, b"a");
+            write(&b, b"bb");
+            let zip = dir.join("staged.zip");
+            let stats = zip_items_sync(&[a, b], &zip, &no_abort()).unwrap();
+
+            for loose in [true, false] {
+                let code = test_code(if loose { "marked" } else { "unmarked" });
+                let (send_code, zip_path) = (code.clone(), zip.clone());
+                let sender = std::thread::spawn(move || {
+                    futures_lite::future::block_on(send_zip_as_folder(
+                        &zip_path,
+                        "2 files",
+                        stats.num_files,
+                        stats.num_bytes,
+                        loose,
+                        Some(&send_code),
+                        &test_server(),
+                        |_| {},
+                        |_| {},
+                        |_, _| {},
+                        pending::<()>(),
+                    ))
+                });
+                std::thread::sleep(std::time::Duration::from_secs(2));
+
+                let pending_receive = request_receive(&code, &test_server(), pending::<()>())
+                    .await
+                    .unwrap();
+                let offer = pending_receive.folder.clone().expect("a directory offer");
+                assert_eq!(offer.loose, loose);
+                assert_eq!(offer.num_files, 2);
+                pending_receive.reject().await.unwrap();
+                // The sender sees the rejection as a failed transfer.
+                assert!(sender.join().unwrap().is_err());
+            }
+            std::fs::remove_dir_all(&dir).ok();
+        });
+    }
+
+    /// A bundle cancelled mid-transfer leaves nothing in the staging
+    /// directory - no partial archive and no half-unpacked files - so "all or
+    /// nothing" holds: the receiver never ends up with some of the files.
+    ///
+    /// Run with `cargo test -- --ignored` when online.
+    #[test]
+    #[ignore]
+    fn cancelled_bundle_leaves_nothing_staged() {
+        use std::sync::atomic::{AtomicBool, Ordering};
+        use std::sync::Arc;
+
+        futures_lite::future::block_on(async {
+            let dir = scratch("files-cancel");
+            // Incompressible, so the archive is still in flight when the
+            // first progress callback arrives.
+            let a = dir.join("src/a.bin");
+            let b = dir.join("src/b.bin");
+            write(&a, &noise(16 * 1024 * 1024, 7));
+            write(&b, &noise(16 * 1024 * 1024, 11));
+            let recv_dir = dir.join("recv");
+            std::fs::create_dir_all(&recv_dir).unwrap();
+
+            let code = test_code("files-cancel");
+            let send_code = code.clone();
+            let items = vec![a, b];
+            let sender = std::thread::spawn(move || {
+                futures_lite::future::block_on(send_files(
+                    &items,
+                    "2 files",
+                    Some(&send_code),
+                    &test_server(),
+                    |_| {},
+                    |_| {},
+                    |_, _| {},
+                    pending::<()>(),
+                ))
+            });
+            std::thread::sleep(std::time::Duration::from_secs(4));
+
+            let pending_receive = request_receive(&code, &test_server(), pending::<()>())
+                .await
+                .unwrap();
+            let started = Arc::new(AtomicBool::new(false));
+            let flag = started.clone();
+            let accepting = pending_receive.accept(
+                &recv_dir,
+                |_| {},
+                move |done, _| {
+                    if done > 0 {
+                        flag.store(true, Ordering::SeqCst);
+                    }
+                },
+                pending::<()>(),
+            );
+            let finished = futures_lite::future::or(
+                async { Some(accepting.await) },
+                async {
+                    while !started.load(Ordering::SeqCst) {
+                        async_io::Timer::after(std::time::Duration::from_millis(5)).await;
+                    }
+                    None
+                },
+            )
+            .await;
+            assert!(
+                finished.is_none(),
+                "the transfer finished before it could be cancelled - send bigger files"
+            );
+
+            let staged: Vec<_> = std::fs::read_dir(&recv_dir)
+                .unwrap()
+                .map(|e| e.unwrap().file_name())
+                .collect();
+            assert!(staged.is_empty(), "left behind: {staged:?}");
+            // The sender is left to notice the dropped connection by itself.
+            drop(sender);
+            std::fs::remove_dir_all(&dir).ok();
+        });
+    }
+
+    /// The sender's workspace - the staged archive of a bundle - is removed
+    /// when the send is cancelled before anybody joins.
+    #[test]
+    fn cancelled_bundle_send_removes_its_workspace() {
+        futures_lite::future::block_on(async {
+            let dir = scratch("files-send-cancel");
+            let a = dir.join("a.txt");
+            let b = dir.join("b.txt");
+            write(&a, b"a");
+            write(&b, b"b");
+
+            let before = sender_workspaces();
+            let result = send_files(
+                &[a, b],
+                "2 files",
+                None,
+                &ServerConfig::default(),
+                |_| {},
+                |_| {},
+                |_, _| {},
+                // Cancelled at once: the send never reaches the network.
+                async {},
+            )
+            .await;
+            assert!(matches!(result, Err(Error::Cancelled)), "got: {result:?}");
+            // The zipping thread is detached; give it a moment to see the
+            // abort flag before looking.
+            std::thread::sleep(std::time::Duration::from_millis(200));
+            assert_eq!(sender_workspaces(), before);
+            std::fs::remove_dir_all(&dir).ok();
+        });
+    }
+
+    /// This process's sender workspaces currently in the temp directory.
+    fn sender_workspaces() -> Vec<std::ffi::OsString> {
+        let prefix = format!("pg-sendfolder-{}-", std::process::id());
+        let mut found: Vec<_> = std::fs::read_dir(std::env::temp_dir())
+            .unwrap()
+            .filter_map(|e| e.ok().map(|e| e.file_name()))
+            .filter(|n| n.to_string_lossy().starts_with(&prefix))
+            .collect();
+        found.sort();
+        found
     }
 
     /// Where the network tests below meet: the public server by default, or a

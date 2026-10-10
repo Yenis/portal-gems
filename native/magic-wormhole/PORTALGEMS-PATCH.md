@@ -115,6 +115,44 @@ panic crossing the FFI is a far worse outcome, and on Android worse still.
 
 Observed as `Panic in async function` through the napi addon before the fix.
 
+## The fourth patch: the loose marker on a directory offer
+
+PortalGems sends several files in one transfer by zipping them and offering
+the archive as a `directory` - the only container protocol v1 has. To tell a
+receiver that the archive is a selection of loose files and not one folder,
+the offer carries one extra member:
+
+    {"offer":{"directory":{"dirname":...,"mode":"zipfile/deflated",
+        "zipsize":...,"numbytes":...,"numfiles":...,
+        "portalgems":{"loose":true}}}}
+
+A receiver that does not know it ignores it and saves a folder called
+`dirname`: the Python client reads the five standard members by name, and
+this crate's `OfferMessage` has never denied unknown fields. The design and
+its reasoning are in `docs/MULTI-FILE-DESIGN.md`.
+
+`src/transfer/v1.rs`:
+
+- `OfferMessage::Directory` gains `portalgems: Option<serde_json::Value>`,
+  defaulted on read and omitted on write when `None`, so an unmarked offer
+  serialises byte for byte as before. It is a raw value on purpose: a
+  malformed or newer extension must never make an otherwise valid directory
+  offer fail to parse.
+- New `loose_marker()` and `directory_is_loose()`: the one place that writes
+  the member and the one place that reads it. Only an object with
+  `"loose": true` counts.
+- `send_zipped_directory` takes `loose: bool`; `DirectoryOfferInfo` gains
+  `loose: bool`.
+
+`src/transfer.rs`:
+
+- `offer_directory_v1` and the public `send_zipped_directory` take `loose`.
+- Tests: the marked offer pinned byte for byte
+  (`test_offer_directory_loose`), every shape the member can arrive in
+  (`test_offer_directory_loose_parsing`), and the pre-extension enum parsing
+  a marked offer (`test_offer_directory_loose_is_ignored_by_old_receivers`) -
+  the proof that an old receiver degrades to a folder instead of failing.
+
 ## Upgrading
 
 To move to a newer upstream release: re-vendor the new version and re-apply

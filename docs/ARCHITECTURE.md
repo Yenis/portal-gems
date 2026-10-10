@@ -53,11 +53,21 @@ cancel must cover more than the transfer phase):
 - `send_folder(path, ...)` - zips the tree into a temp workspace (deflate,
   entries relative to the folder root, empty dirs kept, symlinks skipped,
   cancellable via an abort flag) and sends it as a directory offer.
-- `send_zip_as_folder(zip_path, dir_name, num_files, num_bytes, ...)` - sends
-  an app-staged zip as a directory offer; the Android path (Kotlin zips the
-  SAF tree, Rust can't read `content://`).
+- `send_files(paths, bundle_name, ...)` - several files and folders in one
+  transfer. Zips the selection (each path a top-level entry, a folder as a
+  tree, same-name items told apart as `name (1).ext`, compared without
+  regard to case) and sends it as a directory offer carrying the loose
+  marker `"portalgems":{"loose":true}`. For two or more items only: one file
+  or one folder goes through `send_file`/`send_folder` so it reaches other
+  clients as exactly that. Design: `docs/MULTI-FILE-DESIGN.md`.
+- `send_zip_as_folder(zip_path, dir_name, num_files, num_bytes, loose, ...)`
+  - sends an app-staged zip as a directory offer; the Android path (Kotlin
+  zips the SAF tree, Rust can't read `content://`). `loose` adds the marker.
 - `request_receive(code, cancel) -> PendingReceive { file_name, file_size,
-  folder: Option<FolderOffer{dir_name, num_files, num_bytes}> }`
+  folder: Option<FolderOffer{dir_name, num_files, num_bytes, loose}> }`
+  - `loose` says the sender offered a selection of files, not one folder.
+  `accept` does the same either way and returns the unpacked directory; the
+  app moves its children into the receive folder instead of the directory.
   - connects and waits for the offer WITHOUT accepting: powers confirmation
   UIs. For directory offers `file_name`/`file_size` describe the zip transfer
   (`<dirname>.zip`) and `folder` carries what the UI should show.

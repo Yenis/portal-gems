@@ -91,6 +91,9 @@ pub async fn send_zip_as_folder(
         &dir_name,
         num_files,
         num_bytes,
+        // Not exposed here yet: this signature is what the generated React
+        // Native bindings were built from, and it changes together with them.
+        false,
         code.as_deref(),
         &server,
         move |code| code_listener.on_code(code),

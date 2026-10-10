@@ -22,9 +22,31 @@ pub enum OfferMessage {
         zipsize: u64,
         numbytes: u64,
         numfiles: u64,
+        /// PortalGems extension, absent from the standard offer. Kept as a
+        /// raw value on purpose: an offer whose extension is malformed, or
+        /// from a later version, is still an ordinary directory offer and
+        /// must not fail to parse. Read it through [`directory_is_loose`].
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        portalgems: Option<serde_json::Value>,
     },
     #[serde(other)]
     Unknown,
+}
+
+/// The `portalgems` member of a directory offer that marks its contents as
+/// loose files: unpack them into the receive folder itself, not into a
+/// folder named after the offer.
+pub(crate) fn loose_marker() -> serde_json::Value {
+    serde_json::json!({ "loose": true })
+}
+
+/// Whether a directory offer's `portalgems` member carries the loose marker.
+/// Anything other than an object with `"loose": true` is not one.
+pub(crate) fn directory_is_loose(portalgems: Option<&serde_json::Value>) -> bool {
+    portalgems
+        .and_then(|ext| ext.get("loose"))
+        .and_then(serde_json::Value::as_bool)
+        .unwrap_or(false)
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -177,6 +199,7 @@ pub(crate) async fn send_zipped_directory<F, G, H>(
     zip_size: u64,
     num_bytes: u64,
     num_files: u64,
+    loose: bool,
     transit_abilities: transit::Abilities,
     transit_handler: G,
     progress_handler: H,
@@ -195,6 +218,7 @@ where
         zip_size,
         num_bytes,
         num_files,
+        loose,
     );
     send_blob(
         wormhole,
@@ -542,6 +566,10 @@ pub struct DirectoryOfferInfo {
     pub num_files: u64,
     /// Total unpacked size in bytes, as claimed by the sender
     pub num_bytes: u64,
+    /// The sender marked the contents as loose files (the PortalGems
+    /// extension): they belong directly in the receive folder, and `dir_name`
+    /// is only what a receiver without the extension would call the folder.
+    pub loose: bool,
 }
 
 /// What the peer offered.
@@ -628,6 +656,7 @@ pub async fn request(
                         zipsize,
                         numbytes,
                         numfiles,
+                        portalgems,
                     } => {
                         ensure!(mode == "zipfile/deflated", TransferError::UnsupportedOffer);
                         /* Keep the historic `<dirname>.zip` name so callers that
@@ -637,6 +666,7 @@ pub async fn request(
                             dir_name: dirname,
                             num_files: numfiles,
                             num_bytes: numbytes,
+                            loose: v1::directory_is_loose(portalgems.as_ref()),
                         };
                         (filename, zipsize, Some(directory))
                     },

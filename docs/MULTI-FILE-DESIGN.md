@@ -160,7 +160,7 @@ Per platform:
 
 ## 6. Engine and binding changes
 
-- `native/magic-wormhole` (third patch, documented in `PORTALGEMS-PATCH.md`):
+- `native/magic-wormhole` (fourth patch, documented in `PORTALGEMS-PATCH.md`):
   `send_zipped_directory` takes the marker; `DirectoryOfferInfo` reports it.
 - `native/wormhole-core`:
   - `send_files(paths, bundle_name, ...)` - zips a list of files and folders
@@ -297,9 +297,16 @@ cannot receive:
 8. Android share sheet.
 9. Guide, README, CHANGELOG, ARCHITECTURE.md, SYMBIAN.md.
 
-## 11. Still to decide
+## 11. Decided after the first draft
 
-- The marker's name. `portalgems.loose` is the proposal; it is the one thing
-  that cannot be renamed after release.
-- Whether the fallback name's word "files" follows the sender's language or
-  stays English, given that it is mostly read by other clients.
+- The marker is `portalgems.loose`. It is the one thing that cannot be
+  renamed after release.
+- The fallback name's word "files" follows the sender's language.
+
+## 12. Progress
+
+- Step 1 (vendored crate and `wormhole-core`) is built. `send_files` is
+  there; `send_zip_as_folder` and `FolderOffer` carry `loose` inside the
+  crate, but the UniFFI surface in `ffi.rs` does not expose it yet - that
+  changes in step 4 together with the regenerated bindings, so no commit in
+  between has bindings that disagree with the library.

@@ -289,6 +289,7 @@ impl PeerMessage {
         compressed_size: u64,
         numbytes: u64,
         numfiles: u64,
+        loose: bool,
     ) -> Self {
         PeerMessage::Offer(v1::OfferMessage::Directory {
             dirname: name.into(),
@@ -296,6 +297,7 @@ impl PeerMessage {
             zipsize: compressed_size,
             numbytes,
             numfiles,
+            portalgems: loose.then(v1::loose_marker),
         })
     }
 
@@ -515,6 +517,11 @@ where
 /// and unpacks them into a folder. The caller is responsible for producing the
 /// zip archive (and for its `num_bytes`/`num_files` bookkeeping).
 ///
+/// `loose` adds the PortalGems extension that tells a receiver the archive
+/// holds loose files for its receive folder rather than one folder; a
+/// receiver without the extension ignores it and unpacks a folder named
+/// `dir_name`.
+///
 /// You must ensure that the reader contains exactly as many bytes as
 /// advertised in `zip_size`.
 pub async fn send_zipped_directory<F, N, G, H>(
@@ -525,6 +532,7 @@ pub async fn send_zipped_directory<F, N, G, H>(
     zip_size: u64,
     num_bytes: u64,
     num_files: u64,
+    loose: bool,
     transit_abilities: transit::Abilities,
     transit_handler: G,
     progress_handler: H,
@@ -544,6 +552,7 @@ where
         zip_size,
         num_bytes,
         num_files,
+        loose,
         transit_abilities,
         transit_handler,
         progress_handler,
@@ -794,10 +803,119 @@ mod test {
     #[test]
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
     fn test_offer_directory() {
-        let d1 = PeerMessage::offer_directory_v1("somedirectory", "zipped", 45, 1234, 10);
+        let d1 = PeerMessage::offer_directory_v1("somedirectory", "zipped", 45, 1234, 10, false);
         assert_eq!(
             serde_json::json!(d1).to_string(),
             "{\"offer\":{\"directory\":{\"dirname\":\"somedirectory\",\"mode\":\"zipped\",\"numbytes\":1234,\"numfiles\":10,\"zipsize\":45}}}"
+        );
+    }
+
+    /// The loose marker is the one PortalGems addition to the wire format, so
+    /// it is pinned byte for byte: this string is what wormhole-mini parses
+    /// and what a 1.3.5 receiver has to be able to ignore.
+    #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
+    fn test_offer_directory_loose() {
+        let d1 =
+            PeerMessage::offer_directory_v1("5 files", "zipfile/deflated", 45, 1234, 5, true);
+        assert_eq!(
+            serde_json::json!(d1).to_string(),
+            "{\"offer\":{\"directory\":{\"dirname\":\"5 files\",\"mode\":\"zipfile/deflated\",\"numbytes\":1234,\"numfiles\":5,\"portalgems\":{\"loose\":true},\"zipsize\":45}}}"
+        );
+    }
+
+    fn parse_directory_loose(directory_json: &str) -> bool {
+        let raw = format!("{{\"offer\":{{\"directory\":{directory_json}}}}}");
+        match serde_json::from_str::<PeerMessage>(&raw).expect("offer must parse") {
+            PeerMessage::Offer(v1::OfferMessage::Directory {
+                dirname,
+                numfiles,
+                portalgems,
+                ..
+            }) => {
+                assert_eq!(dirname, "d");
+                assert_eq!(numfiles, 2);
+                v1::directory_is_loose(portalgems.as_ref())
+            },
+            other => panic!("not a directory offer: {other:?}"),
+        }
+    }
+
+    /// Every shape the extension can arrive in still parses as a directory
+    /// offer, and only an explicit `"loose": true` counts.
+    #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
+    fn test_offer_directory_loose_parsing() {
+        const BASE: &str =
+            "\"dirname\":\"d\",\"mode\":\"zipfile/deflated\",\"zipsize\":1,\"numbytes\":1,\"numfiles\":2";
+        let with = |ext: &str| parse_directory_loose(&format!("{{{BASE}{ext}}}"));
+
+        assert!(with(",\"portalgems\":{\"loose\":true}"));
+        // A later version may add members beside it.
+        assert!(with(",\"portalgems\":{\"loose\":true,\"names\":[\"a\"]}"));
+
+        assert!(!with(""));
+        assert!(!with(",\"portalgems\":{\"loose\":false}"));
+        assert!(!with(",\"portalgems\":{}"));
+        assert!(!with(",\"portalgems\":{\"loose\":\"yes\"}"));
+        assert!(!with(",\"portalgems\":{\"loose\":1}"));
+        assert!(!with(",\"portalgems\":true"));
+        assert!(!with(",\"portalgems\":\"loose\""));
+        assert!(!with(",\"portalgems\":null"));
+        assert!(!with(",\"portalgems\":[true]"));
+        // Unknown members elsewhere in the offer are ignored as well.
+        assert!(!with(",\"somebody_elses\":{\"loose\":true}"));
+    }
+
+    /// What a receiver from before the extension does with a marked offer.
+    /// This is the directory variant exactly as 1.3.5 shipped it; if it could
+    /// not parse the new offer, a new sender would break every old receiver
+    /// instead of degrading to a folder.
+    #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
+    fn test_offer_directory_loose_is_ignored_by_old_receivers() {
+        #[derive(Deserialize, Debug, PartialEq)]
+        #[serde(rename_all = "kebab-case")]
+        enum OldOfferMessage {
+            Message(String),
+            File {
+                filename: String,
+                filesize: u64,
+            },
+            Directory {
+                dirname: String,
+                mode: String,
+                zipsize: u64,
+                numbytes: u64,
+                numfiles: u64,
+            },
+            #[serde(other)]
+            Unknown,
+        }
+        #[derive(Deserialize, Debug, PartialEq)]
+        #[serde(rename_all = "kebab-case")]
+        enum OldPeerMessage {
+            Offer(OldOfferMessage),
+        }
+
+        let sent = serde_json::json!(PeerMessage::offer_directory_v1(
+            "5 files",
+            "zipfile/deflated",
+            45,
+            1234,
+            5,
+            true
+        ))
+        .to_string();
+        assert_eq!(
+            serde_json::from_str::<OldPeerMessage>(&sent).unwrap(),
+            OldPeerMessage::Offer(OldOfferMessage::Directory {
+                dirname: "5 files".into(),
+                mode: "zipfile/deflated".into(),
+                zipsize: 45,
+                numbytes: 1234,
+                numfiles: 5,
+            })
         );
     }
 
