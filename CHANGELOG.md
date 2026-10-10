@@ -5,6 +5,43 @@ All notable changes to PortalGems are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.1] - 2026-10-10
+
+Knowing which server you are on.
+
+### Added
+
+- **The user guide explains the connection server, and how to use PortalGems
+  with other magic-wormhole apps.** Two new sections, in all six languages.
+  The first says what the server does (it helps two devices find each other
+  and never sees your files), which three you can choose from, and that both
+  devices must be on the same one. The second covers the `wormhole` terminal
+  program and other magic-wormhole apps: they meet on the public server, so
+  switch to Public server in Settings first, then exchange one-time codes as
+  usual. PortalGems Mini (Symbian) 0.11.1 has both in Options > Help.
+
+- **The sending and receiving screens say how the transfer travels.** A line
+  under the title names the server in use - "Sending via PortalGems server" -
+  and, once the two devices are connected, says whether the file goes
+  directly to the other device or is relayed.
+
+- **The home screen names the server under the receive field**, with a
+  reminder that the sender must use the same one. A code that never connects
+  is most often two devices on different servers, and now the answer is on
+  the screen where the code is typed.
+
+### Changed
+
+- **How it works & security, User guide and Settings moved into a card of
+  their own** at the bottom of the home screen, titled Help & settings, as
+  three full-width buttons. They used to sit as loose links above everything
+  else.
+
+- The "Direct connection" / "Connected via relay" line above the progress bar
+  is gone - the new line under the title says the same thing.
+
+[1.4.1]: https://github.com/Yenis/portal-gems/releases/tag/v1.4.1
+
 ## [1.4.0] - 2026-10-09
 
 Pairing, finally dependable.

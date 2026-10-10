@@ -27596,7 +27596,9 @@
       receivePlaceholder: "npr. 7-crossover-clockwork",
       receiveButton: "Primi",
       sendTextButton: "Napi\u0161i poruku za slanje",
-      guideLink: "Uputstvo"
+      guideLink: "Uputstvo",
+      receiveServer: "Server: {{server}}. Po\u0161iljalac mora koristiti isti.",
+      moreTitle: "Pomo\u0107 i postavke"
     },
     send: {
       title: "Slanje",
@@ -27756,6 +27758,10 @@
       dropBody: "Prevuci datoteku ili folder na upareni ure\u0111aj u listi da ga odmah po\u0161alje\u0161 tamo.",
       settingsTitle: "Prilagodi sebi",
       settingsBody: "U Postavkama mo\u017Ee\u0161 promijeniti ime koje ovaj ure\u0111aj daje pri uparivanju, gdje se spremaju primljene datoteke, jezik i temu boja. Tamo mo\u017Ee\u0161 promijeniti i server za povezivanje - oba ure\u0111aja moraju koristiti isti.",
+      serverTitle: "O serveru za povezivanje",
+      serverBody: "Da bi prijenos po\u010Deo, dva ure\u0111aja se prvo na\u0111u na serveru za povezivanje. On im samo poma\u017Ee da se prona\u0111u: sve se \u0161ifrira na tvom ure\u0111aju, pa server nikada ne vidi tvoje datoteke ni poruke. Postavke > Server za povezivanje nudi tri: PortalGems server (zadani, preporu\u010Den zbog pouzdanosti), javni magic-wormhole server koji vodi zajednica i prilago\u0111eni server koji sam hostuje\u0161. Oba ure\u0111aja moraju koristiti isti server, ina\u010De se nikada ne\u0107e na\u0107i. Ako prijenosi stalno ne uspijevaju, probaj drugi server na oba ure\u0111aja.",
+      wormholeTitle: "Kori\u0161tenje s drugim magic-wormhole aplikacijama",
+      wormholeBody: "PortalGems koristi standardni magic-wormhole protokol, pa radi s terminalskim programom wormhole i drugim magic-wormhole aplikacijama. One koriste javni server, zato prvo odaberi Javni server u Postavke > Server za povezivanje. Zatim \u0161alji kao i obi\u010Dno i na ra\u010Dunaru pokreni wormhole receive s kodom prikazanim ovdje - ili tamo pokreni wormhole send i upi\u0161i njegov kod pod Primi datoteku. Rade datoteke, folderi i poruke. Uparivanje je funkcija PortalGemsa, pa s drugim aplikacijama koristi jednokratne kodove. Poslije se vrati na PortalGems server ako ga koriste tvoji drugi ure\u0111aji.",
       troubleTitle: "Ako prijenos ne po\u010Dne",
       troubleBody: "Provjeri da je PortalGems otvoren na oba ure\u0111aja i da su oba na mre\u017Ei. Kod uparenih ure\u0111aja provjeri da oba sata pokazuju ta\u010Dno vrijeme - ure\u0111aji se pomo\u0107u njega pronalaze. Jednokratni kod vrijedi samo jednom: ako ne\u0161to po\u0111e po zlu, pokreni slanje ponovo da dobije\u0161 novi."
     },
@@ -27778,8 +27784,12 @@
       choosingBody: 'PortalGems treba mailbox server da spoji dva ure\u0111aja, a u Postavkama bira\u0161 koji. Javni server je onaj koji vodi zajednica (magic-wormhole) - radi s drugim wormhole aplikacijama, ali je povremeno nedostupan. PortalGems server vodimo mi i predstavlja pouzdan zadani izbor. \u201EPrilago\u0111eni" ti omogu\u0107ava da usmjeri\u0161 aplikaciju na bilo koji server, uklju\u010Duju\u0107i onaj koji sam hostuje\u0161 - pogledaj vodi\u010D za samostalno hostanje ako te zanima. \u0160ta god odabere\u0161, tvoje datoteke ostaju end-to-end \u0161ifrovane, a server uvijek vidi samo ne\u010Ditljive podatke.'
     },
     transfer: {
-      direct: "Direktna veza s drugim ure\u0111ajem",
-      relay: "Povezano preko releja",
+      sendVia: "Slanje preko: {{server}}",
+      sendViaRelay: "Slanje preko: {{server}} - putem releja",
+      sendDirect: "Slanje direktno na drugi ure\u0111aj",
+      receiveVia: "Primanje preko: {{server}}",
+      receiveViaRelay: "Primanje preko: {{server}} - putem releja",
+      receiveDirect: "Primanje direktno s drugog ure\u0111aja",
       progress: "{{pct}} %"
     },
     common: {
@@ -27839,7 +27849,9 @@
       receivePlaceholder: "z. B. 7-crossover-clockwork",
       receiveButton: "Empfangen",
       sendTextButton: "Nachricht schreiben und senden",
-      guideLink: "Anleitung"
+      guideLink: "Anleitung",
+      receiveServer: "Server: {{server}}. Der Absender muss denselben verwenden.",
+      moreTitle: "Hilfe & Einstellungen"
     },
     send: {
       title: "Senden",
@@ -27999,6 +28011,10 @@
       dropBody: "Ziehe eine Datei oder einen Ordner auf ein gekoppeltes Ger\xE4t in der Liste, um sie sofort dorthin zu senden.",
       settingsTitle: "Nach deinem Geschmack",
       settingsBody: "In den Einstellungen \xE4nderst du den Namen, den dieses Ger\xE4t beim Koppeln nennt, den Speicherort f\xFCr empfangene Dateien, die Sprache und das Farbschema. Dort kannst du auch den Verbindungsserver wechseln - beide Ger\xE4te m\xFCssen denselben verwenden.",
+      serverTitle: "\xDCber den Verbindungsserver",
+      serverBody: "Um eine \xDCbertragung zu starten, treffen sich die beiden Ger\xE4te zuerst auf einem Verbindungsserver. Er hilft ihnen nur, einander zu finden: Alles wird auf deinem Ger\xE4t verschl\xFCsselt, der Server sieht deine Dateien und Nachrichten also nie. Einstellungen > Verbindungsserver bietet drei: den PortalGems-Server (Standard, f\xFCr Zuverl\xE4ssigkeit empfohlen), den \xF6ffentlichen magic-wormhole-Server der Community und einen eigenen Server, den du selbst betreibst. Beide Ger\xE4te m\xFCssen denselben Server verwenden, sonst finden sie sich nie. Wenn \xDCbertragungen immer wieder scheitern, probiere auf beiden einen anderen.",
+      wormholeTitle: "Mit anderen magic-wormhole-Apps verwenden",
+      wormholeBody: "PortalGems spricht das Standardprotokoll von magic-wormhole und funktioniert daher mit dem Terminalprogramm wormhole und anderen magic-wormhole-Apps. Diese nutzen den \xF6ffentlichen Server, wechsle also zuerst unter Einstellungen > Verbindungsserver zu \xD6ffentlicher Server. Sende dann wie gewohnt und f\xFChre am Computer wormhole receive mit dem hier angezeigten Code aus - oder f\xFChre dort wormhole send aus und gib dessen Code unter Datei empfangen ein. Dateien, Ordner und Nachrichten funktionieren alle. Koppeln ist eine PortalGems-Funktion, verwende mit anderen Apps also Einmalcodes. Wechsle danach zur\xFCck zum PortalGems-Server, wenn deine anderen Ger\xE4te ihn nutzen.",
       troubleTitle: "Wenn eine \xDCbertragung nicht startet",
       troubleBody: "Pr\xFCfe, ob PortalGems auf beiden Ger\xE4ten ge\xF6ffnet ist und beide online sind. Bei gekoppelten Ger\xE4ten m\xFCssen beide Uhren richtig gehen - die Ger\xE4te finden einander dar\xFCber. Ein Einmalcode funktioniert nur einmal: Ist etwas schiefgegangen, starte das Senden neu, um einen frischen zu bekommen."
     },
@@ -28021,8 +28037,12 @@
       choosingBody: 'PortalGems braucht einen Mailbox-Server, um zwei Ger\xE4te zusammenzubringen, und in den Einstellungen w\xE4hlst du, welchen. Der \xF6ffentliche Server ist der von der Community betriebene magic-wormhole-Server - er funktioniert mit anderen wormhole-Apps, ist aber gelegentlich nicht verf\xFCgbar. Der PortalGems-Server wird von uns betrieben und ist eine zuverl\xE4ssige Standardwahl. Mit \u201EEigener" kannst du die App auf jeden beliebigen Server richten, auch auf einen selbst gehosteten - siehe die Anleitung zum Selbsthosten, falls dich das interessiert. Egal welchen du w\xE4hlst: deine Dateien bleiben Ende-zu-Ende verschl\xFCsselt, und der Server sieht immer nur unlesbare Daten.'
     },
     transfer: {
-      direct: "Direkte Verbindung zum anderen Ger\xE4t",
-      relay: "Verbunden \xFCber Relay",
+      sendVia: "Senden \xFCber: {{server}}",
+      sendViaRelay: "Senden \xFCber: {{server}} - per Relay",
+      sendDirect: "Senden direkt an das andere Ger\xE4t",
+      receiveVia: "Empfangen \xFCber: {{server}}",
+      receiveViaRelay: "Empfangen \xFCber: {{server}} - per Relay",
+      receiveDirect: "Empfangen direkt vom anderen Ger\xE4t",
       progress: "{{pct}} %"
     },
     common: {
@@ -28082,7 +28102,9 @@
       receivePlaceholder: "e.g. 7-crossover-clockwork",
       receiveButton: "Receive",
       sendTextButton: "Write a message to send",
-      guideLink: "User guide"
+      guideLink: "User guide",
+      receiveServer: "Server: {{server}}. The sender must use the same one.",
+      moreTitle: "Help & settings"
     },
     send: {
       title: "Sending",
@@ -28184,8 +28206,12 @@
       nothingFound: "Nothing arrived from {{name}}. Make sure they tapped Send, then try again."
     },
     transfer: {
-      direct: "Direct connection to the other device",
-      relay: "Connected via relay",
+      sendVia: "Sending via {{server}}",
+      sendViaRelay: "Sending via {{server}} - relayed",
+      sendDirect: "Sending directly to the other device",
+      receiveVia: "Receiving via {{server}}",
+      receiveViaRelay: "Receiving via {{server}} - relayed",
+      receiveDirect: "Receiving directly from the other device",
       progress: "{{pct}}%"
     },
     common: {
@@ -28257,6 +28283,10 @@
       dropBody: "Drop a file or a folder onto a paired device in the list to send it there straight away.",
       settingsTitle: "Make it yours",
       settingsBody: "In Settings you can change the name this device gives when pairing, where received files are saved, the language and the color theme. You can also switch the connection server there - both devices must use the same one.",
+      serverTitle: "About the connection server",
+      serverBody: "To start a transfer, the two devices first meet on a connection server. It only helps them find each other: everything is encrypted on your device, so the server never sees your files or messages. Settings > Connection server offers three: the PortalGems server (the default, recommended for reliability), the public magic-wormhole server run by the community, and a custom server you host yourself. Both devices must use the same server, or they will never meet. If transfers keep failing, try a different one on both.",
+      wormholeTitle: "Use with other magic-wormhole apps",
+      wormholeBody: "PortalGems speaks the standard magic-wormhole protocol, so it works with the wormhole terminal program and other magic-wormhole apps. Those use the public server, so first switch to Public server in Settings > Connection server. Then send as usual and run wormhole receive on the computer with the code shown here - or run wormhole send there and type its code under Receive a file. Files, folders and messages all work. Pairing is a PortalGems feature, so use one-time codes with other apps. Switch back to the PortalGems server afterwards if your other devices use it.",
       troubleTitle: "If a transfer does not start",
       troubleBody: "Check that PortalGems is open on both devices and that both are online. Between paired devices, make sure both clocks show the right time - the devices use it to find each other. A one-time code works only once: if something went wrong, start the send again to get a fresh one."
     },
@@ -28325,7 +28355,9 @@
       receivePlaceholder: "p. ej. 7-crossover-clockwork",
       receiveButton: "Recibir",
       sendTextButton: "Escribir un mensaje para enviar",
-      guideLink: "Gu\xEDa de uso"
+      guideLink: "Gu\xEDa de uso",
+      receiveServer: "Servidor: {{server}}. Quien env\xEDa debe usar el mismo.",
+      moreTitle: "Ayuda y ajustes"
     },
     send: {
       title: "Enviando",
@@ -28485,6 +28517,10 @@
       dropBody: "Suelta un archivo o una carpeta sobre un dispositivo emparejado de la lista para enviarlo all\xED al instante.",
       settingsTitle: "Hazlo tuyo",
       settingsBody: "En Ajustes puedes cambiar el nombre que este dispositivo da al emparejarse, d\xF3nde se guardan los archivos recibidos, el idioma y el tema de color. Tambi\xE9n puedes cambiar all\xED el servidor de conexi\xF3n: ambos dispositivos deben usar el mismo.",
+      serverTitle: "Sobre el servidor de conexi\xF3n",
+      serverBody: "Para iniciar una transferencia, los dos dispositivos se encuentran primero en un servidor de conexi\xF3n. Solo les ayuda a encontrarse: todo se cifra en tu dispositivo, as\xED que el servidor nunca ve tus archivos ni tus mensajes. Ajustes > Servidor de conexi\xF3n ofrece tres: el servidor de PortalGems (el predeterminado, recomendado por fiabilidad), el servidor p\xFAblico de magic-wormhole gestionado por la comunidad y un servidor personalizado que alojas t\xFA. Ambos dispositivos deben usar el mismo servidor o nunca se encontrar\xE1n. Si las transferencias siguen fallando, prueba otro en los dos.",
+      wormholeTitle: "Usar con otras apps de magic-wormhole",
+      wormholeBody: "PortalGems habla el protocolo est\xE1ndar de magic-wormhole, as\xED que funciona con el programa de terminal wormhole y con otras apps de magic-wormhole. Estas usan el servidor p\xFAblico, as\xED que primero cambia a Servidor p\xFAblico en Ajustes > Servidor de conexi\xF3n. Luego env\xEDa como siempre y ejecuta wormhole receive en el ordenador con el c\xF3digo que aparece aqu\xED, o ejecuta all\xED wormhole send y escribe su c\xF3digo en Recibir un archivo. Funcionan archivos, carpetas y mensajes. El emparejamiento es una funci\xF3n de PortalGems, as\xED que con otras apps usa c\xF3digos de un solo uso. Despu\xE9s vuelve al servidor de PortalGems si tus otros dispositivos lo usan.",
       troubleTitle: "Si una transferencia no empieza",
       troubleBody: "Comprueba que PortalGems est\xE1 abierto en ambos dispositivos y que los dos tienen conexi\xF3n. Entre dispositivos emparejados, aseg\xFArate de que ambos relojes marcan la hora correcta: los dispositivos la usan para encontrarse. Un c\xF3digo de un solo uso funciona una \xFAnica vez: si algo sali\xF3 mal, vuelve a iniciar el env\xEDo para obtener uno nuevo."
     },
@@ -28507,8 +28543,12 @@
       choosingBody: "PortalGems necesita un servidor de buz\xF3n para poner en contacto a dos dispositivos, y t\xFA eliges cu\xE1l en Ajustes. El servidor p\xFAblico es el de la comunidad de magic-wormhole: funciona con otras apps de wormhole, pero a veces no est\xE1 disponible. El servidor de PortalGems lo gestionamos nosotros y es una opci\xF3n predeterminada fiable. \xABPersonalizado\xBB te permite apuntar la app a cualquier servidor, incluido uno que alojes t\xFA mismo; consulta la gu\xEDa de autoalojamiento si te interesa. Elijas lo que elijas, tus archivos siguen cifrados de extremo a extremo y el servidor solo ve datos ilegibles."
     },
     transfer: {
-      direct: "Conexi\xF3n directa con el otro dispositivo",
-      relay: "Conectado a trav\xE9s de un rel\xE9",
+      sendVia: "Enviando por: {{server}}",
+      sendViaRelay: "Enviando por: {{server}} - mediante rel\xE9",
+      sendDirect: "Enviando directamente al otro dispositivo",
+      receiveVia: "Recibiendo por: {{server}}",
+      receiveViaRelay: "Recibiendo por: {{server}} - mediante rel\xE9",
+      receiveDirect: "Recibiendo directamente del otro dispositivo",
       progress: "{{pct}} %"
     },
     common: {
@@ -28568,7 +28608,9 @@
       receivePlaceholder: "p. ex. 7-crossover-clockwork",
       receiveButton: "Recevoir",
       sendTextButton: "\xC9crire un message \xE0 envoyer",
-      guideLink: "Guide d'utilisation"
+      guideLink: "Guide d'utilisation",
+      receiveServer: "Serveur : {{server}}. L'exp\xE9diteur doit utiliser le m\xEAme.",
+      moreTitle: "Aide et param\xE8tres"
     },
     send: {
       title: "Envoi",
@@ -28728,6 +28770,10 @@
       dropBody: "D\xE9posez un fichier ou un dossier sur un appareil associ\xE9 de la liste pour le lui envoyer aussit\xF4t.",
       settingsTitle: "\xC0 votre fa\xE7on",
       settingsBody: "Dans Param\xE8tres, vous pouvez changer le nom que cet appareil donne lors de l'association, l'emplacement des fichiers re\xE7us, la langue et le th\xE8me de couleur. Vous pouvez aussi y changer de serveur de connexion - les deux appareils doivent utiliser le m\xEAme.",
+      serverTitle: "\xC0 propos du serveur de connexion",
+      serverBody: "Pour d\xE9marrer un transfert, les deux appareils se retrouvent d'abord sur un serveur de connexion. Il les aide seulement \xE0 se trouver : tout est chiffr\xE9 sur votre appareil, le serveur ne voit donc jamais vos fichiers ni vos messages. Param\xE8tres > Serveur de connexion en propose trois : le serveur PortalGems (par d\xE9faut, recommand\xE9 pour sa fiabilit\xE9), le serveur public magic-wormhole g\xE9r\xE9 par la communaut\xE9 et un serveur personnalis\xE9 que vous h\xE9bergez. Les deux appareils doivent utiliser le m\xEAme serveur, sinon ils ne se trouveront jamais. Si les transferts \xE9chouent sans cesse, essayez-en un autre sur les deux.",
+      wormholeTitle: "Utiliser avec d'autres applications magic-wormhole",
+      wormholeBody: "PortalGems parle le protocole standard magic-wormhole et fonctionne donc avec le programme en ligne de commande wormhole et les autres applications magic-wormhole. Celles-ci utilisent le serveur public : passez d'abord \xE0 Serveur public dans Param\xE8tres > Serveur de connexion. Envoyez ensuite comme d'habitude et lancez wormhole receive sur l'ordinateur avec le code affich\xE9 ici - ou lancez-y wormhole send et saisissez son code sous Recevoir un fichier. Fichiers, dossiers et messages fonctionnent tous. L'association est une fonction de PortalGems : avec les autres applications, utilisez des codes \xE0 usage unique. Revenez ensuite au serveur PortalGems si vos autres appareils l'utilisent.",
       troubleTitle: "Si un transfert ne d\xE9marre pas",
       troubleBody: "V\xE9rifiez que PortalGems est ouvert sur les deux appareils et que tous deux sont en ligne. Entre appareils associ\xE9s, assurez-vous que les deux horloges sont \xE0 l'heure - les appareils s'en servent pour se retrouver. Un code \xE0 usage unique ne fonctionne qu'une fois : en cas de probl\xE8me, relancez l'envoi pour en obtenir un nouveau."
     },
@@ -28750,8 +28796,12 @@
       choosingBody: "PortalGems a besoin d'un serveur de bo\xEEte aux lettres pour mettre deux appareils en relation, et vous choisissez lequel dans les Param\xE8tres. Le serveur public est celui de la communaut\xE9 magic-wormhole - il fonctionne avec les autres applis wormhole mais est parfois indisponible. Le serveur PortalGems est g\xE9r\xE9 par nous et constitue un choix par d\xE9faut fiable. \xAB Personnalis\xE9 \xBB vous permet de pointer l'appli vers n'importe quel serveur, y compris un que vous h\xE9bergez vous-m\xEAme - voir le guide d'auto-h\xE9bergement si cela vous int\xE9resse. Quel que soit votre choix, vos fichiers restent chiffr\xE9s de bout en bout et le serveur ne voit jamais que des donn\xE9es brouill\xE9es."
     },
     transfer: {
-      direct: "Connexion directe \xE0 l'autre appareil",
-      relay: "Connect\xE9 via un relais",
+      sendVia: "Envoi via : {{server}}",
+      sendViaRelay: "Envoi via : {{server}} - par relais",
+      sendDirect: "Envoi direct vers l'autre appareil",
+      receiveVia: "R\xE9ception via : {{server}}",
+      receiveViaRelay: "R\xE9ception via : {{server}} - par relais",
+      receiveDirect: "R\xE9ception directe depuis l'autre appareil",
       progress: "{{pct}} %"
     },
     common: {
@@ -28811,7 +28861,9 @@
       receivePlaceholder: "\u043D\u0430\u043F\u0440\u0438\u043C\u0435\u0440, 7-crossover-clockwork",
       receiveButton: "\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C",
       sendTextButton: "\u041D\u0430\u043F\u0438\u0441\u0430\u0442\u044C \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435",
-      guideLink: "\u0420\u0443\u043A\u043E\u0432\u043E\u0434\u0441\u0442\u0432\u043E"
+      guideLink: "\u0420\u0443\u043A\u043E\u0432\u043E\u0434\u0441\u0442\u0432\u043E",
+      receiveServer: "\u0421\u0435\u0440\u0432\u0435\u0440: {{server}}. \u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u0435\u043B\u044C \u0434\u043E\u043B\u0436\u0435\u043D \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u044C \u0442\u043E\u0442 \u0436\u0435.",
+      moreTitle: "\u0421\u043F\u0440\u0430\u0432\u043A\u0430 \u0438 \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438"
     },
     send: {
       title: "\u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430",
@@ -28971,6 +29023,10 @@
       dropBody: "\u041F\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u0442\u0435 \u0444\u0430\u0439\u043B \u0438\u043B\u0438 \u043F\u0430\u043F\u043A\u0443 \u043D\u0430 \u0441\u0432\u044F\u0437\u0430\u043D\u043D\u043E\u0435 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E \u0432 \u0441\u043F\u0438\u0441\u043A\u0435, \u0447\u0442\u043E\u0431\u044B \u0441\u0440\u0430\u0437\u0443 \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C.",
       settingsTitle: "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u0442\u0435 \u043F\u043E\u0434 \u0441\u0435\u0431\u044F",
       settingsBody: "\u0412 \xAB\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0430\u0445\xBB \u043C\u043E\u0436\u043D\u043E \u0438\u0437\u043C\u0435\u043D\u0438\u0442\u044C \u0438\u043C\u044F, \u043A\u043E\u0442\u043E\u0440\u044B\u043C \u044D\u0442\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E \u043D\u0430\u0437\u044B\u0432\u0430\u0435\u0442\u0441\u044F \u043F\u0440\u0438 \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u0438, \u043C\u0435\u0441\u0442\u043E \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0438\u044F \u043F\u043E\u043B\u0443\u0447\u0435\u043D\u043D\u044B\u0445 \u0444\u0430\u0439\u043B\u043E\u0432, \u044F\u0437\u044B\u043A \u0438 \u0446\u0432\u0435\u0442\u043E\u0432\u0443\u044E \u0442\u0435\u043C\u0443. \u0422\u0430\u043C \u0436\u0435 \u043C\u043E\u0436\u043D\u043E \u0441\u043C\u0435\u043D\u0438\u0442\u044C \u0441\u0435\u0440\u0432\u0435\u0440 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u044F - \u043E\u0431\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u0434\u043E\u043B\u0436\u043D\u044B \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u044C \u043E\u0434\u0438\u043D \u0438 \u0442\u043E\u0442 \u0436\u0435.",
+      serverTitle: "\u041E \u0441\u0435\u0440\u0432\u0435\u0440\u0435 \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u044F",
+      serverBody: "\u0427\u0442\u043E\u0431\u044B \u043D\u0430\u0447\u0430\u0442\u044C \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0443, \u0434\u0432\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u0441\u043D\u0430\u0447\u0430\u043B\u0430 \u0432\u0441\u0442\u0440\u0435\u0447\u0430\u044E\u0442\u0441\u044F \u043D\u0430 \u0441\u0435\u0440\u0432\u0435\u0440\u0435 \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u044F. \u041E\u043D \u0442\u043E\u043B\u044C\u043A\u043E \u043F\u043E\u043C\u043E\u0433\u0430\u0435\u0442 \u0438\u043C \u043D\u0430\u0439\u0442\u0438 \u0434\u0440\u0443\u0433 \u0434\u0440\u0443\u0433\u0430: \u0432\u0441\u0451 \u0448\u0438\u0444\u0440\u0443\u0435\u0442\u0441\u044F \u043D\u0430 \u0432\u0430\u0448\u0435\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0435, \u043F\u043E\u044D\u0442\u043E\u043C\u0443 \u0441\u0435\u0440\u0432\u0435\u0440 \u043D\u0438\u043A\u043E\u0433\u0434\u0430 \u043D\u0435 \u0432\u0438\u0434\u0438\u0442 \u0432\u0430\u0448\u0438 \u0444\u0430\u0439\u043B\u044B \u0438 \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u044F. \u0412 \u0440\u0430\u0437\u0434\u0435\u043B\u0435 \u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 > \u0421\u0435\u0440\u0432\u0435\u0440 \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u044F \u0438\u0445 \u0442\u0440\u0438: \u0441\u0435\u0440\u0432\u0435\u0440 PortalGems (\u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E, \u0440\u0435\u043A\u043E\u043C\u0435\u043D\u0434\u0443\u0435\u0442\u0441\u044F \u0434\u043B\u044F \u043D\u0430\u0434\u0451\u0436\u043D\u043E\u0441\u0442\u0438), \u043F\u0443\u0431\u043B\u0438\u0447\u043D\u044B\u0439 \u0441\u0435\u0440\u0432\u0435\u0440 magic-wormhole, \u043A\u043E\u0442\u043E\u0440\u044B\u0439 \u0432\u0435\u0434\u0451\u0442 \u0441\u043E\u043E\u0431\u0449\u0435\u0441\u0442\u0432\u043E, \u0438 \u0441\u0432\u043E\u0439 \u0441\u0435\u0440\u0432\u0435\u0440, \u043A\u043E\u0442\u043E\u0440\u044B\u0439 \u0432\u044B \u0440\u0430\u0437\u043C\u0435\u0449\u0430\u0435\u0442\u0435 \u0441\u0430\u043C\u0438. \u041E\u0431\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u0434\u043E\u043B\u0436\u043D\u044B \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u044C \u043E\u0434\u0438\u043D \u0438 \u0442\u043E\u0442 \u0436\u0435 \u0441\u0435\u0440\u0432\u0435\u0440, \u0438\u043D\u0430\u0447\u0435 \u043E\u043D\u0438 \u043D\u0435 \u0432\u0441\u0442\u0440\u0435\u0442\u044F\u0442\u0441\u044F. \u0415\u0441\u043B\u0438 \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0438 \u043F\u043E\u0441\u0442\u043E\u044F\u043D\u043D\u043E \u043D\u0435 \u0443\u0434\u0430\u044E\u0442\u0441\u044F, \u043F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0434\u0440\u0443\u0433\u043E\u0439 \u0441\u0435\u0440\u0432\u0435\u0440 \u043D\u0430 \u043E\u0431\u043E\u0438\u0445.",
+      wormholeTitle: "\u0420\u0430\u0431\u043E\u0442\u0430 \u0441 \u0434\u0440\u0443\u0433\u0438\u043C\u0438 \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u044F\u043C\u0438 magic-wormhole",
+      wormholeBody: "PortalGems \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0435\u0442 \u0441\u0442\u0430\u043D\u0434\u0430\u0440\u0442\u043D\u044B\u0439 \u043F\u0440\u043E\u0442\u043E\u043A\u043E\u043B magic-wormhole, \u043F\u043E\u044D\u0442\u043E\u043C\u0443 \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442 \u0441 \u043A\u043E\u043D\u0441\u043E\u043B\u044C\u043D\u043E\u0439 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u043E\u0439 wormhole \u0438 \u0434\u0440\u0443\u0433\u0438\u043C\u0438 \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u044F\u043C\u0438 magic-wormhole. \u041E\u043D\u0438 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u044E\u0442 \u043F\u0443\u0431\u043B\u0438\u0447\u043D\u044B\u0439 \u0441\u0435\u0440\u0432\u0435\u0440, \u043F\u043E\u044D\u0442\u043E\u043C\u0443 \u0441\u043D\u0430\u0447\u0430\u043B\u0430 \u0432\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u041F\u0443\u0431\u043B\u0438\u0447\u043D\u044B\u0439 \u0441\u0435\u0440\u0432\u0435\u0440 \u0432 \u0440\u0430\u0437\u0434\u0435\u043B\u0435 \u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 > \u0421\u0435\u0440\u0432\u0435\u0440 \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u044F. \u0417\u0430\u0442\u0435\u043C \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u044F\u0439\u0442\u0435 \u043A\u0430\u043A \u043E\u0431\u044B\u0447\u043D\u043E \u0438 \u0437\u0430\u043F\u0443\u0441\u0442\u0438\u0442\u0435 \u043D\u0430 \u043A\u043E\u043C\u043F\u044C\u044E\u0442\u0435\u0440\u0435 wormhole receive \u0441 \u043A\u043E\u0434\u043E\u043C, \u043F\u043E\u043A\u0430\u0437\u0430\u043D\u043D\u044B\u043C \u0437\u0434\u0435\u0441\u044C, - \u0438\u043B\u0438 \u0437\u0430\u043F\u0443\u0441\u0442\u0438\u0442\u0435 \u0442\u0430\u043C wormhole send \u0438 \u0432\u0432\u0435\u0434\u0438\u0442\u0435 \u0435\u0433\u043E \u043A\u043E\u0434 \u0432 \u0440\u0430\u0437\u0434\u0435\u043B\u0435 \u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C \u0444\u0430\u0439\u043B. \u0420\u0430\u0431\u043E\u0442\u0430\u044E\u0442 \u0444\u0430\u0439\u043B\u044B, \u043F\u0430\u043F\u043A\u0438 \u0438 \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u044F. \u0421\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u0435 - \u0444\u0443\u043D\u043A\u0446\u0438\u044F PortalGems, \u043F\u043E\u044D\u0442\u043E\u043C\u0443 \u0441 \u0434\u0440\u0443\u0433\u0438\u043C\u0438 \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u044F\u043C\u0438 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0439\u0442\u0435 \u043E\u0434\u043D\u043E\u0440\u0430\u0437\u043E\u0432\u044B\u0435 \u043A\u043E\u0434\u044B. \u041F\u043E\u0441\u043B\u0435 \u044D\u0442\u043E\u0433\u043E \u0432\u0435\u0440\u043D\u0438\u0442\u0435\u0441\u044C \u043D\u0430 \u0441\u0435\u0440\u0432\u0435\u0440 PortalGems, \u0435\u0441\u043B\u0438 \u0438\u043C \u043F\u043E\u043B\u044C\u0437\u0443\u044E\u0442\u0441\u044F \u0434\u0440\u0443\u0433\u0438\u0435 \u0432\u0430\u0448\u0438 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430.",
       troubleTitle: "\u0415\u0441\u043B\u0438 \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0430 \u043D\u0435 \u043D\u0430\u0447\u0438\u043D\u0430\u0435\u0442\u0441\u044F",
       troubleBody: "\u041F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435, \u0447\u0442\u043E PortalGems \u043E\u0442\u043A\u0440\u044B\u0442 \u043D\u0430 \u043E\u0431\u043E\u0438\u0445 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430\u0445 \u0438 \u043E\u0431\u0430 \u0432 \u0441\u0435\u0442\u0438. \u0414\u043B\u044F \u0441\u0432\u044F\u0437\u0430\u043D\u043D\u044B\u0445 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432 \u0443\u0431\u0435\u0434\u0438\u0442\u0435\u0441\u044C, \u0447\u0442\u043E \u0447\u0430\u0441\u044B \u043D\u0430 \u043E\u0431\u043E\u0438\u0445 \u0438\u0434\u0443\u0442 \u0432\u0435\u0440\u043D\u043E - \u043F\u043E \u043D\u0438\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u043D\u0430\u0445\u043E\u0434\u044F\u0442 \u0434\u0440\u0443\u0433 \u0434\u0440\u0443\u0433\u0430. \u041E\u0434\u043D\u043E\u0440\u0430\u0437\u043E\u0432\u044B\u0439 \u043A\u043E\u0434 \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442 \u043E\u0434\u0438\u043D \u0440\u0430\u0437: \u0435\u0441\u043B\u0438 \u0447\u0442\u043E-\u0442\u043E \u043F\u043E\u0448\u043B\u043E \u043D\u0435 \u0442\u0430\u043A, \u043D\u0430\u0447\u043D\u0438\u0442\u0435 \u043E\u0442\u043F\u0440\u0430\u0432\u043A\u0443 \u0437\u0430\u043D\u043E\u0432\u043E, \u0447\u0442\u043E\u0431\u044B \u043F\u043E\u043B\u0443\u0447\u0438\u0442\u044C \u043D\u043E\u0432\u044B\u0439."
     },
@@ -28993,8 +29049,12 @@
       choosingBody: "PortalGems \u043D\u0443\u0436\u0435\u043D \u043F\u043E\u0447\u0442\u043E\u0432\u044B\u0439 \u0441\u0435\u0440\u0432\u0435\u0440 (mailbox), \u0447\u0442\u043E\u0431\u044B \u0441\u0432\u0435\u0441\u0442\u0438 \u0434\u0432\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430, \u0438 \u0432\u044B \u0432\u044B\u0431\u0438\u0440\u0430\u0435\u0442\u0435 \u0435\u0433\u043E \u0432 \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0430\u0445. \u041F\u0443\u0431\u043B\u0438\u0447\u043D\u044B\u0439 \u0441\u0435\u0440\u0432\u0435\u0440 - \u044D\u0442\u043E \u0441\u0435\u0440\u0432\u0435\u0440 \u0441\u043E\u043E\u0431\u0449\u0435\u0441\u0442\u0432\u0430 magic-wormhole: \u043E\u043D \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442 \u0441 \u0434\u0440\u0443\u0433\u0438\u043C\u0438 \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u044F\u043C\u0438 wormhole, \u043D\u043E \u0438\u043D\u043E\u0433\u0434\u0430 \u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u0435\u043D. \u0421\u0435\u0440\u0432\u0435\u0440 PortalGems \u043F\u043E\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u0435\u0442\u0441\u044F \u043D\u0430\u043C\u0438 \u0438 \u043F\u043E\u0434\u0445\u043E\u0434\u0438\u0442 \u043A\u0430\u043A \u043D\u0430\u0434\u0451\u0436\u043D\u044B\u0439 \u0432\u0430\u0440\u0438\u0430\u043D\u0442 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E. \xAB\u0421\u0432\u043E\u0439\xBB \u043F\u043E\u0437\u0432\u043E\u043B\u044F\u0435\u0442 \u0443\u043A\u0430\u0437\u0430\u0442\u044C \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u044E \u043B\u044E\u0431\u043E\u0439 \u0441\u0435\u0440\u0432\u0435\u0440, \u0432 \u0442\u043E\u043C \u0447\u0438\u0441\u043B\u0435 \u0440\u0430\u0437\u043C\u0435\u0449\u0451\u043D\u043D\u044B\u0439 \u0432\u0430\u043C\u0438 \u0441\u0430\u043C\u0438\u043C\u0438 - \u0441\u043C. \u0440\u0443\u043A\u043E\u0432\u043E\u0434\u0441\u0442\u0432\u043E \u043F\u043E \u0441\u0430\u043C\u043E\u0441\u0442\u043E\u044F\u0442\u0435\u043B\u044C\u043D\u043E\u043C\u0443 \u0445\u043E\u0441\u0442\u0438\u043D\u0433\u0443, \u0435\u0441\u043B\u0438 \u0438\u043D\u0442\u0435\u0440\u0435\u0441\u043D\u043E. \u0427\u0442\u043E \u0431\u044B \u0432\u044B \u043D\u0438 \u0432\u044B\u0431\u0440\u0430\u043B\u0438, \u0432\u0430\u0448\u0438 \u0444\u0430\u0439\u043B\u044B \u043E\u0441\u0442\u0430\u044E\u0442\u0441\u044F \u0437\u0430\u0448\u0438\u0444\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u043C\u0438 \u0441\u043A\u0432\u043E\u0437\u043D\u044B\u043C \u043E\u0431\u0440\u0430\u0437\u043E\u043C, \u0430 \u0441\u0435\u0440\u0432\u0435\u0440 \u0432\u0441\u0435\u0433\u0434\u0430 \u0432\u0438\u0434\u0438\u0442 \u0442\u043E\u043B\u044C\u043A\u043E \u043D\u0435\u0447\u0438\u0442\u0430\u0435\u043C\u044B\u0435 \u0434\u0430\u043D\u043D\u044B\u0435."
     },
     transfer: {
-      direct: "\u041F\u0440\u044F\u043C\u043E\u0435 \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u0435 \u0441 \u0434\u0440\u0443\u0433\u0438\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E\u043C",
-      relay: "\u0421\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u0435 \u0447\u0435\u0440\u0435\u0437 \u0440\u0435\u0442\u0440\u0430\u043D\u0441\u043B\u044F\u0442\u043E\u0440",
+      sendVia: "\u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 \u0447\u0435\u0440\u0435\u0437: {{server}}",
+      sendViaRelay: "\u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 \u0447\u0435\u0440\u0435\u0437: {{server}} - \u0447\u0435\u0440\u0435\u0437 \u0440\u0435\u0442\u0440\u0430\u043D\u0441\u043B\u044F\u0442\u043E\u0440",
+      sendDirect: "\u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 \u043D\u0430\u043F\u0440\u044F\u043C\u0443\u044E \u043D\u0430 \u0434\u0440\u0443\u0433\u043E\u0435 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E",
+      receiveVia: "\u041F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u0435 \u0447\u0435\u0440\u0435\u0437: {{server}}",
+      receiveViaRelay: "\u041F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u0435 \u0447\u0435\u0440\u0435\u0437: {{server}} - \u0447\u0435\u0440\u0435\u0437 \u0440\u0435\u0442\u0440\u0430\u043D\u0441\u043B\u044F\u0442\u043E\u0440",
+      receiveDirect: "\u041F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u0435 \u043D\u0430\u043F\u0440\u044F\u043C\u0443\u044E \u0441 \u0434\u0440\u0443\u0433\u043E\u0433\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430",
       progress: "{{pct}} %"
     },
     common: {
@@ -29740,6 +29800,23 @@
       )
     );
   }
+  var SERVER_CHOICE_KEYS = {
+    public: "choicePublic",
+    portalgems: "choicePortalgems",
+    custom: "choiceCustom"
+  };
+  function TransferRoute({
+    c,
+    kind,
+    direct
+  }) {
+    const { t: t2 } = useTranslation();
+    const [choice] = (0, import_react14.useState)(() => loadServerSettings().choice);
+    if (direct) return /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2(`transfer.${kind}Direct`));
+    return /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2(direct === false ? `transfer.${kind}ViaRelay` : `transfer.${kind}Via`, {
+      server: t2(`settings.server.${SERVER_CHOICE_KEYS[choice]}`)
+    }));
+  }
   function Home({
     c,
     onSend,
@@ -29754,6 +29831,7 @@
     const { t: t2, i18n } = useTranslation();
     const [code, setCode] = (0, import_react14.useState)("");
     const [devices, setDevices] = (0, import_react14.useState)([]);
+    const [serverChoice] = (0, import_react14.useState)(() => loadServerSettings().choice);
     (0, import_react14.useEffect)(() => {
       loadDevices().then(setDevices);
     }, []);
@@ -29832,28 +29910,7 @@
         onClick: () => setRemovingId(device.id)
       }
     ];
-    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c }, t2("app.name")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("home.tagline")), /* @__PURE__ */ import_react14.default.createElement("div", { style: { display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: spacing(2) } }, /* @__PURE__ */ import_react14.default.createElement(
-      "a",
-      {
-        onClick: onExplain,
-        style: { color: c.primary, fontWeight: 600, cursor: "pointer" }
-      },
-      t2("home.explainLink")
-    ), /* @__PURE__ */ import_react14.default.createElement(
-      "a",
-      {
-        onClick: onGuide,
-        style: { color: c.primary, fontWeight: 600, cursor: "pointer" }
-      },
-      t2("home.guideLink")
-    ), /* @__PURE__ */ import_react14.default.createElement(
-      "a",
-      {
-        onClick: onSettings,
-        style: { color: c.primary, fontWeight: 600, cursor: "pointer" }
-      },
-      t2("home.settingsLink")
-    )), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("home.devicesTitle")), devices.length === 0 ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("home.devicesEmpty")) : null, devices.map((device) => /* @__PURE__ */ import_react14.default.createElement(
+    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c }, t2("app.name")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("home.tagline")), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("home.devicesTitle")), devices.length === 0 ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("home.devicesEmpty")) : null, devices.map((device) => /* @__PURE__ */ import_react14.default.createElement(
       "div",
       {
         key: device.id,
@@ -30051,7 +30108,9 @@
         onChange: setCode,
         placeholder: t2("home.receivePlaceholder")
       }
-    ), /* @__PURE__ */ import_react14.default.createElement(
+    ), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("home.receiveServer", {
+      server: t2(`settings.server.${SERVER_CHOICE_KEYS[serverChoice]}`)
+    })), /* @__PURE__ */ import_react14.default.createElement(
       PrimaryButton,
       {
         c,
@@ -30059,7 +30118,7 @@
         onClick: () => onReceive(code.trim()),
         disabled: !CODE_RE.test(code.trim())
       }
-    )));
+    )), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("home.moreTitle")), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("home.explainLink"), onClick: onExplain }), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("home.guideLink"), onClick: onGuide }), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("home.settingsLink"), onClick: onSettings })));
   }
   function Compose({
     c,
@@ -30179,14 +30238,14 @@
       count: item.fileCount,
       size: formatSize(item.totalBytes)
     }) : `${item.name} \xB7 ${formatSize(item.size)}`;
-    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("send.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, summary), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, phase === "starting" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.connecting")) : null, phase === "waiting" ? device ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("paired.sendWaiting", { name: deviceLabel(device) })) : /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("send.waitingForReceiver")), /* @__PURE__ */ import_react14.default.createElement(CodeBox, { c, code }), /* @__PURE__ */ import_react14.default.createElement(
+    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("send.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, summary), /* @__PURE__ */ import_react14.default.createElement(TransferRoute, { c, kind: "send", direct }), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, phase === "starting" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.connecting")) : null, phase === "waiting" ? device ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("paired.sendWaiting", { name: deviceLabel(device) })) : /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("send.waitingForReceiver")), /* @__PURE__ */ import_react14.default.createElement(CodeBox, { c, code }), /* @__PURE__ */ import_react14.default.createElement(
       PrimaryButton,
       {
         c,
         label: copied ? t2("send.codeCopied") : t2("send.copyCode"),
         onClick: copy2
       }
-    )) : null, phase === "transferring" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, item.kind === "text" ? t2("send.sendingText") : item.kind === "folder" ? t2("send.sendingFolder", { name: item.name }) : t2("send.sending", { name: item.name })), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, direct ? t2("transfer.direct") : t2("transfer.relay")), /* @__PURE__ */ import_react14.default.createElement(ProgressBar, { c, pct }), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("transfer.progress", { pct }))) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, item.kind === "text" ? t2("send.successText") : item.kind === "folder" ? t2("send.successFolder") : t2("send.success")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.success, margin: 0 } }, summary)) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "cancelled" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("errors.cancelled")) : null, phase === "peerNotOpen" && device ? /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, t2("paired.notOpen", { name: deviceLabel(device) })) : null), busy ? /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancel }) : phase === "error" && serverErr ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(
+    )) : null, phase === "transferring" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, item.kind === "text" ? t2("send.sendingText") : item.kind === "folder" ? t2("send.sendingFolder", { name: item.name }) : t2("send.sending", { name: item.name })), /* @__PURE__ */ import_react14.default.createElement(ProgressBar, { c, pct }), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("transfer.progress", { pct }))) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, item.kind === "text" ? t2("send.successText") : item.kind === "folder" ? t2("send.successFolder") : t2("send.success")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.success, margin: 0 } }, summary)) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "cancelled" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("errors.cancelled")) : null, phase === "peerNotOpen" && device ? /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, t2("paired.notOpen", { name: deviceLabel(device) })) : null), busy ? /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancel }) : phase === "error" && serverErr ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(
       PrimaryButton,
       {
         c,
@@ -30298,7 +30357,7 @@
       window.portalgems.cancel(idRef.current);
     };
     const busy = phase === "connecting" || phase === "transferring";
-    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("receive.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, device ? deviceLabel(device) : code), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, phase === "connecting" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, device ? t2("paired.receiveWaiting", { name: deviceLabel(device) }) : t2("receive.connecting")) : null, phase === "message" && offer?.text != null ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("text.received")), /* @__PURE__ */ import_react14.default.createElement(MessageBox, { c, text: offer.text }), /* @__PURE__ */ import_react14.default.createElement(
+    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("receive.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, device ? deviceLabel(device) : code), /* @__PURE__ */ import_react14.default.createElement(TransferRoute, { c, kind: "receive", direct }), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, phase === "connecting" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, device ? t2("paired.receiveWaiting", { name: deviceLabel(device) }) : t2("receive.connecting")) : null, phase === "message" && offer?.text != null ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("text.received")), /* @__PURE__ */ import_react14.default.createElement(MessageBox, { c, text: offer.text }), /* @__PURE__ */ import_react14.default.createElement(
       PrimaryButton,
       {
         c,
@@ -30331,7 +30390,7 @@
         danger: true,
         onClick: () => startTransfer(true)
       }
-    ), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.decline"), onClick: decline })) : null, phase === "transferring" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, offer?.folder ? t2("receive.receivingFolder") : t2("receive.receiving")), direct !== null ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, direct ? t2("transfer.direct") : t2("transfer.relay")) : null, /* @__PURE__ */ import_react14.default.createElement(ProgressBar, { c, pct }), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("transfer.progress", { pct }))) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, offer?.folder ? t2("receive.successFolder") : t2("receive.success")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.success, margin: 0 } }, downloadDirRef.current && !usedFallback ? t2("receive.savedAsIn", { name: savedName, folder: savedDir }) : t2("receive.savedAs", { name: savedName })), usedFallback ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.folderFallback")) : null) : null, phase === "declined" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.declined")) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "cancelled" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("errors.cancelled")) : null), busy ? /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancel }) : phase === "confirm" || phase === "conflict" ? null : /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.done"), onClick: onHome }));
+    ), /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.decline"), onClick: decline })) : null, phase === "transferring" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, offer?.folder ? t2("receive.receivingFolder") : t2("receive.receiving")), /* @__PURE__ */ import_react14.default.createElement(ProgressBar, { c, pct }), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("transfer.progress", { pct }))) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, offer?.folder ? t2("receive.successFolder") : t2("receive.success")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.success, margin: 0 } }, downloadDirRef.current && !usedFallback ? t2("receive.savedAsIn", { name: savedName, folder: savedDir }) : t2("receive.savedAs", { name: savedName })), usedFallback ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.folderFallback")) : null) : null, phase === "declined" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.declined")) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "cancelled" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("errors.cancelled")) : null), busy ? /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancel }) : phase === "confirm" || phase === "conflict" ? null : /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("common.done"), onClick: onHome }));
   }
   function Pair({
     c,
@@ -30764,6 +30823,8 @@
     "devices",
     "drop",
     "settings",
+    "server",
+    "wormhole",
     "trouble"
   ];
   function Guide({ c, onHome }) {
