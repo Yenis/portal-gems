@@ -164,24 +164,6 @@ export default function HomeScreen({
       <Title>{t('app.name')}</Title>
       <Muted>{t('home.tagline')}</Muted>
 
-      <View style={styles.linkRow}>
-        <Pressable onPress={onExplain}>
-          <Text style={{ color: c.primary, fontSize: fontSize.body, fontWeight: '600' }}>
-            {t('home.explainLink')}
-          </Text>
-        </Pressable>
-        <Pressable onPress={onGuide}>
-          <Text style={{ color: c.primary, fontSize: fontSize.body, fontWeight: '600' }}>
-            {t('home.guideLink')}
-          </Text>
-        </Pressable>
-        <Pressable onPress={onSettings}>
-          <Text style={{ color: c.primary, fontSize: fontSize.body, fontWeight: '600' }}>
-            {t('home.settingsLink')}
-          </Text>
-        </Pressable>
-      </View>
-
       <Card>
         <Subtitle>{t('home.devicesTitle')}</Subtitle>
         {devices.length === 0 ? <Muted>{t('home.devicesEmpty')}</Muted> : null}
@@ -352,6 +334,12 @@ export default function HomeScreen({
         />
       </Card>
 
+      <Card>
+        <GhostButton label={t('home.explainLink')} onPress={onExplain} />
+        <GhostButton label={t('home.guideLink')} onPress={onGuide} />
+        <GhostButton label={t('home.settingsLink')} onPress={onSettings} />
+      </Card>
+
       <View style={{ height: spacing(6) }} />
     </ScrollView>
   );
@@ -370,12 +358,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing(3),
     fontSize: fontSize.body,
     fontFamily: 'monospace',
-  },
-  linkRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: spacing(2),
   },
   device: {
     gap: spacing(2),

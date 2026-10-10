@@ -425,23 +425,6 @@ function Home({
     <>
       <Title c={c}>{t('app.name')}</Title>
       <Muted c={c}>{t('home.tagline')}</Muted>
-      <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: spacing(2) }}>
-        <a
-          onClick={onExplain}
-          style={{ color: c.primary, fontWeight: 600, cursor: 'pointer' }}>
-          {t('home.explainLink')}
-        </a>
-        <a
-          onClick={onGuide}
-          style={{ color: c.primary, fontWeight: 600, cursor: 'pointer' }}>
-          {t('home.guideLink')}
-        </a>
-        <a
-          onClick={onSettings}
-          style={{ color: c.primary, fontWeight: 600, cursor: 'pointer' }}>
-          {t('home.settingsLink')}
-        </a>
-      </div>
       <Card c={c}>
         <Subtitle c={c}>{t('home.devicesTitle')}</Subtitle>
         {devices.length === 0 ? <Muted c={c}>{t('home.devicesEmpty')}</Muted> : null}
@@ -666,6 +649,11 @@ function Home({
           onClick={() => onReceive(code.trim())}
           disabled={!CODE_RE.test(code.trim())}
         />
+      </Card>
+      <Card c={c}>
+        <GhostButton c={c} label={t('home.explainLink')} onClick={onExplain} />
+        <GhostButton c={c} label={t('home.guideLink')} onClick={onGuide} />
+        <GhostButton c={c} label={t('home.settingsLink')} onClick={onSettings} />
       </Card>
     </>
   );
