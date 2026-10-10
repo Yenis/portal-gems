@@ -1742,6 +1742,24 @@ mod tests {
         )
     }
 
+    /// A sender's `on_code` paired with a wait for it. The code is reported
+    /// once the nameplate is claimed, which is the earliest a receiver can
+    /// join - and for a bundle that is only after the archive has been built,
+    /// however long that takes. Sleeping a fixed time instead is a guess: a
+    /// receiver that turns up early finds no nameplate and fails.
+    fn code_claimed() -> (impl FnOnce(String) + Send + 'static, impl FnOnce()) {
+        let (tx, rx) = std::sync::mpsc::channel::<()>();
+        (
+            move |_| {
+                tx.send(()).ok();
+            },
+            move || {
+                rx.recv_timeout(std::time::Duration::from_secs(120))
+                    .expect("the sender never claimed its code");
+            },
+        )
+    }
+
     /// Bytes that do not compress, so an archive of them is as large as they
     /// are and a transfer of it lasts long enough to be interrupted.
     fn noise(len: usize, seed: u32) -> Vec<u8> {
@@ -1777,19 +1795,20 @@ mod tests {
             let code = test_code("files");
             let send_code = code.clone();
             let items = vec![one, two, album];
+            let (on_code, wait_for_sender) = code_claimed();
             let sender = std::thread::spawn(move || {
                 futures_lite::future::block_on(send_files(
                     &items,
                     "3 files - 2026-10-10 14.32",
                     Some(&send_code),
                     &test_server(),
-                    |_| {},
+                    on_code,
                     |_| {},
                     |_, _| {},
                     pending::<()>(),
                 ))
             });
-            std::thread::sleep(std::time::Duration::from_secs(2));
+            wait_for_sender();
 
             let pending_receive = request_receive(&code, &test_server(), pending::<()>())
                 .await
@@ -1847,6 +1866,7 @@ mod tests {
             for loose in [true, false] {
                 let code = test_code(if loose { "marked" } else { "unmarked" });
                 let (send_code, zip_path) = (code.clone(), zip.clone());
+                let (on_code, wait_for_sender) = code_claimed();
                 let sender = std::thread::spawn(move || {
                     futures_lite::future::block_on(send_zip_as_folder(
                         &zip_path,
@@ -1856,13 +1876,13 @@ mod tests {
                         loose,
                         Some(&send_code),
                         &test_server(),
-                        |_| {},
+                        on_code,
                         |_| {},
                         |_, _| {},
                         pending::<()>(),
                     ))
                 });
-                std::thread::sleep(std::time::Duration::from_secs(2));
+                wait_for_sender();
 
                 let pending_receive = request_receive(&code, &test_server(), pending::<()>())
                     .await
@@ -1903,19 +1923,21 @@ mod tests {
             let code = test_code("files-cancel");
             let send_code = code.clone();
             let items = vec![a, b];
+            let (on_code, wait_for_sender) = code_claimed();
             let sender = std::thread::spawn(move || {
                 futures_lite::future::block_on(send_files(
                     &items,
                     "2 files",
                     Some(&send_code),
                     &test_server(),
-                    |_| {},
+                    on_code,
                     |_| {},
                     |_, _| {},
                     pending::<()>(),
                 ))
             });
-            std::thread::sleep(std::time::Duration::from_secs(4));
+            // 32 MiB to deflate before there is a code to join.
+            wait_for_sender();
 
             let pending_receive = request_receive(&code, &test_server(), pending::<()>())
                 .await
