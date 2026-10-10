@@ -15,6 +15,8 @@ const SECTIONS = [
   'devices',
   'share',
   'settings',
+  'server',
+  'wormhole',
   'trouble',
 ] as const;
 

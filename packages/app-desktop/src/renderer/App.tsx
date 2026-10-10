@@ -1775,6 +1775,8 @@ const GUIDE_SECTIONS = [
   'devices',
   'drop',
   'settings',
+  'server',
+  'wormhole',
   'trouble',
 ] as const;
 

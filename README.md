@@ -96,6 +96,8 @@ PortalGems takes a different approach, inherited from magic-wormhole:
 - **Interoperable.** PortalGems speaks the standard magic-wormhole protocol, so
   you can send from your VPS with `wormhole send` and receive on your phone, or
   from your phone to a friend's laptop running any compatible client.
+  Other clients meet on the public magic-wormhole server, so pick **Public
+  server** in Settings first; the in-app User guide walks through it.
 
 ## Features
 

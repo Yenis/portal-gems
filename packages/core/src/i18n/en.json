@@ -193,6 +193,10 @@
     "dropBody": "Drop a file or a folder onto a paired device in the list to send it there straight away.",
     "settingsTitle": "Make it yours",
     "settingsBody": "In Settings you can change the name this device gives when pairing, where received files are saved, the language and the color theme. You can also switch the connection server there - both devices must use the same one.",
+    "serverTitle": "About the connection server",
+    "serverBody": "To start a transfer, the two devices first meet on a connection server. It only helps them find each other: everything is encrypted on your device, so the server never sees your files or messages. Settings > Connection server offers three: the PortalGems server (the default, recommended for reliability), the public magic-wormhole server run by the community, and a custom server you host yourself. Both devices must use the same server, or they will never meet. If transfers keep failing, try a different one on both.",
+    "wormholeTitle": "Use with other magic-wormhole apps",
+    "wormholeBody": "PortalGems speaks the standard magic-wormhole protocol, so it works with the wormhole terminal program and other magic-wormhole apps. Those use the public server, so first switch to Public server in Settings > Connection server. Then send as usual and run wormhole receive on the computer with the code shown here - or run wormhole send there and type its code under Receive a file. Files, folders and messages all work. Pairing is a PortalGems feature, so use one-time codes with other apps. Switch back to the PortalGems server afterwards if your other devices use it.",
     "troubleTitle": "If a transfer does not start",
     "troubleBody": "Check that PortalGems is open on both devices and that both are online. Between paired devices, make sure both clocks show the right time - the devices use it to find each other. A one-time code works only once: if something went wrong, start the send again to get a fresh one."
   },

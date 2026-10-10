@@ -178,6 +178,10 @@
     "dropBody": "Prevuci datoteku ili folder na upareni uređaj u listi da ga odmah pošalješ tamo.",
     "settingsTitle": "Prilagodi sebi",
     "settingsBody": "U Postavkama možeš promijeniti ime koje ovaj uređaj daje pri uparivanju, gdje se spremaju primljene datoteke, jezik i temu boja. Tamo možeš promijeniti i server za povezivanje - oba uređaja moraju koristiti isti.",
+    "serverTitle": "O serveru za povezivanje",
+    "serverBody": "Da bi prijenos počeo, dva uređaja se prvo nađu na serveru za povezivanje. On im samo pomaže da se pronađu: sve se šifrira na tvom uređaju, pa server nikada ne vidi tvoje datoteke ni poruke. Postavke > Server za povezivanje nudi tri: PortalGems server (zadani, preporučen zbog pouzdanosti), javni magic-wormhole server koji vodi zajednica i prilagođeni server koji sam hostuješ. Oba uređaja moraju koristiti isti server, inače se nikada neće naći. Ako prijenosi stalno ne uspijevaju, probaj drugi server na oba uređaja.",
+    "wormholeTitle": "Korištenje s drugim magic-wormhole aplikacijama",
+    "wormholeBody": "PortalGems koristi standardni magic-wormhole protokol, pa radi s terminalskim programom wormhole i drugim magic-wormhole aplikacijama. One koriste javni server, zato prvo odaberi Javni server u Postavke > Server za povezivanje. Zatim šalji kao i obično i na računaru pokreni wormhole receive s kodom prikazanim ovdje - ili tamo pokreni wormhole send i upiši njegov kod pod Primi datoteku. Rade datoteke, folderi i poruke. Uparivanje je funkcija PortalGemsa, pa s drugim aplikacijama koristi jednokratne kodove. Poslije se vrati na PortalGems server ako ga koriste tvoji drugi uređaji.",
     "troubleTitle": "Ako prijenos ne počne",
     "troubleBody": "Provjeri da je PortalGems otvoren na oba uređaja i da su oba na mreži. Kod uparenih uređaja provjeri da oba sata pokazuju tačno vrijeme - uređaji se pomoću njega pronalaze. Jednokratni kod vrijedi samo jednom: ako nešto pođe po zlu, pokreni slanje ponovo da dobiješ novi."
   },
