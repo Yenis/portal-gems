@@ -29,12 +29,12 @@ Pairing, finally dependable.
   two devices that have never met is now one round trip, and typically
   finishes in well under a second.
 
-  Pairing with a device still on 1.3.x keeps working, and so does pairing
-  with PortalGems Mini on Symbian. The pairing code a device shows now says
-  which form it can read, so the other device sends the one it understands -
-  the new way between two updated devices, the old way with anything else.
-  Devices already paired are unaffected: existing pairings keep working and
-  nothing needs setting up again.
+  PortalGems Mini (Symbian) 0.11.0 has this too. Pairing with a device still
+  on 1.3.x keeps working: the pairing code a device shows now says which form
+  it can read, so the other device sends the one it understands - the new way
+  wherever both sides have it, the old way with anything older. Devices
+  already paired are unaffected: existing pairings keep working and nothing
+  needs setting up again.
 
 ### Fixed
 

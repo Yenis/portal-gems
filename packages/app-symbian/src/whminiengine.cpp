@@ -1358,8 +1358,26 @@ static TInt ReceiveHandshake(TJob* aJob, const unsigned char aSecret[32],
         return -1;
     }
     if (wh_xfer_await_offer(&mailbox, gSettings.iRelayHost, gSettings.iRelayPort,
-                            &offer) != 0 ||
-        offer.is_text || offer.is_directory || offer.filesize > sizeof(data)) {
+                            &offer) != 0) {
+        Finish(aJob, EJobFailed, "That was not a pairing handshake");
+        wh_mailbox_close(&mailbox, "errory");
+        return -1;
+    }
+    /* A handshake sent as a message is already here - the offer carried it,
+     * and there is no transit and nothing to accept. That is the form a
+     * device gets when its invitation said it could read one. */
+    if (offer.is_text) {
+        wh_mailbox_close(&mailbox, "happy");
+        if (wh_pair_handshake_decode(offer.text,
+                                     (unsigned long)User::StringLength(
+                                         (const TUint8*)offer.text),
+                                     aName, (unsigned long)aCap) != 0) {
+            Finish(aJob, EJobFailed, "Malformed pairing handshake");
+            return -1;
+        }
+        return 0;
+    }
+    if (offer.is_directory || offer.filesize > sizeof(data)) {
         Finish(aJob, EJobFailed, "That was not a pairing handshake");
         wh_mailbox_close(&mailbox, "errory");
         return -1;
@@ -1399,6 +1417,9 @@ static void RunPairHostJob(TJob* aJob)
     aJob->iStep = EStepInvitation;
     CopyCStr(p.name, sizeof(p.name), gSettings.iDeviceName);
     wh_net_random(p.secret, WH_PAIR_SECRET_LEN);
+    /* We can read a message handshake, so say so: the other device then
+     * sends one, and the pairing needs no connection between the two. */
+    p.wants_message = 1;
     if (wh_pair_encode(&p, invitation, sizeof(invitation)) < 0) {
         Finish(aJob, EJobFailed, "Could not build the invitation");
         return;
@@ -1529,12 +1550,22 @@ static void RunPairJoinJob(TJob* aJob)
         wh_mailbox_close(&mailbox, "errory");
         return;
     }
-    src.iData = (const unsigned char*)handshake;
-    src.iLen = (unsigned long)hslen;
-    src.iOff = 0;
-    if (wh_xfer_send_file(&mailbox, KAppId, WH_PAIR_HANDSHAKE_FILE, (unsigned long)hslen,
-                          gSettings.iRelayHost, gSettings.iRelayPort, &gXferBufs,
-                          MemSourceRead, &src, NULL, NULL) != 0) {
+    /* As a message where the other side said it can read one: that needs no
+     * transit, which is the step most likely to fail between two devices
+     * meeting for the first time. Anything older is sent the file it
+     * expects. */
+    if (p.wants_message) {
+        rc = wh_xfer_send_text(&mailbox, handshake);
+    } else {
+        src.iData = (const unsigned char*)handshake;
+        src.iLen = (unsigned long)hslen;
+        src.iOff = 0;
+        rc = wh_xfer_send_file(&mailbox, KAppId, WH_PAIR_HANDSHAKE_FILE,
+                               (unsigned long)hslen, gSettings.iRelayHost,
+                               gSettings.iRelayPort, &gXferBufs, MemSourceRead,
+                               &src, NULL, NULL);
+    }
+    if (rc != 0) {
         Finish(aJob, EJobFailed, "The handshake was not delivered");
         wh_mailbox_close(&mailbox, "errory");
         return;

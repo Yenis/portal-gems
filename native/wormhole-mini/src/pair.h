@@ -35,6 +35,15 @@ extern "C" {
 typedef struct {
     char name[WH_PAIR_NAME_MAX];
     unsigned char secret[WH_PAIR_SECRET_LEN];
+    /* Non-zero when the device that made this payload can be handed the
+     * handshake as a text message ("hs":"msg"), which needs no transit at
+     * all; zero means it only knows the original file form, which does.
+     * Every sender must honour it - that is what lets this client pair with
+     * a PortalGems that predates the message form, and the other way round.
+     * Always set it explicitly: encode writes the key only when it is set,
+     * so a payload without it is byte-for-byte what every earlier version
+     * produced. */
+    int wants_message;
 } wh_pair_payload;
 
 /* The five-minute window a moment falls in. Codes are derived per window, and
@@ -48,8 +57,9 @@ unsigned long wh_pair_bucket(unsigned long unix_seconds);
 void wh_pair_derive_code(const unsigned char secret[WH_PAIR_SECRET_LEN],
                          unsigned long bucket, char out[WH_PAIR_CODE_MAX]);
 
-/* "PGPAIR1:" + base64url(JSON {"v":1,"name":...,"secret":...}). Returns the
- * length, or -1 if `cap` is too small. */
+/* "PGPAIR1:" + base64url(JSON {"v":1,"name":...,"secret":...}), plus
+ * "hs":"msg" when `wants_message` is set. Returns the length, or -1 if `cap`
+ * is too small. */
 long wh_pair_encode(const wh_pair_payload *p, char *out, unsigned long cap);
 
 /* Parse an invitation, tolerating surrounding whitespace. Returns 0, or -1 for
@@ -59,8 +69,10 @@ long wh_pair_encode(const wh_pair_payload *p, char *out, unsigned long cap);
  * through a character. */
 int wh_pair_decode(const char *text, unsigned long len, wh_pair_payload *out);
 
-/* The handshake the joining side sends back over the derived code, as the
- * contents of a small file: {"v":1,"name":"..."}. Returns the length, or -1. */
+/* The handshake the joining side sends back over the derived code:
+ * {"v":1,"name":"..."}. Sent as a text message when the invitation asked for
+ * one (`wants_message`), otherwise as the contents of a small file. Returns
+ * the length, or -1. */
 long wh_pair_handshake_encode(const char *name, char *out, unsigned long cap);
 
 /* Read a handshake. Returns 0 with the sender's name in `name`, or -1. */

@@ -32,6 +32,15 @@ static const char VECTOR_PAYLOAD[] =
     "PGPAIR1:eyJ2IjoxLCJuYW1lIjoiTm9raWEgRTcyIMSNxIfFviIsInNlY3JldCI6IkFB"
     "RUNBd1FGQmdjSUNRb0xEQTBPRHhBUkVoTVVGUllYR0JrYUd4d2RIaDgifQ";
 
+/* The same payload from a device that can read a message handshake. Pinned
+ * the same way and for the same reason: core's encodePairingPayload must
+ * produce this byte for byte, or the two sides disagree about what a pairing
+ * code says. */
+static const char VECTOR_PAYLOAD_MSG[] =
+    "PGPAIR1:eyJ2IjoxLCJuYW1lIjoiTm9raWEgRTcyIMSNxIfFviIsInNlY3JldCI6Ik"
+    "FBRUNBd1FGQmdjSUNRb0xEQTBPRHhBUkVoTVVGUllYR0JrYUd4d2RIaDgiLCJocyI6"
+    "Im1zZyJ9";
+
 /* "Nokia E72 " followed by c-caron, c-acute, z-caron in UTF-8. */
 static const char VECTOR_NAME[] = "Nokia E72 \304\215\304\207\305\276";
 
@@ -83,8 +92,40 @@ int main(void)
     /* Payload encoding, pinned - including a name that is not ASCII. */
     memcpy(p.secret, secret, WH_PAIR_SECRET_LEN);
     strcpy(p.name, VECTOR_NAME);
+    p.wants_message = 0;
     n = wh_pair_encode(&p, buf, sizeof(buf));
     check("payload encodes exactly as core does", n > 0 && strcmp(buf, VECTOR_PAYLOAD) == 0);
+
+    /* The handshake capability: written only when asked for, so the bytes
+     * above are what a device that does not know about it still produces. */
+    p.wants_message = 1;
+    n = wh_pair_encode(&p, buf, sizeof(buf));
+    check("a payload asking for a message handshake matches core",
+          n > 0 && strcmp(buf, VECTOR_PAYLOAD_MSG) == 0);
+
+    memset(&back, 0, sizeof(back));
+    check("  and decodes with the capability set",
+          wh_pair_decode(VECTOR_PAYLOAD_MSG, strlen(VECTOR_PAYLOAD_MSG), &back) == 0 &&
+          back.wants_message == 1 &&
+          strcmp(back.name, VECTOR_NAME) == 0 &&
+          memcmp(back.secret, secret, 32) == 0);
+
+    memset(&back, 0, sizeof(back));
+    check("a payload without it asks for a file",
+          wh_pair_decode(VECTOR_PAYLOAD, strlen(VECTOR_PAYLOAD), &back) == 0 &&
+          back.wants_message == 0);
+
+    {
+        /* hs:"carrier-pigeon" - a form this build cannot send. */
+        static const char FUTURE[] =
+            "PGPAIR1:eyJ2IjoxLCJuYW1lIjoieCIsInNlY3JldCI6IkFBRUNBd1FGQmdjSUNRb0"
+            "xEQTBPRHhBUkVoTVVGUllYR0JrYUd4d2RIaDgiLCJocyI6ImNhcnJpZXItcGlnZW9u"
+            "In0";
+        memset(&back, 0, sizeof(back));
+        check("an unknown capability is not a reason to refuse a pairing",
+              wh_pair_decode(FUTURE, strlen(FUTURE), &back) == 0 &&
+              back.wants_message == 0 && strcmp(back.name, "x") == 0);
+    }
 
     memset(&back, 0, sizeof(back));
     check("core's payload decodes",
@@ -120,6 +161,7 @@ int main(void)
     /* A payload that went through the text-message path arrives as exactly
      * the string that was sent, so a round trip here is the whole contract. */
     strcpy(p.name, "E72 \"quoted\" \\ back");
+    p.wants_message = 0;
     n = wh_pair_encode(&p, buf, sizeof(buf));
     check("names with quotes and backslashes round-trip",
           n > 0 && wh_pair_decode(buf, (unsigned long)n, &back) == 0 &&

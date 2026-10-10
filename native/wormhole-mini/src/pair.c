@@ -81,6 +81,10 @@ long wh_pair_encode(const wh_pair_payload *p, char *out, unsigned long cap)
     wh_jw_u32(&w, "v", 1);
     wh_jw_str(&w, "name", p->name);
     wh_jw_str(&w, "secret", secret_b64);
+    /* Written only when set: a payload without it has to encode to exactly
+     * the bytes every earlier version produced, or two builds stop agreeing
+     * on what a pairing code says. */
+    if (p->wants_message) wh_jw_str(&w, "hs", "msg");
     wh_jw_obj_close(&w);
     if (wh_jw_done(&w) != 0) return -1;
 
@@ -98,6 +102,13 @@ long wh_pair_encode(const wh_pair_payload *p, char *out, unsigned long cap)
 static int is_space(char c)
 {
     return c == ' ' || c == '\t' || c == '\r' || c == '\n';
+}
+
+static int pair_streq(const char *a, const char *b)
+{
+    unsigned long i = 0;
+    while (a[i] && a[i] == b[i]) i++;
+    return a[i] == '\0' && b[i] == '\0';
 }
 
 static void copy_str(char *dst, unsigned long cap, const char *src)
@@ -143,6 +154,18 @@ int wh_pair_decode(const char *text, unsigned long len, wh_pair_payload *out)
     if (v.type != WH_JSON_STRING) return -1;
     if (wh_json_str(&v, out->name, sizeof(out->name)) < 0) {
         copy_str(out->name, sizeof(out->name), "PortalGems device");
+    }
+
+    /* Absent, or anything this build does not know, reads as "send a file":
+     * a form it cannot produce must not stop it pairing the way it can. */
+    out->wants_message = 0;
+    if (wh_json_get(json, (unsigned long)n, "hs", &v) == 0 &&
+        v.type == WH_JSON_STRING) {
+        char form[16];
+        if (wh_json_str(&v, form, sizeof(form)) >= 0 &&
+            pair_streq(form, "msg")) {
+            out->wants_message = 1;
+        }
     }
 
     for (i = 0; i < WH_PAIR_SECRET_LEN; i++) out->secret[i] = secret[i];

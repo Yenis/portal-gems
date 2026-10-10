@@ -182,9 +182,12 @@ Consumed by both apps as **npm `file:` symlinks** (see §5 build gotchas).
     trip and typically lands in under a second.
   - **Which form to send is negotiated, so no version is locked out.** The
     payload carries `hs: 'msg'` when the side that made it can read a message
-    (`wantsMessageHandshake`), and the sender obeys it: message to a 1.4.0
-    peer, file to anything older, including Symbian, whose
-    `receive_handshake` rejects text offers outright. Receivers accept both.
+    (`wantsMessageHandshake`), and the sender obeys it: message to a peer
+    that asked for one, file to anything older. Receivers accept both.
+    `native/wormhole-mini` implements the same negotiation -
+    `wh_pair_payload.wants_message`, written by `wh_pair_encode` only when
+    set and read back by `wh_pair_decode` - so Symbian pairs without transit
+    against 1.4.0 and still sends a file to anything that did not ask.
     The field is written only when set, so a payload without it encodes to
     exactly the bytes earlier versions produced, and every parser - here and
     `wh_pair_decode` in `native/wormhole-mini` - looks up the keys it knows

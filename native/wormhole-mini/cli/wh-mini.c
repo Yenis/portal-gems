@@ -873,8 +873,18 @@ static int receive_handshake(const wh_paired_server *srv, const char *relay_host
     if (rc != 0) { fprintf(stderr, "could not look for the handshake\n"); return -1; }
     printf("handshake arriving on %s\n", code);
 
-    if (wh_xfer_await_offer(&m, relay_host, relay_port, &offer) != 0 ||
-        offer.is_text || offer.is_directory || offer.filesize > sizeof(data)) {
+    if (wh_xfer_await_offer(&m, relay_host, relay_port, &offer) != 0) {
+        fprintf(stderr, "that was not a pairing handshake\n");
+        wh_mailbox_close(&m, "errory");
+        return -1;
+    }
+    /* A handshake sent as a message is already here - the offer carried it,
+     * and there is no transit and nothing to accept. */
+    if (offer.is_text) {
+        wh_mailbox_close(&m, "happy");
+        return wh_pair_handshake_decode(offer.text, strlen(offer.text), name, cap);
+    }
+    if (offer.is_directory || offer.filesize > sizeof(data)) {
         fprintf(stderr, "that was not a pairing handshake\n");
         wh_mailbox_close(&m, "errory");
         return -1;
@@ -910,6 +920,9 @@ static int cmd_pair_host(const wh_paired_server *srv, const char *relay_host,
     strncpy(p.name, myname, sizeof(p.name) - 1);
     p.name[sizeof(p.name) - 1] = '\0';
     wh_net_random(p.secret, WH_PAIR_SECRET_LEN);
+    /* We can read a message handshake, so say so: the other device then
+     * sends one, and the pairing needs no connection between the two. */
+    p.wants_message = 1;
     if (wh_pair_encode(&p, invitation, sizeof(invitation)) < 0) return 1;
 
     wh_mailbox_init(&m, &g_mbufs);
@@ -988,11 +1001,18 @@ static int cmd_pair_join(const wh_paired_server *srv, const char *relay_host,
 
     hslen = wh_pair_handshake_encode(myname, hs, sizeof(hs));
     if (hslen < 0) { wh_mailbox_close(&m, "errory"); return 1; }
-    src.p = (const unsigned char *)hs;
-    src.len = (unsigned long)hslen;
-    src.off = 0;
-    rc = wh_xfer_send_file(&m, APPID, WH_PAIR_HANDSHAKE_FILE, (unsigned long)hslen,
-                           relay_host, relay_port, &g_xfer, mem_source, &src, 0, 0);
+    /* As a message where the other side said it can read one: that needs no
+     * transit, the step most likely to fail between two devices meeting for
+     * the first time. Anything older is sent the file it expects. */
+    if (p.wants_message) {
+        rc = wh_xfer_send_text(&m, hs);
+    } else {
+        src.p = (const unsigned char *)hs;
+        src.len = (unsigned long)hslen;
+        src.off = 0;
+        rc = wh_xfer_send_file(&m, APPID, WH_PAIR_HANDSHAKE_FILE, (unsigned long)hslen,
+                               relay_host, relay_port, &g_xfer, mem_source, &src, 0, 0);
+    }
     if (rc != 0) {
         fprintf(stderr, "the handshake was not delivered\n");
         wh_mailbox_close(&m, "errory");

@@ -100,6 +100,25 @@ describe('code derivation', () => {
     expect(wantsMessageHandshake(parsePairingPayload(encodePairingPayload(fresh))!)).toBe(true);
   });
 
+  // Pinned on both sides: native/wormhole-mini's test_pair.c asserts this
+  // exact string, so the C client and core cannot drift on what a pairing
+  // code says.
+  it('pins the encoding of a payload that asks for a message handshake', () => {
+    expect(
+      encodePairingPayload({
+        t: 'portalgems-pair',
+        v: 1,
+        name: 'Nokia E72 čćž',
+        secret,
+        hs: 'msg',
+      })
+    ).toBe(
+      'PGPAIR1:eyJ2IjoxLCJuYW1lIjoiTm9raWEgRTcyIMSNxIfFviIsInNlY3JldCI6Ik' +
+        'FBRUNBd1FGQmdjSUNRb0xEQTBPRHhBUkVoTVVGUllYR0JrYUd4d2RIaDgiLCJocyI6' +
+        'Im1zZyJ9'
+    );
+  });
+
   it('treats a payload without the capability as wanting a file', () => {
     const old = { t: 'portalgems-pair', v: 1, name: 'Old Phone', secret } as const;
     const roundTripped = parsePairingPayload(encodePairingPayload(old))!;
