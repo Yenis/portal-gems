@@ -29,17 +29,12 @@ Pairing, finally dependable.
   two devices that have never met is now one round trip, and typically
   finishes in well under a second.
 
-### Breaking
-
-- **Both devices must be on 1.4.0 to pair.** A device on 1.3.x expects that
-  last step as a file and will not recognise a message, so pairing between
-  1.4.0 and 1.3.x fails. This release still *accepts* the old form, so a
-  1.4.0 device can be paired with by a 1.3.x one - but to pair reliably,
-  update both. Devices already paired are unaffected: existing pairings keep
-  working, and nothing needs to be set up again.
-
-- PortalGems Mini (Symbian) cannot pair with a 1.4.0 device until it learns
-  the new form; it is not yet able to complete a pairing in any case.
+  Pairing with a device still on 1.3.x keeps working, and so does pairing
+  with PortalGems Mini on Symbian. The pairing code a device shows now says
+  which form it can read, so the other device sends the one it understands -
+  the new way between two updated devices, the old way with anything else.
+  Devices already paired are unaffected: existing pairings keep working and
+  nothing needs setting up again.
 
 ### Fixed
 

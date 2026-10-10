@@ -179,12 +179,17 @@ Consumed by both apps as **npm `file:` symlinks** (see §5 build gotchas).
     pairing window. Both sides sat waiting, and only the user's second attempt
     worked, on the mappings the first one opened. `send_text` builds no relay
     hints and negotiates no transit, so the handshake is now one mailbox round
-    trip and typically lands in under a second. Receivers still accept a file
-    handshake, which is what a 1.3.x peer sends; a 1.3.x *receiver* cannot
-    read the message form, which is why 1.4.0 is a breaking release for
-    pairing. `native/wormhole-mini` rejects text offers outright
-    (`receive_handshake`), so Symbian needs the same change before it can be
-    paired with from 1.4.0.
+    trip and typically lands in under a second.
+  - **Which form to send is negotiated, so no version is locked out.** The
+    payload carries `hs: 'msg'` when the side that made it can read a message
+    (`wantsMessageHandshake`), and the sender obeys it: message to a 1.4.0
+    peer, file to anything older, including Symbian, whose
+    `receive_handshake` rejects text offers outright. Receivers accept both.
+    The field is written only when set, so a payload without it encodes to
+    exactly the bytes earlier versions produced, and every parser - here and
+    `wh_pair_decode` in `native/wormhole-mini` - looks up the keys it knows
+    and ignores the rest. All four version combinations are exercised in
+    core's tests and were checked against a live mailbox.
   Timeouts: sender 45 s, receiver poll 60 s, **each poll attempt 10 s**
   (`PAIRED_ATTEMPT_TIMEOUT_MS`). A frozen test vector pins the
   derivation - **changing it breaks pairing between app versions**. The

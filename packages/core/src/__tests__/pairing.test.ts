@@ -14,6 +14,7 @@ import {
   encodePairingPayload,
   fromBase64Url,
   parsePairingPayload,
+  wantsMessageHandshake,
   toBase64Url,
   utf8Decode,
   utf8Encode,
@@ -86,6 +87,33 @@ describe('code derivation', () => {
     expect(deriveCode(secret, 1)).toBe('86751495-84d8487eb6-1858ba58a6');
     expect(deriveCode(secret, 42)).toBe('93636662-ffcccbd531-9d38f615c1');
     expect(deriveCode(secret, 5_866_666)).toBe('10150805-bcac0279fb-c1ae797f75');
+  });
+
+  // The handshake capability has to be invisible to everything that came
+  // before it: older builds and the Symbian client look up the keys they know
+  // and ignore the rest, and a payload without the field must still encode to
+  // the exact bytes they have always produced.
+  it('carries the message-handshake capability on new payloads', () => {
+    const fresh = createPairingPayload('Laptop');
+    expect(fresh.hs).toBe('msg');
+    expect(wantsMessageHandshake(fresh)).toBe(true);
+    expect(wantsMessageHandshake(parsePairingPayload(encodePairingPayload(fresh))!)).toBe(true);
+  });
+
+  it('treats a payload without the capability as wanting a file', () => {
+    const old = { t: 'portalgems-pair', v: 1, name: 'Old Phone', secret } as const;
+    const roundTripped = parsePairingPayload(encodePairingPayload(old))!;
+    expect(roundTripped.hs).toBeUndefined();
+    expect(wantsMessageHandshake(roundTripped)).toBe(false);
+  });
+
+  it('ignores a capability it does not understand', () => {
+    const raw = `PGPAIR1:${toBase64Url(
+      utf8Encode(JSON.stringify({ v: 1, name: 'Future', secret, hs: 'carrier-pigeon' }))
+    )}`;
+    const parsed = parsePairingPayload(raw)!;
+    expect(parsed.name).toBe('Future');
+    expect(wantsMessageHandshake(parsed)).toBe(false);
   });
 
   it('pins the payload encoding, non-ASCII name included', () => {

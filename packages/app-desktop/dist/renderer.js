@@ -24209,6 +24209,7 @@
   var PAIRED_CODE_ATTEMPTS = 3;
   var PAIRED_POLL_PAUSE_MS = 500;
   var SEND_ATTEMPTS_KEY = "pg-paired-send-attempts";
+  var PAIRING_HANDSHAKE_FILE = "pg-pair-handshake.json";
   var B64URL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
   function utf8Encode(s) {
     const out = [];
@@ -24286,11 +24287,17 @@
       t: "portalgems-pair",
       v: 1,
       name: myDeviceName2,
-      secret: toBase64Url(randomBytes(32))
+      secret: toBase64Url(randomBytes(32)),
+      hs: "msg"
     };
   }
+  function wantsMessageHandshake(payload) {
+    return payload.hs === "msg";
+  }
   function encodePairingPayload(p) {
-    const json = JSON.stringify({ v: p.v, name: p.name, secret: p.secret });
+    const json = JSON.stringify(
+      p.hs ? { v: p.v, name: p.name, secret: p.secret, hs: p.hs } : { v: p.v, name: p.name, secret: p.secret }
+    );
     return `PGPAIR1:${toBase64Url(utf8Encode(json))}`;
   }
   function parsePairingPayload(raw) {
@@ -24302,7 +24309,14 @@
         return null;
       }
       if (fromBase64Url(json.secret).length !== 32) return null;
-      return { t: "portalgems-pair", v: 1, name: json.name, secret: json.secret };
+      const payload = {
+        t: "portalgems-pair",
+        v: 1,
+        name: json.name,
+        secret: json.secret
+      };
+      if (json.hs === "msg") payload.hs = "msg";
+      return payload;
     } catch {
       return null;
     }
@@ -29131,18 +29145,28 @@
     return pg().requestReceive(transferId, code, currentServer()).finally(() => clearTimeout(timer));
   }
   async function completePairingAsScanner(payload, myName, transferId) {
-    let lastError = null;
-    for (let attempt = 0; attempt < PAIRED_CODE_ATTEMPTS; attempt += 1) {
-      try {
-        const code = deriveCode(payload.secret, currentBucket(), attempt);
-        await pg().sendText(transferId, encodeHandshake(myName), code, currentServer());
-        return await addDevice(payload.name, payload.secret);
-      } catch (e2) {
-        lastError = e2;
-        if (!isTransitFailure(e2)) throw e2;
+    const handshake = encodeHandshake(myName);
+    const path = wantsMessageHandshake(payload) ? null : await pg().writeTemp(PAIRING_HANDSHAKE_FILE, handshake);
+    try {
+      let lastError = null;
+      for (let attempt = 0; attempt < PAIRED_CODE_ATTEMPTS; attempt += 1) {
+        try {
+          const code = deriveCode(payload.secret, currentBucket(), attempt);
+          if (path === null) {
+            await pg().sendText(transferId, handshake, code, currentServer());
+          } else {
+            await pg().send(transferId, path, code, currentServer());
+          }
+          return await addDevice(payload.name, payload.secret);
+        } catch (e2) {
+          lastError = e2;
+          if (!isTransitFailure(e2)) throw e2;
+        }
       }
+      throw lastError ?? new Error("pairing failed");
+    } finally {
+      if (path !== null) pg().deleteFile(path).catch(() => void 0);
     }
-    throw lastError ?? new Error("pairing failed");
   }
   async function waitForPairingAsDisplayer(payload, transferId, isCancelled) {
     const tempDir = await pg().tempDir();

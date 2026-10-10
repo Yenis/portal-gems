@@ -10,24 +10,28 @@ import {
   isTransitFailure,
   newDeviceId,
   parseHandshake,
+  PAIRING_HANDSHAKE_FILE,
   PAIRED_ATTEMPT_TIMEOUT_MS,
   PAIRED_CODE_ATTEMPTS,
   PAIRED_POLL_PAUSE_MS,
   PAIRED_RECEIVE_TIMEOUT_MS,
   parsePairingPayload,
   sanitizeDeviceName,
+  wantsMessageHandshake,
   sortByRecent,
   withDeviceUsed,
   type PairedDevice,
   type PairingPayload,
 } from '@portalgems/core';
-import { requestReceive, sendText } from 'wormhole-rn';
+import { requestReceive, sendFile, sendText } from 'wormhole-rn';
 import {
+  cacheDir,
   deleteFile,
   getPairedDevicesJson,
   incomingDir,
   readTextFile,
   setPairedDevicesJson,
+  writeTextFile,
 } from './native';
 import { currentServer } from './server';
 
@@ -144,12 +148,13 @@ const quietListener = {
  * Scanner side of the handshake: send our device name over the derived code.
  * On success the displayer has stored us; we store them (payload.name).
  *
- * The name travels as a wormhole *message*, not a file. A file needs transit
- * - a connection the two devices open to each other - and the first time two
- * devices meet that is exactly what tends to fail, which used to strand both
- * sides of a pairing. A message rides inside the offer itself, so pairing now
- * asks nothing of the network beyond reaching the mailbox, which both devices
- * have already done by this point.
+ * The name travels as a wormhole *message* where the other side can read one
+ * (`payload.hs`). A file needs transit - a connection the two devices open to
+ * each other - and the first time two devices meet that is exactly what tends
+ * to fail, which used to strand both sides of a pairing. A message rides
+ * inside the offer itself, so pairing asks nothing of the network beyond
+ * reaching the mailbox, which both devices have already done by this point.
+ * A peer that predates the message form is still sent a file.
  */
 export async function completePairingAsScanner(
   payload: PairingPayload,
@@ -157,25 +162,39 @@ export async function completePairingAsScanner(
   signal: AbortSignal
 ): Promise<PairedDevice> {
   const server = await currentServer();
-  let lastError: unknown = null;
-  for (let attempt = 0; attempt < PAIRED_CODE_ATTEMPTS; attempt += 1) {
-    if (signal.aborted) break;
-    try {
-      const code = deriveCode(payload.secret, currentBucket(), attempt);
-      await sendText(encodeHandshake(myName), code, server, quietListener, {
-        signal,
-      });
-      return await addDevice(payload.name, payload.secret);
-    } catch (e) {
-      lastError = e;
-      // A message needs no transit, so this should not happen for that
-      // reason any more - but if it somehow does, the code it failed on is
-      // spent (the nameplate goes the moment the two sides meet) and the
-      // next one is where the other side is already looking.
-      if (!isTransitFailure(e)) throw e;
+  const handshake = encodeHandshake(myName);
+  // Only send a message to a device that said it can read one. Anything
+  // older - and Symbian - still wants the file, and sending what the peer
+  // understands is what keeps pairing across versions working.
+  const asMessage = wantsMessageHandshake(payload);
+  const path = asMessage
+    ? null
+    : await writeTextFile(cacheDir, PAIRING_HANDSHAKE_FILE, handshake);
+  try {
+    let lastError: unknown = null;
+    for (let attempt = 0; attempt < PAIRED_CODE_ATTEMPTS; attempt += 1) {
+      if (signal.aborted) break;
+      try {
+        const code = deriveCode(payload.secret, currentBucket(), attempt);
+        if (path === null) {
+          await sendText(handshake, code, server, quietListener, { signal });
+        } else {
+          await sendFile(path, code, server, quietListener, { signal });
+        }
+        return await addDevice(payload.name, payload.secret);
+      } catch (e) {
+        lastError = e;
+        // A message needs no transit, so this should not happen for that
+        // reason any more - but a file still can, and then the code it
+        // failed on is spent (the nameplate goes the moment the two sides
+        // meet), so the next one is where the other side is looking.
+        if (!isTransitFailure(e)) throw e;
+      }
     }
+    throw lastError ?? new Error('pairing cancelled');
+  } finally {
+    if (path !== null) deleteFile(path).catch(() => undefined);
   }
-  throw lastError ?? new Error('pairing cancelled');
 }
 
 /**

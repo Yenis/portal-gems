@@ -45,6 +45,20 @@ export interface PairingPayload {
   name: string;
   /** shared 32-byte secret, base64url */
   secret: string;
+  /**
+   * How this device can be sent the handshake that closes the pairing.
+   *
+   * `'msg'` means it reads a wormhole message, which needs no connection
+   * between the two devices; absent means it only knows the original file
+   * form, which does. The payload crosses before the handshake, so the side
+   * that sends the handshake knows which to use - which is what lets 1.4.0
+   * pair with an older build, and with Symbian, in both directions.
+   *
+   * Everything that parses this payload looks up the keys it knows and
+   * ignores the rest, here and in `native/wormhole-mini`, so adding the
+   * field left every existing version able to read it.
+   */
+  hs?: 'msg';
 }
 
 /** Codes are derived per time bucket; adjacent buckets tolerate clock skew. */
@@ -189,12 +203,27 @@ export function createPairingPayload(myDeviceName: string): PairingPayload {
     v: 1,
     name: myDeviceName,
     secret: toBase64Url(randomBytes(32)),
+    hs: 'msg',
   };
+}
+
+/**
+ * Whether the device that made this payload can be handed the handshake as a
+ * message. False for anything that predates it, which must be sent a file.
+ */
+export function wantsMessageHandshake(payload: PairingPayload): boolean {
+  return payload.hs === 'msg';
 }
 
 /** Compact string form: shown in QR codes and usable via copy/paste. */
 export function encodePairingPayload(p: PairingPayload): string {
-  const json = JSON.stringify({ v: p.v, name: p.name, secret: p.secret });
+  // `hs` is written only when set, so a payload without it encodes to exactly
+  // the bytes every earlier version produced.
+  const json = JSON.stringify(
+    p.hs
+      ? { v: p.v, name: p.name, secret: p.secret, hs: p.hs }
+      : { v: p.v, name: p.name, secret: p.secret }
+  );
   return `PGPAIR1:${toBase64Url(utf8Encode(json))}`;
 }
 
@@ -207,7 +236,16 @@ export function parsePairingPayload(raw: string): PairingPayload | null {
       return null;
     }
     if (fromBase64Url(json.secret).length !== 32) return null;
-    return { t: 'portalgems-pair', v: 1, name: json.name, secret: json.secret };
+    const payload: PairingPayload = {
+      t: 'portalgems-pair',
+      v: 1,
+      name: json.name,
+      secret: json.secret,
+    };
+    // Unknown values are treated as absent: a future form this build cannot
+    // send must not stop it pairing the way it knows.
+    if (json.hs === 'msg') payload.hs = 'msg';
+    return payload;
   } catch {
     return null;
   }
