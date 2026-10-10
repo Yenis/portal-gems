@@ -310,3 +310,14 @@ cannot receive:
   crate, but the UniFFI surface in `ffi.rs` does not expose it yet - that
   changes in step 4 together with the regenerated bindings, so no commit in
   between has bindings that disagree with the library.
+- Step 2 (`packages/core`) is built: `files.ts` holds `planSend` (which of
+  the three send paths a selection takes), `bundleName`, `filesText` and
+  `savedFilesText`, and the `files.*` strings exist in all six languages.
+  Nothing uses them yet. Wording that already exists - "Choose file to
+  send", the drop hint, the guide - changes in the steps that change the
+  behaviour it describes, not here.
+- Counts are not left to a plural engine. Every counted string has a `One`
+  twin for exactly one file, and Russian and Bosnian word the general form
+  so the noun never follows the number ("Файлов: 5"). The phone's JavaScript
+  engine has no plural rules to lean on, and this keeps all six languages to
+  the same keys, which the completeness test requires.

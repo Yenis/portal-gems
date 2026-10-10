@@ -1,5 +1,6 @@
 export * from './tokens';
 export * from './pairing';
+export * from './files';
 export * from './servers';
 export { initI18n, setLanguage, isSupportedLanguage, SUPPORTED_LANGUAGES, type Language } from './i18n';
 export { friendlyError, isServerUnreachableError, isTransitFailure } from './errors';

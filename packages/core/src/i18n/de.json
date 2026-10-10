@@ -39,6 +39,26 @@
   "folder": {
     "summary": "{{name}} · {{count}} Dateien · {{size}}"
   },
+  "files": {
+    "name": "{{n}} Dateien",
+    "nameOne": "1 Datei",
+    "summary": "{{n}} Dateien · {{size}}",
+    "summaryOne": "1 Datei · {{size}}",
+    "preparing": "Dateien werden vorbereitet…",
+    "sending": "{{n}} Dateien werden gesendet…",
+    "sendingOne": "1 Datei wird gesendet…",
+    "sent": "{{n}} Dateien gesendet.",
+    "sentOne": "1 Datei gesendet.",
+    "incoming": "Eingehende Dateien",
+    "acceptQuestion": "Möchtest du diese Dateien empfangen?",
+    "receiving": "{{n}} Dateien werden empfangen…",
+    "receivingOne": "1 Datei wird empfangen…",
+    "saved": "{{n}} Dateien in Downloads gespeichert.",
+    "savedOne": "1 Datei in Downloads gespeichert.",
+    "savedIn": "{{n}} Dateien in {{folder}} gespeichert.",
+    "savedInOne": "1 Datei in {{folder}} gespeichert.",
+    "savedSome": "Nur {{saved}} von {{n}} Dateien konnten gespeichert werden. Prüfe den freien Speicherplatz in deinem Download-Ordner."
+  },
   "receive": {
     "title": "Empfangen",
     "connecting": "Verbinden…",

@@ -39,6 +39,26 @@
   "folder": {
     "summary": "{{name}} · {{count}} datoteka · {{size}}"
   },
+  "files": {
+    "name": "Datoteke ({{n}})",
+    "nameOne": "1 datoteka",
+    "summary": "Datoteka: {{n}} · {{size}}",
+    "summaryOne": "1 datoteka · {{size}}",
+    "preparing": "Pripremam datoteke…",
+    "sending": "Šaljem datoteke ({{n}})…",
+    "sendingOne": "Šaljem 1 datoteku…",
+    "sent": "Datoteke poslane ({{n}}).",
+    "sentOne": "1 datoteka poslana.",
+    "incoming": "Dolazne datoteke",
+    "acceptQuestion": "Želiš li primiti ove datoteke?",
+    "receiving": "Primanje datoteka ({{n}})…",
+    "receivingOne": "Primanje 1 datoteke…",
+    "saved": "Datoteke sačuvane u Downloads ({{n}}).",
+    "savedOne": "1 datoteka sačuvana u Downloads.",
+    "savedIn": "Datoteke sačuvane u {{folder}} ({{n}}).",
+    "savedInOne": "1 datoteka sačuvana u {{folder}}.",
+    "savedSome": "Sačuvano datoteka: {{saved}} od {{n}}. Provjeri slobodan prostor u folderu za preuzimanja."
+  },
   "receive": {
     "title": "Primanje",
     "connecting": "Povezivanje…",

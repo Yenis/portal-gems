@@ -27617,6 +27617,26 @@
     folder: {
       summary: "{{name}} \xB7 {{count}} datoteka \xB7 {{size}}"
     },
+    files: {
+      name: "Datoteke ({{n}})",
+      nameOne: "1 datoteka",
+      summary: "Datoteka: {{n}} \xB7 {{size}}",
+      summaryOne: "1 datoteka \xB7 {{size}}",
+      preparing: "Pripremam datoteke\u2026",
+      sending: "\u0160aljem datoteke ({{n}})\u2026",
+      sendingOne: "\u0160aljem 1 datoteku\u2026",
+      sent: "Datoteke poslane ({{n}}).",
+      sentOne: "1 datoteka poslana.",
+      incoming: "Dolazne datoteke",
+      acceptQuestion: "\u017Deli\u0161 li primiti ove datoteke?",
+      receiving: "Primanje datoteka ({{n}})\u2026",
+      receivingOne: "Primanje 1 datoteke\u2026",
+      saved: "Datoteke sa\u010Duvane u Downloads ({{n}}).",
+      savedOne: "1 datoteka sa\u010Duvana u Downloads.",
+      savedIn: "Datoteke sa\u010Duvane u {{folder}} ({{n}}).",
+      savedInOne: "1 datoteka sa\u010Duvana u {{folder}}.",
+      savedSome: "Sa\u010Duvano datoteka: {{saved}} od {{n}}. Provjeri slobodan prostor u folderu za preuzimanja."
+    },
     receive: {
       title: "Primanje",
       connecting: "Povezivanje\u2026",
@@ -27869,6 +27889,26 @@
     },
     folder: {
       summary: "{{name}} \xB7 {{count}} Dateien \xB7 {{size}}"
+    },
+    files: {
+      name: "{{n}} Dateien",
+      nameOne: "1 Datei",
+      summary: "{{n}} Dateien \xB7 {{size}}",
+      summaryOne: "1 Datei \xB7 {{size}}",
+      preparing: "Dateien werden vorbereitet\u2026",
+      sending: "{{n}} Dateien werden gesendet\u2026",
+      sendingOne: "1 Datei wird gesendet\u2026",
+      sent: "{{n}} Dateien gesendet.",
+      sentOne: "1 Datei gesendet.",
+      incoming: "Eingehende Dateien",
+      acceptQuestion: "M\xF6chtest du diese Dateien empfangen?",
+      receiving: "{{n}} Dateien werden empfangen\u2026",
+      receivingOne: "1 Datei wird empfangen\u2026",
+      saved: "{{n}} Dateien in Downloads gespeichert.",
+      savedOne: "1 Datei in Downloads gespeichert.",
+      savedIn: "{{n}} Dateien in {{folder}} gespeichert.",
+      savedInOne: "1 Datei in {{folder}} gespeichert.",
+      savedSome: "Nur {{saved}} von {{n}} Dateien konnten gespeichert werden. Pr\xFCfe den freien Speicherplatz in deinem Download-Ordner."
     },
     receive: {
       title: "Empfangen",
@@ -28123,6 +28163,26 @@
     folder: {
       summary: "{{name}} \xB7 {{count}} files \xB7 {{size}}"
     },
+    files: {
+      name: "{{n}} files",
+      nameOne: "1 file",
+      summary: "{{n}} files \xB7 {{size}}",
+      summaryOne: "1 file \xB7 {{size}}",
+      preparing: "Preparing files\u2026",
+      sending: "Sending {{n}} files\u2026",
+      sendingOne: "Sending 1 file\u2026",
+      sent: "{{n}} files sent.",
+      sentOne: "1 file sent.",
+      incoming: "Incoming files",
+      acceptQuestion: "Do you want to receive these files?",
+      receiving: "Receiving {{n}} files\u2026",
+      receivingOne: "Receiving 1 file\u2026",
+      saved: "{{n}} files saved to Downloads.",
+      savedOne: "1 file saved to Downloads.",
+      savedIn: "{{n}} files saved in {{folder}}.",
+      savedInOne: "1 file saved in {{folder}}.",
+      savedSome: "Only {{saved}} of {{n}} files could be saved. Check the free space in your download folder."
+    },
     receive: {
       title: "Receiving",
       connecting: "Connecting\u2026",
@@ -28375,6 +28435,26 @@
     },
     folder: {
       summary: "{{name}} \xB7 {{count}} archivos \xB7 {{size}}"
+    },
+    files: {
+      name: "{{n}} archivos",
+      nameOne: "1 archivo",
+      summary: "{{n}} archivos \xB7 {{size}}",
+      summaryOne: "1 archivo \xB7 {{size}}",
+      preparing: "Preparando archivos\u2026",
+      sending: "Enviando {{n}} archivos\u2026",
+      sendingOne: "Enviando 1 archivo\u2026",
+      sent: "{{n}} archivos enviados.",
+      sentOne: "1 archivo enviado.",
+      incoming: "Archivos entrantes",
+      acceptQuestion: "\xBFQuieres recibir estos archivos?",
+      receiving: "Recibiendo {{n}} archivos\u2026",
+      receivingOne: "Recibiendo 1 archivo\u2026",
+      saved: "{{n}} archivos guardados en Descargas.",
+      savedOne: "1 archivo guardado en Descargas.",
+      savedIn: "{{n}} archivos guardados en {{folder}}.",
+      savedInOne: "1 archivo guardado en {{folder}}.",
+      savedSome: "Solo se pudieron guardar {{saved}} de {{n}} archivos. Comprueba el espacio libre en tu carpeta de descargas."
     },
     receive: {
       title: "Recibiendo",
@@ -28629,6 +28709,26 @@
     folder: {
       summary: "{{name}} \xB7 {{count}} fichiers \xB7 {{size}}"
     },
+    files: {
+      name: "{{n}} fichiers",
+      nameOne: "1 fichier",
+      summary: "{{n}} fichiers \xB7 {{size}}",
+      summaryOne: "1 fichier \xB7 {{size}}",
+      preparing: "Pr\xE9paration des fichiers\u2026",
+      sending: "Envoi de {{n}} fichiers\u2026",
+      sendingOne: "Envoi de 1 fichier\u2026",
+      sent: "{{n}} fichiers envoy\xE9s.",
+      sentOne: "1 fichier envoy\xE9.",
+      incoming: "Fichiers entrants",
+      acceptQuestion: "Voulez-vous recevoir ces fichiers ?",
+      receiving: "R\xE9ception de {{n}} fichiers\u2026",
+      receivingOne: "R\xE9ception de 1 fichier\u2026",
+      saved: "{{n}} fichiers enregistr\xE9s dans T\xE9l\xE9chargements.",
+      savedOne: "1 fichier enregistr\xE9 dans T\xE9l\xE9chargements.",
+      savedIn: "{{n}} fichiers enregistr\xE9s dans {{folder}}.",
+      savedInOne: "1 fichier enregistr\xE9 dans {{folder}}.",
+      savedSome: "Seuls {{saved}} fichiers sur {{n}} ont pu \xEAtre enregistr\xE9s. V\xE9rifiez l'espace libre dans votre dossier de t\xE9l\xE9chargement."
+    },
     receive: {
       title: "R\xE9ception",
       connecting: "Connexion\u2026",
@@ -28881,6 +28981,26 @@
     },
     folder: {
       summary: "{{name}} \xB7 \u0444\u0430\u0439\u043B\u043E\u0432: {{count}} \xB7 {{size}}"
+    },
+    files: {
+      name: "\u0424\u0430\u0439\u043B\u044B ({{n}})",
+      nameOne: "1 \u0444\u0430\u0439\u043B",
+      summary: "\u0424\u0430\u0439\u043B\u043E\u0432: {{n}} \xB7 {{size}}",
+      summaryOne: "1 \u0444\u0430\u0439\u043B \xB7 {{size}}",
+      preparing: "\u041F\u043E\u0434\u0433\u043E\u0442\u043E\u0432\u043A\u0430 \u0444\u0430\u0439\u043B\u043E\u0432\u2026",
+      sending: "\u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 \u0444\u0430\u0439\u043B\u043E\u0432 ({{n}})\u2026",
+      sendingOne: "\u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 1 \u0444\u0430\u0439\u043B\u0430\u2026",
+      sent: "\u0424\u0430\u0439\u043B\u044B \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u044B ({{n}}).",
+      sentOne: "1 \u0444\u0430\u0439\u043B \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u0435\u043D.",
+      incoming: "\u0412\u0445\u043E\u0434\u044F\u0449\u0438\u0435 \u0444\u0430\u0439\u043B\u044B",
+      acceptQuestion: "\u041F\u0440\u0438\u043D\u044F\u0442\u044C \u044D\u0442\u0438 \u0444\u0430\u0439\u043B\u044B?",
+      receiving: "\u041F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u0435 \u0444\u0430\u0439\u043B\u043E\u0432 ({{n}})\u2026",
+      receivingOne: "\u041F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u0435 1 \u0444\u0430\u0439\u043B\u0430\u2026",
+      saved: "\u0424\u0430\u0439\u043B\u044B \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u044B \u0432 \xAB\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0438\xBB ({{n}}).",
+      savedOne: "1 \u0444\u0430\u0439\u043B \u0441\u043E\u0445\u0440\u0430\u043D\u0451\u043D \u0432 \xAB\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0438\xBB.",
+      savedIn: "\u0424\u0430\u0439\u043B\u044B \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u044B \u0432 {{folder}} ({{n}}).",
+      savedInOne: "1 \u0444\u0430\u0439\u043B \u0441\u043E\u0445\u0440\u0430\u043D\u0451\u043D \u0432 {{folder}}.",
+      savedSome: "\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E \u0444\u0430\u0439\u043B\u043E\u0432: {{saved}} \u0438\u0437 {{n}}. \u041F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u0441\u0432\u043E\u0431\u043E\u0434\u043D\u043E\u0435 \u043C\u0435\u0441\u0442\u043E \u0432 \u043F\u0430\u043F\u043A\u0435 \u0437\u0430\u0433\u0440\u0443\u0437\u043E\u043A."
     },
     receive: {
       title: "\u041F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u0435",
