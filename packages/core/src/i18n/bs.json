@@ -18,7 +18,9 @@
     "receivePlaceholder": "npr. 7-crossover-clockwork",
     "receiveButton": "Primi",
     "sendTextButton": "Napiši poruku za slanje",
-    "guideLink": "Uputstvo"
+    "guideLink": "Uputstvo",
+    "receiveServer": "Server: {{server}}. Pošiljalac mora koristiti isti.",
+    "moreTitle": "Pomoć i postavke"
   },
   "send": {
     "title": "Slanje",

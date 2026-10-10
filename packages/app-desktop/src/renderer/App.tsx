@@ -294,6 +294,12 @@ export default function App() {
   );
 }
 
+const SERVER_CHOICE_KEYS = {
+  public: 'choicePublic',
+  portalgems: 'choicePortalgems',
+  custom: 'choiceCustom',
+} as const;
+
 function Home({
   c,
   onSend,
@@ -318,6 +324,9 @@ function Home({
   const { t, i18n } = useTranslation();
   const [code, setCode] = useState('');
   const [devices, setDevices] = useState<PairedDevice[]>([]);
+  // A code only connects when both sides meet on the same server, so the
+  // receive card names the one in use.
+  const [serverChoice] = useState(() => loadServerSettings().choice);
 
   useEffect(() => {
     loadDevices().then(setDevices);
@@ -643,6 +652,11 @@ function Home({
           onChange={setCode}
           placeholder={t('home.receivePlaceholder')}
         />
+        <Muted c={c}>
+          {t('home.receiveServer', {
+            server: t(`settings.server.${SERVER_CHOICE_KEYS[serverChoice]}`),
+          })}
+        </Muted>
         <PrimaryButton
           c={c}
           label={t('home.receiveButton')}
@@ -651,6 +665,7 @@ function Home({
         />
       </Card>
       <Card c={c}>
+        <Subtitle c={c}>{t('home.moreTitle')}</Subtitle>
         <GhostButton c={c} label={t('home.explainLink')} onClick={onExplain} />
         <GhostButton c={c} label={t('home.guideLink')} onClick={onGuide} />
         <GhostButton c={c} label={t('home.settingsLink')} onClick={onSettings} />

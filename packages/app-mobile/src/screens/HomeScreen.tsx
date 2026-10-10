@@ -18,6 +18,7 @@ import {
   radius,
   spacing,
   type PairedDevice,
+  type ServerChoice,
 } from '@portalgems/core';
 import {
   Card,
@@ -29,10 +30,17 @@ import {
 } from '../components';
 import { copyToCache, pickSendFolder, type SendItem } from '../native';
 import { loadDevices, removeDevice, renameDevice } from '../pairing';
+import { loadServerSettings } from '../server';
 import { useTheme } from '../theme';
 
 // Codes look like "7-crossover-clockwork": numeric nameplate, dash, words.
 const CODE_RE = /^\d+(-[a-zA-Z0-9]+)+$/;
+
+const SERVER_CHOICE_KEYS = {
+  public: 'choicePublic',
+  portalgems: 'choicePortalgems',
+  custom: 'choiceCustom',
+} as const;
 
 export default function HomeScreen({
   onSend,
@@ -59,9 +67,13 @@ export default function HomeScreen({
   const [picking, setPicking] = useState(false);
   const [pickError, setPickError] = useState<string | null>(null);
   const [devices, setDevices] = useState<PairedDevice[]>([]);
+  // A code only connects when both sides meet on the same server, so the
+  // receive card names the one in use.
+  const [serverChoice, setServerChoice] = useState<ServerChoice | null>(null);
 
   useEffect(() => {
     loadDevices().then(setDevices);
+    loadServerSettings().then((s) => setServerChoice(s.choice));
   }, []);
 
   const pickFile = async (device?: PairedDevice) => {
@@ -327,6 +339,13 @@ export default function HomeScreen({
           autoCapitalize="none"
           autoCorrect={false}
         />
+        {serverChoice ? (
+          <Muted>
+            {t('home.receiveServer', {
+              server: t(`settings.server.${SERVER_CHOICE_KEYS[serverChoice]}`),
+            })}
+          </Muted>
+        ) : null}
         <PrimaryButton
           label={t('home.receiveButton')}
           onPress={() => onReceive(code.trim())}
@@ -335,6 +354,7 @@ export default function HomeScreen({
       </Card>
 
       <Card>
+        <Subtitle>{t('home.moreTitle')}</Subtitle>
         <GhostButton label={t('home.explainLink')} onPress={onExplain} />
         <GhostButton label={t('home.guideLink')} onPress={onGuide} />
         <GhostButton label={t('home.settingsLink')} onPress={onSettings} />

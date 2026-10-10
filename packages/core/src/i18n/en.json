@@ -18,7 +18,9 @@
     "receivePlaceholder": "e.g. 7-crossover-clockwork",
     "receiveButton": "Receive",
     "sendTextButton": "Write a message to send",
-    "guideLink": "User guide"
+    "guideLink": "User guide",
+    "receiveServer": "Server: {{server}}. The sender must use the same one.",
+    "moreTitle": "Help & settings"
   },
   "send": {
     "title": "Sending",
