@@ -206,8 +206,12 @@
     "choosingBody": "PortalGems necesita un servidor de buzón para poner en contacto a dos dispositivos, y tú eliges cuál en Ajustes. El servidor público es el de la comunidad de magic-wormhole: funciona con otras apps de wormhole, pero a veces no está disponible. El servidor de PortalGems lo gestionamos nosotros y es una opción predeterminada fiable. «Personalizado» te permite apuntar la app a cualquier servidor, incluido uno que alojes tú mismo; consulta la guía de autoalojamiento si te interesa. Elijas lo que elijas, tus archivos siguen cifrados de extremo a extremo y el servidor solo ve datos ilegibles."
   },
   "transfer": {
-    "direct": "Conexión directa con el otro dispositivo",
-    "relay": "Conectado a través de un relé",
+    "sendVia": "Enviando por: {{server}}",
+    "sendViaRelay": "Enviando por: {{server}} - mediante relé",
+    "sendDirect": "Enviando directamente al otro dispositivo",
+    "receiveVia": "Recibiendo por: {{server}}",
+    "receiveViaRelay": "Recibiendo por: {{server}} - mediante relé",
+    "receiveDirect": "Recibiendo directamente del otro dispositivo",
     "progress": "{{pct}} %"
   },
   "common": {

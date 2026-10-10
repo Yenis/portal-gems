@@ -27,6 +27,7 @@ import {
   ProgressBar,
   Subtitle,
   Title,
+  TransferRoute,
 } from '../components';
 import { friendlyError, isServerUnreachableError } from '../errors';
 import {
@@ -236,6 +237,7 @@ export default function SendScreen({
     <View style={[styles.container, { backgroundColor: c.background }]}>
       <Title onBack={onHome}>{t('send.title')}</Title>
       <Muted>{summary}</Muted>
+      <TransferRoute kind="send" direct={direct} />
 
       <Card>
         {phase === 'starting' ? <Muted>{t('receive.connecting')}</Muted> : null}
@@ -265,7 +267,6 @@ export default function SendScreen({
                 ? t('send.sendingFolder', { name: item.name })
                 : t('send.sending', { name: item.name })}
             </Subtitle>
-            <Muted>{direct ? t('transfer.direct') : t('transfer.relay')}</Muted>
             <ProgressBar pct={pct} />
             <Muted>{t('transfer.progress', { pct })}</Muted>
           </>

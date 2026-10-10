@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -8,7 +8,9 @@ import {
   View,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { fontSize, radius, spacing } from '@portalgems/core';
+import { useTranslation } from 'react-i18next';
+import { fontSize, radius, spacing, type ServerChoice } from '@portalgems/core';
+import { loadServerSettings, SERVER_CHOICE_KEYS } from './server';
 import { useTheme } from './theme';
 
 export function Card({ children }: { children: React.ReactNode }) {
@@ -67,6 +69,31 @@ export function Subtitle({ children }: { children: React.ReactNode }) {
 export function Muted({ children }: { children: React.ReactNode }) {
   const c = useTheme();
   return <Text style={[styles.muted, { color: c.textMuted }]}>{children}</Text>;
+}
+
+/** The line under a transfer screen's title: which server the two sides meet
+ *  on, and once the data connection is up, whether it is direct or relayed. */
+export function TransferRoute({
+  kind,
+  direct,
+}: {
+  kind: 'send' | 'receive';
+  direct: boolean | null;
+}) {
+  const { t } = useTranslation();
+  const [choice, setChoice] = useState<ServerChoice | null>(null);
+  useEffect(() => {
+    loadServerSettings().then((s) => setChoice(s.choice));
+  }, []);
+  if (direct) return <Muted>{t(`transfer.${kind}Direct`)}</Muted>;
+  if (!choice) return null;
+  return (
+    <Muted>
+      {t(direct === false ? `transfer.${kind}ViaRelay` : `transfer.${kind}Via`, {
+        server: t(`settings.server.${SERVER_CHOICE_KEYS[choice]}`),
+      })}
+    </Muted>
+  );
 }
 
 export function PrimaryButton({

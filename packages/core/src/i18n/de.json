@@ -206,8 +206,12 @@
     "choosingBody": "PortalGems braucht einen Mailbox-Server, um zwei Geräte zusammenzubringen, und in den Einstellungen wählst du, welchen. Der öffentliche Server ist der von der Community betriebene magic-wormhole-Server - er funktioniert mit anderen wormhole-Apps, ist aber gelegentlich nicht verfügbar. Der PortalGems-Server wird von uns betrieben und ist eine zuverlässige Standardwahl. Mit „Eigener\" kannst du die App auf jeden beliebigen Server richten, auch auf einen selbst gehosteten - siehe die Anleitung zum Selbsthosten, falls dich das interessiert. Egal welchen du wählst: deine Dateien bleiben Ende-zu-Ende verschlüsselt, und der Server sieht immer nur unlesbare Daten."
   },
   "transfer": {
-    "direct": "Direkte Verbindung zum anderen Gerät",
-    "relay": "Verbunden über Relay",
+    "sendVia": "Senden über: {{server}}",
+    "sendViaRelay": "Senden über: {{server}} - per Relay",
+    "sendDirect": "Senden direkt an das andere Gerät",
+    "receiveVia": "Empfangen über: {{server}}",
+    "receiveViaRelay": "Empfangen über: {{server}} - per Relay",
+    "receiveDirect": "Empfangen direkt vom anderen Gerät",
     "progress": "{{pct}} %"
   },
   "common": {

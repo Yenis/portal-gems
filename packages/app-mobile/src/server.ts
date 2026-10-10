@@ -26,3 +26,10 @@ export async function saveServerSettings(s: ServerSettings): Promise<void> {
 export async function currentServer(): Promise<ServerConfig> {
   return resolveServer(await loadServerSettings());
 }
+
+/** The `settings.server.*` string naming each choice. */
+export const SERVER_CHOICE_KEYS = {
+  public: 'choicePublic',
+  portalgems: 'choicePortalgems',
+  custom: 'choiceCustom',
+} as const;

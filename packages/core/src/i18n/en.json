@@ -122,8 +122,12 @@
     "nothingFound": "Nothing arrived from {{name}}. Make sure they tapped Send, then try again."
   },
   "transfer": {
-    "direct": "Direct connection to the other device",
-    "relay": "Connected via relay",
+    "sendVia": "Sending via {{server}}",
+    "sendViaRelay": "Sending via {{server}} - relayed",
+    "sendDirect": "Sending directly to the other device",
+    "receiveVia": "Receiving via {{server}}",
+    "receiveViaRelay": "Receiving via {{server}} - relayed",
+    "receiveDirect": "Receiving directly from the other device",
     "progress": "{{pct}}%"
   },
   "common": {

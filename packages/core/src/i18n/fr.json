@@ -206,8 +206,12 @@
     "choosingBody": "PortalGems a besoin d'un serveur de boîte aux lettres pour mettre deux appareils en relation, et vous choisissez lequel dans les Paramètres. Le serveur public est celui de la communauté magic-wormhole - il fonctionne avec les autres applis wormhole mais est parfois indisponible. Le serveur PortalGems est géré par nous et constitue un choix par défaut fiable. « Personnalisé » vous permet de pointer l'appli vers n'importe quel serveur, y compris un que vous hébergez vous-même - voir le guide d'auto-hébergement si cela vous intéresse. Quel que soit votre choix, vos fichiers restent chiffrés de bout en bout et le serveur ne voit jamais que des données brouillées."
   },
   "transfer": {
-    "direct": "Connexion directe à l'autre appareil",
-    "relay": "Connecté via un relais",
+    "sendVia": "Envoi via : {{server}}",
+    "sendViaRelay": "Envoi via : {{server}} - par relais",
+    "sendDirect": "Envoi direct vers l'autre appareil",
+    "receiveVia": "Réception via : {{server}}",
+    "receiveViaRelay": "Réception via : {{server}} - par relais",
+    "receiveDirect": "Réception directe depuis l'autre appareil",
     "progress": "{{pct}} %"
   },
   "common": {

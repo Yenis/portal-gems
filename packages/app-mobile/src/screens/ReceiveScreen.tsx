@@ -20,6 +20,7 @@ import {
   ProgressBar,
   Subtitle,
   Title,
+  TransferRoute,
 } from '../components';
 import { friendlyError } from '../errors';
 import {
@@ -274,6 +275,7 @@ export default function ReceiveScreen({
     <View style={[styles.container, { backgroundColor: c.background }]}>
       <Title onBack={onHome}>{t('receive.title')}</Title>
       <Muted>{device ? deviceLabel(device) : code}</Muted>
+      <TransferRoute kind="receive" direct={direct} />
 
       <Card>
         {phase === 'connecting' ? (
@@ -352,9 +354,6 @@ export default function ReceiveScreen({
             <Subtitle>
               {folderOffer ? t('receive.receivingFolder') : t('receive.receiving')}
             </Subtitle>
-            {direct !== null ? (
-              <Muted>{direct ? t('transfer.direct') : t('transfer.relay')}</Muted>
-            ) : null}
             <ProgressBar pct={pct} />
             <Muted>{t('transfer.progress', { pct })}</Muted>
           </>

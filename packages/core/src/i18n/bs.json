@@ -206,8 +206,12 @@
     "choosingBody": "PortalGems treba mailbox server da spoji dva uređaja, a u Postavkama biraš koji. Javni server je onaj koji vodi zajednica (magic-wormhole) - radi s drugim wormhole aplikacijama, ali je povremeno nedostupan. PortalGems server vodimo mi i predstavlja pouzdan zadani izbor. „Prilagođeni\" ti omogućava da usmjeriš aplikaciju na bilo koji server, uključujući onaj koji sam hostuješ - pogledaj vodič za samostalno hostanje ako te zanima. Šta god odabereš, tvoje datoteke ostaju end-to-end šifrovane, a server uvijek vidi samo nečitljive podatke."
   },
   "transfer": {
-    "direct": "Direktna veza s drugim uređajem",
-    "relay": "Povezano preko releja",
+    "sendVia": "Slanje preko: {{server}}",
+    "sendViaRelay": "Slanje preko: {{server}} - putem releja",
+    "sendDirect": "Slanje direktno na drugi uređaj",
+    "receiveVia": "Primanje preko: {{server}}",
+    "receiveViaRelay": "Primanje preko: {{server}} - putem releja",
+    "receiveDirect": "Primanje direktno s drugog uređaja",
     "progress": "{{pct}} %"
   },
   "common": {

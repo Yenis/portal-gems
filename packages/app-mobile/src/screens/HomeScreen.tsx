@@ -30,17 +30,11 @@ import {
 } from '../components';
 import { copyToCache, pickSendFolder, type SendItem } from '../native';
 import { loadDevices, removeDevice, renameDevice } from '../pairing';
-import { loadServerSettings } from '../server';
+import { loadServerSettings, SERVER_CHOICE_KEYS } from '../server';
 import { useTheme } from '../theme';
 
 // Codes look like "7-crossover-clockwork": numeric nameplate, dash, words.
 const CODE_RE = /^\d+(-[a-zA-Z0-9]+)+$/;
-
-const SERVER_CHOICE_KEYS = {
-  public: 'choicePublic',
-  portalgems: 'choicePortalgems',
-  custom: 'choiceCustom',
-} as const;
 
 export default function HomeScreen({
   onSend,

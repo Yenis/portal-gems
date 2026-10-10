@@ -300,6 +300,29 @@ const SERVER_CHOICE_KEYS = {
   custom: 'choiceCustom',
 } as const;
 
+/** The line under a transfer screen's title: which server the two sides meet
+ *  on, and once the data connection is up, whether it is direct or relayed. */
+function TransferRoute({
+  c,
+  kind,
+  direct,
+}: {
+  c: Palette;
+  kind: 'send' | 'receive';
+  direct: boolean | null;
+}) {
+  const { t } = useTranslation();
+  const [choice] = useState(() => loadServerSettings().choice);
+  if (direct) return <Muted c={c}>{t(`transfer.${kind}Direct`)}</Muted>;
+  return (
+    <Muted c={c}>
+      {t(direct === false ? `transfer.${kind}ViaRelay` : `transfer.${kind}Via`, {
+        server: t(`settings.server.${SERVER_CHOICE_KEYS[choice]}`),
+      })}
+    </Muted>
+  );
+}
+
 function Home({
   c,
   onSend,
@@ -852,6 +875,7 @@ function Send({
     <>
       <Title c={c} onBack={onHome}>{t('send.title')}</Title>
       <Muted c={c}>{summary}</Muted>
+      <TransferRoute c={c} kind="send" direct={direct} />
       <Card c={c}>
         {phase === 'starting' ? <Muted c={c}>{t('receive.connecting')}</Muted> : null}
         {phase === 'waiting' ? (
@@ -878,7 +902,6 @@ function Send({
                   ? t('send.sendingFolder', { name: item.name })
                   : t('send.sending', { name: item.name })}
             </Subtitle>
-            <Muted c={c}>{direct ? t('transfer.direct') : t('transfer.relay')}</Muted>
             <ProgressBar c={c} pct={pct} />
             <Muted c={c}>{t('transfer.progress', { pct })}</Muted>
           </>
@@ -1074,6 +1097,7 @@ function Receive({
     <>
       <Title c={c} onBack={onHome}>{t('receive.title')}</Title>
       <Muted c={c}>{device ? deviceLabel(device) : code}</Muted>
+      <TransferRoute c={c} kind="receive" direct={direct} />
       <Card c={c}>
         {phase === 'connecting' ? (
           <Muted c={c}>
@@ -1150,9 +1174,6 @@ function Receive({
             <Subtitle c={c}>
               {offer?.folder ? t('receive.receivingFolder') : t('receive.receiving')}
             </Subtitle>
-            {direct !== null ? (
-              <Muted c={c}>{direct ? t('transfer.direct') : t('transfer.relay')}</Muted>
-            ) : null}
             <ProgressBar c={c} pct={pct} />
             <Muted c={c}>{t('transfer.progress', { pct })}</Muted>
           </>
