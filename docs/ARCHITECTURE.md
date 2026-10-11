@@ -3,7 +3,7 @@
 The single document to read before building new features. Deferred work with
 its reasoning lives in `docs/BACKLOG.md`; the Symbian client has its own map
 in `docs/SYMBIAN.md`. This describes the
-released 1.4.3 (2026-10-11); what was verified, and how, is in section 8.
+released 1.4.4 (2026-10-11); what was verified, and how, is in section 8.
 Per-phase discovery notes live in the other `docs/*.md` files; this is the
 consolidated map.
 
@@ -682,7 +682,7 @@ excuse for letting it drift.
   `pg-download-dir` on both platforms.)
 - **New screen** → Route union + screen component per app; strings in core.
 
-## 7. Security review (2026-10-11, after 1.4.3)
+## 7. Security review (2026-10-11, after 1.4.3; fixes released in 1.4.4)
 
 A read of all three clients for input that crosses a trust boundary: the
 network, another app on the phone, the renderer, the environment. What it

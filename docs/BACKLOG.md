@@ -2,7 +2,7 @@
 
 Things worth doing that are not done yet, and what has been decided about
 them. Each entry says what the problem actually is, so the next person does
-not have to rediscover it. Reviewed against the code at 1.4.3 (2026-10-11).
+not have to rediscover it. Reviewed against the code at 1.4.4 (2026-10-11).
 
 ## Open gaps, in the order they are to be worked
 

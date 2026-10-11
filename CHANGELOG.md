@@ -5,6 +5,101 @@ All notable changes to PortalGems are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.4] - 2026-10-11
+
+A security release. Please update.
+
+After 1.4.3 the code of all three apps was read through for anything that
+trusts what it should not: the network, another app on the phone, the
+environment it runs in. Two of the findings are serious. None of them was
+reported from use - they were found by looking - but that is no reason to
+stay on an older version.
+
+### Security
+
+- **Android: another app could write files into PortalGems' private
+  storage.** When a file was shared into PortalGems, the name the sharing
+  app gave it was used as it stood. A name built to climb out of the
+  folder it belonged in let any app on the phone plant a file anywhere in
+  PortalGems' own storage, at the moment of sharing and before you had
+  chosen anything. The name is now reduced to a plain name, and the
+  destination checked.
+
+- **Android: a share can no longer point at PortalGems' own files.** Only
+  content handed over by the sharing app is accepted. A share that named a
+  file path directly - which is read with PortalGems' own access, and so
+  could name its private files and have you send them on - is refused.
+
+- **PortalGems Mini (Symbian) 0.13.1: a crafted message from the server
+  could read or corrupt the phone's memory.** A length far larger than any
+  real message was mishandled by the phone's 32-bit arithmetic. The phone
+  could then be made to send back memory it should never have sent, or to
+  write past the end of a buffer. Because the phone talks to the server
+  without transport encryption, anyone on the network path could send
+  such a message, not only the server. Lengths are now checked the right
+  way round, and a test that crashed before the fix is part of the suite.
+
+- **Desktop: the list of paired devices was readable by other accounts on
+  the same computer.** The file is encrypted with the system keychain
+  where there is one, but on Linux without a keyring that encryption is
+  not real, and the file's permissions were the default. It is now
+  readable by your account only.
+
+- **Desktop: the pairing handshake no longer passes through the shared
+  temporary folder**, and the window's access to files is confined to one
+  private folder inside the app's profile.
+
+- **Desktop: testing switches no longer work in the released app.**
+  Environment variables used by the development test harness were honoured
+  by installed builds; one of them made the app receive and accept a
+  transfer without being asked. They are ignored outside a source
+  checkout.
+
+- **Pairing: the one transfer accepted without asking is now checked
+  first.** With a device on a version older than 1.4.0, the last step of
+  pairing arrives as a small file, and nothing limited what that file
+  could be. It must now be one file of at most 4 KB.
+
+- **Windows: received file names are made safe to store.** A name with a
+  colon would have become a hidden stream inside another file; a trailing
+  dot quietly changes a file's extension; and names like `CON` are
+  devices. All are adjusted before saving.
+
+- **The desktop window can no longer navigate or open other windows**,
+  whatever it is shown.
+
+- **Updated components.** Electron 38, which had reached the end of its
+  support and had a known memory-safety flaw, is replaced by Electron 44.
+  The TLS library is updated past a handshake flaw (rustls 0.23.45).
+
+### Added
+
+- **About & licenses**, on the home screen under Help & settings. It
+  shows the version you are running, the license PortalGems is under (the
+  GNU GPL, version 3 or later), where the source code is, and every
+  component the app is built on with its license. In all six languages.
+  On Symbian it is the last paragraph of Options > Help. The full license
+  texts are in `THIRD-PARTY-LICENSES.txt`, in the repository and inside
+  the desktop installers.
+
+- **A privacy page and a security page**: [PRIVACY.md](PRIVACY.md) says
+  what leaves your device, who can see it and what is kept, and
+  [SECURITY.md](SECURITY.md) says how to report a flaw privately.
+
+### Changed
+
+- **The PortalGems server writes nothing down about who uses it - and
+  until now it did.** While writing the privacy page we checked the
+  server instead of assuming, and found its request log switched on: it
+  recorded the address of anything that connected to it directly, which
+  includes Symbian phones. Connections from the Android and desktop apps
+  were recorded without their address. Logging is now limited to errors,
+  the firewall's log is off, and what had been recorded was deleted the
+  same day. The setup guide for running your own server has the same
+  setting, and a section on checking that a server really keeps nothing.
+
+[1.4.4]: https://github.com/Yenis/portal-gems/releases/tag/v1.4.4
+
 ## [1.4.3] - 2026-10-11
 
 Notifications.
