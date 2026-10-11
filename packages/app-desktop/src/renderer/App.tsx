@@ -3,6 +3,9 @@ import { useTranslation } from 'react-i18next';
 import QRCodeLib from 'qrcode';
 import {
   deviceLabel,
+  componentLine,
+  COMPONENTS,
+  SOURCE_URL,
   itemsText,
   classifyPairingInput,
   createPairingPayload,
@@ -144,6 +147,7 @@ declare global {
       reject(id: number): Promise<void>;
       cancel(id: number): Promise<void>;
       deviceName(): Promise<string>;
+      version(): Promise<string>;
       tempDir(): Promise<string>;
       pairsGet(): Promise<string>;
       pairsSet(json: string): Promise<void>;
@@ -193,7 +197,8 @@ type Route =
   | { name: 'pair' }
   | { name: 'settings'; scrollToServer?: boolean }
   | { name: 'explain' }
-  | { name: 'guide' };
+  | { name: 'guide' }
+  | { name: 'about' };
 
 export default function App() {
   const [themeName, setThemeNameState] = useState<ThemeName>(loadThemeName());
@@ -258,6 +263,7 @@ export default function App() {
           onSettings={() => navigate({ name: 'settings' })}
           onExplain={() => navigate({ name: 'explain' })}
           onGuide={() => navigate({ name: 'guide' })}
+          onAbout={() => navigate({ name: 'about' })}
         />
       ) : route.name === 'send' ? (
         <Send
@@ -289,6 +295,8 @@ export default function App() {
         <Explain c={c} onHome={goBack} />
       ) : route.name === 'guide' ? (
         <Guide c={c} onHome={goBack} />
+      ) : route.name === 'about' ? (
+        <About c={c} onHome={goBack} />
       ) : (
         <Pair
           c={c}
@@ -346,6 +354,7 @@ function Home({
   onSettings,
   onExplain,
   onGuide,
+  onAbout,
 }: {
   c: Palette;
   onSend: (item: SendItem, device?: PairedDevice) => void;
@@ -356,6 +365,7 @@ function Home({
   onSettings: () => void;
   onExplain: () => void;
   onGuide: () => void;
+  onAbout: () => void;
 }) {
   const { t } = useTranslation();
   const [code, setCode] = useState('');
@@ -692,6 +702,7 @@ function Home({
         <GhostButton c={c} label={t('home.explainLink')} onClick={onExplain} />
         <GhostButton c={c} label={t('home.guideLink')} onClick={onGuide} />
         <GhostButton c={c} label={t('home.settingsLink')} onClick={onSettings} />
+        <GhostButton c={c} label={t('home.aboutLink')} onClick={onAbout} />
       </Card>
     </>
   );
@@ -1958,6 +1969,51 @@ function Guide({ c, onHome }: { c: Palette; onHome: () => void }) {
           <Muted c={c}>{t(`guide.${key}Body`)}</Muted>
         </Card>
       ))}
+      <PrimaryButton c={c} label={t('common.done')} onClick={onHome} />
+    </>
+  );
+}
+
+// The license notice the GPL asks for, where the source is, and what the app
+// is built on. The address is shown as text to select and copy, not as a
+// link: this window never navigates anywhere (see main.ts).
+function About({ c, onHome }: { c: Palette; onHome: () => void }) {
+  const { t } = useTranslation();
+  const [version, setVersion] = useState('');
+  useEffect(() => {
+    window.portalgems.version().then(setVersion, () => undefined);
+  }, []);
+  const selectable: React.CSSProperties = {
+    color: c.text,
+    fontFamily: 'monospace',
+    fontSize: fontSize.small,
+    overflowWrap: 'anywhere',
+    userSelect: 'text',
+  };
+  return (
+    <>
+      <Title c={c} onBack={onHome}>{t('about.title')}</Title>
+      {version ? <Muted c={c}>{t('about.version', { version })}</Muted> : null}
+      <Card c={c}>
+        <Subtitle c={c}>{t('about.licenseTitle')}</Subtitle>
+        <Muted c={c}>{t('about.licenseBody')}</Muted>
+      </Card>
+      <Card c={c}>
+        <Subtitle c={c}>{t('about.sourceTitle')}</Subtitle>
+        <Muted c={c}>{t('about.sourceBody')}</Muted>
+        <div style={selectable}>{SOURCE_URL}</div>
+      </Card>
+      <Card c={c}>
+        <Subtitle c={c}>{t('about.privacyTitle')}</Subtitle>
+        <Muted c={c}>{t('about.privacyBody')}</Muted>
+      </Card>
+      <Card c={c}>
+        <Subtitle c={c}>{t('about.componentsTitle')}</Subtitle>
+        <Muted c={c}>{t('about.componentsBody')}</Muted>
+        <div style={{ ...selectable, color: c.textMuted, whiteSpace: 'pre-wrap' }}>
+          {COMPONENTS.desktop.map(componentLine).join('\n')}
+        </div>
+      </Card>
       <PrimaryButton c={c} label={t('common.done')} onClick={onHome} />
     </>
   );

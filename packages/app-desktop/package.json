@@ -51,6 +51,16 @@
     "asarUnpack": [
       "**/*.node"
     ],
+    "extraResources": [
+      {
+        "from": "../../LICENSE",
+        "to": "LICENSE.PortalGems.txt"
+      },
+      {
+        "from": "../../THIRD-PARTY-LICENSES.txt",
+        "to": "THIRD-PARTY-LICENSES.txt"
+      }
+    ],
     "linux": {
       "target": [
         "AppImage",

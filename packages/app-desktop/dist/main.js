@@ -5416,6 +5416,7 @@ import_electron2.ipcMain.handle("pg:statTarget", async (_e, dir2, fileName) => {
   }
 });
 import_electron2.ipcMain.handle("pg:deviceName", () => os.hostname());
+import_electron2.ipcMain.handle("pg:version", () => import_electron2.app.getVersion());
 import_electron2.ipcMain.handle("pg:tempDir", () => handshakeDir());
 import_electron2.ipcMain.handle("pg:pairs:get", () => readPairs());
 import_electron2.ipcMain.handle("pg:pairs:set", (_e, json) => writePairs(json));

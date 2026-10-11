@@ -19,6 +19,7 @@
     "receiveButton": "Receive",
     "sendTextButton": "Write a message to send",
     "guideLink": "User guide",
+    "aboutLink": "About & licenses",
     "receiveServer": "Server: {{server}}. The sender must use the same one.",
     "moreTitle": "Help & settings"
   },
@@ -256,6 +257,18 @@
     "serverUnreachable": "Could not reach the connection server. It may be temporarily down. Open Settings and switch to the PortalGems server, or use your own - see the self-hosting guide.",
     "connectTimeout": "Could not reach the connection server in time. Check that this device is online. If it is, the server may be down - you can switch servers in Settings.",
     "invalidServerUrl": "The server address is not valid. Check it in Settings. A rendezvous URL looks like wss://host/v1 and a relay like tcp://host:4001."
+  },
+  "about": {
+    "title": "About PortalGems",
+    "version": "Version {{version}}",
+    "licenseTitle": "License",
+    "licenseBody": "PortalGems is free software. You may use it, study it, share it and change it under the terms of the GNU General Public License, version 3 or later. It comes with no warranty.",
+    "sourceTitle": "Source code",
+    "sourceBody": "The complete source code, the license and the privacy page are at:",
+    "privacyTitle": "Privacy",
+    "privacyBody": "No accounts, no analytics, no telemetry. Your files and messages are encrypted on your device, and nobody in between can read them.",
+    "componentsTitle": "Built on",
+    "componentsBody": "PortalGems is built on the work of others. These components are part of this app, each under its own license. The full license texts are in THIRD-PARTY-LICENSES.txt at the address above."
   },
   "notify": {
     "received": "Transfer received",

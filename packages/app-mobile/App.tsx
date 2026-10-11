@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { initI18n, itemsText, setLanguage, type PairedDevice } from '@portalgems/core';
 import ComposeScreen from './src/screens/ComposeScreen';
 import ExplainerScreen from './src/screens/ExplainerScreen';
+import AboutScreen from './src/screens/AboutScreen';
 import GuideScreen from './src/screens/GuideScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import PairScreen from './src/screens/PairScreen';
@@ -46,7 +47,8 @@ type Route =
   | { name: 'pair' }
   | { name: 'settings'; scrollToServer?: boolean }
   | { name: 'explain' }
-  | { name: 'guide' };
+  | { name: 'guide' }
+  | { name: 'about' };
 
 export default function App() {
   const isDark = useColorScheme() === 'dark';
@@ -123,6 +125,7 @@ function AppShell() {
           onSettings={() => navigate({ name: 'settings' })}
           onExplain={() => navigate({ name: 'explain' })}
           onGuide={() => navigate({ name: 'guide' })}
+          onAbout={() => navigate({ name: 'about' })}
         />
       ) : route.name === 'send' ? (
         <SendScreen
@@ -166,6 +169,8 @@ function AppShell() {
         <ExplainerScreen onHome={goBack} />
       ) : route.name === 'guide' ? (
         <GuideScreen onHome={goBack} />
+      ) : route.name === 'about' ? (
+        <AboutScreen onHome={goBack} />
       ) : (
         <PairScreen
           onHome={goBack}

@@ -373,6 +373,7 @@ ipcMain.handle('pg:statTarget', async (_e, dir: string | null, fileName: string)
 });
 
 ipcMain.handle('pg:deviceName', () => os.hostname());
+ipcMain.handle('pg:version', () => app.getVersion());
 ipcMain.handle('pg:tempDir', () => handshakeDir());
 ipcMain.handle('pg:pairs:get', () => readPairs());
 ipcMain.handle('pg:pairs:set', (_e, json: string) => writePairs(json));

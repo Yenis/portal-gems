@@ -47,6 +47,7 @@ import_electron.contextBridge.exposeInMainWorld("portalgems", {
   reject: (id) => import_electron.ipcRenderer.invoke("pg:reject", id),
   cancel: (id) => import_electron.ipcRenderer.invoke("pg:cancel", id),
   deviceName: () => import_electron.ipcRenderer.invoke("pg:deviceName"),
+  version: () => import_electron.ipcRenderer.invoke("pg:version"),
   tempDir: () => import_electron.ipcRenderer.invoke("pg:tempDir"),
   pairsGet: () => import_electron.ipcRenderer.invoke("pg:pairs:get"),
   pairsSet: (json) => import_electron.ipcRenderer.invoke("pg:pairs:set", json),

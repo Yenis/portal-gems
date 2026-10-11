@@ -594,7 +594,13 @@ _LIT(KHelpText,
     "PortalGems only.\n\n"
     "IF IT FAILS\n"
     "Check that both apps are open and that this phone's clock is right - "
-    "paired devices find each other by the time.");
+    "paired devices find each other by the time.\n\n"
+    "ABOUT\n"
+    "PortalGems Mini is free software under the GNU General Public "
+    "License, version 3 or later, with no warranty. Source code, "
+    "licenses and the privacy page: github.com/Yenis/portal-gems. It "
+    "includes TweetNaCl and the PGP word list, both in the public "
+    "domain.");
 
 void CWhminiAppUi::ShowHelpL()
     {

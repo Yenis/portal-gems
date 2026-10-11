@@ -129,7 +129,16 @@ class PortalGemsNativeModule(reactContext: ReactApplicationContext) :
     val deviceName =
       Settings.Global.getString(reactApplicationContext.contentResolver, "device_name")
         ?: Build.MODEL
+    // The version of the build that is actually installed, for the About
+    // screen - not one copied into the JavaScript at some earlier point.
+    val appVersion = try {
+      reactApplicationContext.packageManager
+        .getPackageInfo(reactApplicationContext.packageName, 0).versionName ?: ""
+    } catch (e: Exception) {
+      ""
+    }
     return mapOf(
+      "appVersion" to appVersion,
       "incomingDir" to incoming.absolutePath,
       "cacheDir" to reactApplicationContext.cacheDir.absolutePath,
       "deviceName" to deviceName,

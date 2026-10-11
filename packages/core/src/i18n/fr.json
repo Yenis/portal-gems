@@ -19,6 +19,7 @@
     "receiveButton": "Recevoir",
     "sendTextButton": "Écrire un message à envoyer",
     "guideLink": "Guide d'utilisation",
+    "aboutLink": "À propos et licences",
     "receiveServer": "Serveur : {{server}}. L'expéditeur doit utiliser le même.",
     "moreTitle": "Aide et paramètres"
   },
@@ -256,6 +257,18 @@
     "serverUnreachable": "Impossible de joindre le serveur de connexion. Il est peut-être temporairement hors service. Ouvrez les Paramètres et passez au serveur PortalGems, ou utilisez le vôtre - voir le guide d'auto-hébergement.",
     "connectTimeout": "Le serveur de connexion n'a pas répondu à temps. Vérifiez que cet appareil est en ligne. Si c'est le cas, le serveur est peut-être hors service - vous pouvez en changer dans les Paramètres.",
     "invalidServerUrl": "L'adresse du serveur n'est pas valide. Vérifiez-la dans les Paramètres. Une URL de rendez-vous ressemble à wss://host/v1 et un relais à tcp://host:4001."
+  },
+  "about": {
+    "title": "À propos de PortalGems",
+    "version": "Version {{version}}",
+    "licenseTitle": "Licence",
+    "licenseBody": "PortalGems est un logiciel libre. Vous pouvez l'utiliser, l'étudier, le partager et le modifier selon les termes de la GNU General Public License, version 3 ou ultérieure. Il est fourni sans aucune garantie.",
+    "sourceTitle": "Code source",
+    "sourceBody": "Le code source complet, la licence et la page de confidentialité se trouvent à l'adresse :",
+    "privacyTitle": "Confidentialité",
+    "privacyBody": "Pas de compte, pas d'analyse, pas de télémétrie. Vos fichiers et messages sont chiffrés sur votre appareil, et personne entre les deux ne peut les lire.",
+    "componentsTitle": "Construit sur",
+    "componentsBody": "PortalGems s'appuie sur le travail d'autres personnes. Ces composants font partie de cette application, chacun sous sa propre licence. Les textes complets des licences se trouvent dans THIRD-PARTY-LICENSES.txt à l'adresse ci-dessus."
   },
   "notify": {
     "received": "Transfert reçu",

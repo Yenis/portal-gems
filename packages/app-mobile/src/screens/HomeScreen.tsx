@@ -44,6 +44,7 @@ export default function HomeScreen({
   onSettings,
   onExplain,
   onGuide,
+  onAbout,
 }: {
   onSend: (item: SendItem, device?: PairedDevice) => void;
   onCompose: (device?: PairedDevice) => void;
@@ -53,6 +54,7 @@ export default function HomeScreen({
   onSettings: () => void;
   onExplain: () => void;
   onGuide: () => void;
+  onAbout: () => void;
 }) {
   const { t } = useTranslation();
   const c = useTheme();
@@ -342,6 +344,7 @@ export default function HomeScreen({
         <GhostButton label={t('home.explainLink')} onPress={onExplain} />
         <GhostButton label={t('home.guideLink')} onPress={onGuide} />
         <GhostButton label={t('home.settingsLink')} onPress={onSettings} />
+        <GhostButton label={t('home.aboutLink')} onPress={onAbout} />
       </Card>
 
       <View style={{ height: spacing(6) }} />

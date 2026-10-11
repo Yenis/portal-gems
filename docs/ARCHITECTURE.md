@@ -295,7 +295,7 @@ Consumed by both apps as **npm `file:` symlinks** (see §5 build gotchas).
     follows the outer signal.
 - `errors.ts` - engine-string → i18n-key mapping.
 
-Tests: `cd packages/core && npm test` (vitest, 167 tests).
+Tests: `cd packages/core && npm test` (vitest, 169 tests).
 
 ## 4. The apps
 
@@ -567,6 +567,34 @@ service's "File transfers") and does nothing, quietly, without the
 notification permission - the one `withTransferService` already asks for.
 The JavaScript is still running at that point because the foreground service
 is what kept the transfer alive.
+
+### About and licenses (all three apps)
+
+GPLv3 asks that whoever receives the app is shown the license and where the
+source is, and the components it bundles have notices of their own. So:
+
+- `About` (desktop) and `AboutScreen` (Android), reached from the Help &
+  settings card, show the installed version (`pg:version` ->
+  `app.getVersion()`; `appVersion` from the package manager, not a number
+  copied into the JavaScript), the GPL notice, `SOURCE_URL`, a line on
+  privacy, and the component list for that platform. The address is text
+  to copy, not a link - the desktop window never navigates. Symbian has an
+  ABOUT paragraph at the end of `KHelpText`.
+- The list is `COMPONENTS` in `packages/core/src/about.ts`, read from
+  `licenses.json`, which is **generated** by `node scripts/gen-licenses.mjs`
+  from what is installed and locked: npm packages walked from each app's
+  `dependencies`, Rust crates from `cargo metadata` (normal dependencies
+  only), plus a short table in the script for what no package manager
+  reports - Electron and Chromium, the Android libraries Gradle pulls in,
+  and the code vendored into the Symbian client. The same run writes
+  `THIRD-PARTY-LICENSES.txt` at the repository root: the lists, then every
+  distinct license text with the components it came with. The desktop
+  installers carry that file and `LICENSE` in their resources folder
+  (`extraResources`).
+- **Run the script after changing a dependency and before a release**, and
+  commit both files. Nothing checks that they are current.
+- The strings are `about.*` in all six languages; license names and texts
+  stay in English.
 
 ### Branding / icons
 

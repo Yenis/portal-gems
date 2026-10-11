@@ -13,6 +13,7 @@ import {
   type BundleCounts,
   type BundleTextKey,
 } from '../files';
+import { componentLine, COMPONENTS } from '../about';
 import { initI18n, resources, setLanguage, SUPPORTED_LANGUAGES } from '../i18n';
 
 const file = { isFolder: false };
@@ -534,5 +535,21 @@ describe('bundleEntryNames', () => {
 
   it('handles an empty selection', () => {
     expect(bundleEntryNames([])).toEqual([]);
+  });
+});
+
+describe('the bundled component lists', () => {
+  it('names the engine each app is built on, with its license', () => {
+    for (const platform of ['desktop', 'android'] as const) {
+      const lines = COMPONENTS[platform].map(componentLine);
+      expect(lines.length).toBeGreaterThan(100);
+      expect(lines.some((l) => /^magic-wormhole \S+ - EUPL-1\.2$/.test(l))).toBe(true);
+      expect(lines.every((l) => !l.includes('UNKNOWN'))).toBe(true);
+    }
+    expect(COMPONENTS.symbian.map(componentLine)).toContain('TweetNaCl 20140427 - Public domain');
+  });
+
+  it('leaves out a version it does not have', () => {
+    expect(componentLine(['Electron', '', 'MIT'])).toBe('Electron - MIT');
   });
 });

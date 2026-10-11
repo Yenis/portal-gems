@@ -19,6 +19,7 @@
     "receiveButton": "Empfangen",
     "sendTextButton": "Nachricht schreiben und senden",
     "guideLink": "Anleitung",
+    "aboutLink": "Über & Lizenzen",
     "receiveServer": "Server: {{server}}. Der Absender muss denselben verwenden.",
     "moreTitle": "Hilfe & Einstellungen"
   },
@@ -256,6 +257,18 @@
     "serverUnreachable": "Der Verbindungsserver ist nicht erreichbar. Möglicherweise ist er vorübergehend nicht verfügbar. Öffne die Einstellungen und wechsle zum PortalGems-Server oder nutze deinen eigenen - siehe die Anleitung zum Selbsthosten.",
     "connectTimeout": "Der Verbindungsserver hat nicht rechtzeitig geantwortet. Prüfe, ob dieses Gerät online ist. Falls ja, ist der Server möglicherweise nicht verfügbar - du kannst ihn in den Einstellungen wechseln.",
     "invalidServerUrl": "Die Serveradresse ist ungültig. Prüfe sie in den Einstellungen. Eine Rendezvous-URL sieht aus wie wss://host/v1 und ein Relay wie tcp://host:4001."
+  },
+  "about": {
+    "title": "Über PortalGems",
+    "version": "Version {{version}}",
+    "licenseTitle": "Lizenz",
+    "licenseBody": "PortalGems ist freie Software. Du darfst sie unter den Bedingungen der GNU General Public License, Version 3 oder später, nutzen, untersuchen, weitergeben und verändern. Es gibt keine Gewährleistung.",
+    "sourceTitle": "Quellcode",
+    "sourceBody": "Der vollständige Quellcode, die Lizenz und die Datenschutzseite stehen unter:",
+    "privacyTitle": "Datenschutz",
+    "privacyBody": "Keine Konten, keine Analyse, keine Telemetrie. Deine Dateien und Nachrichten werden auf deinem Gerät verschlüsselt, und niemand dazwischen kann sie lesen.",
+    "componentsTitle": "Gebaut auf",
+    "componentsBody": "PortalGems baut auf der Arbeit anderer auf. Diese Komponenten sind Teil dieser App, jede unter ihrer eigenen Lizenz. Die vollständigen Lizenztexte stehen in THIRD-PARTY-LICENSES.txt unter der Adresse oben."
   },
   "notify": {
     "received": "Übertragung empfangen",

@@ -79,6 +79,7 @@ export interface SavedToDir {
 }
 
 interface PortalGemsNativeSpec {
+  appVersion: string;
   incomingDir: string;
   cacheDir: string;
   deviceName: string;
@@ -123,6 +124,7 @@ interface PortalGemsNativeSpec {
 
 const native = NativeModules.PortalGemsNative as PortalGemsNativeSpec;
 
+export const appVersion: string = native.appVersion;
 export const incomingDir: string = native.incomingDir;
 export const cacheDir: string = native.cacheDir;
 export const deviceName: string = native.deviceName;

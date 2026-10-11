@@ -493,7 +493,10 @@ full account, including the failures that only appeared on real hardware, is in
 ## License
 
 PortalGems is free software, licensed under the
-**[GNU General Public License v3.0 or later](LICENSE)**.
+**[GNU General Public License v3.0 or later](LICENSE)**. Every app says so
+on its About screen (Options > Help on Symbian), names the components it is
+built on, and points here; their license texts are in
+[THIRD-PARTY-LICENSES.txt](THIRD-PARTY-LICENSES.txt).
 It builds on [magic-wormhole.rs](https://github.com/magic-wormhole/magic-wormhole.rs)
 (EUPL-1.2, combined and distributed under GPLv3 via the EUPL's compatibility
 clause).

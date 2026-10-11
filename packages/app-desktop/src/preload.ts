@@ -109,6 +109,7 @@ contextBridge.exposeInMainWorld('portalgems', {
   reject: (id: number): Promise<void> => ipcRenderer.invoke('pg:reject', id),
   cancel: (id: number): Promise<void> => ipcRenderer.invoke('pg:cancel', id),
   deviceName: (): Promise<string> => ipcRenderer.invoke('pg:deviceName'),
+  version: (): Promise<string> => ipcRenderer.invoke('pg:version'),
   tempDir: (): Promise<string> => ipcRenderer.invoke('pg:tempDir'),
   pairsGet: (): Promise<string> => ipcRenderer.invoke('pg:pairs:get'),
   pairsSet: (json: string): Promise<void> => ipcRenderer.invoke('pg:pairs:set', json),
