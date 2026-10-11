@@ -163,7 +163,7 @@
       "choicePublic": "Javni server",
       "choicePublicHint": "Vodi ga zajednica. Radi s drugim magic-wormhole aplikacijama. U rijetkim slučajevima može biti preopterećen ili nedostupan.",
       "choicePortalgems": "PortalGems server",
-      "choicePortalgemsHint": "Vodi ga PortalGems. Preporučeno za pouzdanost.",
+      "choicePortalgemsHint": "Vodi ga PortalGems. Trudimo se da bude pouzdan i uvijek dostupan.",
       "choiceCustom": "Prilagođeni server",
       "choiceCustomHint": "Tvoj vlastiti, samostalno hostani server.",
       "rendezvousLabel": "Rendezvous URL",
@@ -200,7 +200,7 @@
     "settingsTitle": "Prilagodi sebi",
     "settingsBody": "U Postavkama možeš promijeniti ime koje ovaj uređaj daje pri uparivanju, gdje se spremaju primljene datoteke, jezik i temu boja. Tamo možeš promijeniti i server za povezivanje - oba uređaja moraju koristiti isti.",
     "serverTitle": "O serveru za povezivanje",
-    "serverBody": "Da bi prijenos počeo, dva uređaja se prvo nađu na serveru za povezivanje. On im samo pomaže da se pronađu: sve se šifrira na tvom uređaju, pa server nikada ne vidi tvoje datoteke ni poruke. Postavke > Server za povezivanje nudi tri: PortalGems server (zadani, preporučen zbog pouzdanosti), javni magic-wormhole server koji vodi zajednica i prilagođeni server koji sam hostuješ. Oba uređaja moraju koristiti isti server, inače se nikada neće naći. Ako prijenosi stalno ne uspijevaju, probaj drugi server na oba uređaja.",
+    "serverBody": "Da bi prijenos počeo, dva uređaja se prvo nađu na serveru za povezivanje. On im samo pomaže da se pronađu: sve se šifrira na tvom uređaju, pa server nikada ne vidi tvoje datoteke ni poruke. Postavke > Server za povezivanje nudi tri: PortalGems server (zadani, za koji se trudimo da bude pouzdan i uvijek dostupan), javni magic-wormhole server koji vodi zajednica i prilagođeni server koji sam hostuješ. Oba uređaja moraju koristiti isti server, inače se nikada neće naći. Ako prijenosi stalno ne uspijevaju, probaj drugi server na oba uređaja.",
     "wormholeTitle": "Korištenje s drugim magic-wormhole aplikacijama",
     "wormholeBody": "PortalGems koristi standardni magic-wormhole protokol, pa radi s terminalskim programom wormhole i drugim magic-wormhole aplikacijama. One koriste javni server, zato prvo odaberi Javni server u Postavke > Server za povezivanje. Zatim šalji kao i obično i na računaru pokreni wormhole receive s kodom prikazanim ovdje - ili tamo pokreni wormhole send i upiši njegov kod pod Primi datoteku. Rade datoteke, folderi i poruke. Uparivanje je funkcija PortalGemsa, pa s drugim aplikacijama koristi jednokratne kodove. Poslije se vrati na PortalGems server ako ga koriste tvoji drugi uređaji.",
     "troubleTitle": "Ako prijenos ne počne",
@@ -222,7 +222,7 @@
     "limitsTitle": "Od čega ovo ne štiti",
     "limitsBody": "Ko god vidi tvoj ekran dok je kod ili QR za uparivanje prikazan, može ga iskoristiti. Ko ima pun pristup tvom otključanom uređaju, može čitati šta je na njemu. A posmatrač tvoje mreže može znati da si nešto prenio/la i otprilike koliko je bilo veliko - ali nikada šta je bilo.",
     "choosingTitle": "Odabir servera",
-    "choosingBody": "PortalGems treba mailbox server da spoji dva uređaja, a u Postavkama biraš koji. Javni server je onaj koji vodi zajednica (magic-wormhole) - radi s drugim wormhole aplikacijama, iako u rijetkim slučajevima može biti preopterećen ili nedostupan. PortalGems server vodimo mi i predstavlja pouzdan zadani izbor. „Prilagođeni\" ti omogućava da usmjeriš aplikaciju na bilo koji server, uključujući onaj koji sam hostuješ - pogledaj vodič za samostalno hostanje ako te zanima. Šta god odabereš, tvoje datoteke ostaju end-to-end šifrovane, a server uvijek vidi samo nečitljive podatke."
+    "choosingBody": "PortalGems treba mailbox server da spoji dva uređaja, a u Postavkama biraš koji. Javni server je onaj koji vodi zajednica (magic-wormhole) - radi s drugim wormhole aplikacijama, iako u rijetkim slučajevima može biti preopterećen ili nedostupan. PortalGems server vodimo mi i trudimo se da bude pouzdan i uvijek dostupan, zato je zadani izbor. „Prilagođeni\" ti omogućava da usmjeriš aplikaciju na bilo koji server, uključujući onaj koji sam hostuješ - pogledaj vodič za samostalno hostanje ako te zanima. Šta god odabereš, tvoje datoteke ostaju end-to-end šifrovane, a server uvijek vidi samo nečitljive podatke."
   },
   "transfer": {
     "sendVia": "Slanje preko: {{server}}",

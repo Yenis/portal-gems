@@ -182,7 +182,7 @@
       "choicePublic": "Public server",
       "choicePublicHint": "Community-run. Works with other magic-wormhole apps. On rare occasions it can be overloaded or unavailable.",
       "choicePortalgems": "PortalGems server",
-      "choicePortalgemsHint": "Run by PortalGems. Recommended for reliability.",
+      "choicePortalgemsHint": "Run by PortalGems. We work to keep it reliable and always running.",
       "choiceCustom": "Custom server",
       "choiceCustomHint": "Your own self-hosted server.",
       "rendezvousLabel": "Rendezvous URL",
@@ -219,7 +219,7 @@
     "settingsTitle": "Make it yours",
     "settingsBody": "In Settings you can change the name this device gives when pairing, where received files are saved, the language and the color theme. You can also switch the connection server there - both devices must use the same one.",
     "serverTitle": "About the connection server",
-    "serverBody": "To start a transfer, the two devices first meet on a connection server. It only helps them find each other: everything is encrypted on your device, so the server never sees your files or messages. Settings > Connection server offers three: the PortalGems server (the default, recommended for reliability), the public magic-wormhole server run by the community, and a custom server you host yourself. Both devices must use the same server, or they will never meet. If transfers keep failing, try a different one on both.",
+    "serverBody": "To start a transfer, the two devices first meet on a connection server. It only helps them find each other: everything is encrypted on your device, so the server never sees your files or messages. Settings > Connection server offers three: the PortalGems server (the default, which we work to keep reliable and always running), the public magic-wormhole server run by the community, and a custom server you host yourself. Both devices must use the same server, or they will never meet. If transfers keep failing, try a different one on both.",
     "wormholeTitle": "Use with other magic-wormhole apps",
     "wormholeBody": "PortalGems speaks the standard magic-wormhole protocol, so it works with the wormhole terminal program and other magic-wormhole apps. Those use the public server, so first switch to Public server in Settings > Connection server. Then send as usual and run wormhole receive on the computer with the code shown here - or run wormhole send there and type its code under Receive a file. Files, folders and messages all work. Pairing is a PortalGems feature, so use one-time codes with other apps. Switch back to the PortalGems server afterwards if your other devices use it.",
     "troubleTitle": "If a transfer does not start",
@@ -241,7 +241,7 @@
     "limitsTitle": "What this does not protect against",
     "limitsBody": "Anyone who can see your screen while a code or pairing QR is visible can use it. Anyone with full access to your unlocked device can read what is stored on it. And an observer of your network can tell that you transferred something and roughly how large it was - but never what it was.",
     "choosingTitle": "Choosing a server",
-    "choosingBody": "PortalGems needs a mailbox server to introduce two devices, and you pick which one in Settings. The Public server is the community-run magic-wormhole one - it works with other wormhole apps, though on rare occasions it can be overloaded or unavailable. The PortalGems server is run by us and makes a reliable default. Custom lets you point the app at any server, including one you host yourself - see the self-hosting guide if you are interested. Whichever you choose, your files stay end-to-end encrypted and the server only ever sees scrambled data."
+    "choosingBody": "PortalGems needs a mailbox server to introduce two devices, and you pick which one in Settings. The Public server is the community-run magic-wormhole one - it works with other wormhole apps, though on rare occasions it can be overloaded or unavailable. The PortalGems server is run by us, and we work to keep it reliable and always running, which is why it is the default. Custom lets you point the app at any server, including one you host yourself - see the self-hosting guide if you are interested. Whichever you choose, your files stay end-to-end encrypted and the server only ever sees scrambled data."
   },
   "errors": {
     "title": "Something went wrong",

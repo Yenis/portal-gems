@@ -37,8 +37,8 @@ export interface ServerSettings {
   customTransitUrl?: string;
 }
 
-/// Default to the PortalGems server: it is deployed and reliable, so it gives
-/// the best out-of-box experience. Users who want interop with other
+/// Default to the PortalGems server: it is ours to keep running, so it gives
+/// a dependable out-of-box experience. Users who want interop with other
 /// magic-wormhole clients, or who prefer not to route through our server, can
 /// switch to 'public' or 'custom' in Settings. (Assumes `PORTALGEMS_*` are real;
 /// a fork that blanks them should default to 'public' instead.)

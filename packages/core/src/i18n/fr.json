@@ -163,7 +163,7 @@
       "choicePublic": "Serveur public",
       "choicePublicHint": "Géré par la communauté. Fonctionne avec les autres applis magic-wormhole. En de rares occasions, il peut être surchargé ou indisponible.",
       "choicePortalgems": "Serveur PortalGems",
-      "choicePortalgemsHint": "Géré par PortalGems. Recommandé pour la fiabilité.",
+      "choicePortalgemsHint": "Géré par PortalGems. Nous nous efforçons de le garder fiable et toujours en service.",
       "choiceCustom": "Serveur personnalisé",
       "choiceCustomHint": "Votre propre serveur auto-hébergé.",
       "rendezvousLabel": "URL de rendez-vous",
@@ -200,7 +200,7 @@
     "settingsTitle": "À votre façon",
     "settingsBody": "Dans Paramètres, vous pouvez changer le nom que cet appareil donne lors de l'association, l'emplacement des fichiers reçus, la langue et le thème de couleur. Vous pouvez aussi y changer de serveur de connexion - les deux appareils doivent utiliser le même.",
     "serverTitle": "À propos du serveur de connexion",
-    "serverBody": "Pour démarrer un transfert, les deux appareils se retrouvent d'abord sur un serveur de connexion. Il les aide seulement à se trouver : tout est chiffré sur votre appareil, le serveur ne voit donc jamais vos fichiers ni vos messages. Paramètres > Serveur de connexion en propose trois : le serveur PortalGems (par défaut, recommandé pour sa fiabilité), le serveur public magic-wormhole géré par la communauté et un serveur personnalisé que vous hébergez. Les deux appareils doivent utiliser le même serveur, sinon ils ne se trouveront jamais. Si les transferts échouent sans cesse, essayez-en un autre sur les deux.",
+    "serverBody": "Pour démarrer un transfert, les deux appareils se retrouvent d'abord sur un serveur de connexion. Il les aide seulement à se trouver : tout est chiffré sur votre appareil, le serveur ne voit donc jamais vos fichiers ni vos messages. Paramètres > Serveur de connexion en propose trois : le serveur PortalGems (par défaut, que nous nous efforçons de garder fiable et toujours en service), le serveur public magic-wormhole géré par la communauté et un serveur personnalisé que vous hébergez. Les deux appareils doivent utiliser le même serveur, sinon ils ne se trouveront jamais. Si les transferts échouent sans cesse, essayez-en un autre sur les deux.",
     "wormholeTitle": "Utiliser avec d'autres applications magic-wormhole",
     "wormholeBody": "PortalGems parle le protocole standard magic-wormhole et fonctionne donc avec le programme en ligne de commande wormhole et les autres applications magic-wormhole. Celles-ci utilisent le serveur public : passez d'abord à Serveur public dans Paramètres > Serveur de connexion. Envoyez ensuite comme d'habitude et lancez wormhole receive sur l'ordinateur avec le code affiché ici - ou lancez-y wormhole send et saisissez son code sous Recevoir un fichier. Fichiers, dossiers et messages fonctionnent tous. L'association est une fonction de PortalGems : avec les autres applications, utilisez des codes à usage unique. Revenez ensuite au serveur PortalGems si vos autres appareils l'utilisent.",
     "troubleTitle": "Si un transfert ne démarre pas",
@@ -222,7 +222,7 @@
     "limitsTitle": "Ce contre quoi cela ne protège pas",
     "limitsBody": "Quiconque peut voir votre écran pendant qu'un code ou un QR d'association est affiché peut l'utiliser. Quiconque a un accès complet à votre appareil déverrouillé peut lire ce qui s'y trouve. Et un observateur de votre réseau peut savoir que vous avez transféré quelque chose et sa taille approximative - mais jamais ce que c'était.",
     "choosingTitle": "Choisir un serveur",
-    "choosingBody": "PortalGems a besoin d'un serveur de boîte aux lettres pour mettre deux appareils en relation, et vous choisissez lequel dans les Paramètres. Le serveur public est celui de la communauté magic-wormhole - il fonctionne avec les autres applis wormhole, même s'il peut, en de rares occasions, être surchargé ou indisponible. Le serveur PortalGems est géré par nous et constitue un choix par défaut fiable. « Personnalisé » vous permet de pointer l'appli vers n'importe quel serveur, y compris un que vous hébergez vous-même - voir le guide d'auto-hébergement si cela vous intéresse. Quel que soit votre choix, vos fichiers restent chiffrés de bout en bout et le serveur ne voit jamais que des données brouillées."
+    "choosingBody": "PortalGems a besoin d'un serveur de boîte aux lettres pour mettre deux appareils en relation, et vous choisissez lequel dans les Paramètres. Le serveur public est celui de la communauté magic-wormhole - il fonctionne avec les autres applis wormhole, même s'il peut, en de rares occasions, être surchargé ou indisponible. Le serveur PortalGems est géré par nous, et nous nous efforçons de le garder fiable et toujours en service - c'est pourquoi il est le choix par défaut. « Personnalisé » vous permet de pointer l'appli vers n'importe quel serveur, y compris un que vous hébergez vous-même - voir le guide d'auto-hébergement si cela vous intéresse. Quel que soit votre choix, vos fichiers restent chiffrés de bout en bout et le serveur ne voit jamais que des données brouillées."
   },
   "transfer": {
     "sendVia": "Envoi via : {{server}}",

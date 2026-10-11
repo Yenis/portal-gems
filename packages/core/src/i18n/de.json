@@ -163,7 +163,7 @@
       "choicePublic": "Öffentlicher Server",
       "choicePublicHint": "Von der Community betrieben. Funktioniert mit anderen magic-wormhole-Apps. Kann in seltenen Fällen überlastet oder nicht verfügbar sein.",
       "choicePortalgems": "PortalGems-Server",
-      "choicePortalgemsHint": "Von PortalGems betrieben. Für Zuverlässigkeit empfohlen.",
+      "choicePortalgemsHint": "Von PortalGems betrieben. Wir bemühen uns, ihn zuverlässig und stets erreichbar zu halten.",
       "choiceCustom": "Eigener Server",
       "choiceCustomHint": "Dein eigener, selbst gehosteter Server.",
       "rendezvousLabel": "Rendezvous-URL",
@@ -200,7 +200,7 @@
     "settingsTitle": "Nach deinem Geschmack",
     "settingsBody": "In den Einstellungen änderst du den Namen, den dieses Gerät beim Koppeln nennt, den Speicherort für empfangene Dateien, die Sprache und das Farbschema. Dort kannst du auch den Verbindungsserver wechseln - beide Geräte müssen denselben verwenden.",
     "serverTitle": "Über den Verbindungsserver",
-    "serverBody": "Um eine Übertragung zu starten, treffen sich die beiden Geräte zuerst auf einem Verbindungsserver. Er hilft ihnen nur, einander zu finden: Alles wird auf deinem Gerät verschlüsselt, der Server sieht deine Dateien und Nachrichten also nie. Einstellungen > Verbindungsserver bietet drei: den PortalGems-Server (Standard, für Zuverlässigkeit empfohlen), den öffentlichen magic-wormhole-Server der Community und einen eigenen Server, den du selbst betreibst. Beide Geräte müssen denselben Server verwenden, sonst finden sie sich nie. Wenn Übertragungen immer wieder scheitern, probiere auf beiden einen anderen.",
+    "serverBody": "Um eine Übertragung zu starten, treffen sich die beiden Geräte zuerst auf einem Verbindungsserver. Er hilft ihnen nur, einander zu finden: Alles wird auf deinem Gerät verschlüsselt, der Server sieht deine Dateien und Nachrichten also nie. Einstellungen > Verbindungsserver bietet drei: den PortalGems-Server (Standard; wir bemühen uns, ihn zuverlässig und stets erreichbar zu halten), den öffentlichen magic-wormhole-Server der Community und einen eigenen Server, den du selbst betreibst. Beide Geräte müssen denselben Server verwenden, sonst finden sie sich nie. Wenn Übertragungen immer wieder scheitern, probiere auf beiden einen anderen.",
     "wormholeTitle": "Mit anderen magic-wormhole-Apps verwenden",
     "wormholeBody": "PortalGems spricht das Standardprotokoll von magic-wormhole und funktioniert daher mit dem Terminalprogramm wormhole und anderen magic-wormhole-Apps. Diese nutzen den öffentlichen Server, wechsle also zuerst unter Einstellungen > Verbindungsserver zu Öffentlicher Server. Sende dann wie gewohnt und führe am Computer wormhole receive mit dem hier angezeigten Code aus - oder führe dort wormhole send aus und gib dessen Code unter Datei empfangen ein. Dateien, Ordner und Nachrichten funktionieren alle. Koppeln ist eine PortalGems-Funktion, verwende mit anderen Apps also Einmalcodes. Wechsle danach zurück zum PortalGems-Server, wenn deine anderen Geräte ihn nutzen.",
     "troubleTitle": "Wenn eine Übertragung nicht startet",
@@ -222,7 +222,7 @@
     "limitsTitle": "Wovor das nicht schützt",
     "limitsBody": "Wer deinen Bildschirm sehen kann, während ein Code oder Kopplungs-QR angezeigt wird, kann ihn verwenden. Wer vollen Zugriff auf dein entsperrtes Gerät hat, kann lesen, was darauf gespeichert ist. Und ein Beobachter deines Netzwerks erkennt, dass du etwas übertragen hast und ungefähr wie groß es war - aber nie, was es war.",
     "choosingTitle": "Server auswählen",
-    "choosingBody": "PortalGems braucht einen Mailbox-Server, um zwei Geräte zusammenzubringen, und in den Einstellungen wählst du, welchen. Der öffentliche Server ist der von der Community betriebene magic-wormhole-Server - er funktioniert mit anderen wormhole-Apps, kann aber in seltenen Fällen überlastet oder nicht verfügbar sein. Der PortalGems-Server wird von uns betrieben und ist eine zuverlässige Standardwahl. Mit „Eigener\" kannst du die App auf jeden beliebigen Server richten, auch auf einen selbst gehosteten - siehe die Anleitung zum Selbsthosten, falls dich das interessiert. Egal welchen du wählst: deine Dateien bleiben Ende-zu-Ende verschlüsselt, und der Server sieht immer nur unlesbare Daten."
+    "choosingBody": "PortalGems braucht einen Mailbox-Server, um zwei Geräte zusammenzubringen, und in den Einstellungen wählst du, welchen. Der öffentliche Server ist der von der Community betriebene magic-wormhole-Server - er funktioniert mit anderen wormhole-Apps, kann aber in seltenen Fällen überlastet oder nicht verfügbar sein. Der PortalGems-Server wird von uns betrieben, und wir bemühen uns, ihn zuverlässig und stets erreichbar zu halten - deshalb ist er die Standardwahl. Mit „Eigener\" kannst du die App auf jeden beliebigen Server richten, auch auf einen selbst gehosteten - siehe die Anleitung zum Selbsthosten, falls dich das interessiert. Egal welchen du wählst: deine Dateien bleiben Ende-zu-Ende verschlüsselt, und der Server sieht immer nur unlesbare Daten."
   },
   "transfer": {
     "sendVia": "Senden über: {{server}}",
