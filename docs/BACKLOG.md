@@ -84,8 +84,9 @@ The review and its fixes are in `docs/ARCHITECTURE.md` section 7. Not done:
   server turned out to be writing each HTTP request to the journal with
   its address. Both services now run with `--log-level=error`, confirmed
   on the server after a transfer: the journal shows nothing but systemd's
-  own start and stop lines. `docs/VPS-SETUP.md` has the flag and a section
-  on checking. `PRIVACY.md` and `SECURITY.md` were written from that.
+  own start and stop lines. The firewall's logging is off and the old
+  journal was cleared the same day. `docs/VPS-SETUP.md` has the flag and a
+  section on checking. `PRIVACY.md` and `SECURITY.md` were written from that.
   Still to do by hand: turn on private vulnerability reporting in the
   repository's settings, which `SECURITY.md` points people to.
 - **No license notices in the apps.** GPLv3 asks that whoever receives the

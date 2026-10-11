@@ -64,10 +64,10 @@ about the people who use it:
   until both devices are done or the slot expires, and then removed. They
   are not tied to an address.
 
-Two things are outside the software's control and are said here so that
-this page is not more reassuring than the facts: the server's firewall may
-note connection attempts that it refuses, and the company hosting the
-server may keep network records of its own.
+The server's firewall keeps no log either. One thing is outside the
+maintainer's control, and is said here so that this page is not more
+reassuring than the facts: the company hosting the server may keep network
+records of its own.
 
 The exact setup is public, in [docs/VPS-SETUP.md](docs/VPS-SETUP.md), with
 the commands to check that a server really is logging nothing.
