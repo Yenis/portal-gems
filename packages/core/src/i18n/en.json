@@ -223,7 +223,7 @@
     "dropTitle": "Drag and drop",
     "dropBody": "Drop files or folders onto a paired device in the list to send them there straight away. Several dropped together go as one transfer, and each arrives under its own name.",
     "settingsTitle": "Make it yours",
-    "settingsBody": "In Settings you can change the name this device gives when pairing, where received files are saved, the language and the color theme. You can also switch the connection server there - both devices must use the same one.",
+    "settingsBody": "In Settings you can change the name this device gives when pairing, where received files are saved, the language and the color theme. PortalGems tells you with a notification when a transfer finishes or fails while it is in the background; you can turn that off there too. You can also switch the connection server there - both devices must use the same one.",
     "serverTitle": "About the connection server",
     "serverBody": "To start a transfer, the two devices first meet on a connection server. It only helps them find each other: everything is encrypted on your device, so the server never sees your files or messages. Settings > Connection server offers three: the PortalGems server (the default, which we work to keep reliable and always running), the public magic-wormhole server run by the community, and a custom server you host yourself. Both devices must use the same server, or they will never meet. If transfers keep failing, try a different one on both.",
     "wormholeTitle": "Use with other magic-wormhole apps",

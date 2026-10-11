@@ -204,7 +204,7 @@
     "dropTitle": "Ziehen und Ablegen",
     "dropBody": "Ziehe Dateien oder Ordner auf ein gekoppeltes Gerät in der Liste, um sie sofort dorthin zu senden. Mehrere zusammen abgelegte gehen als eine Übertragung, und jedes kommt unter seinem eigenen Namen an.",
     "settingsTitle": "Nach deinem Geschmack",
-    "settingsBody": "In den Einstellungen änderst du den Namen, den dieses Gerät beim Koppeln nennt, den Speicherort für empfangene Dateien, die Sprache und das Farbschema. Dort kannst du auch den Verbindungsserver wechseln - beide Geräte müssen denselben verwenden.",
+    "settingsBody": "In den Einstellungen änderst du den Namen, den dieses Gerät beim Koppeln nennt, den Speicherort für empfangene Dateien, die Sprache und das Farbschema. PortalGems meldet per Benachrichtigung, wenn eine Übertragung im Hintergrund fertig wird oder fehlschlägt; auch das lässt sich dort abschalten. Dort kannst du auch den Verbindungsserver wechseln - beide Geräte müssen denselben verwenden.",
     "serverTitle": "Über den Verbindungsserver",
     "serverBody": "Um eine Übertragung zu starten, treffen sich die beiden Geräte zuerst auf einem Verbindungsserver. Er hilft ihnen nur, einander zu finden: Alles wird auf deinem Gerät verschlüsselt, der Server sieht deine Dateien und Nachrichten also nie. Einstellungen > Verbindungsserver bietet drei: den PortalGems-Server (Standard; wir bemühen uns, ihn zuverlässig und stets erreichbar zu halten), den öffentlichen magic-wormhole-Server der Community und einen eigenen Server, den du selbst betreibst. Beide Geräte müssen denselben Server verwenden, sonst finden sie sich nie. Wenn Übertragungen immer wieder scheitern, probiere auf beiden einen anderen.",
     "wormholeTitle": "Mit anderen magic-wormhole-Apps verwenden",

@@ -204,7 +204,7 @@
     "dropTitle": "Arrastrar y soltar",
     "dropBody": "Suelta archivos o carpetas sobre un dispositivo emparejado de la lista para enviarlos allí al instante. Varios soltados juntos van en una sola transferencia, y cada uno llega con su propio nombre.",
     "settingsTitle": "Hazlo tuyo",
-    "settingsBody": "En Ajustes puedes cambiar el nombre que este dispositivo da al emparejarse, dónde se guardan los archivos recibidos, el idioma y el tema de color. También puedes cambiar allí el servidor de conexión: ambos dispositivos deben usar el mismo.",
+    "settingsBody": "En Ajustes puedes cambiar el nombre que este dispositivo da al emparejarse, dónde se guardan los archivos recibidos, el idioma y el tema de color. PortalGems te avisa con una notificación cuando una transferencia termina o falla en segundo plano; también puedes desactivarlo allí. También puedes cambiar allí el servidor de conexión: ambos dispositivos deben usar el mismo.",
     "serverTitle": "Sobre el servidor de conexión",
     "serverBody": "Para iniciar una transferencia, los dos dispositivos se encuentran primero en un servidor de conexión. Solo les ayuda a encontrarse: todo se cifra en tu dispositivo, así que el servidor nunca ve tus archivos ni tus mensajes. Ajustes > Servidor de conexión ofrece tres: el servidor de PortalGems (el predeterminado, que nos esforzamos por mantener fiable y siempre en marcha), el servidor público de magic-wormhole gestionado por la comunidad y un servidor personalizado que alojas tú. Ambos dispositivos deben usar el mismo servidor o nunca se encontrarán. Si las transferencias siguen fallando, prueba otro en los dos.",
     "wormholeTitle": "Usar con otras apps de magic-wormhole",

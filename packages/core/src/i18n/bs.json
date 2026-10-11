@@ -204,7 +204,7 @@
     "dropTitle": "Prevuci i pusti",
     "dropBody": "Prevuci datoteke ili foldere na upareni uređaj u listi da ih odmah pošalješ tamo. Više njih prevučenih zajedno ide kao jedan prijenos, i svaka stavka stiže pod svojim nazivom.",
     "settingsTitle": "Prilagodi sebi",
-    "settingsBody": "U Postavkama možeš promijeniti ime koje ovaj uređaj daje pri uparivanju, gdje se spremaju primljene datoteke, jezik i temu boja. Tamo možeš promijeniti i server za povezivanje - oba uređaja moraju koristiti isti.",
+    "settingsBody": "U Postavkama možeš promijeniti ime koje ovaj uređaj daje pri uparivanju, gdje se spremaju primljene datoteke, jezik i temu boja. PortalGems te obavijesti kada se prijenos završi ili ne uspije dok je u pozadini; i to možeš tamo isključiti. Tamo možeš promijeniti i server za povezivanje - oba uređaja moraju koristiti isti.",
     "serverTitle": "O serveru za povezivanje",
     "serverBody": "Da bi prijenos počeo, dva uređaja se prvo nađu na serveru za povezivanje. On im samo pomaže da se pronađu: sve se šifrira na tvom uređaju, pa server nikada ne vidi tvoje datoteke ni poruke. Postavke > Server za povezivanje nudi tri: PortalGems server (zadani, za koji se trudimo da bude pouzdan i uvijek dostupan), javni magic-wormhole server koji vodi zajednica i prilagođeni server koji sam hostuješ. Oba uređaja moraju koristiti isti server, inače se nikada neće naći. Ako prijenosi stalno ne uspijevaju, probaj drugi server na oba uređaja.",
     "wormholeTitle": "Korištenje s drugim magic-wormhole aplikacijama",

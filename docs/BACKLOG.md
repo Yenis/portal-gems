@@ -42,6 +42,11 @@ host and under qemu-arm against core's vectors. Not yet done: a
 `wh-mini paired-send --attempt 1` picked up by a real desktop, and on the
 E72 itself a paired send cancelled and then repeated inside one bucket.
 
+Notifications: seen working on the desktop (Linux). Not yet seen on
+Android, where the Kotlin (`notifyFinished`) has not even been compiled
+outside a release build, nor on Windows, where a portable `.exe` is the
+least certain case for the AppUserModelID.
+
 ### A connection lost while waiting goes unnoticed
 
 The connect timeout covers reaching the server and stops once the code is
@@ -52,9 +57,6 @@ from an ordinary wait needs a liveness check on the mailbox connection
 
 ## Planned features (decided 2026-10-11)
 
-- **Notifications when a transfer finishes, and open / show in folder.**
-  Transfers finish while the user is in another window. Android has only the
-  foreground service's notification; the desktop has none.
 - **A desktop tray icon with a listening mode for paired devices.** "Both
   apps must be open" is the largest friction in pairing. A tray icon that
   keeps polling for trusted devices removes the desktop's half of it, with
@@ -89,6 +91,9 @@ Decided against:
   developer account and Apple's own channels.
 - **Sending several files from Symbian.** It receives a selection and sends
   one file or one folder at a time, which is enough.
+- **"Open" and "Show in folder" after a receive, and actions on a
+  notification.** A received file should never be opened by accident; the
+  notification only says what happened.
 - **A QR code for a one-time code.** The code is short enough to type.
 - **A transfer history.** Nothing about past transfers is stored.
 

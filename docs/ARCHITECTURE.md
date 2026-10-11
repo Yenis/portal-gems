@@ -533,6 +533,39 @@ alternatives that were turned down are in `docs/MULTI-FILE-DESIGN.md`):
 - Run: `npm run build && npx electron . --no-sandbox`
   (**unset ELECTRON_RUN_AS_NODE** - VS Code shells export it).
 
+### Notifications (both apps)
+
+A transfer that finishes or fails while the app is not in front raises a
+system notification; one that the user cancelled does not, and nothing is
+shown while the app is being looked at - the screen already says it. Four
+titles (`notify.*`: received, sent, receive failed, send failed) over the
+file or folder name, `itemsText` for a bundle, "Message" for a text, or the
+`friendlyError` text. Deliberately bare:
+
+- **No actions, and a tap only brings the app forward.** Nothing in a
+  notification opens a received file - decided against, so that a file is
+  never opened by accident. There is no "open" or "show in folder" on the
+  success screens either, for the same reason.
+- **A message's words stay out of it.** A notification is read over a
+  shoulder or on a lock screen.
+- **It can be switched off**: Settings > Notifications, stored as
+  `pg-notifications` = `'0'` on both platforms (absent means on).
+
+Desktop: `renderer/notifications.ts` holds the setting and `notify()`;
+`pg:notify` in `main.ts` shows an Electron `Notification` only when the
+window is not focused, keeps it referenced until it closes (a collected one
+loses its click handler), and sets the AppUserModelID on Windows, which
+shows nothing without one. `PG_SMOKE_NOTIFY=1` logs each call as
+`SMOKE:NOTIFY=<title>|<body>` whether or not it was shown.
+
+Android: `src/notify.ts` checks `AppState` and the setting, then calls
+`notifyFinished` in the Kotlin module, which posts on its own channel
+("Finished transfers", so it can be silenced apart from the foreground
+service's "File transfers") and does nothing, quietly, without the
+notification permission - the one `withTransferService` already asks for.
+The JavaScript is still running at that point because the foreground service
+is what kept the transfer alive.
+
 ### Branding / icons
 
 - Canonical logo: `assets/logo.png` (450px, opaque black background);
