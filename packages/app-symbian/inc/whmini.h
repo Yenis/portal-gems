@@ -186,6 +186,6 @@ TBool WhminiLoadSettings(TWhminiSettings& aSettings);
 void WhminiSaveSettings(TWhminiSettings& aSettings);
 
 /* Shown in the app, and must match the version in sis/whmini.pkg. */
-#define WHMINI_VERSION "v0.12.1"
+#define WHMINI_VERSION "v0.13.0"
 
 #endif

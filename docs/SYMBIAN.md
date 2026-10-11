@@ -825,7 +825,7 @@ Things worth knowing:
   that exists - claiming creates, and a poller would otherwise sit in empty
   mailboxes of its own making. This mirrors the Rust client's
   `allocate = false`.
-- **A bucket holds three codes, as in the other apps** (since 0.12.1).
+- **A bucket holds three codes, as in the other apps** (since 0.13.0).
   A paired send that stops without finishing - cancelled, timed out,
   failed - leaves its claim on the code it used, so the next send in the
   same five minutes moves to the bucket's next code

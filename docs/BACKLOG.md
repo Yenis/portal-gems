@@ -2,7 +2,7 @@
 
 Things worth doing that are not done yet, and what has been decided about
 them. Each entry says what the problem actually is, so the next person does
-not have to rediscover it. Reviewed against the code at 1.4.2 (2026-10-11).
+not have to rediscover it. Reviewed against the code at 1.4.3 (2026-10-11).
 
 ## Open gaps, in the order they are to be worked
 
@@ -37,7 +37,7 @@ code and read the screen. On Symbian the same case says "That code is not
 waiting on this server", which is imprecise but does not send the user off
 to change servers, so it was left alone.
 
-Symbian's later paired codes (PortalGems Mini 0.12.1) are tested on the
+Symbian's later paired codes (PortalGems Mini 0.13.0) are tested on the
 host and under qemu-arm against core's vectors. Not yet done: a
 `wh-mini paired-send --attempt 1` picked up by a real desktop, and on the
 E72 itself a paired send cancelled and then repeated inside one bucket.

@@ -3,7 +3,7 @@
 The single document to read before building new features. Deferred work with
 its reasoning lives in `docs/BACKLOG.md`; the Symbian client has its own map
 in `docs/SYMBIAN.md`. This describes the
-released 1.4.2 (2026-10-11); what was verified, and how, is in section 7.
+released 1.4.3 (2026-10-11); what was verified, and how, is in section 7.
 Per-phase discovery notes live in the other `docs/*.md` files; this is the
 consolidated map.
 
@@ -266,8 +266,8 @@ Consumed by both apps as **npm `file:` symlinks** (see §5 build gotchas).
     it is complete). `loadDevices` returns the list through `sortByRecent`
     (`lastUsedAt`, else `addedAt`), so every list is in that order. The
     timestamp is stored for that and nothing else: it is never shown. A
-    "Last transfer 5 min ago" line under each device was removed after
-    1.4.2, because the app is to keep no visible record of transfers. Local
+    "Last transfer 5 min ago" line under each device was removed in
+    1.4.3, because the app is to keep no visible record of transfers. Local
     only, like `label`. Symbian keeps `pairs.txt` itself in
     that order instead - see `docs/SYMBIAN.md`.
   - **Getting the payload across.** Three ways, one payload: a QR code,

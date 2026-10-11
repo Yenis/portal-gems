@@ -5,6 +5,60 @@ All notable changes to PortalGems are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.3] - 2026-10-11
+
+Notifications.
+
+### Added
+
+- **A notification when a transfer ends while PortalGems is in the
+  background.** Start a large send, switch to something else, and you are
+  told when it is done - or when it failed, and why. "Transfer received",
+  "Transfer sent", "Receiving failed" or "Sending failed", with the name of
+  what was transferred or the reason underneath. On the desktop and on
+  Android.
+
+  It is deliberately plain. Nothing appears while you are looking at the
+  app, or for a transfer you cancelled yourself. Clicking or tapping it
+  brings PortalGems forward and does nothing else: there are no buttons in
+  it, so a received file is never opened by accident. The words of a
+  received message are never shown in it. And it can be switched off:
+  **Settings > Notifications**.
+
+### Changed
+
+- **A server that does not answer no longer leaves you on "Connecting"
+  forever.** If the connection server has not answered within 20 seconds,
+  the transfer stops and says so: "Could not reach the connection server in
+  time. Check that this device is online. If it is, the server may be down -
+  you can switch servers in Settings." Waiting for the other person is not
+  affected: a sender showing a code still waits as long as it takes.
+
+- **A code that is already used up says so, instead of blaming the
+  server.** A code takes one sender and one receiver. Anything that tried
+  to join after that - most often your own earlier attempt that did not
+  finish cleanly - was told "Could not reach the connection server" and sent
+  off to change servers, when the server was fine. It now reads "This code
+  can no longer be used. Start the send again to get a fresh code."
+
+- **Paired devices no longer show when the last transfer was.** The line
+  under each device's name is gone; PortalGems keeps no visible record of
+  your transfers. The device you used last is still at the top of the list.
+
+- **The descriptions of the servers promise less and say more.** The public
+  server "on rare occasions can be overloaded or unavailable"; the
+  PortalGems server is one "we work to keep reliable and always running".
+  In Settings, the user guide and How it works, in all six languages.
+
+- **PortalGems Mini (Symbian) 0.13.0: a paired send that did not finish no
+  longer blocks the next one.** Cancel a send to a paired device, or let it
+  time out, and the retry inside the same five minutes used to go
+  unanswered until the five minutes were up. The phone now moves to a fresh
+  code for the retry, as the other apps do, and when it is the one
+  receiving it finds a sender that had to do the same.
+
+[1.4.3]: https://github.com/Yenis/portal-gems/releases/tag/v1.4.3
+
 ## [1.4.2] - 2026-10-11
 
 Send the whole selection.
