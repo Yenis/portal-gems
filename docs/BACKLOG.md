@@ -57,10 +57,6 @@ from an ordinary wait needs a liveness check on the mailbox connection
 
 ## Planned features (decided 2026-10-11)
 
-- **A desktop tray icon with a listening mode for paired devices.** "Both
-  apps must be open" is the largest friction in pairing. A tray icon that
-  keeps polling for trusted devices removes the desktop's half of it, with
-  no push server.
 - **Send the clipboard to a paired device.** One tap, on the text-message
   path that already exists.
 - **Updates.** In Settings: an auto-update toggle and a "Check for updates"
@@ -88,6 +84,14 @@ Decided against:
   developer account and Apple's own channels.
 - **Sending several files from Symbian.** It receives a selection and sends
   one file or one folder at a time, which is enough.
+- **A desktop tray icon that keeps listening for paired devices.** It would
+  make phone to laptop one tap, but only that direction: Android stops a
+  background app unless it holds a permanent foreground service or uses
+  Google's push, and neither is wanted. It also needs engine work, because
+  polling as the Receive button does - a new connection per code - cannot
+  run around the clock; the listener would have to ask one long-lived
+  connection for the nameplate list, as the Symbian client does. Not worth
+  it for half the benefit.
 - **"Open" and "Show in folder" after a receive, and actions on a
   notification.** A received file should never be opened by accident; the
   notification only says what happened.
