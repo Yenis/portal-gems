@@ -63,14 +63,36 @@ pub enum Error {
     InvalidServerUrl(String),
     #[error("no answer from the connection server in time")]
     ConnectTimeout,
+    #[error("this code already has two devices on it")]
+    Crowded,
     #[error("invalid folder archive: {0}")]
     Archive(String),
     #[error(transparent)]
-    Wormhole(#[from] magic_wormhole::WormholeError),
+    Wormhole(magic_wormhole::WormholeError),
     #[error(transparent)]
     Transfer(#[from] transfer::TransferError),
     #[error(transparent)]
     Io(#[from] std::io::Error),
+}
+
+/// A code holds two devices. The server turns a third away with the error
+/// `crowded`, which the library reports as "Error with the rendezvous server
+/// connection" - the words it uses for a server it cannot reach, with the
+/// server's own word left in the error's source where no app sees it. So the
+/// user was told to change servers when the server was fine and had just
+/// answered. Pick that one case out here, where the cause is still attached.
+impl From<magic_wormhole::WormholeError> for Error {
+    fn from(e: magic_wormhole::WormholeError) -> Self {
+        use magic_wormhole::{rendezvous::RendezvousError, WormholeError};
+        match e {
+            WormholeError::ServerError(RendezvousError::Server(ref said))
+                if &**said == "crowded" =>
+            {
+                Error::Crowded
+            },
+            other => Error::Wormhole(other),
+        }
+    }
 }
 
 impl From<zip::result::ZipError> for Error {
@@ -1204,6 +1226,31 @@ mod tests {
         assert_eq!(
             Error::ConnectTimeout.to_string(),
             "no answer from the connection server in time"
+        );
+    }
+
+    #[test]
+    fn a_crowded_code_is_told_apart_from_an_unreachable_server() {
+        use magic_wormhole::{rendezvous::RendezvousError, WormholeError};
+
+        let crowded = WormholeError::ServerError(RendezvousError::Server("crowded".into()));
+        assert!(matches!(Error::from(crowded), Error::Crowded));
+
+        // Anything else the server says keeps the library's own wording.
+        let other = WormholeError::ServerError(RendezvousError::Server("bad mood".into()));
+        let other = Error::from(other);
+        assert!(matches!(other, Error::Wormhole(_)));
+        assert_eq!(other.to_string(), "Error with the rendezvous server connection");
+    }
+
+    /// `friendlyError` in packages/core matches this text. It must not drift,
+    /// and must not contain "rendezvous", "peer", "transit" or "network",
+    /// which that file reads as other failures.
+    #[test]
+    fn crowded_message_is_pinned() {
+        assert_eq!(
+            Error::Crowded.to_string(),
+            "this code already has two devices on it"
         );
     }
 
