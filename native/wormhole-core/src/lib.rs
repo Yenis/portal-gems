@@ -830,11 +830,54 @@ where
 
 /// Strip any path components the sender may have smuggled into the file name.
 pub(crate) fn sanitize_file_name(name: &str) -> String {
-    Path::new(name)
+    let leaf = Path::new(name)
         .file_name()
         .map(|n| n.to_string_lossy().into_owned())
         .filter(|n| !n.is_empty() && n != "." && n != "..")
-        .unwrap_or_else(|| "received.bin".to_string())
+        .unwrap_or_else(|| "received.bin".to_string());
+    if cfg!(windows) {
+        windows_safe_name(&leaf)
+    } else {
+        leaf
+    }
+}
+
+/// A name Windows will store as the file it looks like. Applied to names
+/// from the network on Windows only - every one of these is an ordinary
+/// character or an ordinary name elsewhere, and a sender's `12:30 notes.txt`
+/// should stay that on Linux.
+///
+/// - `:` is the one that matters: on NTFS `photo.jpg:extra` is not a file
+///   called that but a hidden second stream inside `photo.jpg`.
+/// - The other characters Windows forbids, and control characters, would
+///   only make the save fail; they are replaced too so that it does not.
+/// - A trailing dot or space is silently dropped by Windows, so `a.exe.`
+///   would land as `a.exe`; they are trimmed here, where it can be seen.
+/// - `CON`, `NUL`, `COM1` and the like are devices whatever extension
+///   follows, so they get a leading underscore.
+pub(crate) fn windows_safe_name(name: &str) -> String {
+    let replaced: String = name
+        .chars()
+        .map(|c| match c {
+            '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*' => '_',
+            c if c.is_control() => '_',
+            c => c,
+        })
+        .collect();
+    let trimmed = replaced.trim_end_matches(['.', ' ']);
+    if trimmed.is_empty() {
+        return "received.bin".to_string();
+    }
+    let stem = trimmed.split('.').next().unwrap_or("").trim_end().to_ascii_uppercase();
+    let device = matches!(stem.as_str(), "CON" | "PRN" | "AUX" | "NUL")
+        || (stem.len() == 4
+            && (stem.starts_with("COM") || stem.starts_with("LPT"))
+            && stem.ends_with(|c: char| c.is_ascii_digit() && c != '0'));
+    if device {
+        format!("_{trimmed}")
+    } else {
+        trimmed.to_string()
+    }
 }
 
 /// Like `sanitize_file_name`, with a folder-appropriate fallback.
@@ -1252,6 +1295,30 @@ mod tests {
             Error::Crowded.to_string(),
             "this code already has two devices on it"
         );
+    }
+
+    #[test]
+    fn windows_names_are_made_storable() {
+        // Untouched: what any platform would accept.
+        assert_eq!(windows_safe_name("photo.jpg"), "photo.jpg");
+        assert_eq!(windows_safe_name("my.notes.v2.txt"), "my.notes.v2.txt");
+        assert_eq!(windows_safe_name("console.log"), "console.log");
+        // A colon would name a hidden stream inside another file.
+        assert_eq!(windows_safe_name("photo.jpg:extra"), "photo.jpg_extra");
+        assert_eq!(windows_safe_name("12:30 notes.txt"), "12_30 notes.txt");
+        assert_eq!(windows_safe_name("a<b>c|d?e*f\"g.txt"), "a_b_c_d_e_f_g.txt");
+        assert_eq!(windows_safe_name("tab\there.txt"), "tab_here.txt");
+        // Windows would drop these without a word, changing the extension.
+        assert_eq!(windows_safe_name("setup.exe."), "setup.exe");
+        assert_eq!(windows_safe_name("setup.exe . ."), "setup.exe");
+        assert_eq!(windows_safe_name("..."), "received.bin");
+        // Device names, with or without an extension, in any case.
+        assert_eq!(windows_safe_name("CON"), "_CON");
+        assert_eq!(windows_safe_name("nul.txt"), "_nul.txt");
+        assert_eq!(windows_safe_name("Com1.tar.gz"), "_Com1.tar.gz");
+        assert_eq!(windows_safe_name("LPT9"), "_LPT9");
+        assert_eq!(windows_safe_name("COM0"), "COM0");
+        assert_eq!(windows_safe_name("COM10"), "COM10");
     }
 
     #[test]

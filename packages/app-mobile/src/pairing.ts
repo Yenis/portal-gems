@@ -10,6 +10,7 @@ import {
   isTransitFailure,
   newDeviceId,
   parseHandshake,
+  isHandshakeOffer,
   PAIRING_HANDSHAKE_FILE,
   PAIRED_ATTEMPT_TIMEOUT_MS,
   PAIRED_CODE_ATTEMPTS,
@@ -240,7 +241,14 @@ export async function waitForPairingAsDisplayer(
       }
       try {
         // A peer on 1.3.x still sends the handshake as a file; take it the
-        // old way so pairing with one keeps working.
+        // old way so pairing with one keeps working. This is the one
+        // transfer taken without asking, so it has to look like a handshake
+        // first: one small file.
+        if (!isHandshakeOffer(Number(incoming.fileSize()), incoming.folderOffer() != null)) {
+          incoming.reject().catch(() => undefined);
+          realError = new Error('malformed handshake');
+          continue;
+        }
         const saved = await incoming.accept(incomingDir, quietListener, { signal });
         const message = parseHandshake(await readTextFile(saved));
         deleteFile(saved).catch(() => undefined);

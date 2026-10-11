@@ -435,7 +435,7 @@ The C client builds and tests on the host on its own, with no SDK at all:
 
 ```bash
 cd native/wormhole-mini
-make test        # 339 checks against known-answer vectors
+make test        # 341 checks against known-answer vectors
 make test-arm    # the same suite cross-compiled and run under qemu-arm
 make cli         # build/wh-mini, for interop testing against any client
 ```

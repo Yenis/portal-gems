@@ -305,10 +305,43 @@ class PortalGemsNativeModule(reactContext: ReactApplicationContext) :
     }
   }
 
+  /**
+   * A URI this app will read in order to send what it points at. Picked and
+   * shared files arrive as `content://` URIs served by another app; anything
+   * else - above all `file://`, which is opened with this app's own access
+   * and can name its private files - is refused, and so is a provider that
+   * belongs to this app itself.
+   */
+  private fun sendableUri(uriString: String): Uri {
+    val uri = Uri.parse(uriString)
+    require(uri.scheme == "content") { "not a content URI" }
+    val own = reactApplicationContext.packageName
+    val authority = uri.authority ?: ""
+    require(authority != own && !authority.startsWith("$own.")) { "not a shared file" }
+    return uri
+  }
+
+  /**
+   * The file name a provider reports, reduced to a name. A provider is
+   * another app and can report anything: `../../shared_prefs/x.xml` used to
+   * be joined to the cache directory as it stood, which let whatever shared
+   * a file into the app write one anywhere in its private storage. Path
+   * separators and control characters are replaced, as `bundleEntryNames`
+   * in packages/core does for several files, and a name that is empty or
+   * all dots becomes `fallback`.
+   */
+  private fun safeLeafName(reported: String?, fallback: String): String {
+    val cleaned = (reported ?: "")
+      .map { c -> if (c == '/' || c == '\\' || c.code < 0x20 || c.code == 0x7f) '_' else c }
+      .joinToString("")
+      .trim()
+    return if (cleaned.replace(".", "").isEmpty()) fallback else cleaned
+  }
+
   @ReactMethod
   fun copyToCache(uriString: String, promise: Promise) {
     try {
-      val uri = Uri.parse(uriString)
+      val uri = sendableUri(uriString)
       val resolver = reactApplicationContext.contentResolver
 
       var name = "shared.bin"
@@ -322,8 +355,12 @@ class PortalGemsNativeModule(reactContext: ReactApplicationContext) :
         }
       }
 
+      name = safeLeafName(name, "shared.bin")
       val outDir = File(reactApplicationContext.cacheDir, "outgoing").apply { mkdirs() }
       val outFile = File(outDir, name)
+      // Belt and braces: whatever the name, the file is written directly
+      // inside the staging directory or not at all.
+      require(outFile.canonicalFile.parentFile == outDir.canonicalFile) { "bad file name" }
       resolver.openInputStream(uri).use { input ->
         requireNotNull(input) { "could not open input stream" }
         outFile.outputStream().use { output -> input.copyTo(output) }
@@ -669,7 +706,7 @@ class PortalGemsNativeModule(reactContext: ReactApplicationContext) :
             val uriString = uris.getString(i) ?: throw IllegalStateException("missing uri")
             val name = names.getString(i) ?: throw IllegalStateException("missing name")
             zip.putNextEntry(java.util.zip.ZipEntry(name))
-            resolver.openInputStream(Uri.parse(uriString)).use { input ->
+            resolver.openInputStream(sendableUri(uriString)).use { input ->
               requireNotNull(input) { "could not read $name" }
               while (true) {
                 val read = input.read(buf)

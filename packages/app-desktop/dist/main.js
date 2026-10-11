@@ -1668,7 +1668,7 @@ var require_shim = __commonJS({
 });
 
 // src/main.ts
-var import_electron = require("electron");
+var import_electron2 = require("electron");
 var fs3 = __toESM(require("node:fs"));
 var os = __toESM(require("node:os"));
 var path4 = __toESM(require("node:path"));
@@ -5068,11 +5068,14 @@ var import_react11 = __toESM(require_react(), 1);
 var import_react10 = __toESM(require_react(), 1);
 
 // src/engine.ts
+var import_electron = require("electron");
 var import_node_module = require("node:module");
 var path = __toESM(require("node:path"));
 var requireNative = (0, import_node_module.createRequire)(__filename);
 function loadAddon() {
-  if (process.env.PG_ADDON_PATH) return requireNative(process.env.PG_ADDON_PATH);
+  if (!import_electron.app.isPackaged && process.env.PG_ADDON_PATH) {
+    return requireNative(process.env.PG_ADDON_PATH);
+  }
   const platformSpecific = path.join(
     __dirname,
     `wormhole_node-${process.platform}-${process.arch}.node`
@@ -5207,18 +5210,23 @@ async function describeSelection(paths) {
 
 // src/main.ts
 var win = null;
-if (!import_electron.app.isPackaged) {
-  const smoke = Object.keys(process.env).some((k) => k.startsWith("PG_SMOKE_"));
-  const dir2 = smoke ? process.env.PG_SMOKE_PROFILE ?? path4.join(os.tmpdir(), "portalgems-smoke") : path4.join(import_electron.app.getPath("appData"), "portalgems-desktop-dev");
-  fs3.mkdirSync(dir2, { recursive: true });
-  import_electron.app.setPath("userData", dir2);
+if (import_electron2.app.isPackaged) {
+  for (const key of Object.keys(process.env)) {
+    if (key.startsWith("PG_SMOKE_")) delete process.env[key];
+  }
 }
-var pairsPath = () => path4.join(import_electron.app.getPath("userData"), "paired-devices.bin");
+if (!import_electron2.app.isPackaged) {
+  const smoke = Object.keys(process.env).some((k) => k.startsWith("PG_SMOKE_"));
+  const dir2 = smoke ? process.env.PG_SMOKE_PROFILE ?? path4.join(os.tmpdir(), "portalgems-smoke") : path4.join(import_electron2.app.getPath("appData"), "portalgems-desktop-dev");
+  fs3.mkdirSync(dir2, { recursive: true });
+  import_electron2.app.setPath("userData", dir2);
+}
+var pairsPath = () => path4.join(import_electron2.app.getPath("userData"), "paired-devices.bin");
 function readPairs() {
   try {
     const raw = fs3.readFileSync(pairsPath());
-    if (import_electron.safeStorage.isEncryptionAvailable()) {
-      return import_electron.safeStorage.decryptString(raw);
+    if (import_electron2.safeStorage.isEncryptionAvailable()) {
+      return import_electron2.safeStorage.decryptString(raw);
     }
     return raw.toString("utf8");
   } catch {
@@ -5226,8 +5234,23 @@ function readPairs() {
   }
 }
 function writePairs(json) {
-  const data = import_electron.safeStorage.isEncryptionAvailable() ? import_electron.safeStorage.encryptString(json) : Buffer.from(json, "utf8");
-  fs3.writeFileSync(pairsPath(), data);
+  const data = import_electron2.safeStorage.isEncryptionAvailable() ? import_electron2.safeStorage.encryptString(json) : Buffer.from(json, "utf8");
+  fs3.writeFileSync(pairsPath(), data, { mode: 384 });
+  try {
+    fs3.chmodSync(pairsPath(), 384);
+  } catch {
+  }
+}
+function handshakeDir() {
+  const dir2 = path4.join(import_electron2.app.getPath("userData"), "handshake");
+  fs3.mkdirSync(dir2, { recursive: true, mode: 448 });
+  return dir2;
+}
+function insideHandshakeDir(p) {
+  const dir2 = path4.resolve(handshakeDir());
+  const target = path4.resolve(String(p));
+  if (path4.dirname(target) !== dir2) throw new Error("path outside the handshake directory");
+  return target;
 }
 var forward = (id) => (ev) => {
   win?.webContents.send("pg:event", { id, ...ev });
@@ -5238,15 +5261,15 @@ function safeFileName(name) {
 }
 function isTempDownloadDir(dir2) {
   const target = path4.resolve(dir2);
-  const bases = [os.tmpdir(), import_electron.app.getPath("temp"), "/tmp"];
+  const bases = [os.tmpdir(), import_electron2.app.getPath("temp"), "/tmp"];
   return bases.some((base) => {
     const b = path4.resolve(base);
     return target === b || target.startsWith(b + path4.sep);
   });
 }
 var isValidDownloadDir = (dir2) => !!dir2 && dir2.trim() !== "" && !isTempDownloadDir(dir2);
-var resolveDownloadDir = (dir2) => isValidDownloadDir(dir2) ? dir2 : import_electron.app.getPath("downloads");
-import_electron.ipcMain.handle("pg:locale", () => import_electron.app.getLocale());
+var resolveDownloadDir = (dir2) => isValidDownloadDir(dir2) ? dir2 : import_electron2.app.getPath("downloads");
+import_electron2.ipcMain.handle("pg:locale", () => import_electron2.app.getLocale());
 async function pickerDefault(dir2) {
   if (!dir2 || dir2.trim() === "") return void 0;
   try {
@@ -5255,18 +5278,18 @@ async function pickerDefault(dir2) {
     return void 0;
   }
 }
-import_electron.ipcMain.handle("pg:pickFiles", async (_e, defaultDir) => {
+import_electron2.ipcMain.handle("pg:pickFiles", async (_e, defaultDir) => {
   if (!win) return null;
-  const result = await import_electron.dialog.showOpenDialog(win, {
+  const result = await import_electron2.dialog.showOpenDialog(win, {
     properties: ["openFile", "multiSelections"],
     defaultPath: await pickerDefault(defaultDir)
   });
   if (result.canceled || result.filePaths.length === 0) return null;
   return describeSelection(result.filePaths);
 });
-import_electron.ipcMain.handle("pg:pickFolder", async (_e, defaultDir) => {
+import_electron2.ipcMain.handle("pg:pickFolder", async (_e, defaultDir) => {
   if (!win) return null;
-  const result = await import_electron.dialog.showOpenDialog(win, {
+  const result = await import_electron2.dialog.showOpenDialog(win, {
     properties: ["openDirectory"],
     defaultPath: await pickerDefault(defaultDir)
   });
@@ -5280,28 +5303,28 @@ import_electron.ipcMain.handle("pg:pickFolder", async (_e, defaultDir) => {
     totalBytes: stats.totalBytes
   };
 });
-import_electron.ipcMain.handle(
+import_electron2.ipcMain.handle(
   "pg:statDropped",
   (_e, dropped) => Array.isArray(dropped) ? describeSelection(dropped) : null
 );
-import_electron.ipcMain.handle(
+import_electron2.ipcMain.handle(
   "pg:send",
   (_e, id, filePath, code, server) => engine.sendFile(id, filePath, code ?? null, server ?? {}, forward(id))
 );
-import_electron.ipcMain.handle(
+import_electron2.ipcMain.handle(
   "pg:sendText",
   (_e, id, text, code, server) => engine.sendText(id, text, code ?? null, server ?? {}, forward(id))
 );
-import_electron.ipcMain.handle(
+import_electron2.ipcMain.handle(
   "pg:sendFolder",
   (_e, id, folderPath, code, server) => engine.sendFolder(id, folderPath, code ?? null, server ?? {}, forward(id))
 );
-import_electron.ipcMain.handle(
+import_electron2.ipcMain.handle(
   "pg:sendFiles",
   (_e, id, paths, bundleName, code, server) => engine.sendFiles(id, paths, bundleName, code ?? null, server ?? {}, forward(id))
 );
 var looseReceives = /* @__PURE__ */ new Set();
-import_electron.ipcMain.handle(
+import_electron2.ipcMain.handle(
   "pg:requestReceive",
   async (_e, id, code, server) => {
     const offer = await requestReceive(id, code, server);
@@ -5323,14 +5346,18 @@ async function requestReceive(id, code, server) {
     throw e;
   }
 }
-import_electron.ipcMain.handle("pg:accept", async (_e, id, destDir) => {
-  return engine.acceptReceive(id, destDir, forward(id));
+import_electron2.ipcMain.handle("pg:accept", async (_e, id, destDir) => {
+  const dir2 = handshakeDir();
+  if (path4.resolve(String(destDir)) !== path4.resolve(dir2)) {
+    throw new Error("path outside the handshake directory");
+  }
+  return engine.acceptReceive(id, dir2, forward(id));
 });
-import_electron.ipcMain.handle(
+import_electron2.ipcMain.handle(
   "pg:acceptDownload",
   async (_e, id, dir2, overwrite) => {
     const loose = looseReceives.delete(id);
-    const staging = path4.join(import_electron.app.getPath("userData"), "incoming", String(id));
+    const staging = path4.join(import_electron2.app.getPath("userData"), "incoming", String(id));
     await fs3.promises.mkdir(staging, { recursive: true });
     try {
       const saved = await engine.acceptReceive(id, staging, forward(id));
@@ -5340,7 +5367,7 @@ import_electron.ipcMain.handle(
       try {
         await fs3.promises.mkdir(destDir, { recursive: true });
       } catch {
-        destDir = import_electron.app.getPath("downloads");
+        destDir = import_electron2.app.getPath("downloads");
         fallback = true;
         await fs3.promises.mkdir(destDir, { recursive: true });
       }
@@ -5360,18 +5387,18 @@ import_electron.ipcMain.handle(
     }
   }
 );
-import_electron.ipcMain.handle(
+import_electron2.ipcMain.handle(
   "pg:downloadDirValid",
   (_e, dir2) => isValidDownloadDir(dir2)
 );
-import_electron.ipcMain.handle("pg:pickDirectory", async () => {
+import_electron2.ipcMain.handle("pg:pickDirectory", async () => {
   if (!win) return null;
-  const result = await import_electron.dialog.showOpenDialog(win, {
+  const result = await import_electron2.dialog.showOpenDialog(win, {
     properties: ["openDirectory", "createDirectory"]
   });
   return result.canceled || result.filePaths.length === 0 ? null : result.filePaths[0];
 });
-import_electron.ipcMain.handle("pg:statTarget", async (_e, dir2, fileName) => {
+import_electron2.ipcMain.handle("pg:statTarget", async (_e, dir2, fileName) => {
   const target = path4.join(resolveDownloadDir(dir2), safeFileName(fileName));
   try {
     const st = await fs3.promises.stat(target);
@@ -5384,31 +5411,34 @@ import_electron.ipcMain.handle("pg:statTarget", async (_e, dir2, fileName) => {
     return { exists: false, size: 0, isFolder: false };
   }
 });
-import_electron.ipcMain.handle("pg:deviceName", () => os.hostname());
-import_electron.ipcMain.handle("pg:tempDir", () => import_electron.app.getPath("temp"));
-import_electron.ipcMain.handle("pg:pairs:get", () => readPairs());
-import_electron.ipcMain.handle("pg:pairs:set", (_e, json) => writePairs(json));
-import_electron.ipcMain.handle("pg:writeTemp", async (_e, name, content) => {
-  const file = path4.join(import_electron.app.getPath("temp"), name);
-  await fs3.promises.writeFile(file, content, "utf8");
+import_electron2.ipcMain.handle("pg:deviceName", () => os.hostname());
+import_electron2.ipcMain.handle("pg:tempDir", () => handshakeDir());
+import_electron2.ipcMain.handle("pg:pairs:get", () => readPairs());
+import_electron2.ipcMain.handle("pg:pairs:set", (_e, json) => writePairs(json));
+import_electron2.ipcMain.handle("pg:writeTemp", async (_e, name, content) => {
+  const file = path4.join(handshakeDir(), safeFileName(String(name)));
+  await fs3.promises.writeFile(file, content, { encoding: "utf8", mode: 384 });
   return file;
 });
-import_electron.ipcMain.handle("pg:readText", (_e, p) => fs3.promises.readFile(p, "utf8"));
-import_electron.ipcMain.handle(
-  "pg:deleteFile",
-  (_e, p) => fs3.promises.unlink(p).catch(() => void 0)
+import_electron2.ipcMain.handle(
+  "pg:readText",
+  async (_e, p) => fs3.promises.readFile(insideHandshakeDir(p), "utf8")
 );
-import_electron.ipcMain.handle("pg:reject", (_e, id) => {
+import_electron2.ipcMain.handle(
+  "pg:deleteFile",
+  async (_e, p) => fs3.promises.unlink(insideHandshakeDir(p)).catch(() => void 0)
+);
+import_electron2.ipcMain.handle("pg:reject", (_e, id) => {
   looseReceives.delete(id);
   return engine.rejectReceive(id);
 });
-import_electron.ipcMain.handle("pg:cancel", (_e, id) => engine.cancelTransfer(id));
-if (process.platform === "win32") import_electron.app.setAppUserModelId("com.gemstech.portalgems");
+import_electron2.ipcMain.handle("pg:cancel", (_e, id) => engine.cancelTransfer(id));
+if (process.platform === "win32") import_electron2.app.setAppUserModelId("com.gemstech.portalgems");
 var liveNotifications = /* @__PURE__ */ new Set();
-import_electron.ipcMain.handle("pg:notify", (_e, title, body) => {
+import_electron2.ipcMain.handle("pg:notify", (_e, title, body) => {
   if (process.env.PG_SMOKE_NOTIFY) console.log(`SMOKE:NOTIFY=${title}|${body}`);
-  if (!win || win.isDestroyed() || win.isFocused() || !import_electron.Notification.isSupported()) return;
-  const note = new import_electron.Notification({
+  if (!win || win.isDestroyed() || win.isFocused() || !import_electron2.Notification.isSupported()) return;
+  const note = new import_electron2.Notification({
     title,
     body,
     icon: path4.join(__dirname, "..", "build", "icon.png")
@@ -5424,8 +5454,8 @@ import_electron.ipcMain.handle("pg:notify", (_e, title, body) => {
   note.on("failed", () => liveNotifications.delete(note));
   note.show();
 });
-import_electron.app.whenReady().then(async () => {
-  win = new import_electron.BrowserWindow({
+import_electron2.app.whenReady().then(async () => {
+  win = new import_electron2.BrowserWindow({
     width: 620,
     height: 760,
     minWidth: 480,
@@ -5435,46 +5465,52 @@ import_electron.app.whenReady().then(async () => {
     autoHideMenuBar: true,
     webPreferences: {
       preload: path4.join(__dirname, "preload.js"),
-      contextIsolation: true
+      contextIsolation: true,
+      // Both are Electron's defaults; stated so that neither can change
+      // under the app with an upgrade or a careless edit.
+      nodeIntegration: false,
+      sandbox: true
     }
   });
+  win.webContents.on("will-navigate", (event) => event.preventDefault());
+  win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
   await win.loadFile(path4.join(__dirname, "..", "src", "renderer", "index.html"));
   const smokeReceive = process.env.PG_SMOKE_RECEIVE;
   const smokeCancel = process.env.PG_SMOKE_RECEIVE_CANCEL;
   if (smokeReceive || smokeCancel) {
     runSmoke(smokeReceive ?? smokeCancel, Boolean(smokeCancel)).catch((e) => {
       console.log(`SMOKE:ERROR:${e}`);
-      import_electron.app.exit(1);
+      import_electron2.app.exit(1);
     });
   }
   if (process.env.PG_SMOKE_PAIR_SHOW) {
     runSmokePairShow().catch((e) => {
       console.log(`SMOKE:ERROR:${e}`);
-      import_electron.app.exit(1);
+      import_electron2.app.exit(1);
     });
   }
   if (process.env.PG_SMOKE_PAIR_HOST) {
     runSmokePairHost().catch((e) => {
       console.log(`SMOKE:ERROR:${e}`);
-      import_electron.app.exit(1);
+      import_electron2.app.exit(1);
     });
   }
   if (process.env.PG_SMOKE_PAIR_JOIN) {
     runSmokePairJoin(process.env.PG_SMOKE_PAIR_JOIN).catch((e) => {
       console.log(`SMOKE:ERROR:${e}`);
-      import_electron.app.exit(1);
+      import_electron2.app.exit(1);
     });
   }
   if (process.env.PG_SMOKE_DEVICE_NAME) {
     runSmokeDeviceName(process.env.PG_SMOKE_DEVICE_NAME).catch((e) => {
       console.log(`SMOKE:ERROR:${e}`);
-      import_electron.app.exit(1);
+      import_electron2.app.exit(1);
     });
   }
   if (process.env.PG_SMOKE_RENAME !== void 0) {
     runSmokeRename(process.env.PG_SMOKE_RENAME).catch((e) => {
       console.log(`SMOKE:ERROR:${e}`);
-      import_electron.app.exit(1);
+      import_electron2.app.exit(1);
     });
   }
   if (process.env.PG_SMOKE_DUMP_PAIRCODE) {
@@ -5485,36 +5521,36 @@ import_electron.app.whenReady().then(async () => {
         console.log(`PAIR-CANDIDATE:${i}:${code}`);
       });
     }
-    import_electron.app.exit(0);
+    import_electron2.app.exit(0);
   }
   if (process.env.PG_SMOKE_PAIRED_RECEIVE) {
     runSmokePairedReceive().catch((e) => {
       console.log(`SMOKE:ERROR:${e}`);
-      import_electron.app.exit(1);
+      import_electron2.app.exit(1);
     });
   }
   if (process.env.PG_SMOKE_PAIRED_SEND) {
     runSmokePairedSend(process.env.PG_SMOKE_PAIRED_SEND).catch((e) => {
       console.log(`SMOKE:ERROR:${e}`);
-      import_electron.app.exit(1);
+      import_electron2.app.exit(1);
     });
   }
   if (process.env.PG_SMOKE_SEND_FOLDER) {
     runSmokeSendFolder(process.env.PG_SMOKE_SEND_FOLDER).catch((e) => {
       console.log(`SMOKE:ERROR:${e}`);
-      import_electron.app.exit(1);
+      import_electron2.app.exit(1);
     });
   }
   if (process.env.PG_SMOKE_SEND_FILES) {
     runSmokeSendFiles(process.env.PG_SMOKE_SEND_FILES).catch((e) => {
       console.log(`SMOKE:ERROR:${e}`);
-      import_electron.app.exit(1);
+      import_electron2.app.exit(1);
     });
   }
   if (process.env.PG_SMOKE_DUMP_DLDIR) {
     runSmokeDumpDlDir().catch((e) => {
       console.log(`SMOKE:ERROR:${e}`);
-      import_electron.app.exit(1);
+      import_electron2.app.exit(1);
     });
   }
   if (process.env.PG_SMOKE_PICK_DEFAULTPATH !== void 0) {
@@ -5523,7 +5559,7 @@ import_electron.app.whenReady().then(async () => {
       process.env.PG_SMOKE_PICK_FILE ?? ""
     ).catch((e) => {
       console.log(`SMOKE:ERROR:${e}`);
-      import_electron.app.exit(1);
+      import_electron2.app.exit(1);
     });
   }
 });
@@ -5565,10 +5601,10 @@ async function runSmokePairShow() {
   await smokeWaitFor("Copy pairing code", 1e4);
   await smokeClick("Copy pairing code");
   await new Promise((r) => setTimeout(r, 300));
-  console.log(`PAIR-PAYLOAD:${import_electron.clipboard.readText()}`);
+  console.log(`PAIR-PAYLOAD:${import_electron2.clipboard.readText()}`);
   await smokeWaitFor("Paired with", 12e4);
   console.log("SMOKE:PAIRED-OK");
-  import_electron.app.exit(0);
+  import_electron2.app.exit(0);
 }
 async function runSmokePairHost() {
   await smokeWaitFor("PortalGems", 1e4);
@@ -5587,7 +5623,7 @@ async function runSmokePairHost() {
   await smokeWaitFor("Paired with", 18e4);
   const text = await smokeExec("document.body.innerText");
   console.log(`SMOKE:PAIRED-OK:${text.match(/Paired with [^\n]*/)?.[0] ?? ""}`);
-  import_electron.app.exit(0);
+  import_electron2.app.exit(0);
 }
 async function runSmokePairJoin(code) {
   await smokeWaitFor("PortalGems", 1e4);
@@ -5603,7 +5639,7 @@ async function runSmokePairJoin(code) {
   await smokeWaitFor("Paired with", 18e4);
   const text = await smokeExec("document.body.innerText");
   console.log(`SMOKE:PAIRED-OK:${text.match(/Paired with [^\n]*/)?.[0] ?? ""}`);
-  import_electron.app.exit(0);
+  import_electron2.app.exit(0);
 }
 async function runSmokeDeviceName(name) {
   await smokeWaitFor("PortalGems", 1e4);
@@ -5612,7 +5648,7 @@ async function runSmokeDeviceName(name) {
   if (!await smokeFill(0, name)) throw new Error("no device name field");
   const stored = await smokeExec(`localStorage.getItem('pg-device-name')`);
   console.log(`SMOKE:DEVICE-NAME:${stored}`);
-  import_electron.app.exit(0);
+  import_electron2.app.exit(0);
 }
 async function runSmokeRename(label) {
   await smokeWaitFor("PortalGems", 1e4);
@@ -5632,7 +5668,7 @@ async function runSmokeRename(label) {
       (d) => d.name + '|' + (d.label === undefined ? '(none)' : d.label)).join(','))()`);
   console.log(`SMOKE:RENAME-SHOWN:${shown}`);
   console.log(`SMOKE:RENAME-STORED:${stored}`);
-  import_electron.app.exit(0);
+  import_electron2.app.exit(0);
 }
 async function runSmokePairedReceive() {
   await smokeWaitFor("PortalGems", 1e4);
@@ -5643,7 +5679,7 @@ async function runSmokePairedReceive() {
   await smokeClick("Accept");
   await smokeWaitFor("Saved to Downloads", 9e4);
   console.log("SMOKE:PAIRED-RECEIVE-OK");
-  import_electron.app.exit(0);
+  import_electron2.app.exit(0);
 }
 function smokeServer() {
   return {
@@ -5665,11 +5701,11 @@ async function runSmokePairedSend(filePath) {
     (ev) => console.log(`SMOKE-EV:${ev.event}:${ev.info ?? ""}`)
   );
   console.log("SMOKE:PAIRED-SEND-OK");
-  import_electron.app.exit(0);
+  import_electron2.app.exit(0);
 }
 async function runSmokePickDefault(seedDir, fakeFile) {
   await smokeWaitFor("PortalGems", 1e4);
-  import_electron.dialog.showOpenDialog = async (_w, opts) => {
+  import_electron2.dialog.showOpenDialog = async (_w, opts) => {
     console.log(`SMOKE:PICK-DEFAULTPATH=${opts.defaultPath ?? ""}`);
     return { canceled: false, filePaths: [fakeFile] };
   };
@@ -5682,7 +5718,7 @@ async function runSmokePickDefault(seedDir, fakeFile) {
     "localStorage.getItem('pg-last-send-dir')"
   );
   console.log(`SMOKE:REMEMBERED=${remembered}`);
-  import_electron.app.exit(0);
+  import_electron2.app.exit(0);
 }
 async function runSmokeDumpDlDir() {
   await smokeWaitFor("PortalGems", 1e4);
@@ -5691,7 +5727,7 @@ async function runSmokeDumpDlDir() {
     "localStorage.getItem('pg-download-dir')"
   );
   console.log(`SMOKE:DLDIR=${v}`);
-  import_electron.app.exit(0);
+  import_electron2.app.exit(0);
 }
 async function runSmokeSendFolder(folderPath) {
   const code = process.env.PG_SMOKE_CODE;
@@ -5704,7 +5740,7 @@ async function runSmokeSendFolder(folderPath) {
     (ev) => console.log(`SMOKE-EV:${ev.event}:${ev.info ?? ""}`)
   );
   console.log("SMOKE:SEND-FOLDER-OK");
-  import_electron.app.exit(0);
+  import_electron2.app.exit(0);
 }
 async function runSmokeSendFiles(joined) {
   const code = process.env.PG_SMOKE_CODE;
@@ -5721,7 +5757,7 @@ async function runSmokeSendFiles(joined) {
     await engine.sendFile(991, picked.path, code, smokeServer(), log);
   }
   console.log("SMOKE:SEND-FILES-OK");
-  import_electron.app.exit(0);
+  import_electron2.app.exit(0);
 }
 async function runSmoke(code, cancelInstead) {
   const exec = (js) => win.webContents.executeJavaScript(js);
@@ -5774,9 +5810,9 @@ async function runSmoke(code, cancelInstead) {
     console.log(`SMOKE:SAVED=${saved}`);
     console.log("SMOKE:RECEIVE-OK");
   }
-  import_electron.app.exit(0);
+  import_electron2.app.exit(0);
 }
-import_electron.app.on("window-all-closed", () => import_electron.app.quit());
+import_electron2.app.on("window-all-closed", () => import_electron2.app.quit());
 /*! Bundled license information:
 
 react/cjs/react.production.js:

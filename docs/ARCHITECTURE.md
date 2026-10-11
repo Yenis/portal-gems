@@ -3,7 +3,7 @@
 The single document to read before building new features. Deferred work with
 its reasoning lives in `docs/BACKLOG.md`; the Symbian client has its own map
 in `docs/SYMBIAN.md`. This describes the
-released 1.4.3 (2026-10-11); what was verified, and how, is in section 7.
+released 1.4.3 (2026-10-11); what was verified, and how, is in section 8.
 Per-phase discovery notes live in the other `docs/*.md` files; this is the
 consolidated map.
 
@@ -295,7 +295,7 @@ Consumed by both apps as **npm `file:` symlinks** (see §5 build gotchas).
     follows the outer signal.
 - `errors.ts` - engine-string → i18n-key mapping.
 
-Tests: `cd packages/core && npm test` (vitest, 165 tests).
+Tests: `cd packages/core && npm test` (vitest, 167 tests).
 
 ## 4. The apps
 
@@ -654,7 +654,76 @@ excuse for letting it drift.
   `pg-download-dir` on both platforms.)
 - **New screen** → Route union + screen component per app; strings in core.
 
-## 7. Verified-state summary & known gaps
+## 7. Security review (2026-10-11, after 1.4.3)
+
+A read of all three clients for input that crosses a trust boundary: the
+network, another app on the phone, the renderer, the environment. What it
+found and what was done, so the reasoning is not lost:
+
+- **Android: a shared file's name was trusted** (the serious one).
+  `copyToCache` joined the display name a content provider reports to the
+  cache directory as it stood. A provider is another app, so
+  `../../shared_prefs/x.xml` let any app that shares a file into PortalGems
+  write a file anywhere in its private storage - at intake, before the user
+  chose anything. The name is now reduced to a name (`safeLeafName`) and the
+  destination checked to be directly inside the staging directory. Several
+  files were never affected: `bundleEntryNames` already did this.
+- **Android: only `content://` is read for sending** (`sendableUri`, and the
+  filter in `MainActivity.captureShare`). A `file://` URI is opened with the
+  app's own access, so a share could name the app's private files and have
+  the user send them on; a provider belonging to the app itself is refused
+  for the same reason.
+- **Symbian: a frame length wrapped on a 32-bit long** (`ws.c`). The
+  WebSocket length is 64-bit on the wire; `header + length` wrapped to a
+  small number, after which a ping was echoed from four gigabytes past the
+  receive buffer - memory, keys included, sent to the server - and a
+  continuation frame was copied past the caller's buffer. The phone talks
+  cleartext to the server, so anyone on the path could send either. Two
+  checks in `test_proto.c` pin it; they passed on the 64-bit host and
+  crashed under qemu-arm before the fix, which is what `make test-arm` is
+  for.
+- **Desktop: the pairing store was readable by other accounts.**
+  `paired-devices.bin` was written with default permissions, and its
+  encryption is not always real: no keyring means none, and Electron's
+  `basic_text` fallback on Linux uses a fixed key. It is now mode 0600.
+- **Desktop: the handshake file left the profile.** It was written to and
+  accepted into the system temp directory under a fixed name. It now lives
+  in `userData/handshake` (0700), and `pg:writeTemp`, `pg:readText`,
+  `pg:deleteFile` and `pg:accept` are confined to that directory instead of
+  taking any path the renderer names.
+- **Desktop: the smoke harness and `PG_ADDON_PATH` worked in packaged
+  builds.** `PG_SMOKE_RECEIVE=<code>` made the installed app receive and
+  accept a transfer by itself, and `PG_ADDON_PATH` made it load a native
+  library of the caller's choosing. Both need control of the app's
+  environment, which is most of the way to running code already, but
+  neither had any business in a release: the variables are now dropped when
+  `app.isPackaged`.
+- **Desktop: the window cannot navigate.** `will-navigate` is cancelled and
+  `setWindowOpenHandler` denies, on top of the CSP (`default-src 'self'`,
+  no inline script) and the explicit `sandbox`/`nodeIntegration` settings.
+- **Both apps: the pairing handshake file is checked before it is taken.**
+  It is the one transfer accepted without asking, and nothing limited it:
+  whoever held the pairing secret could have any file, or a folder, written
+  unprompted. `isHandshakeOffer` in core refuses folders and anything over
+  `PAIRING_HANDSHAKE_MAX_BYTES` (4096).
+- **Engine: names from the network are made storable on Windows**
+  (`windows_safe_name`, applied under `cfg!(windows)` only): a `:` would
+  name a hidden NTFS stream inside another file, a trailing dot changes the
+  extension silently, and `CON`/`NUL`/`COM1` are devices.
+- **Dependencies.** Electron 38 was past its support window and had a
+  use-after-free fixed in 39.8.1: now 44. `rustls` 0.23.41 -> 0.23.45
+  (handshake messages accepted at the wrong encryption level) and
+  `event-listener` 5.4.1 -> 5.4.2, in both Cargo.lock files. Checked with
+  `npm audit` and the OSV database for all 330 crates.
+
+Looked at and found sound: zip unpacking in both engines (traversal
+refused, size capped against the offer), received file and folder names,
+the C client's JSON, transit and zip readers, the Android manifest (one
+exported activity, no backup, cleartext off in release), the renderer (no
+`innerHTML`, React escapes peer-supplied names and messages), and the
+pairing derivation. What is left open is in `docs/BACKLOG.md`.
+
+## 8. Verified-state summary & known gaps
 
 Verified E2E over real servers: manual send/receive (all platform pairs,
 checksummed), receive confirmation + decline, share-sheet intake, friendly

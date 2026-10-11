@@ -30,6 +30,17 @@ let win: BrowserWindow | null = null;
 // and received files really did land in a temp directory. Dev and smoke runs
 // now get their own profiles, so no automated run can reach the real one.
 // Packaged users are untouched - no settings or pairings migrate.
+// The smoke harness below is driven by PG_SMOKE_* variables, and several of
+// its modes act for the user: one receives a transfer and presses Accept.
+// That belongs to a source checkout. In a packaged build the variables are
+// dropped before anything reads them, so nothing that can set this app's
+// environment can make the installed one transfer or accept on its own.
+if (app.isPackaged) {
+  for (const key of Object.keys(process.env)) {
+    if (key.startsWith('PG_SMOKE_')) delete process.env[key];
+  }
+}
+
 if (!app.isPackaged) {
   const smoke = Object.keys(process.env).some((k) => k.startsWith('PG_SMOKE_'));
   // Stable across runs (not per-run): the harness pairs in one run and uses
@@ -57,11 +68,47 @@ function readPairs(): string {
   }
 }
 
+// The file is readable by its owner only. Encryption is the first defence,
+// but it is not always one: with no keyring on Linux there is none at all,
+// and Electron's fallback there ("basic_text") reports itself as available
+// while using a fixed key. In both cases the pairing secrets are as private
+// as this file's permissions, which used to be the default - readable by
+// every account on the machine.
 function writePairs(json: string): void {
   const data = safeStorage.isEncryptionAvailable()
     ? safeStorage.encryptString(json)
     : Buffer.from(json, 'utf8');
-  fs.writeFileSync(pairsPath(), data);
+  fs.writeFileSync(pairsPath(), data, { mode: 0o600 });
+  // `mode` only applies to a file being created; this one may predate it.
+  try {
+    fs.chmodSync(pairsPath(), 0o600);
+  } catch {
+    // Windows has no such bits; the profile directory is per-user there.
+  }
+}
+
+// ---- The pairing handshake's working directory ----
+
+// The handshake that finishes a pairing with an older peer is a small file,
+// written here before it is sent and received here before it is read. It
+// used to live in the system temp directory under a fixed name, which on a
+// shared machine is a place other accounts can read and can plant a link
+// in. This directory is inside the profile and private to the user, and the
+// three handlers that touch files on the renderer's say-so - write, read,
+// delete - are confined to it, as is `pg:accept`. The renderer is trusted
+// code, but none of them has a reason to reach anywhere else.
+function handshakeDir(): string {
+  const dir = path.join(app.getPath('userData'), 'handshake');
+  fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+  return dir;
+}
+
+/** `p` if it is a file directly inside the handshake directory; throws otherwise. */
+function insideHandshakeDir(p: string): string {
+  const dir = path.resolve(handshakeDir());
+  const target = path.resolve(String(p));
+  if (path.dirname(target) !== dir) throw new Error('path outside the handshake directory');
+  return target;
 }
 
 const forward = (id: number) => (ev: NativeTransferEvent) => {
@@ -215,9 +262,14 @@ async function requestReceive(id: number, code: string, server?: ServerConfig) {
   }
 }
 
-// Plain accept into an explicit directory; used by the pairing handshake.
+// Plain accept, with no confirmation: only the pairing handshake uses it,
+// so it writes into the handshake directory and nowhere else.
 ipcMain.handle('pg:accept', async (_e, id: number, destDir: string) => {
-  return engine.acceptReceive(id, destDir, forward(id));
+  const dir = handshakeDir();
+  if (path.resolve(String(destDir)) !== path.resolve(dir)) {
+    throw new Error('path outside the handshake directory');
+  }
+  return engine.acceptReceive(id, dir, forward(id));
 });
 
 // Accept a user-visible download. The transfer lands in a per-transfer
@@ -314,17 +366,19 @@ ipcMain.handle('pg:statTarget', async (_e, dir: string | null, fileName: string)
 });
 
 ipcMain.handle('pg:deviceName', () => os.hostname());
-ipcMain.handle('pg:tempDir', () => app.getPath('temp'));
+ipcMain.handle('pg:tempDir', () => handshakeDir());
 ipcMain.handle('pg:pairs:get', () => readPairs());
 ipcMain.handle('pg:pairs:set', (_e, json: string) => writePairs(json));
 ipcMain.handle('pg:writeTemp', async (_e, name: string, content: string) => {
-  const file = path.join(app.getPath('temp'), name);
-  await fs.promises.writeFile(file, content, 'utf8');
+  const file = path.join(handshakeDir(), safeFileName(String(name)));
+  await fs.promises.writeFile(file, content, { encoding: 'utf8', mode: 0o600 });
   return file;
 });
-ipcMain.handle('pg:readText', (_e, p: string) => fs.promises.readFile(p, 'utf8'));
-ipcMain.handle('pg:deleteFile', (_e, p: string) =>
-  fs.promises.unlink(p).catch(() => undefined)
+ipcMain.handle('pg:readText', async (_e, p: string) =>
+  fs.promises.readFile(insideHandshakeDir(p), 'utf8')
+);
+ipcMain.handle('pg:deleteFile', async (_e, p: string) =>
+  fs.promises.unlink(insideHandshakeDir(p)).catch(() => undefined)
 );
 
 ipcMain.handle('pg:reject', (_e, id: number) => {
@@ -378,8 +432,17 @@ app.whenReady().then(async () => {
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
+      // Both are Electron's defaults; stated so that neither can change
+      // under the app with an upgrade or a careless edit.
+      nodeIntegration: false,
+      sandbox: true,
     },
   });
+  // The window shows one local page and never goes anywhere else. Nothing in
+  // the app navigates or opens a window, so anything that tries - a dropped
+  // link, text that somehow became markup - is refused here.
+  win.webContents.on('will-navigate', (event) => event.preventDefault());
+  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   await win.loadFile(path.join(__dirname, '..', 'src', 'renderer', 'index.html'));
 
   // Dev-only smoke harness: drives the real renderer UI end-to-end.

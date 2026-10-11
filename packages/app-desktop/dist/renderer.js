@@ -24210,6 +24210,10 @@
   var PAIRED_POLL_PAUSE_MS = 500;
   var SEND_ATTEMPTS_KEY = "pg-paired-send-attempts";
   var PAIRING_HANDSHAKE_FILE = "pg-pair-handshake.json";
+  var PAIRING_HANDSHAKE_MAX_BYTES = 4096;
+  function isHandshakeOffer(fileSize, isFolder) {
+    return !isFolder && Number.isFinite(fileSize) && fileSize >= 0 && fileSize <= PAIRING_HANDSHAKE_MAX_BYTES;
+  }
   var B64URL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
   function utf8Encode(s) {
     const out = [];
@@ -29414,6 +29418,11 @@
           continue;
         }
         try {
+          if (!isHandshakeOffer(offer.fileSize, offer.folder != null)) {
+            pg().reject(transferId).catch(() => void 0);
+            realError = new Error("malformed handshake");
+            continue;
+          }
           const saved = await pg().accept(transferId, tempDir);
           const message = parseHandshake(await pg().readText(saved));
           pg().deleteFile(saved).catch(() => void 0);

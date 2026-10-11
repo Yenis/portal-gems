@@ -114,6 +114,23 @@ export const SEND_ATTEMPTS_KEY = 'pg-paired-send-attempts';
 /** File name used for the one-shot pairing handshake transfer. */
 export const PAIRING_HANDSHAKE_FILE = 'pg-pair-handshake.json';
 
+/**
+ * The largest file a displayer takes as a pairing handshake.
+ *
+ * A handshake is `{"v":1,"name":"..."}` with a name of at most
+ * `DEVICE_NAME_MAX_BYTES`, so a hundred bytes or so. It is the one transfer
+ * that is accepted without asking, which makes its size the thing to check:
+ * without a limit, whoever holds the pairing secret - the device being
+ * paired, or someone who guessed a pairing code - could have any file, or a
+ * folder, written to disk unprompted.
+ */
+export const PAIRING_HANDSHAKE_MAX_BYTES = 4096;
+
+/** Whether an offer can be a file handshake: one small file, never a folder. */
+export function isHandshakeOffer(fileSize: number, isFolder: boolean): boolean {
+  return !isFolder && Number.isFinite(fileSize) && fileSize >= 0 && fileSize <= PAIRING_HANDSHAKE_MAX_BYTES;
+}
+
 const B64URL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 
 // Hermes has no TextDecoder (and older versions no TextEncoder), so we carry

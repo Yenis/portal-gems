@@ -55,6 +55,36 @@ still shows a code nobody can use until the user cancels. Telling that apart
 from an ordinary wait needs a liveness check on the mailbox connection
 (a WebSocket ping), inside the vendored crate.
 
+### Left from the security review (2026-10-11)
+
+The review and its fixes are in `docs/ARCHITECTURE.md` section 7. Not done:
+
+- **The fixes have not run on a device.** The Kotlin changes are compiled
+  by nothing but a release build, Electron 44 has only been typechecked and
+  bundled, and the Symbian fix needs a new `.sis`.
+- **An archive's entry count is not capped.** Unpacking is capped by bytes
+  against the offer, not by number of entries, so a folder offer of a
+  million empty files would be created. Needs the receiver's consent
+  first, and a number to cap at that no real folder reaches.
+- **Build tooling carries advisories that do not ship.** `npm audit` still
+  lists Vitest and its dependencies in `packages/core`, the React Native
+  CLI, Metro and Jest in `packages/app-mobile`, and electron-builder's
+  downloader in `packages/app-desktop`. None of it is in an APK or an
+  installer. `npm audit fix` failed here on an npm error and should be run
+  on a normal machine, with a build afterwards.
+- **CI actions are pinned to tags, not commits.** `actions/checkout@v4`,
+  `actions/setup-node@v4` and `dtolnay/rust-toolchain@stable` can change
+  under the release job, which holds the signing keystore. Pinning each to
+  a commit SHA closes that.
+- **Release binaries are unsigned on Windows and macOS, and the `.sha256`
+  files come from the same place as the binaries.** They prove a download
+  was not corrupted, not who made it. Signing the checksums with a key
+  published elsewhere would.
+- **No privacy policy or security contact.** The PortalGems server is run
+  by the project and sees IP addresses and timing, which is worth saying
+  in a short `PRIVACY.md`; a `SECURITY.md` would say where to report a
+  flaw.
+
 ## Features: what has been decided (2026-10-11)
 
 Undecided:

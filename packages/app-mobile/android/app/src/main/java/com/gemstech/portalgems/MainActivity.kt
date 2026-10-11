@@ -38,8 +38,15 @@ class MainActivity : ReactActivity() {
       Intent.ACTION_SEND_MULTIPLE -> sharedStreams(intent)
       else -> return
     }
-    if (uris.isNotEmpty()) {
-      pendingShareUris = uris.map { it.toString() }
+    // Any app can aim a share at this activity, and what it names is read
+    // with this app's own access. A `file://` URI can therefore point at
+    // this app's private files - its settings, its cache - and have them
+    // sent on. Only `content://` is taken: that is read through the other
+    // app's provider, with the other app's access, which is what sharing
+    // means. PortalGemsNativeModule.sendableUri checks again at the read.
+    val sendable = uris.filter { it.scheme == "content" }
+    if (sendable.isNotEmpty()) {
+      pendingShareUris = sendable.map { it.toString() }
     }
   }
 

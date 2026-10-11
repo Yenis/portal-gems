@@ -9,6 +9,7 @@ import {
   isTransitFailure,
   newDeviceId,
   parseHandshake,
+  isHandshakeOffer,
   PAIRING_HANDSHAKE_FILE,
   PAIRED_ATTEMPT_TIMEOUT_MS,
   PAIRED_CODE_ATTEMPTS,
@@ -174,6 +175,13 @@ export async function waitForPairingAsDisplayer(
         // deliberately: the two sides have met by now and the nameplate is
         // already released, so cutting the transfer off would strand both of
         // them with nothing left to find.
+        // This is the one transfer taken without asking, so it has to look
+        // like a handshake first: one small file.
+        if (!isHandshakeOffer(offer.fileSize, offer.folder != null)) {
+          pg().reject(transferId).catch(() => undefined);
+          realError = new Error('malformed handshake');
+          continue;
+        }
         const saved = await pg().accept(transferId, tempDir);
         const message = parseHandshake(await pg().readText(saved));
         pg().deleteFile(saved).catch(() => undefined);

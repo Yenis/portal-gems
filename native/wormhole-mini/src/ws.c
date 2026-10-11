@@ -274,6 +274,12 @@ long wh_ws_recv_text(wh_ws *ws, char *out, unsigned long cap)
             hdr = 10;
         }
 
+        /* Compared this way round because `hdr + plen` wraps where long is
+         * 32 bits - the phone - and a wrapped sum passes any size check: a
+         * length of 0xfffffff8 became a "need" of two bytes, after which a
+         * ping was echoed from four gigabytes past the buffer and a
+         * continuation was copied over whatever followed the caller's. */
+        if (hdr > ws->rx_cap || plen > ws->rx_cap - hdr) return WH_WS_ERROR;
         need = hdr + plen;
         rc = ws_need(ws, need);
         if (rc < 0) return rc;
@@ -296,7 +302,9 @@ long wh_ws_recv_text(wh_ws *ws, char *out, unsigned long cap)
         case OP_TEXT:
         case OP_CONT: {
             unsigned long i;
-            if (total + plen >= cap) return WH_WS_ERROR;
+            /* `total < cap` always holds here, so this cannot wrap; the
+             * sum `total + plen` could. */
+            if (total >= cap || plen >= cap - total) return WH_WS_ERROR;
             for (i = 0; i < plen; i++) out[total + i] = (char)ws->rx[hdr + i];
             total += plen;
             ws_consume(ws, need);

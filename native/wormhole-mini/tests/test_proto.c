@@ -11,6 +11,7 @@
 #include "../src/json.h"
 #include "../src/wordlist.h"
 #include "../src/mailbox.h"
+#include "../src/ws.h"
 
 static int failures = 0;
 static int checks = 0;
@@ -402,6 +403,48 @@ int main(void)
             wh_jw_obj_close(&w);
             check_true("an oversized message is refused", wh_jw_done(&w) != 0);
         }
+    }
+
+    /* A frame length the receive buffer cannot hold must be refused before
+     * anything is read or copied. The length field is 64-bit on the wire and
+     * `unsigned long` is 32 bits on the phone, where header + length used to
+     * wrap round to a small number: a ping then echoed four gigabytes of
+     * memory back to the server, and a continuation frame wrote past the end
+     * of the caller's buffer. The server speaks cleartext to the phone, so
+     * anyone on the path could send either. No connection is attached here:
+     * a correct client touches none, because everything it needs to refuse
+     * the frame is already buffered. */
+    {
+        static unsigned char rx[512];
+        char out[64];
+        wh_ws ws;
+        /* FIN + ping, 64-bit length 0x00000000fffffff8. */
+        static const unsigned char PING[10] = {
+            0x89, 127, 0, 0, 0, 0, 0xff, 0xff, 0xff, 0xf8
+        };
+        /* A 16-byte text fragment (no FIN), then a continuation claiming the
+         * same length: 16 + 0xfffffff8 wraps to 8, under any buffer size. */
+        static const unsigned char CONT[10] = {
+            0x80, 127, 0, 0, 0, 0, 0xff, 0xff, 0xff, 0xf8
+        };
+        unsigned long n = 0, i;
+
+        ws.conn = 0;
+        ws.rx = rx;
+        ws.rx_cap = sizeof(rx);
+        memcpy(rx, PING, sizeof(PING));
+        ws.rx_len = sizeof(PING);
+        check_true("ws: a ping longer than the buffer is refused",
+                   wh_ws_recv_text(&ws, out, sizeof(out)) == WH_WS_ERROR);
+
+        rx[n++] = 0x01;            /* text, no FIN */
+        rx[n++] = 16;
+        for (i = 0; i < 16; i++) rx[n++] = 'a';
+        memcpy(rx + n, CONT, sizeof(CONT));
+        n += sizeof(CONT);
+        ws.rx_len = n;
+        check_true("ws: a continuation that would overflow is refused",
+                   wh_ws_recv_text(&ws, out, sizeof(out)) == WH_WS_ERROR);
     }
 
     printf("\n%d checks, %d failures\n", checks, failures);

@@ -11,6 +11,8 @@ import {
   withSendFinished,
   withSendStarted,
   PAIRED_CODE_ATTEMPTS,
+  isHandshakeOffer,
+  PAIRING_HANDSHAKE_MAX_BYTES,
   encodePairingPayload,
   fromBase64Url,
   parsePairingPayload,
@@ -392,5 +394,20 @@ describe('recently used devices', () => {
   it('keeps the stored order between equals', () => {
     const out = sortByRecent([device('a', 5), device('b', 5), device('c', 5)]);
     expect(out.map((d) => d.id)).toEqual(['a', 'b', 'c']);
+  });
+});
+
+describe('isHandshakeOffer', () => {
+  it('takes one small file', () => {
+    expect(isHandshakeOffer(26, false)).toBe(true);
+    expect(isHandshakeOffer(PAIRING_HANDSHAKE_MAX_BYTES, false)).toBe(true);
+  });
+
+  it('refuses anything that is not one', () => {
+    expect(isHandshakeOffer(PAIRING_HANDSHAKE_MAX_BYTES + 1, false)).toBe(false);
+    expect(isHandshakeOffer(5 * 1024 * 1024 * 1024, false)).toBe(false);
+    expect(isHandshakeOffer(26, true)).toBe(false);
+    expect(isHandshakeOffer(Number.NaN, false)).toBe(false);
+    expect(isHandshakeOffer(-1, false)).toBe(false);
   });
 });

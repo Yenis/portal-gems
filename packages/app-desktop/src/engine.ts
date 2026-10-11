@@ -3,6 +3,7 @@
 // with strings/numbers only, keeping it compatible with Electron's V8 memory
 // cage (see docs/phase0-desktop-notes.md).
 
+import { app } from 'electron';
 import { createRequire } from 'node:module';
 import * as path from 'node:path';
 
@@ -94,7 +95,12 @@ interface NativeAddon {
 const requireNative = createRequire(__filename);
 
 function loadAddon(): NativeAddon {
-  if (process.env.PG_ADDON_PATH) return requireNative(process.env.PG_ADDON_PATH);
+  // A development override, honoured from a source checkout only: in a
+  // packaged build it would let anything that can set this app's
+  // environment have it load native code of its choosing.
+  if (!app.isPackaged && process.env.PG_ADDON_PATH) {
+    return requireNative(process.env.PG_ADDON_PATH);
+  }
   const platformSpecific = path.join(
     __dirname,
     `wormhole_node-${process.platform}-${process.arch}.node`
