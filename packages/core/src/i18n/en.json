@@ -191,6 +191,12 @@
       "leaveBlankHint": "Leave a field blank to keep the public default for it.",
       "change": "Change server"
     },
+    "notifications": {
+      "title": "Notifications",
+      "hint": "Tell you when a transfer finishes or fails while PortalGems is in the background.",
+      "on": "On",
+      "off": "Off"
+    },
     "deviceName": {
       "title": "Device name",
       "hint": "What this device calls itself when you pair with another one. Devices you have already paired with keep the name they learned.",
@@ -258,6 +264,12 @@
     "serverUnreachable": "Could not reach the connection server. It may be temporarily down. Open Settings and switch to the PortalGems server, or use your own - see the self-hosting guide.",
     "connectTimeout": "Could not reach the connection server in time. Check that this device is online. If it is, the server may be down - you can switch servers in Settings.",
     "invalidServerUrl": "The server address is not valid. Check it in Settings. A rendezvous URL looks like wss://host/v1 and a relay like tcp://host:4001."
+  },
+  "notify": {
+    "received": "Transfer received",
+    "sent": "Transfer sent",
+    "receiveFailed": "Receiving failed",
+    "sendFailed": "Sending failed"
   },
   "text": {
     "title": "Message",

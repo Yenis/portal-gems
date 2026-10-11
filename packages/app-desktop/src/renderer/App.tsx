@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import QRCodeLib from 'qrcode';
 import {
   deviceLabel,
+  itemsText,
   classifyPairingInput,
   createPairingPayload,
   currentBucket,
@@ -63,6 +64,7 @@ import { loadThemeName, saveThemeName } from './theme';
 import { currentServer, loadServerSettings, saveServerSettings } from './server';
 import { loadDownloadDir, saveDownloadDir } from './downloads';
 import { loadLastSendDir, rememberSendLocation } from './sendlocation';
+import { loadNotificationsEnabled, notify, saveNotificationsEnabled } from './notifications';
 import {
   Card,
   CodeBox,
@@ -149,6 +151,7 @@ declare global {
       writeTemp(name: string, content: string): Promise<string>;
       readText(path: string): Promise<string>;
       deleteFile(path: string): Promise<void>;
+      notify(title: string, body: string): Promise<void>;
       onEvent(cb: (ev: PgEvent) => void): void;
     };
   }
@@ -784,6 +787,13 @@ function Send({
   useEffect(() => {
     const id = nextId++;
     idRef.current = id;
+    // What a notification calls this transfer.
+    const what =
+      item.kind === 'text'
+        ? t('text.title')
+        : item.kind === 'bundle'
+          ? itemsText(t as any, item.counts)
+          : item.name;
     let connected = false;
     let timedOut = false;
     let armPairedTimeout = () => {};
@@ -857,12 +867,19 @@ function Send({
           );
           markDeviceUsed(device.id).catch(() => undefined);
         }
+        notify(t('notify.sent'), what);
         setPhase('done');
       },
       (e) => {
-        if (timedOut) setPhase('peerNotOpen');
-        else if (cancelledRef.current) setPhase('cancelled');
+        if (timedOut) {
+          notify(
+            t('notify.sendFailed'),
+            t('paired.notOpen', { name: device ? deviceLabel(device) : '' })
+          );
+          setPhase('peerNotOpen');
+        } else if (cancelledRef.current) setPhase('cancelled');
         else {
+          notify(t('notify.sendFailed'), friendlyError(t as any, e));
           setError(friendlyError(t as any, e));
           setServerErr(isServerUnreachableError(e));
           setPhase('error');
@@ -1049,11 +1066,15 @@ function Receive({
       // Text is delivered by the time the offer reaches us - the engine
       // acknowledged it - so there is nothing to accept and no reason to ask.
       if (o.text != null && device) markDeviceUsed(device.id).catch(() => undefined);
+      // The words of a message stay out of the notification: it can be read
+      // over a shoulder, or on a lock screen.
+      if (o.text != null) notify(t('notify.received'), t('text.title'));
       setPhase(o.text != null ? 'message' : 'confirm');
     };
     const failed = (e: unknown) => {
       if (cancelledRef.current) setPhase('cancelled');
       else {
+        notify(t('notify.receiveFailed'), friendlyError(t as any, e));
         setError(friendlyError(t as any, e));
         setPhase('error');
       }
@@ -1100,11 +1121,16 @@ function Receive({
           });
         }
         if (device) markDeviceUsed(device.id).catch(() => undefined);
+        notify(
+          t('notify.received'),
+          bundle ? itemsText(t as any, { files: bundle.files, folders: bundle.folders }) : name
+        );
         setPhase('done');
       },
       (e) => {
         if (cancelledRef.current) setPhase('cancelled');
         else {
+          notify(t('notify.receiveFailed'), friendlyError(t as any, e));
           setError(friendlyError(t as any, e));
           setPhase('error');
         }
@@ -1694,6 +1720,12 @@ function Settings({
     localStorage.setItem('pg-language', lng);
   };
 
+  const [notifications, setNotifications] = useState(loadNotificationsEnabled);
+  const toggleNotifications = () => {
+    saveNotificationsEnabled(!notifications);
+    setNotifications(!notifications);
+  };
+
   const row = (selected: boolean): React.CSSProperties => ({
     display: 'flex',
     justifyContent: 'space-between',
@@ -1798,6 +1830,20 @@ function Settings({
             onClick={resetDownloadDir}
           />
         ) : null}
+      </Card>
+      <Card c={c}>
+        <Subtitle c={c}>{t('settings.notifications.title')}</Subtitle>
+        <Muted c={c}>{t('settings.notifications.hint')}</Muted>
+        <div
+          role="switch"
+          aria-checked={notifications}
+          style={row(notifications)}
+          onClick={toggleNotifications}>
+          <span style={{ color: c.text }}>{t('settings.notifications.title')}</span>
+          <span style={{ color: notifications ? c.primary : c.textMuted }}>
+            {t(notifications ? 'settings.notifications.on' : 'settings.notifications.off')}
+          </span>
+        </div>
       </Card>
       <div ref={serverRef}>
       <Card c={c}>

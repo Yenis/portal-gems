@@ -172,6 +172,12 @@
       "leaveBlankHint": "Lass ein Feld leer, um dafür den öffentlichen Standard zu behalten.",
       "change": "Server ändern"
     },
+    "notifications": {
+      "title": "Benachrichtigungen",
+      "hint": "Melden, wenn eine Übertragung fertig ist oder fehlschlägt, während PortalGems im Hintergrund ist.",
+      "on": "An",
+      "off": "Aus"
+    },
     "deviceName": {
       "title": "Gerätename",
       "hint": "So nennt sich dieses Gerät, wenn ihr es mit einem anderen koppelt. Bereits gekoppelte Geräte behalten den Namen, den sie kennen.",
@@ -258,6 +264,12 @@
     "serverUnreachable": "Der Verbindungsserver ist nicht erreichbar. Möglicherweise ist er vorübergehend nicht verfügbar. Öffne die Einstellungen und wechsle zum PortalGems-Server oder nutze deinen eigenen - siehe die Anleitung zum Selbsthosten.",
     "connectTimeout": "Der Verbindungsserver hat nicht rechtzeitig geantwortet. Prüfe, ob dieses Gerät online ist. Falls ja, ist der Server möglicherweise nicht verfügbar - du kannst ihn in den Einstellungen wechseln.",
     "invalidServerUrl": "Die Serveradresse ist ungültig. Prüfe sie in den Einstellungen. Eine Rendezvous-URL sieht aus wie wss://host/v1 und ein Relay wie tcp://host:4001."
+  },
+  "notify": {
+    "received": "Übertragung empfangen",
+    "sent": "Übertragung gesendet",
+    "receiveFailed": "Empfang fehlgeschlagen",
+    "sendFailed": "Senden fehlgeschlagen"
   },
   "text": {
     "title": "Nachricht",

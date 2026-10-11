@@ -27783,6 +27783,12 @@
         leaveBlankHint: "Ostavi polje prazno da za njega zadr\u017Ei\u0161 javnu zadanu vrijednost.",
         change: "Promijeni server"
       },
+      notifications: {
+        title: "Obavijesti",
+        hint: "Javi kada se prijenos zavr\u0161i ili ne uspije dok je PortalGems u pozadini.",
+        on: "Uklju\u010Deno",
+        off: "Isklju\u010Deno"
+      },
       deviceName: {
         title: "Naziv ure\u0111aja",
         hint: "Ovako se ovaj ure\u0111aj predstavlja kada ga uparite s drugim. Ve\u0107 upareni ure\u0111aji zadr\u017Eavaju naziv koji su zapamtili.",
@@ -27859,6 +27865,7 @@
       pickFailed: "Odabranu datoteku nije mogu\u0107e pro\u010Ditati.",
       invalidCode: "Ovo ne li\u010Di na va\u017Ee\u0107i kod. Kodovi izgledaju ovako: 7-rije\u010D-rije\u010D",
       wrongCode: "Pod ovim kodom se ne nudi nijedna datoteka. Provjeri kod i da li je aplikacija po\u0161iljaoca jo\u0161 otvorena i \u010Deka.",
+      codeUnusable: "Ovaj kod se vi\u0161e ne mo\u017Ee koristiti. Pokreni slanje ponovo da dobije\u0161 novi kod.",
       network: "Problem s mre\u017Eom - provjeri internet vezu i poku\u0161aj ponovo.",
       transit: "Dva ure\u0111aja nisu mogla uspostaviti vezu me\u0111usobno. Poku\u0161ajte ponovo - ako i dalje ne uspijeva, provjerite jesu li oba ure\u0111aja na mre\u017Ei.",
       peerGone: "Druga strana je nestala prije zavr\u0161etka prijenosa.",
@@ -27868,6 +27875,12 @@
       serverUnreachable: "Nije mogu\u0107e dohvatiti server za povezivanje. Mo\u017Eda je privremeno nedostupan. Otvori Postavke i prebaci se na PortalGems server ili koristi vlastiti - pogledaj vodi\u010D za samostalno hostanje.",
       connectTimeout: "Server za povezivanje nije odgovorio na vrijeme. Provjeri da li je ovaj ure\u0111aj na mre\u017Ei. Ako jeste, server je mo\u017Eda nedostupan - mo\u017Ee\u0161 ga promijeniti u Postavkama.",
       invalidServerUrl: "Adresa servera nije ispravna. Provjeri je u Postavkama. Rendezvous URL izgleda kao wss://host/v1, a relej kao tcp://host:4001."
+    },
+    notify: {
+      received: "Prijenos primljen",
+      sent: "Prijenos poslan",
+      receiveFailed: "Primanje nije uspjelo",
+      sendFailed: "Slanje nije uspjelo"
     },
     text: {
       title: "Poruka",
@@ -28056,6 +28069,12 @@
         leaveBlankHint: "Lass ein Feld leer, um daf\xFCr den \xF6ffentlichen Standard zu behalten.",
         change: "Server \xE4ndern"
       },
+      notifications: {
+        title: "Benachrichtigungen",
+        hint: "Melden, wenn eine \xDCbertragung fertig ist oder fehlschl\xE4gt, w\xE4hrend PortalGems im Hintergrund ist.",
+        on: "An",
+        off: "Aus"
+      },
       deviceName: {
         title: "Ger\xE4tename",
         hint: "So nennt sich dieses Ger\xE4t, wenn ihr es mit einem anderen koppelt. Bereits gekoppelte Ger\xE4te behalten den Namen, den sie kennen.",
@@ -28132,6 +28151,7 @@
       pickFailed: "Die ausgew\xE4hlte Datei konnte nicht gelesen werden.",
       invalidCode: "Das sieht nicht nach einem g\xFCltigen Code aus. Codes sehen so aus: 7-wort-wort",
       wrongCode: "Unter diesem Code wird keine Datei angeboten. Pr\xFCfe den Code und stelle sicher, dass die App des Absenders noch ge\xF6ffnet ist und wartet.",
+      codeUnusable: "Dieser Code kann nicht mehr verwendet werden. Starte das Senden erneut, um einen neuen Code zu erhalten.",
       network: "Netzwerkproblem - pr\xFCfe deine Internetverbindung und versuche es erneut.",
       transit: "Die beiden Ger\xE4te konnten keine Verbindung zueinander aufbauen. Versuchen Sie es erneut - wenn es weiterhin fehlschl\xE4gt, pr\xFCfen Sie, ob beide Ger\xE4te online sind.",
       peerGone: "Die Gegenseite ist verschwunden, bevor die \xDCbertragung abgeschlossen war.",
@@ -28141,6 +28161,12 @@
       serverUnreachable: "Der Verbindungsserver ist nicht erreichbar. M\xF6glicherweise ist er vor\xFCbergehend nicht verf\xFCgbar. \xD6ffne die Einstellungen und wechsle zum PortalGems-Server oder nutze deinen eigenen - siehe die Anleitung zum Selbsthosten.",
       connectTimeout: "Der Verbindungsserver hat nicht rechtzeitig geantwortet. Pr\xFCfe, ob dieses Ger\xE4t online ist. Falls ja, ist der Server m\xF6glicherweise nicht verf\xFCgbar - du kannst ihn in den Einstellungen wechseln.",
       invalidServerUrl: "Die Serveradresse ist ung\xFCltig. Pr\xFCfe sie in den Einstellungen. Eine Rendezvous-URL sieht aus wie wss://host/v1 und ein Relay wie tcp://host:4001."
+    },
+    notify: {
+      received: "\xDCbertragung empfangen",
+      sent: "\xDCbertragung gesendet",
+      receiveFailed: "Empfang fehlgeschlagen",
+      sendFailed: "Senden fehlgeschlagen"
     },
     text: {
       title: "Nachricht",
@@ -28348,6 +28374,12 @@
         leaveBlankHint: "Leave a field blank to keep the public default for it.",
         change: "Change server"
       },
+      notifications: {
+        title: "Notifications",
+        hint: "Tell you when a transfer finishes or fails while PortalGems is in the background.",
+        on: "On",
+        off: "Off"
+      },
       deviceName: {
         title: "Device name",
         hint: "What this device calls itself when you pair with another one. Devices you have already paired with keep the name they learned.",
@@ -28405,6 +28437,7 @@
       pickFailed: "Could not read the selected file.",
       invalidCode: "That does not look like a valid code. Codes look like: 7-word-word",
       wrongCode: "No file is being offered under this code. Double-check the code and make sure the sender's app is still open and waiting.",
+      codeUnusable: "This code can no longer be used. Start the send again to get a fresh code.",
       network: "Network problem - check your internet connection and try again.",
       transit: "The two devices could not open a connection to each other. Try again - if it keeps failing, check that both devices are online.",
       peerGone: "The other side went away before the transfer finished.",
@@ -28414,6 +28447,12 @@
       serverUnreachable: "Could not reach the connection server. It may be temporarily down. Open Settings and switch to the PortalGems server, or use your own - see the self-hosting guide.",
       connectTimeout: "Could not reach the connection server in time. Check that this device is online. If it is, the server may be down - you can switch servers in Settings.",
       invalidServerUrl: "The server address is not valid. Check it in Settings. A rendezvous URL looks like wss://host/v1 and a relay like tcp://host:4001."
+    },
+    notify: {
+      received: "Transfer received",
+      sent: "Transfer sent",
+      receiveFailed: "Receiving failed",
+      sendFailed: "Sending failed"
     },
     text: {
       title: "Message",
@@ -28602,6 +28641,12 @@
         leaveBlankHint: "Deja un campo en blanco para conservar el valor p\xFAblico predeterminado.",
         change: "Cambiar servidor"
       },
+      notifications: {
+        title: "Notificaciones",
+        hint: "Avisarte cuando una transferencia termina o falla mientras PortalGems est\xE1 en segundo plano.",
+        on: "Activadas",
+        off: "Desactivadas"
+      },
       deviceName: {
         title: "Nombre del dispositivo",
         hint: "As\xED se presenta este dispositivo al emparejarlo con otro. Los dispositivos ya emparejados conservan el nombre que aprendieron.",
@@ -28678,6 +28723,7 @@
       pickFailed: "No se pudo leer el archivo seleccionado.",
       invalidCode: "Eso no parece un c\xF3digo v\xE1lido. Los c\xF3digos son as\xED: 7-palabra-palabra",
       wrongCode: "Nadie ofrece un archivo con este c\xF3digo. Comprueba el c\xF3digo y aseg\xFArate de que la aplicaci\xF3n del remitente siga abierta y esperando.",
+      codeUnusable: "Este c\xF3digo ya no se puede usar. Vuelve a iniciar el env\xEDo para obtener un c\xF3digo nuevo.",
       network: "Problema de red - comprueba tu conexi\xF3n a Internet e int\xE9ntalo de nuevo.",
       transit: "Los dos dispositivos no pudieron establecer una conexi\xF3n entre s\xED. Vuelve a intentarlo: si sigue fallando, comprueba que ambos dispositivos est\xE9n conectados.",
       peerGone: "La otra parte desapareci\xF3 antes de terminar la transferencia.",
@@ -28687,6 +28733,12 @@
       serverUnreachable: "No se pudo contactar con el servidor de conexi\xF3n. Puede que est\xE9 temporalmente ca\xEDdo. Abre Ajustes y cambia al servidor de PortalGems, o usa el tuyo - consulta la gu\xEDa de autoalojamiento.",
       connectTimeout: "El servidor de conexi\xF3n no respondi\xF3 a tiempo. Comprueba que este dispositivo est\xE1 conectado. Si lo est\xE1, puede que el servidor est\xE9 ca\xEDdo - puedes cambiarlo en Ajustes.",
       invalidServerUrl: "La direcci\xF3n del servidor no es v\xE1lida. Compru\xE9bala en Ajustes. Una URL de encuentro es como wss://host/v1 y un rel\xE9 como tcp://host:4001."
+    },
+    notify: {
+      received: "Transferencia recibida",
+      sent: "Transferencia enviada",
+      receiveFailed: "Error al recibir",
+      sendFailed: "Error al enviar"
     },
     text: {
       title: "Mensaje",
@@ -28875,6 +28927,12 @@
         leaveBlankHint: "Laissez un champ vide pour en conserver la valeur publique par d\xE9faut.",
         change: "Changer de serveur"
       },
+      notifications: {
+        title: "Notifications",
+        hint: "Vous pr\xE9venir quand un transfert se termine ou \xE9choue pendant que PortalGems est en arri\xE8re-plan.",
+        on: "Activ\xE9es",
+        off: "D\xE9sactiv\xE9es"
+      },
       deviceName: {
         title: "Nom de l'appareil",
         hint: "Le nom que cet appareil donne lorsque vous l'associez \xE0 un autre. Les appareils d\xE9j\xE0 associ\xE9s gardent le nom qu'ils connaissent.",
@@ -28951,6 +29009,7 @@
       pickFailed: "Impossible de lire le fichier s\xE9lectionn\xE9.",
       invalidCode: "Cela ne ressemble pas \xE0 un code valide. Les codes ressemblent \xE0 : 7-mot-mot",
       wrongCode: "Aucun fichier n'est propos\xE9 sous ce code. V\xE9rifiez le code et assurez-vous que l'application de l'exp\xE9diteur est toujours ouverte et en attente.",
+      codeUnusable: "Ce code ne peut plus \xEAtre utilis\xE9. Relancez l'envoi pour obtenir un nouveau code.",
       network: "Probl\xE8me r\xE9seau - v\xE9rifiez votre connexion Internet et r\xE9essayez.",
       transit: "Les deux appareils n'ont pas pu \xE9tablir de connexion entre eux. R\xE9essayez - si cela \xE9choue encore, v\xE9rifiez que les deux appareils sont en ligne.",
       peerGone: "L'autre partie a disparu avant la fin du transfert.",
@@ -28960,6 +29019,12 @@
       serverUnreachable: "Impossible de joindre le serveur de connexion. Il est peut-\xEAtre temporairement hors service. Ouvrez les Param\xE8tres et passez au serveur PortalGems, ou utilisez le v\xF4tre - voir le guide d'auto-h\xE9bergement.",
       connectTimeout: "Le serveur de connexion n'a pas r\xE9pondu \xE0 temps. V\xE9rifiez que cet appareil est en ligne. Si c'est le cas, le serveur est peut-\xEAtre hors service - vous pouvez en changer dans les Param\xE8tres.",
       invalidServerUrl: "L'adresse du serveur n'est pas valide. V\xE9rifiez-la dans les Param\xE8tres. Une URL de rendez-vous ressemble \xE0 wss://host/v1 et un relais \xE0 tcp://host:4001."
+    },
+    notify: {
+      received: "Transfert re\xE7u",
+      sent: "Transfert envoy\xE9",
+      receiveFailed: "\xC9chec de la r\xE9ception",
+      sendFailed: "\xC9chec de l'envoi"
     },
     text: {
       title: "Message",
@@ -29148,6 +29213,12 @@
         leaveBlankHint: "\u041E\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u043F\u043E\u043B\u0435 \u043F\u0443\u0441\u0442\u044B\u043C, \u0447\u0442\u043E\u0431\u044B \u0441\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C \u0434\u043B\u044F \u043D\u0435\u0433\u043E \u043F\u0443\u0431\u043B\u0438\u0447\u043D\u043E\u0435 \u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0435 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E.",
         change: "\u0421\u043C\u0435\u043D\u0438\u0442\u044C \u0441\u0435\u0440\u0432\u0435\u0440"
       },
+      notifications: {
+        title: "\u0423\u0432\u0435\u0434\u043E\u043C\u043B\u0435\u043D\u0438\u044F",
+        hint: "\u0421\u043E\u043E\u0431\u0449\u0430\u0442\u044C, \u043A\u043E\u0433\u0434\u0430 \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0430 \u0437\u0430\u0432\u0435\u0440\u0448\u0435\u043D\u0430 \u0438\u043B\u0438 \u043D\u0435 \u0443\u0434\u0430\u043B\u0430\u0441\u044C, \u043F\u043E\u043A\u0430 PortalGems \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442 \u0432 \u0444\u043E\u043D\u0435.",
+        on: "\u0412\u043A\u043B.",
+        off: "\u0412\u044B\u043A\u043B."
+      },
       deviceName: {
         title: "\u0418\u043C\u044F \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430",
         hint: "\u0422\u0430\u043A \u044D\u0442\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E \u043F\u0440\u0435\u0434\u0441\u0442\u0430\u0432\u043B\u044F\u0435\u0442\u0441\u044F \u043F\u0440\u0438 \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u0438 \u0441 \u0434\u0440\u0443\u0433\u0438\u043C. \u0423 \u0443\u0436\u0435 \u0441\u0432\u044F\u0437\u0430\u043D\u043D\u044B\u0445 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432 \u043E\u0441\u0442\u0430\u043D\u0435\u0442\u0441\u044F \u043F\u0440\u0435\u0436\u043D\u0435\u0435 \u0438\u043C\u044F.",
@@ -29224,6 +29295,7 @@
       pickFailed: "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u0442\u044C \u0432\u044B\u0431\u0440\u0430\u043D\u043D\u044B\u0439 \u0444\u0430\u0439\u043B.",
       invalidCode: "\u042D\u0442\u043E \u043D\u0435 \u043F\u043E\u0445\u043E\u0436\u0435 \u043D\u0430 \u0434\u0435\u0439\u0441\u0442\u0432\u0438\u0442\u0435\u043B\u044C\u043D\u044B\u0439 \u043A\u043E\u0434. \u041A\u043E\u0434\u044B \u0432\u044B\u0433\u043B\u044F\u0434\u044F\u0442 \u0442\u0430\u043A: 7-\u0441\u043B\u043E\u0432\u043E-\u0441\u043B\u043E\u0432\u043E",
       wrongCode: "\u041F\u043E\u0434 \u044D\u0442\u0438\u043C \u043A\u043E\u0434\u043E\u043C \u043D\u0438\u043A\u0442\u043E \u043D\u0435 \u043F\u0440\u0435\u0434\u043B\u0430\u0433\u0430\u0435\u0442 \u0444\u0430\u0439\u043B. \u041F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u043A\u043E\u0434 \u0438 \u0443\u0431\u0435\u0434\u0438\u0442\u0435\u0441\u044C, \u0447\u0442\u043E \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435 \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u0435\u043B\u044F \u0432\u0441\u0451 \u0435\u0449\u0451 \u043E\u0442\u043A\u0440\u044B\u0442\u043E \u0438 \u0436\u0434\u0451\u0442.",
+      codeUnusable: "\u042D\u0442\u043E\u0442 \u043A\u043E\u0434 \u0431\u043E\u043B\u044C\u0448\u0435 \u043D\u0435\u043B\u044C\u0437\u044F \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u044C. \u0417\u0430\u043F\u0443\u0441\u0442\u0438\u0442\u0435 \u043E\u0442\u043F\u0440\u0430\u0432\u043A\u0443 \u0437\u0430\u043D\u043E\u0432\u043E, \u0447\u0442\u043E\u0431\u044B \u043F\u043E\u043B\u0443\u0447\u0438\u0442\u044C \u043D\u043E\u0432\u044B\u0439 \u043A\u043E\u0434.",
       network: "\u041F\u0440\u043E\u0431\u043B\u0435\u043C\u0430 \u0441 \u0441\u0435\u0442\u044C\u044E - \u043F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435 \u043A \u0438\u043D\u0442\u0435\u0440\u043D\u0435\u0442\u0443 \u0438 \u043F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0441\u043D\u043E\u0432\u0430.",
       transit: "\u0423\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430\u043C \u043D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0442\u044C \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u0435 \u0434\u0440\u0443\u0433 \u0441 \u0434\u0440\u0443\u0433\u043E\u043C. \u041F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0435\u0449\u0451 \u0440\u0430\u0437 - \u0435\u0441\u043B\u0438 \u043D\u0435 \u043F\u043E\u043B\u0443\u0447\u0430\u0435\u0442\u0441\u044F, \u043F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435, \u0447\u0442\u043E \u043E\u0431\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u0432 \u0441\u0435\u0442\u0438.",
       peerGone: "\u0414\u0440\u0443\u0433\u0430\u044F \u0441\u0442\u043E\u0440\u043E\u043D\u0430 \u043F\u0440\u043E\u043F\u0430\u043B\u0430 \u0434\u043E \u0437\u0430\u0432\u0435\u0440\u0448\u0435\u043D\u0438\u044F \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0438.",
@@ -29233,6 +29305,12 @@
       serverUnreachable: "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0438\u0442\u044C\u0441\u044F \u043A \u0441\u0435\u0440\u0432\u0435\u0440\u0443 \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u044F. \u0412\u043E\u0437\u043C\u043E\u0436\u043D\u043E, \u043E\u043D \u0432\u0440\u0435\u043C\u0435\u043D\u043D\u043E \u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u0435\u043D. \u041E\u0442\u043A\u0440\u043E\u0439\u0442\u0435 \u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u0438 \u043F\u0435\u0440\u0435\u043A\u043B\u044E\u0447\u0438\u0442\u0435\u0441\u044C \u043D\u0430 \u0441\u0435\u0440\u0432\u0435\u0440 PortalGems \u0438\u043B\u0438 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0439\u0442\u0435 \u0441\u043E\u0431\u0441\u0442\u0432\u0435\u043D\u043D\u044B\u0439 - \u0441\u043C. \u0440\u0443\u043A\u043E\u0432\u043E\u0434\u0441\u0442\u0432\u043E \u043F\u043E \u0441\u0430\u043C\u043E\u0441\u0442\u043E\u044F\u0442\u0435\u043B\u044C\u043D\u043E\u043C\u0443 \u0445\u043E\u0441\u0442\u0438\u043D\u0433\u0443.",
       connectTimeout: "\u0421\u0435\u0440\u0432\u0435\u0440 \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u044F \u043D\u0435 \u043E\u0442\u0432\u0435\u0442\u0438\u043B \u0432\u043E\u0432\u0440\u0435\u043C\u044F. \u041F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435, \u0447\u0442\u043E \u044D\u0442\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u043E \u043A \u0438\u043D\u0442\u0435\u0440\u043D\u0435\u0442\u0443. \u0415\u0441\u043B\u0438 \u0434\u0430, \u0432\u043E\u0437\u043C\u043E\u0436\u043D\u043E, \u0441\u0435\u0440\u0432\u0435\u0440 \u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u0435\u043D - \u0435\u0433\u043E \u043C\u043E\u0436\u043D\u043E \u0441\u043C\u0435\u043D\u0438\u0442\u044C \u0432 \u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0430\u0445.",
       invalidServerUrl: "\u0410\u0434\u0440\u0435\u0441 \u0441\u0435\u0440\u0432\u0435\u0440\u0430 \u043D\u0435\u0434\u0435\u0439\u0441\u0442\u0432\u0438\u0442\u0435\u043B\u0435\u043D. \u041F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u0435\u0433\u043E \u0432 \u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0430\u0445. URL \u0440\u0430\u043D\u0434\u0435\u0432\u0443 \u0432\u044B\u0433\u043B\u044F\u0434\u0438\u0442 \u043A\u0430\u043A wss://host/v1, \u0430 \u0440\u0435\u043B\u0435\u0439 - \u043A\u0430\u043A tcp://host:4001."
+    },
+    notify: {
+      received: "\u041F\u0435\u0440\u0435\u0434\u0430\u0447\u0430 \u043F\u043E\u043B\u0443\u0447\u0435\u043D\u0430",
+      sent: "\u041F\u0435\u0440\u0435\u0434\u0430\u0447\u0430 \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u0430",
+      receiveFailed: "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043F\u043E\u043B\u0443\u0447\u0438\u0442\u044C",
+      sendFailed: "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C"
     },
     text: {
       title: "\u0421\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435",
@@ -29280,6 +29358,7 @@
   var rawMessage = (error) => String(error?.message ?? error ?? "");
   var SERVER_UNREACHABLE_RE = /rendezvous|connection refused|could not connect to the rendezvous/i;
   var CONNECT_TIMEOUT_RE = /no answer from the connection server in time/i;
+  var CROWDED_RE = /this code already has two devices on it/i;
   function isServerUnreachableError(error) {
     const raw = rawMessage(error);
     return SERVER_UNREACHABLE_RE.test(raw) || CONNECT_TIMEOUT_RE.test(raw);
@@ -29291,6 +29370,7 @@
   function friendlyError(t2, error) {
     const raw = rawMessage(error);
     if (/nameplate is unclaimed/i.test(raw)) return t2("errors.wrongCode");
+    if (CROWDED_RE.test(raw)) return t2("errors.codeUnusable");
     if (/invalid server url/i.test(raw)) return t2("errors.invalidServerUrl");
     if (/transfer was rejected|rejected the transfer|TransferRejected/i.test(raw))
       return t2("errors.declinedBySender");
@@ -29498,6 +29578,20 @@
   function parentDir(p) {
     const i = Math.max(p.lastIndexOf("/"), p.lastIndexOf("\\"));
     return i > 0 ? p.slice(0, i) : "";
+  }
+
+  // src/renderer/notifications.ts
+  var KEY5 = "pg-notifications";
+  function loadNotificationsEnabled() {
+    return localStorage.getItem(KEY5) !== "0";
+  }
+  function saveNotificationsEnabled(enabled) {
+    if (enabled) localStorage.removeItem(KEY5);
+    else localStorage.setItem(KEY5, "0");
+  }
+  function notify(title, body) {
+    if (!loadNotificationsEnabled()) return;
+    window.portalgems.notify(title, body).catch(() => void 0);
   }
 
   // src/renderer/components.tsx
@@ -30319,6 +30413,7 @@
     (0, import_react14.useEffect)(() => {
       const id = nextId++;
       idRef.current = id;
+      const what = item.kind === "text" ? t2("text.title") : item.kind === "bundle" ? itemsText(t2, item.counts) : item.name;
       let connected = false;
       let timedOut = false;
       let armPairedTimeout = () => {
@@ -30372,12 +30467,19 @@
             );
             markDeviceUsed(device.id).catch(() => void 0);
           }
+          notify(t2("notify.sent"), what);
           setPhase("done");
         },
         (e2) => {
-          if (timedOut) setPhase("peerNotOpen");
-          else if (cancelledRef.current) setPhase("cancelled");
+          if (timedOut) {
+            notify(
+              t2("notify.sendFailed"),
+              t2("paired.notOpen", { name: device ? deviceLabel(device) : "" })
+            );
+            setPhase("peerNotOpen");
+          } else if (cancelledRef.current) setPhase("cancelled");
           else {
+            notify(t2("notify.sendFailed"), friendlyError(t2, e2));
             setError(friendlyError(t2, e2));
             setServerErr(isServerUnreachableError(e2));
             setPhase("error");
@@ -30460,11 +30562,13 @@
       const gotOffer = (o) => {
         setOffer(o);
         if (o.text != null && device) markDeviceUsed(device.id).catch(() => void 0);
+        if (o.text != null) notify(t2("notify.received"), t2("text.title"));
         setPhase(o.text != null ? "message" : "confirm");
       };
       const failed = (e2) => {
         if (cancelledRef.current) setPhase("cancelled");
         else {
+          notify(t2("notify.receiveFailed"), friendlyError(t2, e2));
           setError(friendlyError(t2, e2));
           setPhase("error");
         }
@@ -30505,11 +30609,16 @@
             });
           }
           if (device) markDeviceUsed(device.id).catch(() => void 0);
+          notify(
+            t2("notify.received"),
+            bundle ? itemsText(t2, { files: bundle.files, folders: bundle.folders }) : name
+          );
           setPhase("done");
         },
         (e2) => {
           if (cancelledRef.current) setPhase("cancelled");
           else {
+            notify(t2("notify.receiveFailed"), friendlyError(t2, e2));
             setError(friendlyError(t2, e2));
             setPhase("error");
           }
@@ -30869,6 +30978,11 @@
       setLanguage(lng);
       localStorage.setItem("pg-language", lng);
     };
+    const [notifications, setNotifications] = (0, import_react14.useState)(loadNotificationsEnabled);
+    const toggleNotifications = () => {
+      saveNotificationsEnabled(!notifications);
+      setNotifications(!notifications);
+    };
     const row = (selected) => ({
       display: "flex",
       justifyContent: "space-between",
@@ -30948,7 +31062,17 @@
         label: t2("settings.downloads.reset"),
         onClick: resetDownloadDir
       }
-    ) : null), /* @__PURE__ */ import_react14.default.createElement("div", { ref: serverRef }, /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(
+    ) : null), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("settings.notifications.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("settings.notifications.hint")), /* @__PURE__ */ import_react14.default.createElement(
+      "div",
+      {
+        role: "switch",
+        "aria-checked": notifications,
+        style: row(notifications),
+        onClick: toggleNotifications
+      },
+      /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.text } }, t2("settings.notifications.title")),
+      /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: notifications ? c.primary : c.textMuted } }, t2(notifications ? "settings.notifications.on" : "settings.notifications.off"))
+    )), /* @__PURE__ */ import_react14.default.createElement("div", { ref: serverRef }, /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(
       "div",
       {
         style: { display: "flex", alignItems: "center", justifyContent: "space-between" }

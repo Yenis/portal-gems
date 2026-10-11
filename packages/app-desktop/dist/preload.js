@@ -53,6 +53,7 @@ import_electron.contextBridge.exposeInMainWorld("portalgems", {
   writeTemp: (name, content) => import_electron.ipcRenderer.invoke("pg:writeTemp", name, content),
   readText: (path) => import_electron.ipcRenderer.invoke("pg:readText", path),
   deleteFile: (path) => import_electron.ipcRenderer.invoke("pg:deleteFile", path),
+  notify: (title, body) => import_electron.ipcRenderer.invoke("pg:notify", title, body),
   onEvent: (cb) => {
     import_electron.ipcRenderer.on("pg:event", (_e, ev) => cb(ev));
   }

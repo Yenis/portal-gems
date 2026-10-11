@@ -172,6 +172,12 @@
       "leaveBlankHint": "Laissez un champ vide pour en conserver la valeur publique par défaut.",
       "change": "Changer de serveur"
     },
+    "notifications": {
+      "title": "Notifications",
+      "hint": "Vous prévenir quand un transfert se termine ou échoue pendant que PortalGems est en arrière-plan.",
+      "on": "Activées",
+      "off": "Désactivées"
+    },
     "deviceName": {
       "title": "Nom de l'appareil",
       "hint": "Le nom que cet appareil donne lorsque vous l'associez à un autre. Les appareils déjà associés gardent le nom qu'ils connaissent.",
@@ -258,6 +264,12 @@
     "serverUnreachable": "Impossible de joindre le serveur de connexion. Il est peut-être temporairement hors service. Ouvrez les Paramètres et passez au serveur PortalGems, ou utilisez le vôtre - voir le guide d'auto-hébergement.",
     "connectTimeout": "Le serveur de connexion n'a pas répondu à temps. Vérifiez que cet appareil est en ligne. Si c'est le cas, le serveur est peut-être hors service - vous pouvez en changer dans les Paramètres.",
     "invalidServerUrl": "L'adresse du serveur n'est pas valide. Vérifiez-la dans les Paramètres. Une URL de rendez-vous ressemble à wss://host/v1 et un relais à tcp://host:4001."
+  },
+  "notify": {
+    "received": "Transfert reçu",
+    "sent": "Transfert envoyé",
+    "receiveFailed": "Échec de la réception",
+    "sendFailed": "Échec de l'envoi"
   },
   "text": {
     "title": "Message",

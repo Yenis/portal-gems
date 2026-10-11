@@ -2,7 +2,15 @@
 // napi addon) and exposes a narrow IPC surface to the sandboxed renderer.
 // Transfer ids are allocated by the renderer; events stream back on 'pg:event'.
 
-import { app, BrowserWindow, clipboard, dialog, ipcMain, safeStorage } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  clipboard,
+  dialog,
+  ipcMain,
+  Notification,
+  safeStorage,
+} from 'electron';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
@@ -325,6 +333,38 @@ ipcMain.handle('pg:reject', (_e, id: number) => {
 });
 
 ipcMain.handle('pg:cancel', (_e, id: number) => engine.cancelTransfer(id));
+
+// Windows files a notification under the app's AppUserModelID and shows none
+// from a process that has not named one.
+if (process.platform === 'win32') app.setAppUserModelId('com.gemstech.portalgems');
+
+// Held until shown notifications close: one that is garbage collected takes
+// its click handler with it.
+const liveNotifications = new Set<Notification>();
+
+// A transfer finished or failed. Say so only when the window is not the one
+// being looked at - a transfer started and left running is the case this is
+// for, and the screen itself already says it otherwise. Clicking brings the
+// window forward and does nothing else: no action here opens a received file.
+ipcMain.handle('pg:notify', (_e, title: string, body: string) => {
+  if (process.env.PG_SMOKE_NOTIFY) console.log(`SMOKE:NOTIFY=${title}|${body}`);
+  if (!win || win.isDestroyed() || win.isFocused() || !Notification.isSupported()) return;
+  const note = new Notification({
+    title,
+    body,
+    icon: path.join(__dirname, '..', 'build', 'icon.png'),
+  });
+  liveNotifications.add(note);
+  note.on('click', () => {
+    if (!win || win.isDestroyed()) return;
+    if (win.isMinimized()) win.restore();
+    win.show();
+    win.focus();
+  });
+  note.on('close', () => liveNotifications.delete(note));
+  note.on('failed', () => liveNotifications.delete(note));
+  note.show();
+});
 
 app.whenReady().then(async () => {
   win = new BrowserWindow({

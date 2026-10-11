@@ -172,6 +172,12 @@
       "leaveBlankHint": "Deja un campo en blanco para conservar el valor público predeterminado.",
       "change": "Cambiar servidor"
     },
+    "notifications": {
+      "title": "Notificaciones",
+      "hint": "Avisarte cuando una transferencia termina o falla mientras PortalGems está en segundo plano.",
+      "on": "Activadas",
+      "off": "Desactivadas"
+    },
     "deviceName": {
       "title": "Nombre del dispositivo",
       "hint": "Así se presenta este dispositivo al emparejarlo con otro. Los dispositivos ya emparejados conservan el nombre que aprendieron.",
@@ -258,6 +264,12 @@
     "serverUnreachable": "No se pudo contactar con el servidor de conexión. Puede que esté temporalmente caído. Abre Ajustes y cambia al servidor de PortalGems, o usa el tuyo - consulta la guía de autoalojamiento.",
     "connectTimeout": "El servidor de conexión no respondió a tiempo. Comprueba que este dispositivo está conectado. Si lo está, puede que el servidor esté caído - puedes cambiarlo en Ajustes.",
     "invalidServerUrl": "La dirección del servidor no es válida. Compruébala en Ajustes. Una URL de encuentro es como wss://host/v1 y un relé como tcp://host:4001."
+  },
+  "notify": {
+    "received": "Transferencia recibida",
+    "sent": "Transferencia enviada",
+    "receiveFailed": "Error al recibir",
+    "sendFailed": "Error al enviar"
   },
   "text": {
     "title": "Mensaje",

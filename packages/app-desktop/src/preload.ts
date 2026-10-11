@@ -116,6 +116,8 @@ contextBridge.exposeInMainWorld('portalgems', {
     ipcRenderer.invoke('pg:writeTemp', name, content),
   readText: (path: string): Promise<string> => ipcRenderer.invoke('pg:readText', path),
   deleteFile: (path: string): Promise<void> => ipcRenderer.invoke('pg:deleteFile', path),
+  notify: (title: string, body: string): Promise<void> =>
+    ipcRenderer.invoke('pg:notify', title, body),
   onEvent: (cb: (ev: PgEvent) => void) => {
     ipcRenderer.on('pg:event', (_e, ev: PgEvent) => cb(ev));
   },

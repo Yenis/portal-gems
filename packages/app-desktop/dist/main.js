@@ -5403,6 +5403,27 @@ import_electron.ipcMain.handle("pg:reject", (_e, id) => {
   return engine.rejectReceive(id);
 });
 import_electron.ipcMain.handle("pg:cancel", (_e, id) => engine.cancelTransfer(id));
+if (process.platform === "win32") import_electron.app.setAppUserModelId("com.gemstech.portalgems");
+var liveNotifications = /* @__PURE__ */ new Set();
+import_electron.ipcMain.handle("pg:notify", (_e, title, body) => {
+  if (process.env.PG_SMOKE_NOTIFY) console.log(`SMOKE:NOTIFY=${title}|${body}`);
+  if (!win || win.isDestroyed() || win.isFocused() || !import_electron.Notification.isSupported()) return;
+  const note = new import_electron.Notification({
+    title,
+    body,
+    icon: path4.join(__dirname, "..", "build", "icon.png")
+  });
+  liveNotifications.add(note);
+  note.on("click", () => {
+    if (!win || win.isDestroyed()) return;
+    if (win.isMinimized()) win.restore();
+    win.show();
+    win.focus();
+  });
+  note.on("close", () => liveNotifications.delete(note));
+  note.on("failed", () => liveNotifications.delete(note));
+  note.show();
+});
 import_electron.app.whenReady().then(async () => {
   win = new import_electron.BrowserWindow({
     width: 620,
