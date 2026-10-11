@@ -26,6 +26,13 @@ export interface ZippedFolder {
   totalBytes: number;
 }
 
+/** One file shared into the app from another one. `name` is what its source
+ * calls it, when the source says. */
+export interface SharedFile {
+  uri: string;
+  name: string | null;
+}
+
 /** Several files picked or shared together, sent as one transfer. They are
  * still `content://` URIs here: they are zipped straight from their sources
  * once the send starts, not copied first. `names` are the entry names the
@@ -99,7 +106,7 @@ interface PortalGemsNativeSpec {
     folderName: string,
     overwrite: boolean
   ): Promise<SavedToDir>;
-  consumePendingShare(): Promise<string | null>;
+  consumePendingShare(): Promise<SharedFile[]>;
   startTransferService(title: string): Promise<void>;
   stopTransferService(): Promise<void>;
   getPairedDevices(): Promise<string>;

@@ -6,7 +6,8 @@ import {
   useColorScheme,
   View,
 } from 'react-native';
-import { initI18n, setLanguage, type PairedDevice } from '@portalgems/core';
+import { useTranslation } from 'react-i18next';
+import { initI18n, itemsText, setLanguage, type PairedDevice } from '@portalgems/core';
 import ComposeScreen from './src/screens/ComposeScreen';
 import ExplainerScreen from './src/screens/ExplainerScreen';
 import GuideScreen from './src/screens/GuideScreen';
@@ -17,11 +18,11 @@ import SendScreen from './src/screens/SendScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import ShareTargetScreen from './src/screens/ShareTargetScreen';
 import { loadDevices } from './src/pairing';
+import { itemFromUris } from './src/picking';
 import { ThemeProvider, useTheme } from './src/theme';
 import {
   clearIncomingDir,
   consumePendingShare,
-  copyToCache,
   deviceLocale,
   getSetting,
   type SendItem,
@@ -39,7 +40,7 @@ clearIncomingDir().catch(() => undefined);
 type Route =
   | { name: 'home' }
   | { name: 'send'; item: SendItem; device?: PairedDevice }
-  | { name: 'shareTarget'; item: SendItem & { kind: 'file' }; devices: PairedDevice[] }
+  | { name: 'shareTarget'; item: SendItem; devices: PairedDevice[] }
   | { name: 'compose'; device?: PairedDevice }
   | { name: 'receive'; code?: string; device?: PairedDevice }
   | { name: 'pair' }
@@ -59,6 +60,7 @@ export default function App() {
 
 function AppShell() {
   const c = useTheme();
+  const { t } = useTranslation();
   // A history stack, so the back arrow and Android's hardware/gesture back both
   // pop one page; at the root (home), hardware back falls through to the OS.
   const [stack, setStack] = useState<Route[]>([{ name: 'home' }]);
@@ -87,20 +89,20 @@ function AppShell() {
   // into the send flow. Home stays underneath either way, so back still works.
   useEffect(() => {
     const check = async () => {
-      const uri = await consumePendingShare().catch(() => null);
-      if (uri) {
-        const file = await copyToCache(uri).catch(() => null);
-        if (file) {
-          const item = { kind: 'file' as const, ...file };
-          const devices = await loadDevices().catch(() => []);
-          setStack([
-            { name: 'home' },
-            devices.length > 0
-              ? { name: 'shareTarget', item, devices }
-              : { name: 'send', item },
-          ]);
-        }
-      }
+      const shared = await consumePendingShare().catch(() => []);
+      if (shared.length === 0) return;
+      // One shared file is a plain file send; several selected together are
+      // one bundle - the same decision the picker makes.
+      const item = await itemFromUris(
+        shared.map((file) => file.uri),
+        shared.map((file) => file.name)
+      ).catch(() => null);
+      if (!item) return;
+      const devices = await loadDevices().catch(() => []);
+      setStack([
+        { name: 'home' },
+        devices.length > 0 ? { name: 'shareTarget', item, devices } : { name: 'send', item },
+      ]);
     };
     check();
     const sub = AppState.addEventListener('change', (state) => {
@@ -131,7 +133,13 @@ function AppShell() {
         />
       ) : route.name === 'shareTarget' ? (
         <ShareTargetScreen
-          name={route.item.name}
+          name={
+            route.item.kind === 'bundle'
+              ? itemsText(t as any, { files: route.item.uris.length, folders: 0 })
+              : route.item.kind === 'text'
+                ? ''
+                : route.item.name
+          }
           devices={route.devices}
           onHome={goBack}
           // Replaces this screen rather than stacking on it, so leaving the

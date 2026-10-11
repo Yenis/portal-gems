@@ -26,24 +26,44 @@ class MainActivity : ReactActivity() {
     captureShare(intent)
   }
 
-  // "Share -> PortalGems" from other apps. The URI is parked here and JS pulls
-  // it via PortalGemsNative.consumePendingShare (polled on mount and on
-  // AppState becoming active) - no event-emitter plumbing needed.
+  // "Share -> PortalGems" from other apps: one file (ACTION_SEND) or several
+  // selected together in a gallery or file manager (ACTION_SEND_MULTIPLE).
+  // The URIs are parked here and JS pulls them via
+  // PortalGemsNative.consumePendingShare (polled on mount and on AppState
+  // becoming active) - no event-emitter plumbing needed. A share that
+  // carries no file - plain text, say - is not ours and is left alone.
   private fun captureShare(intent: Intent?) {
-    if (intent?.action != Intent.ACTION_SEND) return
-    @Suppress("DEPRECATION")
-    val uri: Uri? =
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
-      } else {
-        intent.getParcelableExtra(Intent.EXTRA_STREAM)
-      }
-    if (uri != null) {
-      pendingShareUri = uri.toString()
+    val uris: List<Uri> = when (intent?.action) {
+      Intent.ACTION_SEND -> listOfNotNull(sharedStream(intent))
+      Intent.ACTION_SEND_MULTIPLE -> sharedStreams(intent)
+      else -> return
+    }
+    if (uris.isNotEmpty()) {
+      pendingShareUris = uris.map { it.toString() }
     }
   }
 
+  @Suppress("DEPRECATION")
+  private fun sharedStream(intent: Intent): Uri? =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+      intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
+    } else {
+      intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
+    }
+
+  @Suppress("DEPRECATION")
+  private fun sharedStreams(intent: Intent): List<Uri> {
+    val list: ArrayList<Uri>? =
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM, Uri::class.java)
+      } else {
+        intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM)
+      }
+    // Senders are free to put nulls in the list.
+    return list?.filterNotNull() ?: emptyList()
+  }
+
   companion object {
-    @Volatile var pendingShareUri: String? = null
+    @Volatile var pendingShareUris: List<String> = emptyList()
   }
 }

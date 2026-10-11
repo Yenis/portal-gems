@@ -394,3 +394,8 @@ cannot receive:
   in core cleans and de-duplicates the names the picker reports, under the
   same rule as the engine, where it is tested. `home.sendButton` is gone;
   both apps use `home.sendFilesButton`.
+- Step 8 (Android share sheet) is built: the manifest takes
+  `ACTION_SEND_MULTIPLE`, `MainActivity` parks every shared URI,
+  `consumePendingShare` returns them with the names their sources report,
+  and `App.tsx` hands them to the same `itemFromUris` the picker uses. The
+  chooser shows "5 files" where it showed one file's name.

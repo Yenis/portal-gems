@@ -288,9 +288,11 @@ recursive size.
   MainApplication): SAF `copyToCache(uri)` (Rust can't read `content://`),
   MediaStore `saveToDownloads` (API 29+ insert + legacy fallback, dedup name
   queried back), foreground `TransferService` (dataSync, held only during
-  transfers), `consumePendingShare` (ACTION_SEND intake, polled on mount +
-  AppState active; with paired devices `App.tsx` routes it through
-  `ShareTargetScreen` to choose one of them or a one-time code), EncryptedSharedPreferences pair store, zxing-embedded
+  transfers), `consumePendingShare` (ACTION_SEND and ACTION_SEND_MULTIPLE intake,
+  polled on mount + AppState active: returns every shared file's URI and
+  reported name; `itemFromUris` makes one file a file and several a bundle,
+  and with paired devices `App.tsx` routes it through `ShareTargetScreen` to
+  choose one of them or a one-time code), EncryptedSharedPreferences pair store, zxing-embedded
   `scanQr()`, plain SharedPreferences `get/setSetting`,
   `zipUrisToCache(uris, names)` (several picked or shared files into one
   archive for a multi-file send, each read once straight from its URI; the
@@ -591,6 +593,5 @@ explicit server flags on one side.
 Gaps: QR *camera* scan untested (needs real phone);
 mobile server-picker UI + ubrn regen; 32-bit `armeabi-v7a` ABI (older phones
 get INSTALL_FAILED_NO_MATCHING_ABIS); paired-transfer UI buttons E2E (smoke
-modes exist); mid-transfer cancel; share-sheet multi-file intake
-(ACTION_SEND_MULTIPLE - the folder picker path now covers bulk sends);
+modes exist); mid-transfer cancel;
 F-Droid recipe; store metadata.

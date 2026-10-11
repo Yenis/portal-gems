@@ -840,9 +840,34 @@ class PortalGemsNativeModule(reactContext: ReactApplicationContext) :
 
   @ReactMethod
   fun consumePendingShare(promise: Promise) {
-    val uri = MainActivity.pendingShareUri
-    MainActivity.pendingShareUri = null
-    promise.resolve(uri)
+    // What was shared into the app since this was last asked: each file's
+    // URI and the name its source gives it, in the order they were shared.
+    // An empty list when there is nothing. The names are only reported here;
+    // making them safe and distinct is `bundleEntryNames` in packages/core.
+    val uris = MainActivity.pendingShareUris
+    MainActivity.pendingShareUris = emptyList()
+    val shared = WritableNativeArray()
+    val resolver = reactApplicationContext.contentResolver
+    for (uriString in uris) {
+      var name: String? = null
+      try {
+        resolver.query(Uri.parse(uriString), null, null, null, null)?.use { cursor ->
+          val nameIdx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+          if (nameIdx >= 0 && cursor.moveToFirst()) name = cursor.getString(nameIdx)
+        }
+      } catch (_: Exception) {
+        // A source that will not say what the file is called still gets its
+        // file sent, under a name of ours.
+      }
+      val reported = name
+      shared.pushMap(
+        WritableNativeMap().apply {
+          putString("uri", uriString)
+          if (reported != null) putString("name", reported) else putNull("name")
+        }
+      )
+    }
+    promise.resolve(shared)
   }
 
   @ReactMethod
