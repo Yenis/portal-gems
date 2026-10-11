@@ -248,6 +248,7 @@
     "pickFailed": "Could not read the selected file.",
     "invalidCode": "That does not look like a valid code. Codes look like: 7-word-word",
     "wrongCode": "No file is being offered under this code. Double-check the code and make sure the sender's app is still open and waiting.",
+    "codeUnusable": "This code can no longer be used. Start the send again to get a fresh code.",
     "network": "Network problem - check your internet connection and try again.",
     "transit": "The two devices could not open a connection to each other. Try again - if it keeps failing, check that both devices are online.",
     "peerGone": "The other side went away before the transfer finished.",

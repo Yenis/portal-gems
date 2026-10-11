@@ -23,6 +23,14 @@ describe('friendlyError', () => {
     expect(isTransitFailure(new Error(CONNECT_TIMEOUT))).toBe(false);
   });
 
+  it('says a crowded code is spent, and does not blame the server', () => {
+    const crowded = 'this code already has two devices on it';
+    expect(friendlyError(t, new Error(crowded))).toBe('errors.codeUnusable');
+    expect(friendlyError(t, `Exception.Crowded: ${crowded}`)).toBe('errors.codeUnusable');
+    expect(isServerUnreachableError(new Error(crowded))).toBe(false);
+    expect(isTransitFailure(new Error(crowded))).toBe(false);
+  });
+
   it('keeps the messages it already had', () => {
     expect(friendlyError(t, 'Nameplate is unclaimed: 71300')).toBe('errors.wrongCode');
     expect(friendlyError(t, 'invalid server URL: nope')).toBe('errors.invalidServerUrl');

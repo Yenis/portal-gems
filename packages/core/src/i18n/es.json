@@ -248,6 +248,7 @@
     "pickFailed": "No se pudo leer el archivo seleccionado.",
     "invalidCode": "Eso no parece un código válido. Los códigos son así: 7-palabra-palabra",
     "wrongCode": "Nadie ofrece un archivo con este código. Comprueba el código y asegúrate de que la aplicación del remitente siga abierta y esperando.",
+    "codeUnusable": "Este código ya no se puede usar. Vuelve a iniciar el envío para obtener un código nuevo.",
     "network": "Problema de red - comprueba tu conexión a Internet e inténtalo de nuevo.",
     "transit": "Los dos dispositivos no pudieron establecer una conexión entre sí. Vuelve a intentarlo: si sigue fallando, comprueba que ambos dispositivos estén conectados.",
     "peerGone": "La otra parte desapareció antes de terminar la transferencia.",

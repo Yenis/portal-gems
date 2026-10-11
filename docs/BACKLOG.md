@@ -6,27 +6,20 @@ not have to rediscover it. Reviewed against the code at 1.4.2 (2026-10-11).
 
 ## Open gaps, in the order they are to be worked
 
-1. `crowded` is reported as "your server is unreachable"
-2. Symbian derives attempt 0 only
-3. The stale claim is never released
-4. CI runs no test suite
-5. What has not been verified end to end
-6. A connection lost while waiting goes unnoticed
+1. Symbian derives attempt 0 only
+2. The stale claim is never released
+3. CI runs no test suite
+4. What has not been verified end to end
+5. A connection lost while waiting goes unnoticed
 
-### `crowded` is reported as "your server is unreachable"
-
-The engine's message for a nameplate that already has two sides on it
-contains the word "rendezvous", which `SERVER_UNREACHABLE_RE` in
-`packages/core/src/errors.ts` matches, so a typed code that hits a crowded
-nameplate tells the user to change servers when the server is fine. Needs
-one new string in all six locales, and the Symbian client's own wording
-checked.
+The first two are under "Paired send" below, with the findings they come
+from.
 
 ### CI runs no test suite
 
 `.github/workflows/release.yml` builds and publishes on a `v*` tag and runs
 nothing else. Every suite runs only when someone remembers to: core (vitest,
-169 tests), the desktop's `npm test`, `cargo test` in `native/wormhole-core`,
+170 tests), the desktop's `npm test`, `cargo test` in `native/wormhole-core`,
 and `make test` / `make test-arm` in `native/wormhole-mini` (329 checks).
 None of them needs a network except the `#[ignore]`d engine round trips.
 
@@ -45,6 +38,13 @@ is covered by hand and by the smoke harness.
 The connect timeout (`CONNECT_TIMEOUT`, 20 s) is covered by a unit test
 against a server that never answers; it has not been watched on a phone
 with its Wi-Fi off, which is where the hang was first seen.
+
+A crowded code now has its own error (`Error::Crowded`, shown as "This code
+can no longer be used") instead of being reported as an unreachable
+server. The conversion is unit-tested; nobody has put three devices on one
+code and read the screen. On Symbian the same case says "That code is not
+waiting on this server", which is imprecise but does not send the user off
+to change servers, so it was left alone.
 
 ### A connection lost while waiting goes unnoticed
 

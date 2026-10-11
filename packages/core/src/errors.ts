@@ -15,6 +15,14 @@ const SERVER_UNREACHABLE_RE =
 // that is not answering, so the message names both.
 const CONNECT_TIMEOUT_RE = /no answer from the connection server in time/i;
 
+// A code holds two devices; the server turns a third away. The engine reports
+// that with exactly this text (pinned by `crowded_message_is_pinned` in
+// native/wormhole-core). The server answered, so this is about the code and
+// offers no "Change server" shortcut. The string says only that the code is
+// spent: the usual third arrival is the user's own earlier attempt, and
+// "two devices are on your code" reads as a file gone to someone else.
+const CROWDED_RE = /this code already has two devices on it/i;
+
 /// True when the failure looks like the chosen server being unreachable - used
 /// to offer a "Change server" shortcut, not just a message.
 export function isServerUnreachableError(error: unknown): boolean {
@@ -46,6 +54,7 @@ export function isTransitFailure(error: unknown): boolean {
 export function friendlyError(t: TFunction, error: unknown): string {
   const raw = rawMessage(error);
   if (/nameplate is unclaimed/i.test(raw)) return t('errors.wrongCode');
+  if (CROWDED_RE.test(raw)) return t('errors.codeUnusable');
   if (/invalid server url/i.test(raw)) return t('errors.invalidServerUrl');
   if (/transfer was rejected|rejected the transfer|TransferRejected/i.test(raw))
     return t('errors.declinedBySender');

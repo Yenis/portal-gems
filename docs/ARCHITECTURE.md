@@ -104,8 +104,17 @@ cancel must cover more than the transfer phase):
   receiver - can take as long as the other person does. The engine cannot
   tell an offline device from a silent server, so `errors.connectTimeout`
   names both, and `isServerUnreachableError` is true for it.
+- A code holds two devices, and the server turns a third away with the
+  error `crowded`. magic-wormhole reports that as "Error with the rendezvous
+  server connection" - its words for a server it cannot reach - and keeps
+  the server's own word in the error's source, which no binding carries. So
+  `From<WormholeError>` picks that one case out as `Error::Crowded`, which
+  `errors.ts` maps to `errors.codeUnusable` with no "Change server" shortcut.
+  The string says only that the code can no longer be used: the usual third
+  arrival is the user's own crashed or cancelled attempt, and naming "two
+  devices" reads as a file that went to someone else.
 - Errors: one flat `Error` enum (`InvalidCode`, `Cancelled`, `AlreadyConsumed`,
-  `ConnectTimeout`, wrapped wormhole/transfer/IO). Foreign sides receive the Display string;
+  `ConnectTimeout`, `Crowded`, wrapped wormhole/transfer/IO). Foreign sides receive the Display string;
   `packages/core/src/errors.ts::friendlyError` pattern-matches it to
   localized messages. If you add error cases, extend BOTH - and regenerate
   the Android binding, which decodes the enum by position: a variant it does
@@ -276,7 +285,7 @@ Consumed by both apps as **npm `file:` symlinks** (see §5 build gotchas).
     follows the outer signal.
 - `errors.ts` - engine-string → i18n-key mapping.
 
-Tests: `cd packages/core && npm test` (vitest, 169 tests).
+Tests: `cd packages/core && npm test` (vitest, 170 tests).
 
 ## 4. The apps
 
@@ -652,9 +661,10 @@ folder E2E runs - and is the app's default choice; note the CLI examples and
 the reference CLI default to the PUBLIC server, so cross-testing needs
 explicit server flags on one side.
 
-Gaps, each with its reasoning in `docs/BACKLOG.md`: a `crowded` nameplate is reported as an unreachable server;
-Symbian derives only the first paired code of a bucket; a sender that does
-not finish never releases its nameplate; CI runs no test suite. Not yet
+Gaps, each with its reasoning in `docs/BACKLOG.md`: Symbian derives only
+the first paired code of a bucket; a sender that does not finish never
+releases its nameplate; CI runs no test suite; a connection lost while
+waiting goes unnoticed. Not yet
 verified end to end: QR *camera* scan (needs a real phone), cancel in the
 middle of a transfer, and the paired-transfer buttons in the UI (smoke modes
 exist). Not started: F-Droid recipe, store metadata.

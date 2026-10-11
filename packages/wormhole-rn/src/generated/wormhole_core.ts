@@ -657,6 +657,7 @@ export enum Exception_Tags {
   NotAFileOffer = 'NotAFileOffer',
   InvalidServerUrl = 'InvalidServerUrl',
   ConnectTimeout = 'ConnectTimeout',
+  Crowded = 'Crowded',
   Archive = 'Archive',
   Wormhole = 'Wormhole',
   Transfer = 'Transfer',
@@ -795,7 +796,7 @@ export const Exception = (() => {
       return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 6;
     }
   }
-  class Archive extends UniffiError {
+  class Crowded extends UniffiError {
     /**
      * @private
      * This field is private and should not be used.
@@ -807,6 +808,28 @@ export const Exception = (() => {
      */
     readonly [variantOrdinalSymbol] = 7;
 
+    readonly tag = Exception_Tags.Crowded;
+
+    constructor(message: string) {
+      super('Exception', 'Crowded', message);
+    }
+
+    static instanceOf(e: any): e is Crowded {
+      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 7;
+    }
+  }
+  class Archive extends UniffiError {
+    /**
+     * @private
+     * This field is private and should not be used.
+     */
+    readonly [uniffiTypeNameSymbol]: string = 'Exception';
+    /**
+     * @private
+     * This field is private and should not be used.
+     */
+    readonly [variantOrdinalSymbol] = 8;
+
     readonly tag = Exception_Tags.Archive;
 
     constructor(message: string) {
@@ -814,7 +837,7 @@ export const Exception = (() => {
     }
 
     static instanceOf(e: any): e is Archive {
-      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 7;
+      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 8;
     }
   }
   class Wormhole extends UniffiError {
@@ -827,7 +850,7 @@ export const Exception = (() => {
      * @private
      * This field is private and should not be used.
      */
-    readonly [variantOrdinalSymbol] = 8;
+    readonly [variantOrdinalSymbol] = 9;
 
     readonly tag = Exception_Tags.Wormhole;
 
@@ -836,7 +859,7 @@ export const Exception = (() => {
     }
 
     static instanceOf(e: any): e is Wormhole {
-      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 8;
+      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 9;
     }
   }
   class Transfer extends UniffiError {
@@ -849,7 +872,7 @@ export const Exception = (() => {
      * @private
      * This field is private and should not be used.
      */
-    readonly [variantOrdinalSymbol] = 9;
+    readonly [variantOrdinalSymbol] = 10;
 
     readonly tag = Exception_Tags.Transfer;
 
@@ -858,7 +881,7 @@ export const Exception = (() => {
     }
 
     static instanceOf(e: any): e is Transfer {
-      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 9;
+      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 10;
     }
   }
   class Io extends UniffiError {
@@ -871,7 +894,7 @@ export const Exception = (() => {
      * @private
      * This field is private and should not be used.
      */
-    readonly [variantOrdinalSymbol] = 10;
+    readonly [variantOrdinalSymbol] = 11;
 
     readonly tag = Exception_Tags.Io;
 
@@ -880,7 +903,7 @@ export const Exception = (() => {
     }
 
     static instanceOf(e: any): e is Io {
-      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 10;
+      return instanceOf(e) && (e as any)[variantOrdinalSymbol] === 11;
     }
   }
 
@@ -895,6 +918,7 @@ export const Exception = (() => {
     NotAFileOffer,
     InvalidServerUrl,
     ConnectTimeout,
+    Crowded,
     Archive,
     Wormhole,
     Transfer,
@@ -912,6 +936,7 @@ export type Exception = InstanceType<
     | 'NotAFileOffer'
     | 'InvalidServerUrl'
     | 'ConnectTimeout'
+    | 'Crowded'
     | 'Archive'
     | 'Wormhole'
     | 'Transfer'
@@ -943,15 +968,18 @@ const FfiConverterTypeError = (() => {
           return new Exception.ConnectTimeout(FfiConverterString.read(from));
 
         case 7:
-          return new Exception.Archive(FfiConverterString.read(from));
+          return new Exception.Crowded(FfiConverterString.read(from));
 
         case 8:
-          return new Exception.Wormhole(FfiConverterString.read(from));
+          return new Exception.Archive(FfiConverterString.read(from));
 
         case 9:
-          return new Exception.Transfer(FfiConverterString.read(from));
+          return new Exception.Wormhole(FfiConverterString.read(from));
 
         case 10:
+          return new Exception.Transfer(FfiConverterString.read(from));
+
+        case 11:
           return new Exception.Io(FfiConverterString.read(from));
 
         default:
