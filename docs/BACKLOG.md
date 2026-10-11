@@ -7,19 +7,10 @@ not have to rediscover it. Reviewed against the code at 1.4.2 (2026-10-11).
 ## Open gaps, in the order they are to be worked
 
 1. The stale claim is never released
-2. CI runs no test suite
-3. What has not been verified end to end
-4. A connection lost while waiting goes unnoticed
+2. What has not been verified end to end
+3. A connection lost while waiting goes unnoticed
 
 The first is under "Paired send" below, with the findings it comes from.
-
-### CI runs no test suite
-
-`.github/workflows/release.yml` builds and publishes on a `v*` tag and runs
-nothing else. Every suite runs only when someone remembers to: core (vitest,
-170 tests), the desktop's `npm test`, `cargo test` in `native/wormhole-core`,
-and `make test` / `make test-arm` in `native/wormhole-mini` (339 checks).
-None of them needs a network except the `#[ignore]`d engine round trips.
 
 ### What has not been verified end to end
 
@@ -31,7 +22,9 @@ None of them needs a network except the `#[ignore]`d engine round trips.
   same code underneath them.
 
 Android has one Jest file and the desktop two test files, so the UI on both
-is covered by hand and by the smoke harness.
+is covered by hand and by the smoke harness. That Jest file is the React
+Native template's and is not in CI (`.github/workflows/test.yml`): it needs
+the native modules mocked before a pass would mean anything.
 
 The connect timeout (`CONNECT_TIMEOUT`, 20 s) is covered by a unit test
 against a server that never answers; it has not been watched on a phone

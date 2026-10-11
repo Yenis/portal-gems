@@ -1,0 +1,109 @@
+# Every test suite that needs neither a network nor a device, on each push to
+# master and each pull request. Until this existed they ran only when someone
+# remembered to run them.
+#
+#   core     ubuntu   packages/core (vitest): pairing, i18n completeness,
+#                     servers, file naming, error mapping
+#   desktop  ubuntu   packages/app-desktop: typecheck + node --test
+#   engine   ubuntu   native/wormhole-core: cargo test
+#   mini     ubuntu   native/wormhole-mini: make test, then the same suite
+#                     cross-compiled for 32-bit ARM and run under qemu
+#
+# Left out on purpose:
+#   - the engine's `#[ignore]`d tests and the vendored crate's own suite, which
+#     talk to a real mailbox server; run them by hand with
+#     `cargo test -- --ignored` in native/wormhole-core
+#   - packages/app-mobile, whose one Jest file is the React Native template's
+#     and needs the native modules mocked before it can mean anything
+#   - the Symbian app, which needs the S60 SDK
+#
+# The jobs are independent: one failing does not stop the others.
+
+name: Tests
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # --------------------------------------------------------------------------
+  core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        working-directory: packages/core
+        run: npm ci
+
+      - name: Test
+        working-directory: packages/core
+        run: npm test
+
+  # --------------------------------------------------------------------------
+  desktop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # The desktop app takes @portalgems/core as a `file:` symlink, so core's
+      # own dependencies have to be there for the typecheck to follow it.
+      - name: Install core dependencies
+        working-directory: packages/core
+        run: npm ci
+
+      - name: Install desktop dependencies
+        working-directory: packages/app-desktop
+        run: npm ci
+
+      - name: Typecheck
+        working-directory: packages/app-desktop
+        run: npx tsc --noEmit -p .
+
+      - name: Test
+        working-directory: packages/app-desktop
+        run: npm test
+
+  # --------------------------------------------------------------------------
+  engine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Test
+        working-directory: native/wormhole-core
+        run: cargo test --locked
+
+  # --------------------------------------------------------------------------
+  mini:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test on the host
+        working-directory: native/wormhole-mini
+        run: make test
+
+      # ARMv5 soft-float with a 32-bit long is the data model the phone uses,
+      # so this catches width and alignment mistakes the host build cannot.
+      - name: Install the ARM cross compiler and qemu
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-linux-gnueabi libc6-dev-armel-cross qemu-user-static
+
+      - name: Test on 32-bit ARM under qemu
+        working-directory: native/wormhole-mini
+        run: make test-arm

@@ -147,6 +147,11 @@ cancel must cover more than the transfer phase):
 
 Tests: `cargo test` (unit) · `cargo test -- --ignored` (network round-trip).
 
+CI runs every suite that needs neither a network nor a device on each push
+to master and each pull request (`.github/workflows/test.yml`): core, the
+desktop's typecheck and tests, this crate's unit tests, and wormhole-mini on
+the host and under qemu-arm. The `--ignored` round trips stay manual.
+
 ## 2. Binding layers
 
 ### Android - `packages/wormhole-rn` (uniffi-bindgen-react-native 0.31)
@@ -665,7 +670,7 @@ the reference CLI default to the PUBLIC server, so cross-testing needs
 explicit server flags on one side.
 
 Gaps, each with its reasoning in `docs/BACKLOG.md`: a sender that does not
-finish never releases its nameplate; CI runs no test suite; a connection lost while
+finish never releases its nameplate; a connection lost while
 waiting goes unnoticed. Not yet
 verified end to end: QR *camera* scan (needs a real phone), cancel in the
 middle of a transfer, and the paired-transfer buttons in the UI (smoke modes
