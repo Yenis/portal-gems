@@ -2964,6 +2964,7 @@ name = "wormhole-core"
 version = "0.1.0"
 dependencies = [
  "async-fs",
+ "async-io",
  "async-tungstenite",
  "blocking",
  "futures-lite",

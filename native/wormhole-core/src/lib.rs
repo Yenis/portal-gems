@@ -27,6 +27,12 @@ use magic_wormhole::{
 /// Number of wordlist words in generated codes (the CLI default).
 pub const DEFAULT_CODE_LENGTH: usize = 2;
 
+/// How long the mailbox server gets to answer before a transfer gives up.
+/// It covers reaching the server and claiming or allocating the code, and
+/// nothing after that: a sender waiting for its receiver waits as long as it
+/// takes.
+pub const CONNECT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(20);
+
 /// Which servers a transfer should use. Both fields are optional; a missing or
 /// empty field falls back to the public magic-wormhole defaults. Keeping the
 /// app id fixed (see `app_config`) means any two clients pointed at the SAME
@@ -55,6 +61,8 @@ pub enum Error {
     NotAFileOffer,
     #[error("invalid server URL: {0}")]
     InvalidServerUrl(String),
+    #[error("no answer from the connection server in time")]
+    ConnectTimeout,
     #[error("invalid folder archive: {0}")]
     Archive(String),
     #[error(transparent)]
@@ -199,6 +207,32 @@ where
     .await
 }
 
+/// Reach the mailbox server and take a place on it: a fresh code (`None`),
+/// or `code` itself, which `allocate` claims for a sender and which a receiver
+/// joins. Fails with `ConnectTimeout` if the server has not answered within
+/// `timeout`. Nothing bounded the wait before, and a server that never
+/// answered - or a device with no way out - left the apps on "Connecting"
+/// until the user cancelled.
+async fn open_mailbox(
+    server: &ServerConfig,
+    code: Option<magic_wormhole::Code>,
+    allocate: bool,
+    timeout: std::time::Duration,
+) -> Result<MailboxConnection<AppVersion>, Error> {
+    let config = app_config(server);
+    let reach = async {
+        Ok(match code {
+            None => MailboxConnection::create(config, DEFAULT_CODE_LENGTH).await?,
+            Some(code) => MailboxConnection::connect(config, code, allocate).await?,
+        })
+    };
+    futures_lite::future::or(reach, async {
+        async_io::Timer::after(timeout).await;
+        Err(Error::ConnectTimeout)
+    })
+    .await
+}
+
 /// Open the sender side of a wormhole: allocate (or claim) the code, report it
 /// through `on_code`, and complete the PAKE handshake.
 async fn sender_connect<F: FnOnce(String)>(
@@ -207,13 +241,11 @@ async fn sender_connect<F: FnOnce(String)>(
     on_code: F,
 ) -> Result<(Wormhole, Vec<RelayHint>), Error> {
     let relay_hints = relay_hints(server)?;
-    let mailbox = match code {
-        None => MailboxConnection::create(app_config(server), DEFAULT_CODE_LENGTH).await?,
-        Some(raw) => {
-            let code = raw.parse().map_err(|_| Error::InvalidCode(raw.into()))?;
-            MailboxConnection::connect(app_config(server), code, true).await?
-        },
+    let code = match code {
+        None => None,
+        Some(raw) => Some(raw.parse().map_err(|_| Error::InvalidCode(raw.into()))?),
     };
+    let mailbox = open_mailbox(server, code, true, CONNECT_TIMEOUT).await?;
     on_code(mailbox.code().to_string());
     let wormhole = Wormhole::connect(mailbox).await?;
     Ok((wormhole, relay_hints))
@@ -540,7 +572,7 @@ pub async fn request_receive(
     let work = async {
         let relay_hints = relay_hints(server)?;
         let parsed = code.parse().map_err(|_| Error::InvalidCode(code.into()))?;
-        let mailbox = MailboxConnection::connect(app_config(server), parsed, false).await?;
+        let mailbox = open_mailbox(server, Some(parsed), false, CONNECT_TIMEOUT).await?;
         let wormhole = Wormhole::connect(mailbox).await?;
         let offer = transfer::request_offer(
             wormhole,
@@ -1132,6 +1164,47 @@ mod tests {
         assert_eq!(sanitize_file_name(""), "received.bin");
         assert_eq!(sanitize_file_name(".."), "received.bin");
         assert_eq!(sanitize_file_name("."), "received.bin");
+    }
+
+    /// A server that takes the connection and then says nothing: what a
+    /// device behind a dead route, or a server that has hung, looks like.
+    fn silent_server() -> (std::net::TcpListener, ServerConfig) {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let server = ServerConfig {
+            rendezvous_url: Some(format!("ws://{}/v1", listener.local_addr().unwrap())),
+            transit_url: None,
+        };
+        (listener, server)
+    }
+
+    #[test]
+    fn a_server_that_never_answers_times_out() {
+        futures_lite::future::block_on(async {
+            let (_listener, server) = silent_server();
+            let timeout = std::time::Duration::from_millis(300);
+
+            let started = std::time::Instant::now();
+            let fresh = open_mailbox(&server, None, true, timeout).await;
+            assert!(matches!(fresh, Err(Error::ConnectTimeout)));
+            assert!(started.elapsed() < std::time::Duration::from_secs(5));
+
+            let code: magic_wormhole::Code = "7-crossover-clockwork".parse().unwrap();
+            let claimed = open_mailbox(&server, Some(code.clone()), true, timeout).await;
+            assert!(matches!(claimed, Err(Error::ConnectTimeout)));
+            let joined = open_mailbox(&server, Some(code), false, timeout).await;
+            assert!(matches!(joined, Err(Error::ConnectTimeout)));
+        });
+    }
+
+    /// The message crosses both bindings as a string and `friendlyError` in
+    /// packages/core matches it, so it must not drift - and must not contain
+    /// "rendezvous", which that file reads as an unreachable server.
+    #[test]
+    fn connect_timeout_message_is_pinned() {
+        assert_eq!(
+            Error::ConnectTimeout.to_string(),
+            "no answer from the connection server in time"
+        );
     }
 
     #[test]

@@ -34,8 +34,10 @@ thiserror = "2"
 uniffi = "0.31"
 zip = { version = "2", default-features = false, features = ["deflate"] }
 blocking = "1"
+# Timers, for the bound on reaching the mailbox server. Already in the tree:
+# magic-wormhole depends on it.
+async-io = "2"
 
 [dev-dependencies]
-async-io = "2"
 anyhow = "1"
 uniffi = { version = "0.31", features = ["cli"] }
