@@ -55,11 +55,7 @@ still shows a code nobody can use until the user cancels. Telling that apart
 from an ordinary wait needs a liveness check on the mailbox connection
 (a WebSocket ping), inside the vendored crate.
 
-## Planned features (decided 2026-10-11)
-
-- **Updates.** In Settings: an auto-update toggle and a "Check for updates"
-  button, against the GitHub releases. A sideloaded APK and a portable
-  `.exe` otherwise never learn that a new version exists.
+## Features: what has been decided (2026-10-11)
 
 Undecided:
 
@@ -71,6 +67,22 @@ Undecided:
 
 Later, not now:
 
+- **Updates.** Wanted: an auto-update toggle and a "Check for updates"
+  button in Settings, against the GitHub releases - a sideloaded APK and a
+  portable `.exe` otherwise never learn that a new version exists. Delayed
+  until its shape is decided, because "auto-update" cannot mean the same
+  thing everywhere. An AppImage can replace itself. A `.deb` or `.rpm`
+  belongs to the package manager, a running portable `.exe` cannot cleanly
+  replace itself, and an unsigned macOS app cannot self-update at all.
+  Android can download the APK and open the system installer, with a
+  confirmation each time and the "install unknown apps" permission. Symbian
+  cannot reach GitHub over modern TLS. So the choice is between "check and
+  tell" - say a newer version exists and open the download page, the same
+  on every platform, no new permissions - and "install where possible",
+  which behaves differently per platform and must be switched off again
+  for F-Droid, which does not allow self-updaters. Also open: whether the
+  automatic check is on by default, since it would be the only time the
+  app contacts anything but the chosen connection server.
 - **F-Droid recipe and store metadata.** Planned; the "no proprietary
   dependencies" discipline in `docs/ARCHITECTURE.md` section 5 exists for it.
 
