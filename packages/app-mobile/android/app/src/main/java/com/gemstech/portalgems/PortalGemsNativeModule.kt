@@ -19,6 +19,7 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
+import com.facebook.react.bridge.WritableNativeArray
 import com.facebook.react.bridge.WritableNativeMap
 import com.google.zxing.integration.android.IntentIntegrator
 import java.io.File
@@ -228,6 +229,50 @@ class PortalGemsNativeModule(reactContext: ReactApplicationContext) :
       promise.resolve(null)
     } catch (e: Exception) {
       promise.reject("delete_failed", e.message, e)
+    }
+  }
+
+  /**
+   * What is directly inside a staged directory: the top-level items of a
+   * multi-file bundle the engine has just unpacked, each of which is then
+   * saved under its own name. Files and directories only.
+   */
+  @ReactMethod
+  fun listStaged(path: String, promise: Promise) {
+    try {
+      val entries = WritableNativeArray()
+      for (child in File(path).listFiles() ?: emptyArray()) {
+        if (!child.isFile && !child.isDirectory) continue
+        entries.pushMap(
+          WritableNativeMap().apply {
+            putString("name", child.name)
+            putString("path", child.absolutePath)
+            putBoolean("isFolder", child.isDirectory)
+          }
+        )
+      }
+      promise.resolve(entries)
+    } catch (e: Exception) {
+      promise.reject("list_staged_failed", e.message, e)
+    }
+  }
+
+  /**
+   * Remove a staged directory and whatever is still in it - what is left of
+   * a bundle once its items have been saved, including any that could not
+   * be. Refuses anything outside the app cache: this deletes recursively,
+   * and a path from JavaScript is not to be trusted with that.
+   */
+  @ReactMethod
+  fun removeStaged(path: String, promise: Promise) {
+    try {
+      val cache = reactApplicationContext.cacheDir.canonicalFile
+      val target = File(path).canonicalFile
+      require(target.startsWith(cache) && target != cache) { "not a staged path: $path" }
+      target.deleteRecursively()
+      promise.resolve(null)
+    } catch (e: Exception) {
+      promise.reject("remove_staged_failed", e.message, e)
     }
   }
 

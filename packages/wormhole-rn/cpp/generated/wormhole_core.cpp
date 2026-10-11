@@ -251,6 +251,7 @@ extern "C" {
         RustBuffer dir_name, 
         uint64_t num_files, 
         uint64_t num_bytes, 
+        RustBuffer loose, 
         RustBuffer code, 
         RustBuffer server, 
         /*handle*/ uint64_t listener
@@ -2788,7 +2789,7 @@ NativeWormholeCore::NativeWormholeCore(
     props["ubrn_uniffi_wormhole_core_fn_func_send_zip_as_folder"] = jsi::Function::createFromHostFunction(
         rt,
         jsi::PropNameID::forAscii(rt, "ubrn_uniffi_wormhole_core_fn_func_send_zip_as_folder"),
-        7,
+        8,
         [this](jsi::Runtime &rt, const jsi::Value &thisVal, const jsi::Value *args, size_t count) -> jsi::Value {
             return this->cpp_uniffi_wormhole_core_fn_func_send_zip_as_folder(rt, thisVal, args, count);
         }
@@ -3678,7 +3679,7 @@ jsi::Value NativeWormholeCore::cpp_uniffi_wormhole_core_fn_func_send_text(jsi::R
         return uniffi_jsi::Bridging</*handle*/ uint64_t>::toJs(rt, callInvoker, value);
 }
 jsi::Value NativeWormholeCore::cpp_uniffi_wormhole_core_fn_func_send_zip_as_folder(jsi::Runtime& rt, const jsi::Value& thisVal, const jsi::Value* args, size_t count) {
-        auto value = uniffi_wormhole_core_fn_func_send_zip_as_folder(uniffi::wormhole_core::Bridging<RustBuffer>::fromJs(rt, callInvoker, args[0]), uniffi::wormhole_core::Bridging<RustBuffer>::fromJs(rt, callInvoker, args[1]), uniffi_jsi::Bridging<uint64_t>::fromJs(rt, callInvoker, args[2]), uniffi_jsi::Bridging<uint64_t>::fromJs(rt, callInvoker, args[3]), uniffi::wormhole_core::Bridging<RustBuffer>::fromJs(rt, callInvoker, args[4]), uniffi::wormhole_core::Bridging<RustBuffer>::fromJs(rt, callInvoker, args[5]), uniffi_jsi::Bridging</*handle*/ uint64_t>::fromJs(rt, callInvoker, args[6])
+        auto value = uniffi_wormhole_core_fn_func_send_zip_as_folder(uniffi::wormhole_core::Bridging<RustBuffer>::fromJs(rt, callInvoker, args[0]), uniffi::wormhole_core::Bridging<RustBuffer>::fromJs(rt, callInvoker, args[1]), uniffi_jsi::Bridging<uint64_t>::fromJs(rt, callInvoker, args[2]), uniffi_jsi::Bridging<uint64_t>::fromJs(rt, callInvoker, args[3]), uniffi::wormhole_core::Bridging<RustBuffer>::fromJs(rt, callInvoker, args[4]), uniffi::wormhole_core::Bridging<RustBuffer>::fromJs(rt, callInvoker, args[5]), uniffi::wormhole_core::Bridging<RustBuffer>::fromJs(rt, callInvoker, args[6]), uniffi_jsi::Bridging</*handle*/ uint64_t>::fromJs(rt, callInvoker, args[7])
         );
 
         

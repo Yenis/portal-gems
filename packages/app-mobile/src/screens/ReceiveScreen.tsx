@@ -4,11 +4,15 @@ import { useTranslation } from 'react-i18next';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { requestReceive, type IncomingFileInterface } from 'wormhole-rn';
 import {
+  bundleText,
   deviceLabel,
   candidateCodes,
   fontSize,
+  landEntries,
+  savedBundleText,
   spacing,
   PAIRED_RECEIVE_TIMEOUT_MS,
+  type BundleCounts,
   type PairedDevice,
 } from '@portalgems/core';
 import {
@@ -26,7 +30,9 @@ import { friendlyError } from '../errors';
 import {
   formatSize,
   incomingDir,
+  listStaged,
   loadDownloadDir,
+  removeStaged,
   saveFolderToDownloadDir,
   saveFolderToDownloads,
   saveToDownloadDir,
@@ -71,7 +77,12 @@ export default function ReceiveScreen({
     dirName: string;
     numFiles: number;
     numBytes: number;
+    // A selection of loose items rather than one folder: its contents land
+    // in the download location themselves, and `dirName` is not shown.
+    loose: BundleCounts | null;
   } | null>(null);
+  // For a loose bundle: what reached the download location, counted there.
+  const [landed, setLanded] = useState<{ saved: BundleCounts; expected: number } | null>(null);
   const [direct, setDirect] = useState<boolean | null>(null);
   const [pct, setPct] = useState(0);
   const [savedName, setSavedName] = useState('');
@@ -116,6 +127,12 @@ export default function ReceiveScreen({
               dirName: folder.dirName,
               numFiles: Number(folder.numFiles),
               numBytes: Number(folder.numBytes),
+              loose: folder.loose
+                ? {
+                    files: Number(folder.loose.files),
+                    folders: Number(folder.loose.folders),
+                  }
+                : null,
             }
           : null
       );
@@ -207,6 +224,32 @@ export default function ReceiveScreen({
         savedPath.split('/').pop() ||
         'received.bin';
       const dir = downloadDirRef.current;
+      if (folderOffer?.loose) {
+        // A bundle: `savedPath` is its unpacked contents, and each top-level
+        // item is saved under its own name with the calls a single file and
+        // a single folder use. Never with overwrite - nothing was asked, so
+        // a taken name is kept beside. One item failing does not stop the
+        // rest; what is reported is what was actually saved.
+        let fallback = false;
+        const landing = await landEntries(await listStaged(savedPath), async (item) => {
+          if (!dir) {
+            if (item.isFolder) await saveFolderToDownloads(item.path, item.name);
+            else await saveToDownloads(item.path, item.name);
+            return;
+          }
+          const result = item.isFolder
+            ? await saveFolderToDownloadDir(item.path, dir.uri, item.name, false)
+            : await saveToDownloadDir(item.path, dir.uri, item.name, false);
+          if (result.fallback) fallback = true;
+        });
+        // Whatever is still staged - the emptied directory, and anything
+        // that could not be saved - would otherwise push the next bundle of
+        // that name to `name (1)`.
+        await removeStaged(savedPath).catch(() => undefined);
+        setUsedFallback(fallback);
+        setLanded(landing);
+        return '';
+      }
       if (folderOffer) {
         // `savedPath` is the unpacked folder staged in the app cache.
         if (dir) {
@@ -246,13 +289,16 @@ export default function ReceiveScreen({
   // The name this offer will occupy in the download location: the folder
   // name for directory offers, the file name otherwise.
   const targetName = folderOffer ? folderOffer.dirName : offerName;
+  const loose = folderOffer?.loose ?? null;
 
   // With a custom folder we can see other apps' files, so warn about a
   // same-name collision before accepting. (Default MediaStore Downloads keeps
   // the system's automatic renaming - other apps' files are not visible.)
   const accept = async () => {
     const dir = downloadDirRef.current;
-    if (dir && targetName) {
+    // A bundle has no single name to check: its items keep their own, and
+    // those are only known once it has arrived.
+    if (dir && targetName && !loose) {
       const target = await statDownloadTarget(dir.uri, targetName).catch(() => null);
       if (target?.exists) {
         setExistingSize(target.size);
@@ -304,10 +350,18 @@ export default function ReceiveScreen({
         {phase === 'confirm' ? (
           <>
             <Subtitle>
-              {folderOffer ? t('receive.incomingFolder') : t('receive.incoming')}
+              {loose
+                ? t('files.incoming')
+                : folderOffer
+                  ? t('receive.incomingFolder')
+                  : t('receive.incoming')}
             </Subtitle>
             <Text style={{ color: c.text, fontSize: fontSize.subtitle }}>
-              {folderOffer
+              {loose
+                ? bundleText(t as any, 'summary', loose, {
+                    size: formatSize(folderOffer?.numBytes ?? 0),
+                  })
+                : folderOffer
                 ? t('folder.summary', {
                     name: folderOffer.dirName,
                     count: folderOffer.numFiles,
@@ -316,9 +370,11 @@ export default function ReceiveScreen({
                 : `${offerName} · ${formatSize(offerSize)}`}
             </Text>
             <Muted>
-              {folderOffer
-                ? t('receive.acceptQuestionFolder')
-                : t('receive.acceptQuestion')}
+              {loose
+                ? t('files.acceptQuestion')
+                : folderOffer
+                  ? t('receive.acceptQuestionFolder')
+                  : t('receive.acceptQuestion')}
             </Muted>
             <PrimaryButton label={t('common.accept')} onPress={accept} />
             <GhostButton label={t('common.decline')} danger onPress={decline} />
@@ -352,14 +408,44 @@ export default function ReceiveScreen({
         {phase === 'transferring' || phase === 'saving' ? (
           <>
             <Subtitle>
-              {folderOffer ? t('receive.receivingFolder') : t('receive.receiving')}
+              {loose
+                ? bundleText(t as any, 'receiving', loose)
+                : folderOffer
+                  ? t('receive.receivingFolder')
+                  : t('receive.receiving')}
             </Subtitle>
             <ProgressBar pct={pct} />
             <Muted>{t('transfer.progress', { pct })}</Muted>
           </>
         ) : null}
 
-        {phase === 'done' ? (
+        {phase === 'done' && landed ? (
+          <>
+            {/* One line says it all for a bundle: what was saved, and where.
+                If some of it could not be saved it says how many made it, in
+                the colour of a problem and not of a success. */}
+            <Text
+              style={{
+                color:
+                  landed.saved.files + landed.saved.folders < landed.expected
+                    ? c.danger
+                    : c.success,
+                fontSize: fontSize.body,
+              }}>
+              {savedBundleText(t as any, {
+                saved: landed.saved,
+                expected: landed.expected,
+                folder:
+                  downloadDirRef.current && !usedFallback
+                    ? downloadDirRef.current.label
+                    : null,
+              })}
+            </Text>
+            {usedFallback ? <Muted>{t('files.folderFallback')}</Muted> : null}
+          </>
+        ) : null}
+
+        {phase === 'done' && !landed ? (
           <>
             <Subtitle>
               {folderOffer ? t('receive.successFolder') : t('receive.success')}

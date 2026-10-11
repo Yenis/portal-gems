@@ -12,7 +12,9 @@ use futures_lite::future::pending;
 uniffi::setup_scaffolding!();
 
 mod ffi;
-pub use ffi::{create_test_file, FolderOfferInfo, IncomingFile, TransferListener};
+pub use ffi::{
+    create_test_file, FolderOfferInfo, IncomingFile, LooseBundleInfo, TransferListener,
+};
 pub use magic_wormhole::transfer::LooseBundle;
 use std::borrow::Cow;
 

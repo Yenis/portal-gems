@@ -221,6 +221,7 @@ interface NativeModuleInterface {
     dirName: Uint8Array,
     numFiles: bigint,
     numBytes: bigint,
+    loose: Uint8Array,
     code: Uint8Array,
     server: Uint8Array,
     listener: bigint

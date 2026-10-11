@@ -292,6 +292,9 @@ recursive size.
   AppState active; with paired devices `App.tsx` routes it through
   `ShareTargetScreen` to choose one of them or a one-time code), EncryptedSharedPreferences pair store, zxing-embedded
   `scanQr()`, plain SharedPreferences `get/setSetting`,
+  `listStaged(path)` / `removeStaged(path)` (the top-level items of an
+  unpacked multi-file bundle, and the recursive cleanup of what is left of
+  it - cache paths only),
   `clearIncomingDir()` (empties `cache/incoming`, called once at bundle load:
   the engine's own cleanup cannot run when Android kills the process), and
   constants (`incomingDir`, `cacheDir`, `deviceName`, `locale`).

@@ -344,12 +344,18 @@ export async function sendText(
  * the Android path: the app zips the SAF tree into `zip_path` (cache dir)
  * first and passes the file count and unpacked byte total it counted while
  * zipping. The zip must hold paths relative to the folder root.
+ *
+ * `loose` turns it into a multi-file send: the archive is a selection of
+ * items rather than one folder, a receiver that knows the marker unpacks
+ * them into its receive folder itself, and `dir_name` is only what other
+ * clients will call the folder they save instead.
  */
 export async function sendZipAsFolder(
   zipPath: string,
   dirName: string,
   numFiles: bigint,
   numBytes: bigint,
+  loose: LooseBundleInfo | undefined,
   code: string | undefined,
   server: ServerConfig,
   listener: TransferListener,
@@ -365,6 +371,10 @@ export async function sendZipAsFolder(
           FfiConverterString.lower(dirName, nativeModule().rustbuffer_alloc),
           FfiConverterUInt64.lower(numFiles, nativeModule().rustbuffer_alloc),
           FfiConverterUInt64.lower(numBytes, nativeModule().rustbuffer_alloc),
+          FfiConverterOptionalTypeLooseBundleInfo.lower(
+            loose,
+            nativeModule().rustbuffer_alloc
+          ),
           FfiConverterOptionalString.lower(
             code,
             nativeModule().rustbuffer_alloc
@@ -461,6 +471,56 @@ const stringConverter = (() => {
 const FfiConverterString = uniffiCreateFfiConverterString(stringConverter);
 
 /**
+ * How many files and folders a loose bundle puts at the top level of the
+ * receive folder. Sender-claimed on receive; it words the prompt ("7 files
+ * and 2 folders") and nothing is enforced against it.
+ */
+export type LooseBundleInfo = {
+  files: bigint;
+  folders: bigint;
+};
+
+/**
+ * Generated factory for {@link LooseBundleInfo} record objects.
+ */
+export const LooseBundleInfo = (() => {
+  const defaults = () => ({});
+  const create = (() => {
+    return uniffiCreateRecord<LooseBundleInfo, ReturnType<typeof defaults>>(
+      defaults
+    );
+  })();
+  return Object.freeze({
+    create,
+    new: create,
+    defaults: () => Object.freeze(defaults()) as Partial<LooseBundleInfo>,
+  });
+})();
+
+const FfiConverterTypeLooseBundleInfo = (() => {
+  type TypeName = LooseBundleInfo;
+  class FFIConverter extends AbstractFfiConverterByteArray<TypeName> {
+    read(from: RustBuffer): TypeName {
+      return {
+        files: FfiConverterUInt64.read(from),
+        folders: FfiConverterUInt64.read(from),
+      };
+    }
+    write(value: TypeName, into: RustBuffer): void {
+      FfiConverterUInt64.write(value.files, into);
+      FfiConverterUInt64.write(value.folders, into);
+    }
+    allocationSize(value: TypeName): number {
+      return (
+        FfiConverterUInt64.allocationSize(value.files) +
+        FfiConverterUInt64.allocationSize(value.folders)
+      );
+    }
+  }
+  return new FFIConverter();
+})();
+
+/**
  * Folder metadata of a directory offer, for the receive confirmation UI.
  * All values are sender-claimed; the engine enforces `num_bytes` (plus
  * slack) as an unpack cap.
@@ -478,6 +538,13 @@ export type FolderOfferInfo = {
    * Total unpacked size in bytes
    */
   numBytes: bigint;
+  /**
+   * Set when the sender offered a selection of loose items rather than
+   * one folder: `accept` still returns the unpacked directory, but its
+   * contents belong directly in the receive folder and `dir_name` is not
+   * a name to show.
+   */
+  loose?: LooseBundleInfo;
 };
 
 /**
@@ -505,18 +572,21 @@ const FfiConverterTypeFolderOfferInfo = (() => {
         dirName: FfiConverterString.read(from),
         numFiles: FfiConverterUInt64.read(from),
         numBytes: FfiConverterUInt64.read(from),
+        loose: FfiConverterOptionalTypeLooseBundleInfo.read(from),
       };
     }
     write(value: TypeName, into: RustBuffer): void {
       FfiConverterString.write(value.dirName, into);
       FfiConverterUInt64.write(value.numFiles, into);
       FfiConverterUInt64.write(value.numBytes, into);
+      FfiConverterOptionalTypeLooseBundleInfo.write(value.loose, into);
     }
     allocationSize(value: TypeName): number {
       return (
         FfiConverterString.allocationSize(value.dirName) +
         FfiConverterUInt64.allocationSize(value.numFiles) +
-        FfiConverterUInt64.allocationSize(value.numBytes)
+        FfiConverterUInt64.allocationSize(value.numBytes) +
+        FfiConverterOptionalTypeLooseBundleInfo.allocationSize(value.loose)
       );
     }
   }
@@ -1438,6 +1508,11 @@ const FfiConverterTypeIncomingFile = new FfiConverterObject(
   uniffiTypeIncomingFileObjectFactory
 );
 
+// FfiConverter for LooseBundleInfo | undefined
+const FfiConverterOptionalTypeLooseBundleInfo = new FfiConverterOptional(
+  FfiConverterTypeLooseBundleInfo
+);
+
 // FfiConverter for string | undefined
 const FfiConverterOptionalString = new FfiConverterOptional(FfiConverterString);
 
@@ -1516,7 +1591,7 @@ function uniffiEnsureInitialized() {
   }
   if (
     nativeModule().ubrn_uniffi_wormhole_core_checksum_func_send_zip_as_folder() !==
-    37812
+    60240
   ) {
     throw new UniffiInternalError.ApiChecksumMismatch(
       'uniffi_wormhole_core_checksum_func_send_zip_as_folder'
@@ -1604,6 +1679,7 @@ export default Object.freeze({
     FfiConverterTypeError,
     FfiConverterTypeFolderOfferInfo,
     FfiConverterTypeIncomingFile,
+    FfiConverterTypeLooseBundleInfo,
     FfiConverterTypeServerConfig,
     FfiConverterTypeTransferListener,
   },

@@ -165,6 +165,8 @@ export default function SendScreen({
             zipped.name,
             BigInt(zipped.fileCount),
             BigInt(zipped.totalBytes),
+            // One real folder: no loose marker, so it arrives as a folder.
+            undefined,
             pairedCode,
             server,
             listener,

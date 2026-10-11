@@ -74,12 +74,18 @@ pub async fn send_folder(
 /// the Android path: the app zips the SAF tree into `zip_path` (cache dir)
 /// first and passes the file count and unpacked byte total it counted while
 /// zipping. The zip must hold paths relative to the folder root.
+///
+/// `loose` turns it into a multi-file send: the archive is a selection of
+/// items rather than one folder, a receiver that knows the marker unpacks
+/// them into its receive folder itself, and `dir_name` is only what other
+/// clients will call the folder they save instead.
 #[uniffi::export]
 pub async fn send_zip_as_folder(
     zip_path: String,
     dir_name: String,
     num_files: u64,
     num_bytes: u64,
+    loose: Option<LooseBundleInfo>,
     code: Option<String>,
     server: ServerConfig,
     listener: Arc<dyn TransferListener>,
@@ -91,9 +97,10 @@ pub async fn send_zip_as_folder(
         &dir_name,
         num_files,
         num_bytes,
-        // Not exposed here yet: this signature is what the generated React
-        // Native bindings were built from, and it changes together with them.
-        None,
+        loose.map(|b| crate::LooseBundle {
+            files: b.files,
+            folders: b.folders,
+        }),
         code.as_deref(),
         &server,
         move |code| code_listener.on_code(code),
@@ -160,6 +167,20 @@ pub struct FolderOfferInfo {
     pub num_files: u64,
     /// Total unpacked size in bytes
     pub num_bytes: u64,
+    /// Set when the sender offered a selection of loose items rather than
+    /// one folder: `accept` still returns the unpacked directory, but its
+    /// contents belong directly in the receive folder and `dir_name` is not
+    /// a name to show.
+    pub loose: Option<LooseBundleInfo>,
+}
+
+/// How many files and folders a loose bundle puts at the top level of the
+/// receive folder. Sender-claimed on receive; it words the prompt ("7 files
+/// and 2 folders") and nothing is enforced against it.
+#[derive(uniffi::Record)]
+pub struct LooseBundleInfo {
+    pub files: u64,
+    pub folders: u64,
 }
 
 /// A pending file (or folder) offer. Inspect `file_name`/`file_size` and
@@ -218,6 +239,10 @@ impl IncomingFile {
             dir_name: f.dir_name.clone(),
             num_files: f.num_files,
             num_bytes: f.num_bytes,
+            loose: f.loose.map(|b| LooseBundleInfo {
+                files: b.files,
+                folders: b.folders,
+            }),
         })
     }
 

@@ -354,3 +354,22 @@ cannot receive:
   prompt, progress and saved line. `npm test` in `packages/app-desktop` is
   new and covers the landing. Until the apps can send a bundle, the engine
   example can: `cargo run --example send -- --files "<name>" <paths...>`.
+- Step 4 (Android receive) is built, and the UniFFI surface now carries the
+  bundle: `FolderOfferInfo.loose` and a `loose` argument on
+  `send_zip_as_folder`, both `Option<LooseBundleInfo { files, folders }>`.
+  The React Native bindings were regenerated with it. `ReceiveScreen` lists
+  the unpacked bundle with the new native `listStaged`, saves each item with
+  the calls a single file and a single folder already use, and clears what
+  is left with `removeStaged`. The loop itself is `landEntries` in
+  `packages/core`, where it is tested; the desktop keeps its own in
+  `landing.ts` because it moves on disk instead of saving through a
+  provider.
+- One Android limit, inherited from folder receives: with no download folder
+  chosen, files go through MediaStore, which has no directory objects. A
+  folder in a bundle whose name already exists in Downloads is therefore
+  merged into - its files individually kept beside same-name ones - instead
+  of becoming `name (1)`. With a chosen download folder it is `name (1)`,
+  as on the desktop.
+- `ubrn-postgen.sh` ends in a `git checkout`; when the regeneration is not
+  run by the repository's owner, keep a copy of `android/CMakeLists.txt`
+  beforehand and put it back by hand instead.

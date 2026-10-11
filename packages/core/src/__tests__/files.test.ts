@@ -4,6 +4,7 @@ import {
   bundleText,
   countBundle,
   itemsText,
+  landEntries,
   planSend,
   sanitizeBundleName,
   savedBundleText,
@@ -373,4 +374,76 @@ describe('savedBundleText', () => {
       expect(line).toContain('7');
     });
   }
+});
+
+describe('landEntries', () => {
+  const entry = (name: string, isFolder = false) => ({ name, isFolder });
+
+  it('saves every entry and counts files and folders apart', async () => {
+    const seen: string[] = [];
+    const result = await landEntries(
+      [entry('b.jpg'), entry('album', true), entry('a.jpg'), entry('other', true)],
+      async (e) => {
+        seen.push(e.name);
+      }
+    );
+    expect(result).toEqual({ saved: { files: 2, folders: 2 }, expected: 4 });
+    // In name order, whatever order the directory listing came in.
+    expect(seen).toEqual(['a.jpg', 'album', 'b.jpg', 'other']);
+  });
+
+  it('saves one at a time, never two at once', async () => {
+    let running = 0;
+    let most = 0;
+    await landEntries([entry('a'), entry('b'), entry('c')], async () => {
+      running++;
+      most = Math.max(most, running);
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      running--;
+    });
+    expect(most).toBe(1);
+  });
+
+  it('carries on past an entry that cannot be saved, and does not count it', async () => {
+    const seen: string[] = [];
+    const result = await landEntries(
+      [entry('a.jpg'), entry('big.mov'), entry('album', true), entry('z.jpg')],
+      async (e) => {
+        seen.push(e.name);
+        if (e.name === 'big.mov') throw new Error('no space left on device');
+      }
+    );
+    expect(seen).toEqual(['a.jpg', 'album', 'big.mov', 'z.jpg']);
+    expect(result).toEqual({ saved: { files: 2, folders: 1 }, expected: 4 });
+  });
+
+  it('reports nothing saved when nothing could be', async () => {
+    const result = await landEntries([entry('a'), entry('d', true)], async () => {
+      throw new Error('read-only');
+    });
+    expect(result).toEqual({ saved: { files: 0, folders: 0 }, expected: 2 });
+  });
+
+  it('handles an empty bundle', async () => {
+    const result = await landEntries([], async () => {
+      throw new Error('never called');
+    });
+    expect(result).toEqual({ saved: { files: 0, folders: 0 }, expected: 0 });
+  });
+
+  it('leaves the list it was given as it was', async () => {
+    const entries = [entry('b'), entry('a')];
+    await landEntries(entries, async () => {});
+    expect(entries.map((e) => e.name)).toEqual(['b', 'a']);
+  });
+
+  it('feeds the saved line', async () => {
+    const result = await landEntries(
+      [entry('a.jpg'), entry('b.jpg'), entry('album', true)],
+      async (e) => {
+        if (e.name === 'b.jpg') throw new Error('full');
+      }
+    );
+    expect(savedBundleText(translator('en'), result)).toContain('2 of 3');
+  });
 });

@@ -152,3 +152,42 @@ export function savedBundleText(
     ? bundleText(t, 'savedIn', saved, { folder })
     : bundleText(t, 'saved', saved);
 }
+
+/** One top-level entry of an unpacked bundle, waiting in staging. */
+export interface StagedEntry {
+  name: string;
+  isFolder: boolean;
+}
+
+/**
+ * Move an unpacked bundle's entries into the receive folder, one at a time,
+ * and report what made it.
+ *
+ * `save` puts one entry where received things go; how is the platform's
+ * business. It must never overwrite: a name that is taken is kept beside, as
+ * `name (1).ext`, because a bundle's names are only known once it is down -
+ * too late to ask.
+ *
+ * The transfer was all or nothing; this step is not. An entry that cannot be
+ * saved (a full disk, mostly) does not stop the others - smaller ones may
+ * still fit - and is counted by its absence, so the screen can say "4 of 9"
+ * instead of a success or a failure that would both be untrue. Entries go in
+ * name order, so the same bundle always lands the same way.
+ */
+export async function landEntries<E extends StagedEntry>(
+  entries: readonly E[],
+  save: (entry: E) => Promise<unknown>
+): Promise<{ saved: BundleCounts; expected: number }> {
+  const ordered = [...entries].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+  const saved: BundleCounts = { files: 0, folders: 0 };
+  for (const entry of ordered) {
+    try {
+      await save(entry);
+      if (entry.isFolder) saved.folders++;
+      else saved.files++;
+    } catch {
+      // Counted by its absence.
+    }
+  }
+  return { saved, expected: entries.length };
+}

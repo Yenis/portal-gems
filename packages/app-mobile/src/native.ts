@@ -40,6 +40,13 @@ export interface DownloadTargetStat {
   isFolder: boolean;
 }
 
+/** A top-level item of an unpacked bundle, still in the app's staging area. */
+export interface StagedItem {
+  name: string;
+  path: string;
+  isFolder: boolean;
+}
+
 export interface SavedToDir {
   name: string;
   /** True when the chosen folder was gone and the file went to Downloads. */
@@ -82,6 +89,8 @@ interface PortalGemsNativeSpec {
   writeTextFile(dir: string, name: string, content: string): Promise<string>;
   readTextFile(path: string): Promise<string>;
   deleteFile(path: string): Promise<void>;
+  listStaged(path: string): Promise<StagedItem[]>;
+  removeStaged(path: string): Promise<void>;
   clearIncomingDir(): Promise<void>;
 }
 
@@ -104,6 +113,8 @@ export const writeTextFile = (dir: string, name: string, content: string) =>
 export const readTextFile = (path: string) => native.readTextFile(path);
 export const deleteFile = (path: string) => native.deleteFile(path);
 export const clearIncomingDir = () => native.clearIncomingDir();
+export const listStaged = (path: string) => native.listStaged(path);
+export const removeStaged = (path: string) => native.removeStaged(path);
 export const saveToDownloads = (srcPath: string, fileName: string) =>
   native.saveToDownloads(srcPath, fileName);
 export const pickDownloadDirectory = () => native.pickDownloadDirectory();
