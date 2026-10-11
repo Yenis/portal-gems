@@ -5,7 +5,7 @@ All notable changes to PortalGems are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.4.2] - 2026-10-11
 
 Send the whole selection.
 
@@ -42,9 +42,9 @@ Send the whole selection.
   standard folder transfer carrying a note that the files are loose, which
   other clients simply ignore.
 
-  PortalGems Mini (Symbian) receives selections sent this way, each file
-  under its own name in `E:\PortalGems`; it sends one file or one folder at
-  a time.
+  PortalGems Mini (Symbian) 0.12.0 receives selections sent this way, each
+  file under its own name in `E:\PortalGems`; it sends one file or one
+  folder at a time.
 
 - **The user guide has a section on it**, "Several files at once", in all six
   languages, and Options > Help on Symbian says how such files arrive.
@@ -59,6 +59,8 @@ Send the whole selection.
   up used to start when the send screen opened, so the time spent packing a
   large folder counted against it and could end in "doesn't seem to have
   PortalGems open". It now starts when there is something to pick up.
+
+[1.4.2]: https://github.com/Yenis/portal-gems/releases/tag/v1.4.2
 
 ## [1.4.1] - 2026-10-10
 
