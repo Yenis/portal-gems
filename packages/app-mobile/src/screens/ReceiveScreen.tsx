@@ -7,6 +7,7 @@ import {
   bundleText,
   deviceLabel,
   candidateCodes,
+  itemsText,
   fontSize,
   landEntries,
   savedBundleText,
@@ -27,6 +28,7 @@ import {
   TransferRoute,
 } from '../components';
 import { friendlyError } from '../errors';
+import { notify } from '../notify';
 import {
   formatSize,
   incomingDir,
@@ -115,6 +117,9 @@ export default function ReceiveScreen({
       if (text !== undefined) {
         setMessage(text);
         if (device) markDeviceUsed(device.id).catch(() => undefined);
+        // The words of a message stay out of the notification: it can be
+        // read on a lock screen.
+        notify(t('notify.received'), t('text.title'));
         setPhase('message');
         return;
       }
@@ -141,6 +146,7 @@ export default function ReceiveScreen({
     const failed = (e: unknown) => {
       if (controller.signal.aborted) setPhase('cancelled');
       else {
+        notify(t('notify.receiveFailed'), friendlyError(t, e));
         setError(friendlyError(t, e));
         setPhase('error');
       }
@@ -274,11 +280,17 @@ export default function ReceiveScreen({
       (finalName) => {
         setSavedName(finalName);
         if (device) markDeviceUsed(device.id).catch(() => undefined);
+        // A bundle has no one name: it is called by what it holds.
+        notify(
+          t('notify.received'),
+          finalName || (loose ? itemsText(t as any, loose) : targetName)
+        );
         setPhase('done');
       },
       (e) => {
         if (controller.signal.aborted) setPhase('cancelled');
         else {
+          notify(t('notify.receiveFailed'), friendlyError(t, e));
           setError(friendlyError(t, e));
           setPhase('error');
         }

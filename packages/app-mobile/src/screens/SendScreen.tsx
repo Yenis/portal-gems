@@ -34,6 +34,7 @@ import {
   TransferRoute,
 } from '../components';
 import { friendlyError, isServerUnreachableError } from '../errors';
+import { notify } from '../notify';
 import {
   deleteFile,
   formatSize,
@@ -80,6 +81,9 @@ export default function SendScreen({
     folders: 0,
   };
   const itemsLabel = itemsText(t as any, bundleCounts);
+  // What a notification calls this transfer.
+  const what =
+    item.kind === 'text' ? t('text.title') : item.kind === 'bundle' ? itemsLabel : item.name;
   const [phase, setPhase] = useState<Phase>('starting');
   const [code, setCode] = useState('');
   const [direct, setDirect] = useState<boolean | null>(null);
@@ -233,14 +237,20 @@ export default function SendScreen({
           ).catch(() => undefined);
           await markDeviceUsed(device.id).catch(() => undefined);
         }
+        notify(t('notify.sent'), what);
         setPhase('done');
       },
       (e) => {
         if (timedOut) {
+          notify(
+            t('notify.sendFailed'),
+            t('paired.notOpen', { name: device ? deviceLabel(device) : '' })
+          );
           setPhase('peerNotOpen');
         } else if (cancelled || controller.signal.aborted) {
           setPhase('cancelled');
         } else {
+          notify(t('notify.sendFailed'), friendlyError(t, e));
           setError(friendlyError(t, e));
           setServerErr(isServerUnreachableError(e));
           setPhase('error');

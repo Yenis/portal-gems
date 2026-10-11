@@ -39,6 +39,7 @@ import {
   setSetting,
   type PickedDirectory,
 } from '../native';
+import { loadNotificationsEnabled, saveNotificationsEnabled } from '../notify';
 import { loadServerSettings, saveServerSettings } from '../server';
 import { useTheme, useThemeControl } from '../theme';
 
@@ -108,6 +109,15 @@ export default function SettingsScreen({
   const chooseLanguage = (lng: string) => {
     setLanguage(lng);
     setSetting('language', lng).catch(() => undefined);
+  };
+
+  const [notifications, setNotifications] = useState(true);
+  useEffect(() => {
+    loadNotificationsEnabled().then(setNotifications);
+  }, []);
+  const toggleNotifications = () => {
+    saveNotificationsEnabled(!notifications).catch(() => undefined);
+    setNotifications(!notifications);
   };
 
   const [downloadDir, setDownloadDir] = useState<PickedDirectory | null>(null);
@@ -297,6 +307,26 @@ export default function SettingsScreen({
             onPress={resetDownloadDir}
           />
         ) : null}
+      </Card>
+
+      <Card>
+        <Subtitle>{t('settings.notifications.title')}</Subtitle>
+        <Text style={{ color: c.textMuted, fontSize: fontSize.small }}>
+          {t('settings.notifications.hint')}
+        </Text>
+        <Pressable
+          onPress={toggleNotifications}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: notifications }}
+          style={[styles.row, { borderColor: notifications ? c.primary : c.border }]}>
+          <Text style={{ color: c.text, fontSize: fontSize.body }}>
+            {t('settings.notifications.title')}
+          </Text>
+          <Text
+            style={{ color: notifications ? c.primary : c.textMuted, fontSize: fontSize.body }}>
+            {t(notifications ? 'settings.notifications.on' : 'settings.notifications.off')}
+          </Text>
+        </Pressable>
       </Card>
 
       <View onLayout={(e) => setServerY(e.nativeEvent.layout.y)}>

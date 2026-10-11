@@ -109,6 +109,7 @@ interface PortalGemsNativeSpec {
   consumePendingShare(): Promise<SharedFile[]>;
   startTransferService(title: string): Promise<void>;
   stopTransferService(): Promise<void>;
+  notifyFinished(title: string, body: string): Promise<void>;
   getPairedDevices(): Promise<string>;
   setPairedDevices(json: string): Promise<void>;
   scanQr(): Promise<string | null>;
@@ -127,6 +128,8 @@ export const cacheDir: string = native.cacheDir;
 export const deviceName: string = native.deviceName;
 export const deviceLocale: string = native.locale;
 export const getSetting = (key: string) => native.getSetting(key);
+export const notifyFinished = (title: string, body: string) =>
+  native.notifyFinished(title, body);
 export const setSetting = (key: string, value: string) =>
   native.setSetting(key, value);
 export const copyToCache = (uri: string) => native.copyToCache(uri);

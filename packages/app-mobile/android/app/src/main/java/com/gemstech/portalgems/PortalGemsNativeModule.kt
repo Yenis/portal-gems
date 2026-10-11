@@ -1,6 +1,9 @@
 package com.gemstech.portalgems
 
 import android.app.Activity
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.ContentValues
 import android.content.Intent
 import android.net.Uri
@@ -10,6 +13,8 @@ import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.provider.Settings
 import android.webkit.MimeTypeMap
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.documentfile.provider.DocumentFile
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
@@ -38,6 +43,9 @@ class PortalGemsNativeModule(reactContext: ReactApplicationContext) :
     // IntentIntegrator.REQUEST_CODE is 49374; stay clear of it.
     private const val PICK_DIR_REQUEST = 49375
     private const val PICK_SEND_FOLDER_REQUEST = 49376
+    private const val FINISHED_CHANNEL_ID = "finished"
+    // TransferService holds 4242 for as long as a transfer runs.
+    private const val FIRST_FINISHED_ID = 5000
   }
 
   private var scanPromise: Promise? = null
@@ -883,6 +891,55 @@ class PortalGemsNativeModule(reactContext: ReactApplicationContext) :
       promise.resolve(null)
     } catch (e: Exception) {
       promise.reject("service_start_failed", e.message, e)
+    }
+  }
+
+  private var nextFinishedId = FIRST_FINISHED_ID
+
+  /**
+   * A transfer finished or failed while the app was not on screen. Its own
+   * channel, so it can be silenced apart from the ongoing "File transfers"
+   * one, and no actions: tapping opens the app and nothing else. Without the
+   * notification permission this does nothing, quietly - a transfer must
+   * never fail over being unable to announce itself.
+   */
+  @ReactMethod
+  fun notifyFinished(title: String, body: String, promise: Promise) {
+    try {
+      val ctx = reactApplicationContext
+      val manager = NotificationManagerCompat.from(ctx)
+      if (!manager.areNotificationsEnabled()) {
+        promise.resolve(null)
+        return
+      }
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        ctx.getSystemService(NotificationManager::class.java).createNotificationChannel(
+          NotificationChannel(
+            FINISHED_CHANNEL_ID,
+            "Finished transfers",
+            NotificationManager.IMPORTANCE_DEFAULT
+          )
+        )
+      }
+      val launchIntent = ctx.packageManager.getLaunchIntentForPackage(ctx.packageName)
+      val contentIntent = PendingIntent.getActivity(
+        ctx, 0, launchIntent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+      )
+      val notification = NotificationCompat.Builder(ctx, FINISHED_CHANNEL_ID)
+        .setContentTitle(title)
+        .setContentText(body)
+        .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+        .setSmallIcon(android.R.drawable.stat_sys_download_done)
+        .setAutoCancel(true)
+        .setContentIntent(contentIntent)
+        .build()
+      manager.notify(nextFinishedId++, notification)
+      promise.resolve(null)
+    } catch (e: Exception) {
+      // SecurityException included: the permission can be withdrawn between
+      // the check above and the call.
+      promise.resolve(null)
     }
   }
 
