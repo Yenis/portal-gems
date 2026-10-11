@@ -871,8 +871,8 @@ Things worth knowing:
   of `pairs.txt`, and a completed paired transfer moves its device to the
   top (`WhminiTouchPair`, called from the UI thread when the job ends). The
   other apps store a `lastUsedAt` timestamp and sort on it; here the file
-  order is the whole mechanism, so the format is unchanged and there is no
-  "last transfer" time to show - a menu item has one line.
+  order is the whole mechanism, so the format is unchanged. No app shows
+  when the last transfer was.
 - **A paired send asks what to send.** Options > Send to paired device picks
   the device, then a list query offers File, Folder or Message - the same
   three the other apps offer per device. The pickers are the ones an ordinary

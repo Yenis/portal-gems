@@ -24412,28 +24412,6 @@
     const when = (d) => d.lastUsedAt ?? d.addedAt ?? 0;
     return devices.map((device, index) => ({ device, index })).sort((a, b) => when(b.device) - when(a.device) || a.index - b.index).map(({ device }) => device);
   }
-  function timeAgo(thenMs, nowMs = Date.now()) {
-    const minutes = Math.floor((nowMs - thenMs) / 6e4);
-    if (minutes < 1) return { unit: "now" };
-    if (minutes < 60) return { unit: "minutes", n: minutes };
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return { unit: "hours", n: hours };
-    const days = Math.floor(hours / 24);
-    if (days <= 30) return { unit: "days", n: days };
-    return { unit: "date" };
-  }
-  function lastTransferText(t2, device, locale, nowMs = Date.now()) {
-    if (device.lastUsedAt == null) return null;
-    const ago = timeAgo(device.lastUsedAt, nowMs);
-    if (ago.unit === "date") {
-      return t2("devices.lastUsedOn", {
-        date: new Date(device.lastUsedAt).toLocaleDateString(locale)
-      });
-    }
-    return t2("devices.lastUsed", {
-      when: ago.unit === "now" ? t2("time.now") : t2(`time.${ago.unit}`, { n: ago.n })
-    });
-  }
   function newDeviceId() {
     return toBase64Url(randomBytes(9));
   }
@@ -27728,15 +27706,7 @@
       renameHint: "Ovaj naziv vrijedi samo na ovom ure\u0111aju. Ostavite prazno da se vratite na {{name}}.",
       renamePlaceholder: "Naziv za ovaj ure\u0111aj",
       dropHint: "Prevuci datoteke ili foldere na ure\u0111aj da ih po\u0161alje\u0161 tamo.",
-      dropFailed: "To se nije moglo pro\u010Ditati. Poku\u0161aj ga odabrati dugmetom Po\u0161alji.",
-      lastUsed: "Zadnji prijenos {{when}}",
-      lastUsedOn: "Zadnji prijenos {{date}}"
-    },
-    time: {
-      now: "upravo sada",
-      minutes: "prije {{n}} min",
-      hours: "prije {{n}} h",
-      days: "prije {{n}} d"
+      dropFailed: "To se nije moglo pro\u010Ditati. Poku\u0161aj ga odabrati dugmetom Po\u0161alji."
     },
     shareTarget: {
       title: "Po\u0161alji na",
@@ -27809,7 +27779,7 @@
       pairTitle: "Upari ure\u0111aje koje \u010Desto koristi\u0161",
       pairBody: "Upari novi ure\u0111aj povezuje dva ure\u0111aja jednom zauvijek, pa izme\u0111u njih vi\u0161e nikad ne kuca\u0161 kod. Prika\u017Ei QR kod na jednom i skeniraj ga drugim, ili koristi kod za uparivanje kad nema kamere. Odmah nakon uparivanja mo\u017Ee\u0161 ure\u0111aju dati svoje ime i isprobati prvi prijenos.",
       devicesTitle: "Po\u0161alji na upareni ure\u0111aj",
-      devicesBody: "Svaki upareni ure\u0111aj ima dugmad Po\u0161alji i Primi: jedno od vas dodirne Po\u0161alji, a drugo Primi pored imena po\u0161iljaoca. PortalGems mora biti otvoren na oba. Dodirni ime ure\u0111aja za vi\u0161e - po\u0161alji folder, po\u0161alji poruku, preimenuj ga ili ukloni. Ure\u0111aj koji si zadnji koristio je na vrhu, s vremenom zadnjeg prijenosa.",
+      devicesBody: "Svaki upareni ure\u0111aj ima dugmad Po\u0161alji i Primi: jedno od vas dodirne Po\u0161alji, a drugo Primi pored imena po\u0161iljaoca. PortalGems mora biti otvoren na oba. Dodirni ime ure\u0111aja za vi\u0161e - po\u0161alji folder, po\u0161alji poruku, preimenuj ga ili ukloni. Ure\u0111aj koji si zadnji koristio je na vrhu.",
       shareTitle: "Dijeli iz drugih aplikacija",
       shareBody: "U galeriji ili upravitelju datoteka ozna\u010Di jednu ili vi\u0161e datoteka, odaberi Dijeli, pa PortalGems. Zatim ih mo\u017Ee\u0161 poslati na jedan od uparenih ure\u0111aja, ili bilo kome pomo\u0107u jednokratnog koda. Vi\u0161e datoteka podijeljenih zajedno ide kao jedan prijenos.",
       dropTitle: "Prevuci i pusti",
@@ -28014,15 +27984,7 @@
       renameHint: "Dieser Name gilt nur auf diesem Ger\xE4t. Leer lassen, um wieder {{name}} zu verwenden.",
       renamePlaceholder: "Name f\xFCr dieses Ger\xE4t",
       dropHint: "Ziehe Dateien oder Ordner auf ein Ger\xE4t, um sie dorthin zu senden.",
-      dropFailed: "Das konnte nicht gelesen werden. W\xE4hle es stattdessen \xFCber Senden aus.",
-      lastUsed: "Letzte \xDCbertragung {{when}}",
-      lastUsedOn: "Letzte \xDCbertragung am {{date}}"
-    },
-    time: {
-      now: "gerade eben",
-      minutes: "vor {{n}} Min.",
-      hours: "vor {{n}} Std.",
-      days: "vor {{n}} T."
+      dropFailed: "Das konnte nicht gelesen werden. W\xE4hle es stattdessen \xFCber Senden aus."
     },
     shareTarget: {
       title: "Senden an",
@@ -28095,7 +28057,7 @@
       pairTitle: "Ger\xE4te koppeln, die du oft nutzt",
       pairBody: "Neues Ger\xE4t koppeln verbindet zwei Ger\xE4te einmalig, sodass du zwischen ihnen nie wieder einen Code eintippen musst. Zeige auf einem Ger\xE4t einen QR-Code und scanne ihn mit dem anderen, oder nutze einen Kopplungscode, wenn keine Kamera vorhanden ist. Direkt nach dem Koppeln kannst du dem Ger\xE4t einen eigenen Namen geben und eine erste \xDCbertragung ausprobieren.",
       devicesTitle: "An ein gekoppeltes Ger\xE4t senden",
-      devicesBody: "Jedes gekoppelte Ger\xE4t hat die Schaltfl\xE4chen Senden und Empfangen: Einer tippt auf Senden, der andere auf Empfangen neben dem Namen des Absenders. PortalGems muss auf beiden ge\xF6ffnet sein. Tippe auf den Ger\xE4tenamen f\xFCr mehr - Ordner senden, Nachricht senden, umbenennen oder entfernen. Das zuletzt genutzte Ger\xE4t steht oben, mit dem Zeitpunkt der letzten \xDCbertragung.",
+      devicesBody: "Jedes gekoppelte Ger\xE4t hat die Schaltfl\xE4chen Senden und Empfangen: Einer tippt auf Senden, der andere auf Empfangen neben dem Namen des Absenders. PortalGems muss auf beiden ge\xF6ffnet sein. Tippe auf den Ger\xE4tenamen f\xFCr mehr - Ordner senden, Nachricht senden, umbenennen oder entfernen. Das zuletzt genutzte Ger\xE4t steht oben.",
       shareTitle: "Aus anderen Apps teilen",
       shareBody: "Markiere in der Galerie oder im Dateimanager eine oder mehrere Dateien, w\xE4hle Teilen und dann PortalGems. Du kannst sie an eines deiner gekoppelten Ger\xE4te senden oder mit einem Einmalcode an jeden. Mehrere zusammen geteilte Dateien gehen als eine \xDCbertragung.",
       dropTitle: "Ziehen und Ablegen",
@@ -28300,15 +28262,7 @@
       renameHint: "This name is only used on this device. Leave it empty to go back to {{name}}.",
       renamePlaceholder: "Name for this device",
       dropHint: "Drop files or folders on a device to send them there.",
-      dropFailed: "That could not be read. Try choosing it with the Send button.",
-      lastUsed: "Last transfer {{when}}",
-      lastUsedOn: "Last transfer on {{date}}"
-    },
-    time: {
-      now: "just now",
-      minutes: "{{n}} min ago",
-      hours: "{{n}} h ago",
-      days: "{{n}} d ago"
+      dropFailed: "That could not be read. Try choosing it with the Send button."
     },
     shareTarget: {
       title: "Send to",
@@ -28400,7 +28354,7 @@
       pairTitle: "Pair the devices you use often",
       pairBody: "Pair a new device links two devices once, so you never type a code between them again. Show a QR code on one and scan it with the other, or use a pairing code when there is no camera. Right after pairing you can give the device a name of your own and try a first transfer.",
       devicesTitle: "Send to a paired device",
-      devicesBody: "Every paired device has Send and Receive buttons: one of you taps Send, the other taps Receive next to the sender's name. PortalGems must be open on both. Tap the device's name for more - send a folder, send a message, rename it or remove it. The device you used last is at the top, with the time of your last transfer.",
+      devicesBody: "Every paired device has Send and Receive buttons: one of you taps Send, the other taps Receive next to the sender's name. PortalGems must be open on both. Tap the device's name for more - send a folder, send a message, rename it or remove it. The device you used last is at the top.",
       shareTitle: "Share from other apps",
       shareBody: "In your gallery or file manager, select one or more files, choose Share and pick PortalGems. You can then send them to one of your paired devices, or to anyone with a one-time code. Several files shared together go as one transfer.",
       dropTitle: "Drag and drop",
@@ -28586,15 +28540,7 @@
       renameHint: "Este nombre solo se usa en este dispositivo. D\xE9jalo vac\xEDo para volver a {{name}}.",
       renamePlaceholder: "Nombre de este dispositivo",
       dropHint: "Suelta archivos o carpetas sobre un dispositivo para enviarlos all\xED.",
-      dropFailed: "No se pudo leer. Prueba a elegirlo con el bot\xF3n Enviar.",
-      lastUsed: "\xDAltima transferencia {{when}}",
-      lastUsedOn: "\xDAltima transferencia el {{date}}"
-    },
-    time: {
-      now: "ahora mismo",
-      minutes: "hace {{n}} min",
-      hours: "hace {{n}} h",
-      days: "hace {{n}} d"
+      dropFailed: "No se pudo leer. Prueba a elegirlo con el bot\xF3n Enviar."
     },
     shareTarget: {
       title: "Enviar a",
@@ -28667,7 +28613,7 @@
       pairTitle: "Empareja los dispositivos que usas a menudo",
       pairBody: "Emparejar un dispositivo nuevo vincula dos dispositivos una sola vez, para no volver a escribir c\xF3digos entre ellos. Muestra un c\xF3digo QR en uno y escan\xE9alo con el otro, o usa un c\xF3digo de emparejamiento si no hay c\xE1mara. Justo despu\xE9s de emparejar puedes darle al dispositivo un nombre a tu gusto y probar una primera transferencia.",
       devicesTitle: "Enviar a un dispositivo emparejado",
-      devicesBody: "Cada dispositivo emparejado tiene los botones Enviar y Recibir: uno pulsa Enviar y el otro pulsa Recibir junto al nombre de quien env\xEDa. PortalGems debe estar abierto en ambos. Pulsa el nombre del dispositivo para ver m\xE1s: enviar una carpeta, enviar un mensaje, cambiarle el nombre o quitarlo. El \xFAltimo que usaste aparece arriba, con la hora de la \xFAltima transferencia.",
+      devicesBody: "Cada dispositivo emparejado tiene los botones Enviar y Recibir: uno pulsa Enviar y el otro pulsa Recibir junto al nombre de quien env\xEDa. PortalGems debe estar abierto en ambos. Pulsa el nombre del dispositivo para ver m\xE1s: enviar una carpeta, enviar un mensaje, cambiarle el nombre o quitarlo. El \xFAltimo que usaste aparece arriba.",
       shareTitle: "Compartir desde otras apps",
       shareBody: "En la galer\xEDa o el gestor de archivos, selecciona uno o varios archivos, elige Compartir y selecciona PortalGems. Despu\xE9s puedes enviarlos a uno de tus dispositivos emparejados, o a cualquiera con un c\xF3digo de un solo uso. Varios archivos compartidos juntos van en una sola transferencia.",
       dropTitle: "Arrastrar y soltar",
@@ -28872,15 +28818,7 @@
       renameHint: "Ce nom ne sert que sur cet appareil. Laissez vide pour revenir \xE0 {{name}}.",
       renamePlaceholder: "Nom de cet appareil",
       dropHint: "D\xE9posez des fichiers ou des dossiers sur un appareil pour les lui envoyer.",
-      dropFailed: "Impossible de le lire. Essayez de le choisir avec le bouton Envoyer.",
-      lastUsed: "Dernier transfert {{when}}",
-      lastUsedOn: "Dernier transfert le {{date}}"
-    },
-    time: {
-      now: "\xE0 l'instant",
-      minutes: "il y a {{n}} min",
-      hours: "il y a {{n}} h",
-      days: "il y a {{n}} j"
+      dropFailed: "Impossible de le lire. Essayez de le choisir avec le bouton Envoyer."
     },
     shareTarget: {
       title: "Envoyer \xE0",
@@ -28953,7 +28891,7 @@
       pairTitle: "Associer les appareils que vous utilisez souvent",
       pairBody: "Associer un nouvel appareil relie deux appareils une fois pour toutes, pour ne plus jamais saisir de code entre eux. Affichez un code QR sur l'un et scannez-le avec l'autre, ou utilisez un code d'association s'il n'y a pas de cam\xE9ra. Juste apr\xE8s l'association, vous pouvez donner \xE0 l'appareil le nom de votre choix et essayer un premier transfert.",
       devicesTitle: "Envoyer \xE0 un appareil associ\xE9",
-      devicesBody: "Chaque appareil associ\xE9 a des boutons Envoyer et Recevoir : l'un appuie sur Envoyer, l'autre sur Recevoir \xE0 c\xF4t\xE9 du nom de l'exp\xE9diteur. PortalGems doit \xEAtre ouvert sur les deux. Appuyez sur le nom de l'appareil pour en voir plus - envoyer un dossier, envoyer un message, le renommer ou le retirer. Le dernier appareil utilis\xE9 est en haut, avec l'heure du dernier transfert.",
+      devicesBody: "Chaque appareil associ\xE9 a des boutons Envoyer et Recevoir : l'un appuie sur Envoyer, l'autre sur Recevoir \xE0 c\xF4t\xE9 du nom de l'exp\xE9diteur. PortalGems doit \xEAtre ouvert sur les deux. Appuyez sur le nom de l'appareil pour en voir plus - envoyer un dossier, envoyer un message, le renommer ou le retirer. Le dernier appareil utilis\xE9 est en haut.",
       shareTitle: "Partager depuis d'autres applications",
       shareBody: "Dans votre galerie ou votre gestionnaire de fichiers, s\xE9lectionnez un ou plusieurs fichiers, choisissez Partager puis PortalGems. Vous pouvez alors les envoyer \xE0 l'un de vos appareils associ\xE9s, ou \xE0 n'importe qui avec un code \xE0 usage unique. Plusieurs fichiers partag\xE9s ensemble partent en un seul transfert.",
       dropTitle: "Glisser-d\xE9poser",
@@ -29158,15 +29096,7 @@
       renameHint: "\u042D\u0442\u043E \u0438\u043C\u044F \u0432\u0438\u0434\u043D\u043E \u0442\u043E\u043B\u044C\u043A\u043E \u043D\u0430 \u044D\u0442\u043E\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0435. \u041E\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u043F\u0443\u0441\u0442\u044B\u043C, \u0447\u0442\u043E\u0431\u044B \u0432\u0435\u0440\u043D\u0443\u0442\u044C {{name}}.",
       renamePlaceholder: "\u0418\u043C\u044F \u044D\u0442\u043E\u0433\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430",
       dropHint: "\u041F\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u0442\u0435 \u0444\u0430\u0439\u043B\u044B \u0438\u043B\u0438 \u043F\u0430\u043F\u043A\u0438 \u043D\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E, \u0447\u0442\u043E\u0431\u044B \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C.",
-      dropFailed: "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u0442\u044C. \u041F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0432\u044B\u0431\u0440\u0430\u0442\u044C \u0447\u0435\u0440\u0435\u0437 \u043A\u043D\u043E\u043F\u043A\u0443 \xAB\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C\xBB.",
-      lastUsed: "\u041F\u043E\u0441\u043B\u0435\u0434\u043D\u044F\u044F \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0430 {{when}}",
-      lastUsedOn: "\u041F\u043E\u0441\u043B\u0435\u0434\u043D\u044F\u044F \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0430 {{date}}"
-    },
-    time: {
-      now: "\u0442\u043E\u043B\u044C\u043A\u043E \u0447\u0442\u043E",
-      minutes: "{{n}} \u043C\u0438\u043D \u043D\u0430\u0437\u0430\u0434",
-      hours: "{{n}} \u0447 \u043D\u0430\u0437\u0430\u0434",
-      days: "{{n}} \u0434\u043D. \u043D\u0430\u0437\u0430\u0434"
+      dropFailed: "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u0442\u044C. \u041F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0432\u044B\u0431\u0440\u0430\u0442\u044C \u0447\u0435\u0440\u0435\u0437 \u043A\u043D\u043E\u043F\u043A\u0443 \xAB\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C\xBB."
     },
     shareTarget: {
       title: "\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u043D\u0430",
@@ -29239,7 +29169,7 @@
       pairTitle: "\u0421\u0432\u044F\u0436\u0438\u0442\u0435 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430, \u043A\u043E\u0442\u043E\u0440\u044B\u043C\u0438 \u0447\u0430\u0441\u0442\u043E \u043F\u043E\u043B\u044C\u0437\u0443\u0435\u0442\u0435\u0441\u044C",
       pairBody: "\xAB\u0421\u0432\u044F\u0437\u0430\u0442\u044C \u043D\u043E\u0432\u043E\u0435 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E\xBB \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u0435\u0442 \u0434\u0432\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u043E\u0434\u0438\u043D \u0440\u0430\u0437, \u0438 \u0431\u043E\u043B\u044C\u0448\u0435 \u0432\u0432\u043E\u0434\u0438\u0442\u044C \u043A\u043E\u0434\u044B \u043C\u0435\u0436\u0434\u0443 \u043D\u0438\u043C\u0438 \u043D\u0435 \u043D\u0443\u0436\u043D\u043E. \u041F\u043E\u043A\u0430\u0436\u0438\u0442\u0435 QR-\u043A\u043E\u0434 \u043D\u0430 \u043E\u0434\u043D\u043E\u043C \u0438 \u043E\u0442\u0441\u043A\u0430\u043D\u0438\u0440\u0443\u0439\u0442\u0435 \u0434\u0440\u0443\u0433\u0438\u043C, \u043B\u0438\u0431\u043E \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0439\u0442\u0435 \u043A\u043E\u0434 \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u044F, \u0435\u0441\u043B\u0438 \u043A\u0430\u043C\u0435\u0440\u044B \u043D\u0435\u0442. \u0421\u0440\u0430\u0437\u0443 \u043F\u043E\u0441\u043B\u0435 \u0441\u0432\u044F\u0437\u044B\u0432\u0430\u043D\u0438\u044F \u043C\u043E\u0436\u043D\u043E \u0434\u0430\u0442\u044C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0443 \u0441\u0432\u043E\u0451 \u0438\u043C\u044F \u0438 \u043F\u043E\u043F\u0440\u043E\u0431\u043E\u0432\u0430\u0442\u044C \u043F\u0435\u0440\u0432\u0443\u044E \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0443.",
       devicesTitle: "\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u043D\u0430 \u0441\u0432\u044F\u0437\u0430\u043D\u043D\u043E\u0435 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E",
-      devicesBody: "\u0423 \u043A\u0430\u0436\u0434\u043E\u0433\u043E \u0441\u0432\u044F\u0437\u0430\u043D\u043D\u043E\u0433\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u0435\u0441\u0442\u044C \u043A\u043D\u043E\u043F\u043A\u0438 \xAB\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C\xBB \u0438 \xAB\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C\xBB: \u043E\u0434\u0438\u043D \u043D\u0430\u0436\u0438\u043C\u0430\u0435\u0442 \xAB\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C\xBB, \u0434\u0440\u0443\u0433\u043E\u0439 - \xAB\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C\xBB \u0440\u044F\u0434\u043E\u043C \u0441 \u0438\u043C\u0435\u043D\u0435\u043C \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u0435\u043B\u044F. PortalGems \u0434\u043E\u043B\u0436\u0435\u043D \u0431\u044B\u0442\u044C \u043E\u0442\u043A\u0440\u044B\u0442 \u043D\u0430 \u043E\u0431\u043E\u0438\u0445. \u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u043D\u0430 \u0438\u043C\u044F \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430, \u0447\u0442\u043E\u0431\u044B \u0443\u0432\u0438\u0434\u0435\u0442\u044C \u0431\u043E\u043B\u044C\u0448\u0435: \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u043F\u0430\u043F\u043A\u0443, \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435, \u043F\u0435\u0440\u0435\u0438\u043C\u0435\u043D\u043E\u0432\u0430\u0442\u044C \u0438\u043B\u0438 \u0443\u0434\u0430\u043B\u0438\u0442\u044C. \u041F\u043E\u0441\u043B\u0435\u0434\u043D\u0435\u0435 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u043D\u043D\u043E\u0435 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E \u0441\u0442\u043E\u0438\u0442 \u043F\u0435\u0440\u0432\u044B\u043C, \u0441 \u0432\u0440\u0435\u043C\u0435\u043D\u0435\u043C \u043F\u043E\u0441\u043B\u0435\u0434\u043D\u0435\u0439 \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0438.",
+      devicesBody: "\u0423 \u043A\u0430\u0436\u0434\u043E\u0433\u043E \u0441\u0432\u044F\u0437\u0430\u043D\u043D\u043E\u0433\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \u0435\u0441\u0442\u044C \u043A\u043D\u043E\u043F\u043A\u0438 \xAB\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C\xBB \u0438 \xAB\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C\xBB: \u043E\u0434\u0438\u043D \u043D\u0430\u0436\u0438\u043C\u0430\u0435\u0442 \xAB\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C\xBB, \u0434\u0440\u0443\u0433\u043E\u0439 - \xAB\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C\xBB \u0440\u044F\u0434\u043E\u043C \u0441 \u0438\u043C\u0435\u043D\u0435\u043C \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u0435\u043B\u044F. PortalGems \u0434\u043E\u043B\u0436\u0435\u043D \u0431\u044B\u0442\u044C \u043E\u0442\u043A\u0440\u044B\u0442 \u043D\u0430 \u043E\u0431\u043E\u0438\u0445. \u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u043D\u0430 \u0438\u043C\u044F \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430, \u0447\u0442\u043E\u0431\u044B \u0443\u0432\u0438\u0434\u0435\u0442\u044C \u0431\u043E\u043B\u044C\u0448\u0435: \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u043F\u0430\u043F\u043A\u0443, \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435, \u043F\u0435\u0440\u0435\u0438\u043C\u0435\u043D\u043E\u0432\u0430\u0442\u044C \u0438\u043B\u0438 \u0443\u0434\u0430\u043B\u0438\u0442\u044C. \u041F\u043E\u0441\u043B\u0435\u0434\u043D\u0435\u0435 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u043D\u043D\u043E\u0435 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E \u0441\u0442\u043E\u0438\u0442 \u043F\u0435\u0440\u0432\u044B\u043C.",
       shareTitle: "\u041F\u043E\u0434\u0435\u043B\u0438\u0442\u044C\u0441\u044F \u0438\u0437 \u0434\u0440\u0443\u0433\u0438\u0445 \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0439",
       shareBody: "\u0412 \u0433\u0430\u043B\u0435\u0440\u0435\u0435 \u0438\u043B\u0438 \u0444\u0430\u0439\u043B\u043E\u0432\u043E\u043C \u043C\u0435\u043D\u0435\u0434\u0436\u0435\u0440\u0435 \u043E\u0442\u043C\u0435\u0442\u044C\u0442\u0435 \u043E\u0434\u0438\u043D \u0438\u043B\u0438 \u043D\u0435\u0441\u043A\u043E\u043B\u044C\u043A\u043E \u0444\u0430\u0439\u043B\u043E\u0432, \u0432\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \xAB\u041F\u043E\u0434\u0435\u043B\u0438\u0442\u044C\u0441\u044F\xBB, \u0437\u0430\u0442\u0435\u043C PortalGems. \u041F\u043E\u0441\u043B\u0435 \u044D\u0442\u043E\u0433\u043E \u0438\u0445 \u043C\u043E\u0436\u043D\u043E \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u043D\u0430 \u043E\u0434\u043D\u043E \u0438\u0437 \u0441\u0432\u044F\u0437\u0430\u043D\u043D\u044B\u0445 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432 \u0438\u043B\u0438 \u043A\u043E\u043C\u0443 \u0443\u0433\u043E\u0434\u043D\u043E \u043F\u043E \u043E\u0434\u043D\u043E\u0440\u0430\u0437\u043E\u0432\u043E\u043C\u0443 \u043A\u043E\u0434\u0443. \u041D\u0435\u0441\u043A\u043E\u043B\u044C\u043A\u043E \u0444\u0430\u0439\u043B\u043E\u0432, \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u043D\u044B\u0445 \u0432\u043C\u0435\u0441\u0442\u0435, \u0438\u0434\u0443\u0442 \u043E\u0434\u043D\u043E\u0439 \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0435\u0439.",
       dropTitle: "\u041F\u0435\u0440\u0435\u0442\u0430\u0441\u043A\u0438\u0432\u0430\u043D\u0438\u0435",
@@ -30078,7 +30008,7 @@
     onExplain,
     onGuide
   }) {
-    const { t: t2, i18n } = useTranslation();
+    const { t: t2 } = useTranslation();
     const [code, setCode] = (0, import_react14.useState)("");
     const [devices, setDevices] = (0, import_react14.useState)([]);
     const [serverChoice] = (0, import_react14.useState)(() => loadServerSettings().choice);
@@ -30283,20 +30213,7 @@
             }
           },
           deviceLabel(device)
-        ), lastTransferText(t2, device, i18n.language) ? /* @__PURE__ */ import_react14.default.createElement(
-          "span",
-          {
-            style: {
-              color: c.textMuted,
-              fontSize: fontSize.small,
-              fontWeight: 400,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap"
-            }
-          },
-          lastTransferText(t2, device, i18n.language)
-        ) : null)
+        ))
       ), /* @__PURE__ */ import_react14.default.createElement("div", { style: { width: 110 } }, /* @__PURE__ */ import_react14.default.createElement(
         PrimaryButton,
         {

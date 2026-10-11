@@ -117,15 +117,7 @@
     "renameHint": "Ovaj naziv vrijedi samo na ovom uređaju. Ostavite prazno da se vratite na {{name}}.",
     "renamePlaceholder": "Naziv za ovaj uređaj",
     "dropHint": "Prevuci datoteke ili foldere na uređaj da ih pošalješ tamo.",
-    "dropFailed": "To se nije moglo pročitati. Pokušaj ga odabrati dugmetom Pošalji.",
-    "lastUsed": "Zadnji prijenos {{when}}",
-    "lastUsedOn": "Zadnji prijenos {{date}}"
-  },
-  "time": {
-    "now": "upravo sada",
-    "minutes": "prije {{n}} min",
-    "hours": "prije {{n}} h",
-    "days": "prije {{n}} d"
+    "dropFailed": "To se nije moglo pročitati. Pokušaj ga odabrati dugmetom Pošalji."
   },
   "shareTarget": {
     "title": "Pošalji na",
@@ -198,7 +190,7 @@
     "pairTitle": "Upari uređaje koje često koristiš",
     "pairBody": "Upari novi uređaj povezuje dva uređaja jednom zauvijek, pa između njih više nikad ne kucaš kod. Prikaži QR kod na jednom i skeniraj ga drugim, ili koristi kod za uparivanje kad nema kamere. Odmah nakon uparivanja možeš uređaju dati svoje ime i isprobati prvi prijenos.",
     "devicesTitle": "Pošalji na upareni uređaj",
-    "devicesBody": "Svaki upareni uređaj ima dugmad Pošalji i Primi: jedno od vas dodirne Pošalji, a drugo Primi pored imena pošiljaoca. PortalGems mora biti otvoren na oba. Dodirni ime uređaja za više - pošalji folder, pošalji poruku, preimenuj ga ili ukloni. Uređaj koji si zadnji koristio je na vrhu, s vremenom zadnjeg prijenosa.",
+    "devicesBody": "Svaki upareni uređaj ima dugmad Pošalji i Primi: jedno od vas dodirne Pošalji, a drugo Primi pored imena pošiljaoca. PortalGems mora biti otvoren na oba. Dodirni ime uređaja za više - pošalji folder, pošalji poruku, preimenuj ga ili ukloni. Uređaj koji si zadnji koristio je na vrhu.",
     "shareTitle": "Dijeli iz drugih aplikacija",
     "shareBody": "U galeriji ili upravitelju datoteka označi jednu ili više datoteka, odaberi Dijeli, pa PortalGems. Zatim ih možeš poslati na jedan od uparenih uređaja, ili bilo kome pomoću jednokratnog koda. Više datoteka podijeljenih zajedno ide kao jedan prijenos.",
     "dropTitle": "Prevuci i pusti",

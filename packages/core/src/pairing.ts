@@ -475,50 +475,6 @@ export function sortByRecent(devices: PairedDevice[]): PairedDevice[] {
     .map(({ device }) => device);
 }
 
-/** How long ago something happened, in the coarsest unit that says it. */
-export type TimeAgo =
-  | { unit: 'now' }
-  | { unit: 'minutes' | 'hours' | 'days'; n: number }
-  | { unit: 'date' };
-
-/**
- * Past a month a count of days stops meaning much, so the caller shows the
- * date instead. A time in the future - a clock that was wrong, then fixed -
- * reads as now, not as a negative age.
- */
-export function timeAgo(thenMs: number, nowMs: number = Date.now()): TimeAgo {
-  const minutes = Math.floor((nowMs - thenMs) / 60_000);
-  if (minutes < 1) return { unit: 'now' };
-  if (minutes < 60) return { unit: 'minutes', n: minutes };
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return { unit: 'hours', n: hours };
-  const days = Math.floor(hours / 24);
-  if (days <= 30) return { unit: 'days', n: days };
-  return { unit: 'date' };
-}
-
-/**
- * The "Last transfer ..." line under a paired device, or null for one that
- * has never been used. `locale` only shapes the date, once it comes to that.
- */
-export function lastTransferText(
-  t: (key: string, options?: Record<string, unknown>) => string,
-  device: Pick<PairedDevice, 'lastUsedAt'>,
-  locale?: string,
-  nowMs: number = Date.now()
-): string | null {
-  if (device.lastUsedAt == null) return null;
-  const ago = timeAgo(device.lastUsedAt, nowMs);
-  if (ago.unit === 'date') {
-    return t('devices.lastUsedOn', {
-      date: new Date(device.lastUsedAt).toLocaleDateString(locale),
-    });
-  }
-  return t('devices.lastUsed', {
-    when: ago.unit === 'now' ? t('time.now') : t(`time.${ago.unit}`, { n: ago.n }),
-  });
-}
-
 export function newDeviceId(): string {
   return toBase64Url(randomBytes(9));
 }

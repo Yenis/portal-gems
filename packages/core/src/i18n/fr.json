@@ -117,15 +117,7 @@
     "renameHint": "Ce nom ne sert que sur cet appareil. Laissez vide pour revenir à {{name}}.",
     "renamePlaceholder": "Nom de cet appareil",
     "dropHint": "Déposez des fichiers ou des dossiers sur un appareil pour les lui envoyer.",
-    "dropFailed": "Impossible de le lire. Essayez de le choisir avec le bouton Envoyer.",
-    "lastUsed": "Dernier transfert {{when}}",
-    "lastUsedOn": "Dernier transfert le {{date}}"
-  },
-  "time": {
-    "now": "à l'instant",
-    "minutes": "il y a {{n}} min",
-    "hours": "il y a {{n}} h",
-    "days": "il y a {{n}} j"
+    "dropFailed": "Impossible de le lire. Essayez de le choisir avec le bouton Envoyer."
   },
   "shareTarget": {
     "title": "Envoyer à",
@@ -198,7 +190,7 @@
     "pairTitle": "Associer les appareils que vous utilisez souvent",
     "pairBody": "Associer un nouvel appareil relie deux appareils une fois pour toutes, pour ne plus jamais saisir de code entre eux. Affichez un code QR sur l'un et scannez-le avec l'autre, ou utilisez un code d'association s'il n'y a pas de caméra. Juste après l'association, vous pouvez donner à l'appareil le nom de votre choix et essayer un premier transfert.",
     "devicesTitle": "Envoyer à un appareil associé",
-    "devicesBody": "Chaque appareil associé a des boutons Envoyer et Recevoir : l'un appuie sur Envoyer, l'autre sur Recevoir à côté du nom de l'expéditeur. PortalGems doit être ouvert sur les deux. Appuyez sur le nom de l'appareil pour en voir plus - envoyer un dossier, envoyer un message, le renommer ou le retirer. Le dernier appareil utilisé est en haut, avec l'heure du dernier transfert.",
+    "devicesBody": "Chaque appareil associé a des boutons Envoyer et Recevoir : l'un appuie sur Envoyer, l'autre sur Recevoir à côté du nom de l'expéditeur. PortalGems doit être ouvert sur les deux. Appuyez sur le nom de l'appareil pour en voir plus - envoyer un dossier, envoyer un message, le renommer ou le retirer. Le dernier appareil utilisé est en haut.",
     "shareTitle": "Partager depuis d'autres applications",
     "shareBody": "Dans votre galerie ou votre gestionnaire de fichiers, sélectionnez un ou plusieurs fichiers, choisissez Partager puis PortalGems. Vous pouvez alors les envoyer à l'un de vos appareils associés, ou à n'importe qui avec un code à usage unique. Plusieurs fichiers partagés ensemble partent en un seul transfert.",
     "dropTitle": "Glisser-déposer",

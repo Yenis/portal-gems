@@ -117,15 +117,7 @@
     "renameHint": "Dieser Name gilt nur auf diesem Gerät. Leer lassen, um wieder {{name}} zu verwenden.",
     "renamePlaceholder": "Name für dieses Gerät",
     "dropHint": "Ziehe Dateien oder Ordner auf ein Gerät, um sie dorthin zu senden.",
-    "dropFailed": "Das konnte nicht gelesen werden. Wähle es stattdessen über Senden aus.",
-    "lastUsed": "Letzte Übertragung {{when}}",
-    "lastUsedOn": "Letzte Übertragung am {{date}}"
-  },
-  "time": {
-    "now": "gerade eben",
-    "minutes": "vor {{n}} Min.",
-    "hours": "vor {{n}} Std.",
-    "days": "vor {{n}} T."
+    "dropFailed": "Das konnte nicht gelesen werden. Wähle es stattdessen über Senden aus."
   },
   "shareTarget": {
     "title": "Senden an",
@@ -198,7 +190,7 @@
     "pairTitle": "Geräte koppeln, die du oft nutzt",
     "pairBody": "Neues Gerät koppeln verbindet zwei Geräte einmalig, sodass du zwischen ihnen nie wieder einen Code eintippen musst. Zeige auf einem Gerät einen QR-Code und scanne ihn mit dem anderen, oder nutze einen Kopplungscode, wenn keine Kamera vorhanden ist. Direkt nach dem Koppeln kannst du dem Gerät einen eigenen Namen geben und eine erste Übertragung ausprobieren.",
     "devicesTitle": "An ein gekoppeltes Gerät senden",
-    "devicesBody": "Jedes gekoppelte Gerät hat die Schaltflächen Senden und Empfangen: Einer tippt auf Senden, der andere auf Empfangen neben dem Namen des Absenders. PortalGems muss auf beiden geöffnet sein. Tippe auf den Gerätenamen für mehr - Ordner senden, Nachricht senden, umbenennen oder entfernen. Das zuletzt genutzte Gerät steht oben, mit dem Zeitpunkt der letzten Übertragung.",
+    "devicesBody": "Jedes gekoppelte Gerät hat die Schaltflächen Senden und Empfangen: Einer tippt auf Senden, der andere auf Empfangen neben dem Namen des Absenders. PortalGems muss auf beiden geöffnet sein. Tippe auf den Gerätenamen für mehr - Ordner senden, Nachricht senden, umbenennen oder entfernen. Das zuletzt genutzte Gerät steht oben.",
     "shareTitle": "Aus anderen Apps teilen",
     "shareBody": "Markiere in der Galerie oder im Dateimanager eine oder mehrere Dateien, wähle Teilen und dann PortalGems. Du kannst sie an eines deiner gekoppelten Geräte senden oder mit einem Einmalcode an jeden. Mehrere zusammen geteilte Dateien gehen als eine Übertragung.",
     "dropTitle": "Ziehen und Ablegen",

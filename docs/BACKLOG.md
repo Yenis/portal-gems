@@ -66,9 +66,6 @@ from an ordinary wait needs a liveness check on the mailbox connection
 - **Updates.** In Settings: an auto-update toggle and a "Check for updates"
   button, against the GitHub releases. A sideloaded APK and a portable
   `.exe` otherwise never learn that a new version exists.
-- **Drop the "Last transfer" time under a paired device.** It is no longer
-  shown anywhere. `lastUsedAt` stays stored, because most recently used
-  first is ordered by it.
 
 Undecided:
 

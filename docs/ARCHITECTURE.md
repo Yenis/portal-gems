@@ -264,9 +264,11 @@ Consumed by both apps as **npm `file:` symlinks** (see §5 build gotchas).
     app's `markDeviceUsed` when a transfer with that device completes, in
     either direction (a received message counts at the offer, which is when
     it is complete). `loadDevices` returns the list through `sortByRecent`
-    (`lastUsedAt`, else `addedAt`), so every list is in that order, and
-    `lastTransferText` builds the "Last transfer 5 min ago" line under a
-    device. Local only, like `label`. Symbian keeps `pairs.txt` itself in
+    (`lastUsedAt`, else `addedAt`), so every list is in that order. The
+    timestamp is stored for that and nothing else: it is never shown. A
+    "Last transfer 5 min ago" line under each device was removed after
+    1.4.2, because the app is to keep no visible record of transfers. Local
+    only, like `label`. Symbian keeps `pairs.txt` itself in
     that order instead - see `docs/SYMBIAN.md`.
   - **Getting the payload across.** Three ways, one payload: a QR code,
     copy/paste, or *pairing over a code* - the displayer allocates an ordinary
@@ -293,7 +295,7 @@ Consumed by both apps as **npm `file:` symlinks** (see §5 build gotchas).
     follows the outer signal.
 - `errors.ts` - engine-string → i18n-key mapping.
 
-Tests: `cd packages/core && npm test` (vitest, 170 tests).
+Tests: `cd packages/core && npm test` (vitest, 165 tests).
 
 ## 4. The apps
 

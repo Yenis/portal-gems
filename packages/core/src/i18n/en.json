@@ -117,15 +117,7 @@
     "renameHint": "This name is only used on this device. Leave it empty to go back to {{name}}.",
     "renamePlaceholder": "Name for this device",
     "dropHint": "Drop files or folders on a device to send them there.",
-    "dropFailed": "That could not be read. Try choosing it with the Send button.",
-    "lastUsed": "Last transfer {{when}}",
-    "lastUsedOn": "Last transfer on {{date}}"
-  },
-  "time": {
-    "now": "just now",
-    "minutes": "{{n}} min ago",
-    "hours": "{{n}} h ago",
-    "days": "{{n}} d ago"
+    "dropFailed": "That could not be read. Try choosing it with the Send button."
   },
   "shareTarget": {
     "title": "Send to",
@@ -217,7 +209,7 @@
     "pairTitle": "Pair the devices you use often",
     "pairBody": "Pair a new device links two devices once, so you never type a code between them again. Show a QR code on one and scan it with the other, or use a pairing code when there is no camera. Right after pairing you can give the device a name of your own and try a first transfer.",
     "devicesTitle": "Send to a paired device",
-    "devicesBody": "Every paired device has Send and Receive buttons: one of you taps Send, the other taps Receive next to the sender's name. PortalGems must be open on both. Tap the device's name for more - send a folder, send a message, rename it or remove it. The device you used last is at the top, with the time of your last transfer.",
+    "devicesBody": "Every paired device has Send and Receive buttons: one of you taps Send, the other taps Receive next to the sender's name. PortalGems must be open on both. Tap the device's name for more - send a folder, send a message, rename it or remove it. The device you used last is at the top.",
     "shareTitle": "Share from other apps",
     "shareBody": "In your gallery or file manager, select one or more files, choose Share and pick PortalGems. You can then send them to one of your paired devices, or to anyone with a one-time code. Several files shared together go as one transfer.",
     "dropTitle": "Drag and drop",

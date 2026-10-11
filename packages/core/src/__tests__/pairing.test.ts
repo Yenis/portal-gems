@@ -22,9 +22,7 @@ import {
   deviceLabel,
   sanitizeDeviceName,
   DEVICE_NAME_MAX_BYTES,
-  lastTransferText,
   sortByRecent,
-  timeAgo,
   withDeviceUsed,
 } from '../pairing';
 
@@ -394,50 +392,5 @@ describe('recently used devices', () => {
   it('keeps the stored order between equals', () => {
     const out = sortByRecent([device('a', 5), device('b', 5), device('c', 5)]);
     expect(out.map((d) => d.id)).toEqual(['a', 'b', 'c']);
-  });
-});
-
-describe('timeAgo', () => {
-  const MIN = 60_000;
-  const HOUR = 60 * MIN;
-  const DAY = 24 * HOUR;
-  const now = 100 * DAY;
-
-  it('picks the coarsest unit that fits', () => {
-    expect(timeAgo(now - 30_000, now)).toEqual({ unit: 'now' });
-    expect(timeAgo(now - 5 * MIN, now)).toEqual({ unit: 'minutes', n: 5 });
-    expect(timeAgo(now - 59 * MIN, now)).toEqual({ unit: 'minutes', n: 59 });
-    expect(timeAgo(now - HOUR, now)).toEqual({ unit: 'hours', n: 1 });
-    expect(timeAgo(now - 23 * HOUR, now)).toEqual({ unit: 'hours', n: 23 });
-    expect(timeAgo(now - DAY, now)).toEqual({ unit: 'days', n: 1 });
-    expect(timeAgo(now - 30 * DAY, now)).toEqual({ unit: 'days', n: 30 });
-    expect(timeAgo(now - 31 * DAY, now)).toEqual({ unit: 'date' });
-  });
-
-  it('reads a time in the future as now', () => {
-    expect(timeAgo(now + HOUR, now)).toEqual({ unit: 'now' });
-  });
-});
-
-describe('lastTransferText', () => {
-  const t = (key: string, options?: Record<string, unknown>) =>
-    `${key}${options ? JSON.stringify(options) : ''}`;
-
-  it('says nothing for a device never used', () => {
-    expect(lastTransferText(t, {})).toBeNull();
-  });
-
-  it('nests the age inside the sentence', () => {
-    expect(lastTransferText(t, { lastUsedAt: 0 }, 'en', 5 * 60_000)).toBe(
-      'devices.lastUsed{"when":"time.minutes{\\"n\\":5}"}'
-    );
-    expect(lastTransferText(t, { lastUsedAt: 0 }, 'en', 1000)).toBe(
-      'devices.lastUsed{"when":"time.now"}'
-    );
-  });
-
-  it('falls back to the date past a month', () => {
-    const out = lastTransferText(t, { lastUsedAt: 0 }, 'en', 40 * 24 * 3_600_000);
-    expect(out).toMatch(/^devices\.lastUsedOn\{"date":".+"\}$/);
   });
 });

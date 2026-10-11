@@ -13,7 +13,6 @@ import { useTranslation } from 'react-i18next';
 import {
   deviceLabel,
   fontSize,
-  lastTransferText,
   radius,
   spacing,
   type PairedDevice,
@@ -55,7 +54,7 @@ export default function HomeScreen({
   onExplain: () => void;
   onGuide: () => void;
 }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const c = useTheme();
   const [code, setCode] = useState('');
   const [picking, setPicking] = useState(false);
@@ -239,13 +238,6 @@ export default function HomeScreen({
                         style={[styles.deviceNameText, { color: c.text }]}>
                         {deviceLabel(device)}
                       </Text>
-                      {lastTransferText(t as any, device, i18n.language) ? (
-                        <Text
-                          numberOfLines={1}
-                          style={[styles.deviceLastUsed, { color: c.textMuted }]}>
-                          {lastTransferText(t as any, device, i18n.language)}
-                        </Text>
-                      ) : null}
                     </View>
                   </Pressable>
                   <View style={styles.quickActions}>
@@ -397,7 +389,6 @@ const styles = StyleSheet.create({
   },
   deviceNameLines: { flexShrink: 1 },
   deviceNameText: { fontSize: fontSize.body, fontWeight: '600' },
-  deviceLastUsed: { fontSize: fontSize.small },
   quickActions: { flexGrow: 1, flexDirection: 'row', gap: spacing(2) },
   quickAction: { flexGrow: 1 },
   // Two to a line, wrapping as actions are added; an odd one out takes the

@@ -117,15 +117,7 @@
     "renameHint": "Este nombre solo se usa en este dispositivo. Déjalo vacío para volver a {{name}}.",
     "renamePlaceholder": "Nombre de este dispositivo",
     "dropHint": "Suelta archivos o carpetas sobre un dispositivo para enviarlos allí.",
-    "dropFailed": "No se pudo leer. Prueba a elegirlo con el botón Enviar.",
-    "lastUsed": "Última transferencia {{when}}",
-    "lastUsedOn": "Última transferencia el {{date}}"
-  },
-  "time": {
-    "now": "ahora mismo",
-    "minutes": "hace {{n}} min",
-    "hours": "hace {{n}} h",
-    "days": "hace {{n}} d"
+    "dropFailed": "No se pudo leer. Prueba a elegirlo con el botón Enviar."
   },
   "shareTarget": {
     "title": "Enviar a",
@@ -198,7 +190,7 @@
     "pairTitle": "Empareja los dispositivos que usas a menudo",
     "pairBody": "Emparejar un dispositivo nuevo vincula dos dispositivos una sola vez, para no volver a escribir códigos entre ellos. Muestra un código QR en uno y escanéalo con el otro, o usa un código de emparejamiento si no hay cámara. Justo después de emparejar puedes darle al dispositivo un nombre a tu gusto y probar una primera transferencia.",
     "devicesTitle": "Enviar a un dispositivo emparejado",
-    "devicesBody": "Cada dispositivo emparejado tiene los botones Enviar y Recibir: uno pulsa Enviar y el otro pulsa Recibir junto al nombre de quien envía. PortalGems debe estar abierto en ambos. Pulsa el nombre del dispositivo para ver más: enviar una carpeta, enviar un mensaje, cambiarle el nombre o quitarlo. El último que usaste aparece arriba, con la hora de la última transferencia.",
+    "devicesBody": "Cada dispositivo emparejado tiene los botones Enviar y Recibir: uno pulsa Enviar y el otro pulsa Recibir junto al nombre de quien envía. PortalGems debe estar abierto en ambos. Pulsa el nombre del dispositivo para ver más: enviar una carpeta, enviar un mensaje, cambiarle el nombre o quitarlo. El último que usaste aparece arriba.",
     "shareTitle": "Compartir desde otras apps",
     "shareBody": "En la galería o el gestor de archivos, selecciona uno o varios archivos, elige Compartir y selecciona PortalGems. Después puedes enviarlos a uno de tus dispositivos emparejados, o a cualquiera con un código de un solo uso. Varios archivos compartidos juntos van en una sola transferencia.",
     "dropTitle": "Arrastrar y soltar",

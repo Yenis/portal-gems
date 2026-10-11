@@ -15,7 +15,6 @@ import {
   bundleName,
   bundleText,
   isServerUnreachableError,
-  lastTransferText,
   nextSendAttempt,
   parsePairingPayload,
   parseSendAttempts,
@@ -358,7 +357,7 @@ function Home({
   onExplain: () => void;
   onGuide: () => void;
 }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [code, setCode] = useState('');
   const [devices, setDevices] = useState<PairedDevice[]>([]);
   // A code only connects when both sides meet on the same server, so the
@@ -605,19 +604,6 @@ function Home({
                       }}>
                       {deviceLabel(device)}
                     </span>
-                    {lastTransferText(t as any, device, i18n.language) ? (
-                      <span
-                        style={{
-                          color: c.textMuted,
-                          fontSize: fontSize.small,
-                          fontWeight: 400,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}>
-                        {lastTransferText(t as any, device, i18n.language)}
-                      </span>
-                    ) : null}
                   </span>
                 </button>
                 <div style={{ width: 110 }}>
