@@ -4,7 +4,10 @@ import { useTranslation } from 'react-i18next';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { sendFile, sendText, sendZipAsFolder } from 'wormhole-rn';
 import {
+  bundleName,
+  bundleText,
   deviceLabel,
+  itemsText,
   currentBucket,
   deriveCode,
   fontSize,
@@ -15,6 +18,7 @@ import {
   withSendStarted,
   PAIRED_SEND_TIMEOUT_MS,
   SEND_ATTEMPTS_KEY,
+  type BundleCounts,
   type PairedDevice,
   type SendAttempts,
 } from '@portalgems/core';
@@ -37,7 +41,9 @@ import {
   setSetting,
   withTransferService,
   zipTreeToCache,
+  zipUrisToCache,
   type SendItem,
+  type ZippedBundle,
   type ZippedFolder,
 } from '../native';
 import { currentServer } from '../server';
@@ -67,11 +73,19 @@ export default function SendScreen({
 }) {
   const { t } = useTranslation();
   const c = useTheme();
+  // A bundle from this phone is files only: the picker and the share sheet
+  // hand over files, never folders.
+  const bundleCounts: BundleCounts = {
+    files: item.kind === 'bundle' ? item.uris.length : 0,
+    folders: 0,
+  };
+  const itemsLabel = itemsText(t as any, bundleCounts);
   const [phase, setPhase] = useState<Phase>('starting');
   const [code, setCode] = useState('');
   const [direct, setDirect] = useState<boolean | null>(null);
   const [pct, setPct] = useState(0);
   const [folderStats, setFolderStats] = useState<ZippedFolder | null>(null);
+  const [bundleStats, setBundleStats] = useState<ZippedBundle | null>(null);
   const [error, setError] = useState('');
   const [serverErr, setServerErr] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -147,6 +161,34 @@ export default function SendScreen({
         await sendText(item.text, pairedCode, server, listener, {
           signal: controller.signal,
         });
+      } else if (item.kind === 'bundle') {
+        // Several files in one transfer: zipped straight from their sources
+        // into the cache, then sent as a directory offer marked loose, so a
+        // PortalGems receiver puts them in its receive folder and any other
+        // client saves a folder under the bundle's name.
+        setPhase('preparing');
+        const zipped = await zipUrisToCache(item.uris, item.names);
+        setBundleStats(zipped);
+        if (controller.signal.aborted) {
+          await deleteFile(zipped.path).catch(() => undefined);
+          throw new Error('cancelled');
+        }
+        armPairedTimeout();
+        try {
+          await sendZipAsFolder(
+            zipped.path,
+            bundleName(t as any, bundleCounts),
+            BigInt(zipped.fileCount),
+            BigInt(zipped.totalBytes),
+            { files: BigInt(bundleCounts.files), folders: BigInt(bundleCounts.folders) },
+            pairedCode,
+            server,
+            listener,
+            { signal: controller.signal }
+          );
+        } finally {
+          await deleteFile(zipped.path).catch(() => undefined);
+        }
       } else if (item.kind === 'folder') {
         // The SAF tree is zipped into the cache first (Rust cannot read
         // content:// URIs); the engine then sends the zip under a
@@ -225,6 +267,13 @@ export default function SendScreen({
   const summary =
     item.kind === 'text'
       ? t('text.title')
+      : item.kind === 'bundle'
+      ? bundleStats
+        ? bundleText(t as any, 'summary', bundleCounts, {
+            size: formatSize(bundleStats.totalBytes),
+          })
+        : // The size is only known once the files have been read.
+          itemsLabel
       : item.kind === 'folder'
       ? folderStats
         ? t('folder.summary', {
@@ -243,7 +292,11 @@ export default function SendScreen({
 
       <Card>
         {phase === 'starting' ? <Muted>{t('receive.connecting')}</Muted> : null}
-        {phase === 'preparing' ? <Muted>{t('send.preparingFolder')}</Muted> : null}
+        {phase === 'preparing' ? (
+          <Muted>
+            {item.kind === 'bundle' ? t('files.preparing') : t('send.preparingFolder')}
+          </Muted>
+        ) : null}
 
         {phase === 'waiting' ? (
           device ? (
@@ -265,6 +318,8 @@ export default function SendScreen({
             <Subtitle>
               {item.kind === 'text'
                 ? t('send.sendingText')
+                : item.kind === 'bundle'
+                ? bundleText(t as any, 'sending', bundleCounts)
                 : item.kind === 'folder'
                 ? t('send.sendingFolder', { name: item.name })
                 : t('send.sending', { name: item.name })}
@@ -279,6 +334,8 @@ export default function SendScreen({
             <Subtitle>
               {item.kind === 'text'
                 ? t('send.successText')
+                : item.kind === 'bundle'
+                ? bundleText(t as any, 'sent', bundleCounts)
                 : item.kind === 'folder'
                 ? t('send.successFolder')
                 : t('send.success')}

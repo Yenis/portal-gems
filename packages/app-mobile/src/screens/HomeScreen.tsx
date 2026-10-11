@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useTranslation } from 'react-i18next';
-import { pick } from '@react-native-documents/picker';
 import {
   deviceLabel,
   fontSize,
@@ -28,9 +27,10 @@ import {
   Subtitle,
   Title,
 } from '../components';
-import { copyToCache, pickSendFolder, type SendItem } from '../native';
+import { pickSendFolder, type SendItem } from '../native';
 import { loadDevices, removeDevice, renameDevice } from '../pairing';
 import { loadServerSettings, SERVER_CHOICE_KEYS } from '../server';
+import { pickFilesToSend } from '../picking';
 import { useTheme } from '../theme';
 
 // Codes look like "7-crossover-clockwork": numeric nameplate, dash, words.
@@ -74,9 +74,7 @@ export default function HomeScreen({
     setPickError(null);
     setPicking(true);
     try {
-      const [result] = await pick();
-      const file = await copyToCache(result.uri);
-      onSend({ kind: 'file', ...file }, device);
+      onSend(await pickFilesToSend(), device);
     } catch (e: any) {
       // User closing the picker is not an error.
       if (e?.code !== 'OPERATION_CANCELED') {
@@ -293,7 +291,7 @@ export default function HomeScreen({
         <Subtitle>{t('home.sendTitle')}</Subtitle>
         <Muted>{t('home.sendHint')}</Muted>
         <PrimaryButton
-          label={t('home.sendButton')}
+          label={t('home.sendFilesButton')}
           onPress={() => pickFile()}
           busy={picking}
         />

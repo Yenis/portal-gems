@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  bundleEntryNames,
   bundleName,
   bundleText,
   countBundle,
   itemsText,
   landEntries,
+  numberedFileName,
   planSend,
   sanitizeBundleName,
   savedBundleText,
@@ -445,5 +447,92 @@ describe('landEntries', () => {
       }
     );
     expect(savedBundleText(translator('en'), result)).toContain('2 of 3');
+  });
+});
+
+describe('numberedFileName', () => {
+  // The same table as wh_numbered_name in tests/test_bundle.c and
+  // unique_entry_name_shapes in wormhole-core: four implementations of one
+  // rule have to agree, or a clash would read differently by platform.
+  it('numbers before the last extension', () => {
+    expect(numberedFileName('a.txt', 0)).toBe('a.txt');
+    expect(numberedFileName('a.txt', 1)).toBe('a (1).txt');
+    expect(numberedFileName('a.txt', 12)).toBe('a (12).txt');
+    expect(numberedFileName('b.tar.gz', 1)).toBe('b.tar (1).gz');
+    expect(numberedFileName('with space.jpg', 3)).toBe('with space (3).jpg');
+    expect(numberedFileName('a (1).txt', 1)).toBe('a (1) (1).txt');
+    expect(numberedFileName('trailing.', 1)).toBe('trailing (1).');
+  });
+
+  it('numbers at the end when there is no extension', () => {
+    expect(numberedFileName('noext', 1)).toBe('noext (1)');
+    expect(numberedFileName('.hidden', 1)).toBe('.hidden (1)');
+  });
+});
+
+describe('bundleEntryNames', () => {
+  it('leaves distinct names alone, in order', () => {
+    expect(bundleEntryNames(['b.jpg', 'a.jpg', 'c'])).toEqual(['b.jpg', 'a.jpg', 'c']);
+  });
+
+  it('keeps same-named files apart, the first one unchanged', () => {
+    expect(bundleEntryNames(['IMG_1.jpg', 'IMG_1.jpg', 'IMG_1.jpg'])).toEqual([
+      'IMG_1.jpg',
+      'IMG_1 (1).jpg',
+      'IMG_1 (2).jpg',
+    ]);
+  });
+
+  it('treats names that differ only in case as the same name', () => {
+    expect(bundleEntryNames(['photo.jpg', 'Photo.JPG'])).toEqual(['photo.jpg', 'Photo (1).JPG']);
+  });
+
+  it('does not rename a file onto a name another one already has', () => {
+    // The second 'a.txt' wants 'a (1).txt', which a picked file is called.
+    expect(bundleEntryNames(['a.txt', 'a (1).txt', 'a.txt'])).toEqual([
+      'a.txt',
+      'a (1).txt',
+      'a (2).txt',
+    ]);
+    expect(bundleEntryNames(['a (1).txt', 'a.txt', 'a.txt'])).toEqual([
+      'a (1).txt',
+      'a.txt',
+      'a (2).txt',
+    ]);
+  });
+
+  it('never lets a path into the archive', () => {
+    const names = bundleEntryNames(['../../etc/passwd', 'a/b.txt', 'c\\d.txt', '/abs']);
+    for (const name of names) {
+      expect(name).not.toMatch(/[/\\]/);
+    }
+    expect(names).toEqual(['.._.._etc_passwd', 'a_b.txt', 'c_d.txt', '_abs']);
+  });
+
+  it('gives a name to a file that reports none', () => {
+    expect(bundleEntryNames([null, undefined, '', '   ', '.', '..', '...'])).toEqual([
+      'file',
+      'file (1)',
+      'file (2)',
+      'file (3)',
+      'file (4)',
+      'file (5)',
+      'file (6)',
+    ]);
+  });
+
+  it('removes control characters', () => {
+    expect(bundleEntryNames(['tab\there.txt', 'new\nline'])).toEqual(['tab_here.txt', 'new_line']);
+  });
+
+  it('returns one name per file, all different, for any input', () => {
+    const input = ['a', 'A', 'a', null, '', 'a (1)', 'A (1)', 'x.y', 'X.Y', 'x.y'];
+    const out = bundleEntryNames(input);
+    expect(out).toHaveLength(input.length);
+    expect(new Set(out.map((n) => n.toLowerCase())).size).toBe(input.length);
+  });
+
+  it('handles an empty selection', () => {
+    expect(bundleEntryNames([])).toEqual([]);
   });
 });

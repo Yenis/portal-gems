@@ -11,7 +11,6 @@
     "tagline": "Envía archivos de dispositivo a dispositivo - privado, directo, sin cuentas.",
     "sendTitle": "Enviar un archivo",
     "sendHint": "Elige un archivo y comparte el código de un solo uso con el receptor.",
-    "sendButton": "Elegir archivo",
     "sendFilesButton": "Elegir archivos",
     "sendFolderButton": "Elegir carpeta",
     "receiveTitle": "Recibir un archivo",

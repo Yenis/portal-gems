@@ -19,6 +19,7 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
+import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.WritableNativeArray
 import com.facebook.react.bridge.WritableNativeMap
 import com.google.zxing.integration.android.IntentIntegrator
@@ -623,6 +624,67 @@ class PortalGemsNativeModule(reactContext: ReactApplicationContext) :
         )
       } catch (e: Exception) {
         promise.reject("zip_tree_failed", e.message, e)
+      }
+    }.start()
+  }
+
+  /** Zip several picked or shared files into one archive in the cache - the
+   *  payload of a multi-file send. `uris[i]` is stored as the top-level entry
+   *  `names[i]`; the names come from JavaScript, already made distinct and
+   *  free of path separators (`bundleEntryNames` in packages/core), so
+   *  nothing here decides a name. Each URI is read once, straight into the
+   *  zip, with no copy in between. A file that cannot be read fails the whole
+   *  archive, which is then removed: a selection is sent whole or not at all.
+   *  Returns { path, fileCount, totalBytes }. */
+  @ReactMethod
+  fun zipUrisToCache(uris: ReadableArray, names: ReadableArray, promise: Promise) {
+    Thread {
+      var zipFile: File? = null
+      try {
+        require(uris.size() > 0) { "nothing to send" }
+        require(uris.size() == names.size()) { "one name is needed per file" }
+
+        val outDir = File(reactApplicationContext.cacheDir, "outgoing").apply { mkdirs() }
+        var target = File(outDir, "bundle.zip")
+        var n = 1
+        while (target.exists()) target = File(outDir, "bundle ($n).zip").also { n++ }
+        zipFile = target
+
+        var fileCount = 0L
+        var totalBytes = 0L
+        val resolver = reactApplicationContext.contentResolver
+        java.util.zip.ZipOutputStream(target.outputStream().buffered()).use { zip ->
+          // Photos and videos are already compressed; spend little on trying.
+          zip.setLevel(java.util.zip.Deflater.BEST_SPEED)
+          val buf = ByteArray(64 * 1024)
+          for (i in 0 until uris.size()) {
+            val uriString = uris.getString(i) ?: throw IllegalStateException("missing uri")
+            val name = names.getString(i) ?: throw IllegalStateException("missing name")
+            zip.putNextEntry(java.util.zip.ZipEntry(name))
+            resolver.openInputStream(Uri.parse(uriString)).use { input ->
+              requireNotNull(input) { "could not read $name" }
+              while (true) {
+                val read = input.read(buf)
+                if (read < 0) break
+                zip.write(buf, 0, read)
+                totalBytes += read
+              }
+            }
+            zip.closeEntry()
+            fileCount++
+          }
+        }
+
+        promise.resolve(
+          WritableNativeMap().apply {
+            putString("path", target.absolutePath)
+            putDouble("fileCount", fileCount.toDouble())
+            putDouble("totalBytes", totalBytes.toDouble())
+          }
+        )
+      } catch (e: Exception) {
+        zipFile?.delete()
+        promise.reject("zip_uris_failed", e.message, e)
       }
     }.start()
   }

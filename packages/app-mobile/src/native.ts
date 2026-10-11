@@ -26,10 +26,28 @@ export interface ZippedFolder {
   totalBytes: number;
 }
 
-/** What the user chose to send: a file, a whole folder, or a typed message. */
+/** Several files picked or shared together, sent as one transfer. They are
+ * still `content://` URIs here: they are zipped straight from their sources
+ * once the send starts, not copied first. `names` are the entry names the
+ * archive will use - distinct, one per URI (`bundleEntryNames` in core). */
+export interface PickedBundle {
+  uris: string[];
+  names: string[];
+}
+
+/** The staged zip of a bundle, with the stats counted while zipping. */
+export interface ZippedBundle {
+  path: string;
+  fileCount: number;
+  totalBytes: number;
+}
+
+/** What the user chose to send: a file, a whole folder, several files as one
+ * bundle, or a typed message. */
 export type SendItem =
   | ({ kind: 'file' } & PickedFile)
   | ({ kind: 'folder' } & PickedSendFolder)
+  | ({ kind: 'bundle' } & PickedBundle)
   | { kind: 'text'; text: string };
 
 export interface DownloadTargetStat {
@@ -73,6 +91,7 @@ interface PortalGemsNativeSpec {
   ): Promise<SavedToDir>;
   pickSendFolder(): Promise<PickedSendFolder | null>;
   zipTreeToCache(uri: string): Promise<ZippedFolder>;
+  zipUrisToCache(uris: string[], names: string[]): Promise<ZippedBundle>;
   saveFolderToDownloads(srcDirPath: string, folderName: string): Promise<string>;
   saveFolderToDownloadDir(
     srcDirPath: string,
@@ -130,6 +149,8 @@ export const saveToDownloadDir = (
 ) => native.saveToDownloadDir(srcPath, dirUri, fileName, overwrite);
 export const pickSendFolder = () => native.pickSendFolder();
 export const zipTreeToCache = (uri: string) => native.zipTreeToCache(uri);
+export const zipUrisToCache = (uris: string[], names: string[]) =>
+  native.zipUrisToCache(uris, names);
 export const saveFolderToDownloads = (srcDirPath: string, folderName: string) =>
   native.saveFolderToDownloads(srcDirPath, folderName);
 export const saveFolderToDownloadDir = (

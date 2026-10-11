@@ -386,3 +386,11 @@ cannot receive:
   wording on the send screen. The home button reads "Choose files to send"
   through a new `home.sendFilesButton`; the phone keeps `home.sendButton`
   until its own picker changes in step 7, and `devices.dropOne` is gone.
+- Step 7 (Android send) is built. `src/picking.ts` opens the picker with
+  multi-select and turns the result into a `file` (copied to the cache, as
+  before) or a `bundle` of URIs; `SendScreen` zips a bundle with the new
+  native `zipUrisToCache` and sends it through `sendZipAsFolder` with the
+  loose counts. The entry names are not decided in Kotlin: `bundleEntryNames`
+  in core cleans and de-duplicates the names the picker reports, under the
+  same rule as the engine, where it is tested. `home.sendButton` is gone;
+  both apps use `home.sendFilesButton`.

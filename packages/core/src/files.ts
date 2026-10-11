@@ -153,6 +153,55 @@ export function savedBundleText(
     : bundleText(t, 'saved', saved);
 }
 
+/**
+ * The name for candidate `n` of a file that must not collide: the name itself
+ * for 0, then `name (1).ext`, `name (2).ext`... Only the last dot starts an
+ * extension, and a leading dot is a hidden file, not one. The same shapes
+ * the engine, the desktop and the C client produce (`create_unique`,
+ * `dedupPath`, `wh_numbered_name`), so a clash reads the same wherever it is
+ * resolved.
+ */
+export function numberedFileName(name: string, n: number): string {
+  if (n === 0) return name;
+  const dot = name.lastIndexOf('.');
+  return dot > 0 ? `${name.slice(0, dot)} (${n})${name.slice(dot)}` : `${name} (${n})`;
+}
+
+/**
+ * Entry names for a bundle of files, from the names their sources report -
+ * one per file, in order, no two alike.
+ *
+ * Used where the app builds the archive itself (Android, from `content://`
+ * URIs), so this is that platform's half of what `zip_items_sync` does in
+ * the engine:
+ *
+ * - A name is only ever a name. A provider can report anything, so path
+ *   separators and control characters are replaced, and a name that is
+ *   empty, missing or all dots becomes `file` - an entry called `..` or
+ *   `a/b` must not reach a zip.
+ * - Two files of one name are both kept, the later one renamed. Names are
+ *   compared without regard to case: `Photo.JPG` and `photo.jpg` are two
+ *   files in a gallery and one on a memory card.
+ */
+export function bundleEntryNames(names: readonly (string | null | undefined)[]): string[] {
+  const taken = new Set<string>();
+  return names.map((raw) => {
+    const cleaned = (raw ?? '')
+      // eslint-disable-next-line no-control-regex
+      .replace(/[/\\\u0000-\u001f\u007f]/g, '_')
+      .trim();
+    const name = cleaned.replace(/\./g, '') === '' ? 'file' : cleaned;
+    for (let n = 0; ; n++) {
+      const candidate = numberedFileName(name, n);
+      const key = candidate.toLowerCase();
+      if (!taken.has(key)) {
+        taken.add(key);
+        return candidate;
+      }
+    }
+  });
+}
+
 /** One top-level entry of an unpacked bundle, waiting in staging. */
 export interface StagedEntry {
   name: string;

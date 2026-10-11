@@ -11,7 +11,6 @@
     "tagline": "Envoyez des fichiers d'un appareil à l'autre - privé, direct, sans compte.",
     "sendTitle": "Envoyer un fichier",
     "sendHint": "Choisissez un fichier et partagez le code à usage unique avec le destinataire.",
-    "sendButton": "Choisir un fichier",
     "sendFilesButton": "Choisir des fichiers",
     "sendFolderButton": "Choisir un dossier",
     "receiveTitle": "Recevoir un fichier",

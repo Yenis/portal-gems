@@ -11,7 +11,6 @@
     "tagline": "Send files from device to device - private, direct, no accounts.",
     "sendTitle": "Send a file",
     "sendHint": "Pick a file and share the one-time code with the receiver.",
-    "sendButton": "Choose file to send",
     "sendFilesButton": "Choose files to send",
     "sendFolderButton": "Choose folder to send",
     "receiveTitle": "Receive a file",

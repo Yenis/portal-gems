@@ -292,6 +292,9 @@ recursive size.
   AppState active; with paired devices `App.tsx` routes it through
   `ShareTargetScreen` to choose one of them or a one-time code), EncryptedSharedPreferences pair store, zxing-embedded
   `scanQr()`, plain SharedPreferences `get/setSetting`,
+  `zipUrisToCache(uris, names)` (several picked or shared files into one
+  archive for a multi-file send, each read once straight from its URI; the
+  entry names are decided in JavaScript by `bundleEntryNames`),
   `listStaged(path)` / `removeStaged(path)` (the top-level items of an
   unpacked multi-file bundle, and the recursive cleanup of what is left of
   it - cache paths only),

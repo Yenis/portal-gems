@@ -3,7 +3,6 @@ import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Clipboard from '@react-native-clipboard/clipboard';
 import QRCode from 'react-native-qrcode-svg';
-import { pick } from '@react-native-documents/picker';
 import { sendText } from 'wormhole-rn';
 import {
   classifyPairingInput,
@@ -26,7 +25,7 @@ import {
   Title,
 } from '../components';
 import { friendlyError } from '../errors';
-import { copyToCache, scanQr, type SendItem } from '../native';
+import { scanQr, type SendItem } from '../native';
 import { myDeviceName } from '../devicename';
 import {
   completePairingAsScanner,
@@ -37,6 +36,7 @@ import {
   waitForPairingAsDisplayer,
 } from '../pairing';
 import { currentServer } from '../server';
+import { pickFilesToSend } from '../picking';
 import { useTheme } from '../theme';
 
 type Phase =
@@ -98,9 +98,7 @@ export default function PairScreen({
   const sendFirst = async (device: PairedDevice) => {
     setPicking(true);
     try {
-      const [result] = await pick();
-      const file = await copyToCache(result.uri);
-      onSend({ kind: 'file', ...file }, await storedPeer(device));
+      onSend(await pickFilesToSend(), await storedPeer(device));
     } catch {
       // Closing the picker, or a file that cannot be read: stay here, the
       // pairing itself is done and the button can simply be tapped again.
