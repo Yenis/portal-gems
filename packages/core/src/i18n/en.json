@@ -180,7 +180,7 @@
       "title": "Connection server",
       "hint": "Where your devices meet to set up a transfer. If sending keeps failing, try a different server here.",
       "choicePublic": "Public server",
-      "choicePublicHint": "Community-run. Works with other magic-wormhole apps. Occasionally unavailable.",
+      "choicePublicHint": "Community-run. Works with other magic-wormhole apps. On rare occasions it can be overloaded or unavailable.",
       "choicePortalgems": "PortalGems server",
       "choicePortalgemsHint": "Run by PortalGems. Recommended for reliability.",
       "choiceCustom": "Custom server",
@@ -241,7 +241,7 @@
     "limitsTitle": "What this does not protect against",
     "limitsBody": "Anyone who can see your screen while a code or pairing QR is visible can use it. Anyone with full access to your unlocked device can read what is stored on it. And an observer of your network can tell that you transferred something and roughly how large it was - but never what it was.",
     "choosingTitle": "Choosing a server",
-    "choosingBody": "PortalGems needs a mailbox server to introduce two devices, and you pick which one in Settings. The Public server is the community-run magic-wormhole one - it works with other wormhole apps but is occasionally unavailable. The PortalGems server is run by us and makes a reliable default. Custom lets you point the app at any server, including one you host yourself - see the self-hosting guide if you are interested. Whichever you choose, your files stay end-to-end encrypted and the server only ever sees scrambled data."
+    "choosingBody": "PortalGems needs a mailbox server to introduce two devices, and you pick which one in Settings. The Public server is the community-run magic-wormhole one - it works with other wormhole apps, though on rare occasions it can be overloaded or unavailable. The PortalGems server is run by us and makes a reliable default. Custom lets you point the app at any server, including one you host yourself - see the self-hosting guide if you are interested. Whichever you choose, your files stay end-to-end encrypted and the server only ever sees scrambled data."
   },
   "errors": {
     "title": "Something went wrong",

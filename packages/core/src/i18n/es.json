@@ -161,7 +161,7 @@
       "title": "Servidor de conexión",
       "hint": "Donde tus dispositivos se encuentran para preparar una transferencia. Si el envío sigue fallando, prueba otro servidor aquí.",
       "choicePublic": "Servidor público",
-      "choicePublicHint": "Gestionado por la comunidad. Funciona con otras apps de magic-wormhole. A veces no disponible.",
+      "choicePublicHint": "Gestionado por la comunidad. Funciona con otras apps de magic-wormhole. En raras ocasiones puede estar saturado o no disponible.",
       "choicePortalgems": "Servidor de PortalGems",
       "choicePortalgemsHint": "Gestionado por PortalGems. Recomendado por su fiabilidad.",
       "choiceCustom": "Servidor personalizado",
@@ -222,7 +222,7 @@
     "limitsTitle": "Contra qué no protege",
     "limitsBody": "Cualquiera que pueda ver tu pantalla mientras se muestra un código o un QR de emparejamiento puede usarlo. Cualquiera con acceso total a tu dispositivo desbloqueado puede leer lo que contiene. Y un observador de tu red puede saber que transferiste algo y su tamaño aproximado - pero nunca qué era.",
     "choosingTitle": "Elegir un servidor",
-    "choosingBody": "PortalGems necesita un servidor de buzón para poner en contacto a dos dispositivos, y tú eliges cuál en Ajustes. El servidor público es el de la comunidad de magic-wormhole: funciona con otras apps de wormhole, pero a veces no está disponible. El servidor de PortalGems lo gestionamos nosotros y es una opción predeterminada fiable. «Personalizado» te permite apuntar la app a cualquier servidor, incluido uno que alojes tú mismo; consulta la guía de autoalojamiento si te interesa. Elijas lo que elijas, tus archivos siguen cifrados de extremo a extremo y el servidor solo ve datos ilegibles."
+    "choosingBody": "PortalGems necesita un servidor de buzón para poner en contacto a dos dispositivos, y tú eliges cuál en Ajustes. El servidor público es el de la comunidad de magic-wormhole: funciona con otras apps de wormhole, aunque en raras ocasiones puede estar saturado o no disponible. El servidor de PortalGems lo gestionamos nosotros y es una opción predeterminada fiable. «Personalizado» te permite apuntar la app a cualquier servidor, incluido uno que alojes tú mismo; consulta la guía de autoalojamiento si te interesa. Elijas lo que elijas, tus archivos siguen cifrados de extremo a extremo y el servidor solo ve datos ilegibles."
   },
   "transfer": {
     "sendVia": "Enviando por: {{server}}",

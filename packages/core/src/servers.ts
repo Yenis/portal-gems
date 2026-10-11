@@ -3,8 +3,8 @@
 // app id fixed, so any two clients pointed at the SAME rendezvous server
 // interoperate - including the reference `wormhole` CLI on the public server.
 //
-// Why this exists: the public community server can (and does) go down, which
-// takes every client with it. Letting users pick a reliable server - the
+// Why this exists: the public community server can, on rare occasions, be
+// overloaded or unavailable, which takes every client with it. Letting users pick a reliable server - the
 // PortalGems one, or their own self-hosted box - is the fix.
 
 /// The concrete server addresses handed to the engine. Empty/missing fields

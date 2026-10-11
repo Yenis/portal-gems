@@ -161,7 +161,7 @@
       "title": "Server za povezivanje",
       "hint": "Gdje se tvoji uređaji susreću da bi uspostavili prijenos. Ako slanje stalno ne uspijeva, ovdje probaj drugi server.",
       "choicePublic": "Javni server",
-      "choicePublicHint": "Vodi ga zajednica. Radi s drugim magic-wormhole aplikacijama. Povremeno nedostupan.",
+      "choicePublicHint": "Vodi ga zajednica. Radi s drugim magic-wormhole aplikacijama. U rijetkim slučajevima može biti preopterećen ili nedostupan.",
       "choicePortalgems": "PortalGems server",
       "choicePortalgemsHint": "Vodi ga PortalGems. Preporučeno za pouzdanost.",
       "choiceCustom": "Prilagođeni server",
@@ -222,7 +222,7 @@
     "limitsTitle": "Od čega ovo ne štiti",
     "limitsBody": "Ko god vidi tvoj ekran dok je kod ili QR za uparivanje prikazan, može ga iskoristiti. Ko ima pun pristup tvom otključanom uređaju, može čitati šta je na njemu. A posmatrač tvoje mreže može znati da si nešto prenio/la i otprilike koliko je bilo veliko - ali nikada šta je bilo.",
     "choosingTitle": "Odabir servera",
-    "choosingBody": "PortalGems treba mailbox server da spoji dva uređaja, a u Postavkama biraš koji. Javni server je onaj koji vodi zajednica (magic-wormhole) - radi s drugim wormhole aplikacijama, ali je povremeno nedostupan. PortalGems server vodimo mi i predstavlja pouzdan zadani izbor. „Prilagođeni\" ti omogućava da usmjeriš aplikaciju na bilo koji server, uključujući onaj koji sam hostuješ - pogledaj vodič za samostalno hostanje ako te zanima. Šta god odabereš, tvoje datoteke ostaju end-to-end šifrovane, a server uvijek vidi samo nečitljive podatke."
+    "choosingBody": "PortalGems treba mailbox server da spoji dva uređaja, a u Postavkama biraš koji. Javni server je onaj koji vodi zajednica (magic-wormhole) - radi s drugim wormhole aplikacijama, iako u rijetkim slučajevima može biti preopterećen ili nedostupan. PortalGems server vodimo mi i predstavlja pouzdan zadani izbor. „Prilagođeni\" ti omogućava da usmjeriš aplikaciju na bilo koji server, uključujući onaj koji sam hostuješ - pogledaj vodič za samostalno hostanje ako te zanima. Šta god odabereš, tvoje datoteke ostaju end-to-end šifrovane, a server uvijek vidi samo nečitljive podatke."
   },
   "transfer": {
     "sendVia": "Slanje preko: {{server}}",
