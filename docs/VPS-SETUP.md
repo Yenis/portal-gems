@@ -58,7 +58,7 @@ User=wormhole
 # directory. systemd's default cwd is `/`, which the service user can't write
 # to, so without this it crash-loops on startup.
 WorkingDirectory=/home/wormhole
-ExecStart=/home/wormhole/venv/bin/twist wormhole-mailbox --port tcp:4000:interface=127.0.0.1
+ExecStart=/home/wormhole/venv/bin/twist --log-level=error wormhole-mailbox --port tcp:4000:interface=127.0.0.1
 Restart=always
 
 [Install]
@@ -77,13 +77,27 @@ After=network.target
 
 [Service]
 User=wormhole
-ExecStart=/home/wormhole/venv/bin/twist transitrelay --port tcp:4001
+ExecStart=/home/wormhole/venv/bin/twist --log-level=error transitrelay --port tcp:4001
 Restart=always
 
 [Install]
 WantedBy=multi-user.target
 EOF
 ```
+
+**`--log-level=error` is what keeps the server from recording who used
+it.** Without it the mailbox writes every HTTP request it receives to the
+system journal - address, time, path and user agent - along with a line,
+address included, for each connection it times out. Found on the PortalGems
+server itself on 2026-10-11, which had been running without the flag.
+Clients that come in through Caddy show up there as `127.0.0.1`, because
+Caddy is the one connecting; anything that reaches the mailbox's own port
+directly - a Symbian phone on the cleartext listener in the last section,
+and every scanner on the internet - shows up under its real address. With
+the flag only errors are written. Neither service is given `--usage-db` or
+`--log-fd`, so nothing else is kept, and Caddy writes no access log unless
+a `log` directive asks for one. See "What the server records" below for how
+to check.
 
 ```bash
 sudo systemctl daemon-reload
@@ -175,6 +189,39 @@ curl -I https://relay.example.com          # Caddy up + valid cert
 sudo journalctl -u wormhole-mailbox -f     # live mailbox log
 ```
 
+## What the server records
+
+Set up as above, nothing about its users. To check a running server rather
+than take that on trust:
+
+```bash
+# Should show errors only - no request lines, no addresses, no "app prune".
+sudo journalctl -u wormhole-mailbox -n 50 --no-pager -a -o cat
+sudo journalctl -u wormhole-transit -n 50 --no-pager -a -o cat
+# Should show certificate housekeeping only.
+sudo journalctl -u caddy -n 50 --no-pager
+# Should print nothing: no `log` directive, so no access log.
+grep -n 'log' /etc/caddy/Caddyfile
+# "Logging: on" means blocked packets are written down with their source.
+sudo ufw status verbose
+```
+
+Three things sit outside the wormhole software:
+
+- **Entries from before the flag was added stay in the journal** until
+  they age out. `sudo journalctl --rotate && sudo journalctl
+  --vacuum-time=1s` removes everything archived - for every service on the
+  machine, not only these two.
+- **`ufw` logs the packets it blocks**, source address included, when its
+  logging is on (the default is "low"). Those are connections that were
+  refused, not users of the server; `sudo ufw logging off` stops it.
+- **The hosting provider** may keep network records of its own.
+
+The mailbox still has to know each connection's address for as long as the
+connection lasts, and its working file `relay.sqlite` holds the open
+meeting slots and the encrypted messages waiting in them, without
+addresses, until both sides are done.
+
 ## 7. Point the app at it
 
 In **Settings -> Connection server**, choose **Custom** and enter:
@@ -261,7 +308,7 @@ Change the unit from step 2:
 
 ```ini
 # was: --port tcp:4000:interface=127.0.0.1
-ExecStart=/home/wormhole/venv/bin/twist wormhole-mailbox --port tcp:4000
+ExecStart=/home/wormhole/venv/bin/twist --log-level=error wormhole-mailbox --port tcp:4000
 ```
 
 ```sh

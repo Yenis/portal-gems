@@ -5224,6 +5224,10 @@ if (!import_electron2.app.isPackaged) {
 var pairsPath = () => path4.join(import_electron2.app.getPath("userData"), "paired-devices.bin");
 function readPairs() {
   try {
+    try {
+      fs3.chmodSync(pairsPath(), 384);
+    } catch {
+    }
     const raw = fs3.readFileSync(pairsPath());
     if (import_electron2.safeStorage.isEncryptionAvailable()) {
       return import_electron2.safeStorage.decryptString(raw);

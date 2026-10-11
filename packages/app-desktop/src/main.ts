@@ -58,6 +58,13 @@ const pairsPath = () => path.join(app.getPath('userData'), 'paired-devices.bin')
 
 function readPairs(): string {
   try {
+    // A file written before it was made owner-only (see writePairs) is
+    // closed up the first time it is read, not the next time it changes.
+    try {
+      fs.chmodSync(pairsPath(), 0o600);
+    } catch {
+      // Not there yet, or a platform without these bits.
+    }
     const raw = fs.readFileSync(pairsPath());
     if (safeStorage.isEncryptionAvailable()) {
       return safeStorage.decryptString(raw);

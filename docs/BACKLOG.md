@@ -80,10 +80,18 @@ The review and its fixes are in `docs/ARCHITECTURE.md` section 7. Not done:
   files come from the same place as the binaries.** They prove a download
   was not corrupted, not who made it. Signing the checksums with a key
   published elsewhere would.
-- **No privacy policy or security contact.** The PortalGems server is run
-  by the project and sees IP addresses and timing, which is worth saying
-  in a short `PRIVACY.md`; a `SECURITY.md` would say where to report a
-  flaw.
+- **The server's logging, found and closed.** On 2026-10-11 the PortalGems
+  server turned out to be writing each HTTP request to the journal with
+  its address. Both services now run with `--log-level=error`, confirmed
+  on the server after a transfer: the journal shows nothing but systemd's
+  own start and stop lines. `docs/VPS-SETUP.md` has the flag and a section
+  on checking. `PRIVACY.md` and `SECURITY.md` were written from that.
+  Still to do by hand: turn on private vulnerability reporting in the
+  repository's settings, which `SECURITY.md` points people to.
+- **No license notices in the apps.** GPLv3 asks that whoever receives the
+  app is shown the license and where the source is, and the bundled
+  libraries have notices of their own. Agreed 2026-10-11: an About /
+  Licenses screen.
 
 ## Features: what has been decided (2026-10-11)
 

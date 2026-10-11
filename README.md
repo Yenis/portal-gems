@@ -236,6 +236,10 @@ file or one folder at a time.
   unlocked device*, and traffic analysis (an observer can see *that* you
   transferred something and roughly how large it was, but not *what*).
 
+What leaves your device, who can see it and what is kept is set out in
+[PRIVACY.md](PRIVACY.md). To report a security flaw, see
+[SECURITY.md](SECURITY.md).
+
 ## Device pairing (no backend)
 
 The wormhole protocol lets a sender *choose* the code instead of getting a
@@ -553,14 +557,15 @@ User=you
 # directory. Without a writable one it crash-loops on startup (systemd's
 # default cwd is `/`, which the service user can't write to).
 WorkingDirectory=/home/you
-ExecStart=/home/you/wormhole/bin/twist wormhole-mailbox --port tcp:4000
+# --log-level=error: without it every request is logged with its address.
+ExecStart=/home/you/wormhole/bin/twist --log-level=error wormhole-mailbox --port tcp:4000
 Restart=always
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-(Duplicate it for `transitrelay --port tcp:4001`, then
+(Duplicate it for `--log-level=error transitrelay --port tcp:4001`, then
 `sudo systemctl enable --now wormhole-mailbox wormhole-transitrelay`.)
 
 ### 3. Use TLS (recommended)
