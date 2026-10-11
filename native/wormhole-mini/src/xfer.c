@@ -205,7 +205,7 @@ int wh_xfer_await_offer(wh_mailbox *m, const char *relay_host,
                         unsigned int relay_port, wh_offer *offer)
 {
     char buf[2048];
-    wh_json_val v, inner, field;
+    wh_json_val v, inner;
     long n;
 
     offer->filename[0] = '\0';
@@ -217,6 +217,9 @@ int wh_xfer_await_offer(wh_mailbox *m, const char *relay_host,
     g_text[0] = '\0';
     offer->num_files = 0;
     offer->num_bytes = 0;
+    offer->is_loose = 0;
+    offer->loose_files = 0;
+    offer->loose_folders = 0;
     offer->peer.count = 0;
 
     /* Read before writing. What arrives first says which exchange this is: a
@@ -250,7 +253,53 @@ int wh_xfer_await_offer(wh_mailbox *m, const char *relay_host,
     /* Their offer. */
     n = wh_mailbox_recv_phase(m, buf, sizeof(buf));
     if (n < 0) return -1;
-    if (wh_json_get(buf, (unsigned long)n, "offer", &v) != 0) return -1;
+    return wh_xfer_parse_offer(buf, (unsigned long)n, offer);
+}
+
+/* The PortalGems extension on a directory offer. Only an object holding
+ * "loose":true makes the offer loose. Its two counts are taken together or
+ * not at all - half of a claim is not a claim - and without them `num_files`
+ * stands in for the files, which is at worst an imprecise sentence. */
+static void parse_loose(const wh_json_val *directory, wh_offer *offer)
+{
+    wh_json_val ext, field;
+    unsigned long files = 0, folders = 0;
+
+    offer->is_loose = 0;
+    offer->loose_files = 0;
+    offer->loose_folders = 0;
+
+    if (wh_json_get(directory->p, directory->len, "portalgems", &ext) != 0) return;
+    if (ext.type != WH_JSON_OBJECT) return;
+    if (wh_json_get(ext.p, ext.len, "loose", &field) != 0) return;
+    if (field.type != WH_JSON_BOOL || field.len != 4 ||
+        field.p[0] != 't' || field.p[1] != 'r' ||
+        field.p[2] != 'u' || field.p[3] != 'e') {
+        return;
+    }
+
+    offer->is_loose = 1;
+    if (wh_json_get(ext.p, ext.len, "files", &field) == 0 &&
+        wh_json_u32(&field, &files) == 0 &&
+        wh_json_get(ext.p, ext.len, "folders", &field) == 0 &&
+        wh_json_u32(&field, &folders) == 0) {
+        offer->loose_files = files;
+        offer->loose_folders = folders;
+    } else {
+        offer->loose_files = offer->num_files;
+        offer->loose_folders = 0;
+    }
+}
+
+int wh_xfer_parse_offer(const char *msg, unsigned long len, wh_offer *offer)
+{
+    wh_json_val v, inner, field;
+
+    offer->is_loose = 0;
+    offer->loose_files = 0;
+    offer->loose_folders = 0;
+
+    if (wh_json_get(msg, len, "offer", &v) != 0) return -1;
 
     if (wh_json_get(v.p, v.len, "file", &inner) == 0) {
         unsigned long size = 0;
@@ -281,10 +330,91 @@ int wh_xfer_await_offer(wh_mailbox *m, const char *relay_host,
         if (wh_json_get(inner.p, inner.len, "numfiles", &field) == 0) {
             if (wh_json_u32(&field, &n) == 0) offer->num_files = n;
         }
+        parse_loose(&inner, offer);
         return 0;
     }
 
     return -1;
+}
+
+/* Append `s` to `out` at `*at`, keeping room for the NUL. */
+static int put_str(char *out, unsigned long cap, unsigned long *at, const char *s)
+{
+    while (*s) {
+        if (*at + 1 >= cap) return -1;
+        out[(*at)++] = *s++;
+    }
+    out[*at] = '\0';
+    return 0;
+}
+
+static int put_num(char *out, unsigned long cap, unsigned long *at, unsigned long n)
+{
+    char digits[12];
+    int i = 0;
+    do {
+        digits[i++] = (char)('0' + (n % 10));
+        n /= 10;
+    } while (n > 0 && i < (int)sizeof(digits));
+    while (i > 0) {
+        if (*at + 1 >= cap) return -1;
+        out[(*at)++] = digits[--i];
+    }
+    out[*at] = '\0';
+    return 0;
+}
+
+int wh_numbered_name(const char *name, int is_dir, unsigned long n,
+                     char *out, unsigned long cap)
+{
+    unsigned long len = wh_strlen(name);
+    unsigned long dot = len;        /* where the extension starts; len = none */
+    unsigned long i, at = 0;
+
+    if (cap == 0) return -1;
+    out[0] = '\0';
+
+    if (!is_dir) {
+        for (i = len; i > 0; i--) {
+            if (name[i - 1] == '.') {
+                /* A dot at the very start is a hidden file, not an extension. */
+                if (i - 1 > 0) dot = i - 1;
+                break;
+            }
+        }
+    }
+
+    for (i = 0; i < dot; i++) {
+        if (at + 1 >= cap) return -1;
+        out[at++] = name[i];
+    }
+    out[at] = '\0';
+    if (n > 0) {
+        if (put_str(out, cap, &at, " (") != 0) return -1;
+        if (put_num(out, cap, &at, n) != 0) return -1;
+        if (put_str(out, cap, &at, ")") != 0) return -1;
+    }
+    return put_str(out, cap, &at, name + dot);
+}
+
+int wh_items_text(unsigned long files, unsigned long folders,
+                  char *out, unsigned long cap)
+{
+    unsigned long at = 0;
+
+    if (cap == 0) return -1;
+    out[0] = '\0';
+
+    if (files > 0 || folders == 0) {
+        if (put_num(out, cap, &at, files) != 0) return -1;
+        if (put_str(out, cap, &at, files == 1 ? " file" : " files") != 0) return -1;
+    }
+    if (folders > 0) {
+        if (files > 0 && put_str(out, cap, &at, " and ") != 0) return -1;
+        if (put_num(out, cap, &at, folders) != 0) return -1;
+        if (put_str(out, cap, &at, folders == 1 ? " folder" : " folders") != 0) return -1;
+    }
+    return 0;
 }
 
 int wh_xfer_reject(wh_mailbox *m, const char *reason)

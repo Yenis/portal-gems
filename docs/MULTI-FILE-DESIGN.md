@@ -373,3 +373,10 @@ cannot receive:
 - `ubrn-postgen.sh` ends in a `git checkout`; when the regeneration is not
   run by the repository's owner, keep a copy of `android/CMakeLists.txt`
   beforehand and put it back by hand instead.
+- Step 5 (Symbian receive) is built: `wh_xfer_parse_offer`,
+  `wh_numbered_name` and `wh_items_text` in `wormhole-mini` with
+  `tests/test_bundle.c` (host and ARM), bundle landing in `wh-mini receive`,
+  and `LandBundle` in the Symbian engine. The phone build itself was not
+  compiled where this was written - the 32-bit cross compiler could not run
+  there - only syntax-checked with a host compiler against the SDK headers,
+  so `abld build gcce urel` is the first thing to run.

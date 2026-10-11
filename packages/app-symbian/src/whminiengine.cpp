@@ -28,6 +28,10 @@ _LIT(KDestDir, "E:\\PortalGems\\");
  * state the archive's size before a byte goes out, and unpacking wants to
  * read the central directory at the end. */
 _LIT(KStageZip, "E:\\PortalGems\\.stage.zip");
+/* Where a multi-file bundle is unpacked before its items are moved out
+ * under names nothing else has. On the same drive as KDestDir, so the move
+ * is a rename and costs nothing however large the items are. */
+_LIT(KStageDir, "E:\\PortalGems\\.stage\\");
 
 /* About 100 KB of buffers, static because Symbian gives a thread 8 KB of
  * stack and the protocol needs far more than that in one place. */
@@ -782,6 +786,124 @@ static TInt UnpackStaged(RFs& aFs, const TDesC& aDest, TUint aCap, TInt& aFiles)
     return rc < 0 ? KErrCorrupt : KErrNone;
     }
 
+/* Delete `aDir` (with its trailing backslash) and everything in it. Bounded
+ * like ZipTree, and for the same reason: a TFileName per level on a worker
+ * stack. Best effort - it clears a staging directory, and anything it cannot
+ * remove is found and cleared again before the next bundle is unpacked. */
+static void RemoveTree(RFs& aFs, const TDesC& aDir, TInt aDepth)
+    {
+    CDir* dir = NULL;
+    TInt i;
+
+    if (aDepth > KMaxZipDepth) return;
+    if (aFs.GetDir(aDir, KEntryAttMaskSupported, ESortNone, dir) == KErrNone && dir)
+        {
+        for (i = 0; i < dir->Count(); i++)
+            {
+            const TEntry& e = (*dir)[i];
+            TFileName path;
+            if (aDir.Length() + e.iName.Length() + 2 > path.MaxLength()) continue;
+            path.Copy(aDir);
+            path.Append(e.iName);
+            if (e.IsDir())
+                {
+                path.Append('\\');
+                RemoveTree(aFs, path, aDepth + 1);
+                }
+            else
+                {
+                /* A read-only file would refuse to go. */
+                aFs.SetAtt(path, 0, KEntryAttReadOnly);
+                aFs.Delete(path);
+                }
+            }
+        }
+    delete dir;
+    aFs.RmDir(aDir);
+    }
+
+/* Move each top-level item of an unpacked bundle out of `aStage` and into
+ * `aDest`, each under the first name nothing there has - `photo.jpg`, else
+ * `photo (1).jpg` - so a bundle never overwrites and never merges into a
+ * folder that was already there. Counts what landed; an item that could not
+ * be moved stays in staging, is cleared with it, and shows as the difference
+ * from `aExpected`.
+ *
+ * Names here are the archive's bytes widened to 16 bits (EntryToPath), so
+ * narrowing them again for wh_numbered_name loses nothing. */
+static void LandBundle(RFs& aFs, const TDesC& aStage, const TDesC& aDest,
+                       TUint& aFiles, TUint& aFolders, TUint& aExpected)
+    {
+    CDir* dir = NULL;
+    TInt i;
+
+    aFiles = 0;
+    aFolders = 0;
+    aExpected = 0;
+    if (aFs.GetDir(aStage, KEntryAttNormal | KEntryAttDir, ESortByName, dir) != KErrNone)
+        {
+        return;
+        }
+
+    for (i = 0; i < dir->Count(); i++)
+        {
+        const TEntry& e = (*dir)[i];
+        static char name[260];
+        static char candidate[300];
+        TFileName from;
+        TFileName to;
+        TInt k;
+        TUint n;
+        TBool isDir = e.IsDir();
+
+        aExpected++;
+        if (e.iName.Length() >= (TInt)sizeof(name)) continue;
+        if (aStage.Length() + e.iName.Length() + 2 > from.MaxLength()) continue;
+        for (k = 0; k < e.iName.Length(); k++) name[k] = (char)e.iName[k];
+        name[k] = '\0';
+        from.Copy(aStage);
+        from.Append(e.iName);
+
+        for (n = 0; n < 1000; n++)
+            {
+            TEntry probe;
+            TInt found;
+
+            if (wh_numbered_name(name, isDir ? 1 : 0, n, candidate,
+                                 sizeof(candidate)) != 0)
+                {
+                break;
+                }
+            TPtrC8 cand8((const TUint8*)candidate);
+            if (aDest.Length() + cand8.Length() + 2 > to.MaxLength()) break;
+            to.Copy(aDest);
+            for (k = 0; k < cand8.Length(); k++) to.Append((TChar)cand8[k]);
+
+            found = aFs.Entry(to, probe);
+            if (found == KErrNone) continue;          /* taken: try the next */
+            if (found != KErrNotFound) break;         /* cannot tell: give up */
+
+            {
+            TInt err = aFs.Rename(from, to);
+            if (err != KErrNone && isDir)
+                {
+                /* Some file systems want a directory named as a path. */
+                from.Append('\\');
+                to.Append('\\');
+                err = aFs.Rename(from, to);
+                }
+            if (err == KErrNone)
+                {
+                if (isDir) aFolders++;
+                else aFiles++;
+                }
+            }
+            break;
+            }
+        }
+    delete dir;
+    }
+
 static void Finish(TJob* aJob, TInt aState, const char* aMessage)
 {
     /* "You stopped this" and "this went wrong" deserve different words, and
@@ -898,7 +1020,13 @@ static void RunJob(TJob* aJob)
     /* A folder arrives as one archive, staged and then unpacked. Only the
      * name check below differs: a folder's name is its own, a file's comes
      * from the offer. */
-    if (offer.is_directory) {
+    if (offer.is_loose) {
+        /* A bundle of several files and folders. Its own name is never used
+         * here - that is only what a client without the extension calls the
+         * folder it saves instead - so the screen shows what it holds. */
+        wh_items_text(offer.loose_files, offer.loose_folders,
+                      offer.filename, sizeof(offer.filename));
+    } else if (offer.is_directory) {
         CopyCStr(offer.filename, sizeof(offer.filename), offer.dirname);
     }
 
@@ -960,7 +1088,50 @@ static void RunJob(TJob* aJob)
                             WhminiProgress, NULL);
         sink.iFile.Close();
 
-        if (rc == 0 && offer.is_directory) {
+        if (rc == 0 && offer.is_loose) {
+            /* Unpacked whole into staging first, and only then moved out:
+             * a bundle that fails to unpack leaves the receive folder as it
+             * was, and one that succeeds lands each item beside what is
+             * already there instead of inside a folder of its own. */
+            TInt files = 0;
+            TUint landedFiles = 0, landedFolders = 0, expected = 0;
+            TInt err;
+
+            aJob->iState = EJobUnpacking;
+            RemoveTree(fs, KStageDir, 0);
+            err = UnpackStaged(fs, KStageDir, (TUint)wh_unpack_cap(offer.num_bytes),
+                               files);
+            fs.Delete(KStageZip);
+            if (err != KErrNone) {
+                RemoveTree(fs, KStageDir, 0);
+                fs.Close();
+                Finish(aJob, EJobFailed,
+                       err == KErrTooBig ? "Archive is larger than it claimed"
+                                         : "Could not unpack the files");
+                wh_mailbox_close(&mailbox, "errory");
+                return;
+            }
+            LandBundle(fs, KStageDir, KDestDir, landedFiles, landedFolders, expected);
+            RemoveTree(fs, KStageDir, 0);
+            aJob->iDone = (TUint)files;
+
+            /* What the screen names is what landed, not what was claimed. */
+            wh_items_text(landedFiles, landedFolders, offer.filename,
+                          sizeof(offer.filename));
+            CopyCStr(aJob->iFileName, KJobTextLen, offer.filename);
+            if (landedFiles + landedFolders < expected) {
+                /* The transfer was complete; the last step was not. Say so
+                 * in numbers - the memory card is most likely full. */
+                TBuf8<64> msg;
+                msg.Format(_L8("Saved only %u of %u items"),
+                           landedFiles + landedFolders, expected);
+                msg.Append(TChar(0));
+                fs.Close();
+                Finish(aJob, EJobFailed, (const char*)msg.Ptr());
+                wh_mailbox_close(&mailbox, "happy");
+                return;
+            }
+        } else if (rc == 0 && offer.is_directory) {
             TFileName dest(KDestDir);
             TInt files = 0;
             TInt err;

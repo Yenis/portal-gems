@@ -593,6 +593,38 @@ Both directions stage the archive as a single file. A send has to know its
 size before offering it, and a receive wants to read the central directory
 at the end - neither is possible while the bytes are still in flight.
 
+### Several files at once
+
+The other apps can send a selection of files and folders as one transfer.
+On the wire it is a directory offer with one extra member,
+`"portalgems":{"loose":true,"files":7,"folders":2}`, and a receiver that
+knows it puts the items straight into its receive folder instead of into a
+folder of their own (`docs/MULTI-FILE-DESIGN.md`). This phone receives them;
+it does not send them - there is no multi-select picker to send from, and
+"Send folder" covers the need.
+
+- `wh_xfer_parse_offer` reads the marker into `wh_offer.is_loose`,
+  `loose_files` and `loose_folders`. It was split out of
+  `wh_xfer_await_offer` so the parsing can be tested without a mailbox, and
+  `tests/test_bundle.c` reads the same literal offer that the Rust crate
+  pins in `test_offer_directory_loose` - two implementations, one string.
+  A malformed marker never fails the offer; it is merely not loose.
+- The archive is unpacked whole into `E:\PortalGems\.stage\` and only then
+  moved out, item by item, with `RFs::Rename` - the same drive, so a move
+  costs nothing however large the item. A bundle that fails to unpack
+  therefore leaves the receive folder exactly as it was.
+- Nothing is overwritten and nothing is merged. `wh_numbered_name` gives the
+  candidates - `photo.jpg`, `photo (1).jpg`, a folder `album (1)` - in the
+  shapes the other clients use, and `LandBundle` takes the first that
+  `RFs::Entry` does not find. This is stricter than this phone's own
+  single-file and folder receives, which replace what is there.
+- The screen names what landed ("7 files and 2 folders", from
+  `wh_items_text`), counted after the move. If the card filled during it the
+  job ends as failed with "Saved only 4 of 9 items".
+- The host `wh-mini receive` does the same with a `.wh-bundle.d` staging
+  directory and `rename()`, so the whole path can be exercised against
+  `cargo run --example send -- --files ...` without a phone.
+
 ## Direct transit
 
 The phone dials out but never listens. The full protocol has both peers

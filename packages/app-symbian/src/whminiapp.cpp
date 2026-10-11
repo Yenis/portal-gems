@@ -330,7 +330,7 @@ void CWhminiAppUi::Refresh()
             iContainer->SetLine(3, _L("Building archive..."));
             break;
         case EJobUnpacking:
-            iContainer->SetLine(3, _L("Unpacking folder..."));
+            iContainer->SetLine(3, _L("Unpacking..."));
             break;
         case EJobShowingCode:
             {
@@ -566,7 +566,8 @@ _LIT(KHelpText,
     "give it to the other person.\n\n"
     "RECEIVE\n"
     "Options > Receive file, then type the sender's code. Files are saved "
-    "to E:\\PortalGems.\n\n"
+    "to E:\\PortalGems. Several files sent at once arrive there as "
+    "separate files, not in a folder; a name already taken gets (1).\n\n"
     "PAIR\n"
     "Options > Pair a device. One device shows a code and the other enters "
     "it. After that the two need no codes.\n\n"

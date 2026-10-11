@@ -30,6 +30,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <dirent.h>
+#include <unistd.h>
 #include <errno.h>
 
 #include "../src/net.h"
@@ -517,6 +518,75 @@ static long zipfile_read(void *ctx, unsigned long offset, unsigned char *buf,
     return (long)fread(buf, 1, (size_t)len, f);
 }
 
+/* rm -r, for the staging directory of a bundle. */
+static void remove_tree(const char *path)
+{
+    DIR *d = opendir(path);
+    struct dirent *e;
+    char child[1024];
+
+    if (!d) {
+        remove(path);
+        return;
+    }
+    while ((e = readdir(d)) != 0) {
+        if (strcmp(e->d_name, ".") == 0 || strcmp(e->d_name, "..") == 0) continue;
+        if (strlen(path) + strlen(e->d_name) + 2 > sizeof(child)) continue;
+        strcpy(child, path);
+        strcat(child, "/");
+        strcat(child, e->d_name);
+        remove_tree(child);
+    }
+    closedir(d);
+    rmdir(path);
+}
+
+/* Move each top-level item of an unpacked bundle from `stage` into `outdir`
+ * under the first name nothing there has - see wh_numbered_name. Counts
+ * what landed; an item that cannot be moved is left for the caller's
+ * cleanup and shows as the difference from `expected`. */
+static void land_bundle(const char *stage, const char *outdir,
+                        unsigned long *files, unsigned long *folders,
+                        unsigned long *expected)
+{
+    DIR *d = opendir(stage);
+    struct dirent *e;
+
+    if (!d) return;
+    while ((e = readdir(d)) != 0) {
+        char from[1024], to[1024], name[300];
+        struct stat st;
+        unsigned long n;
+        int is_dir;
+
+        if (strcmp(e->d_name, ".") == 0 || strcmp(e->d_name, "..") == 0) continue;
+        if (strlen(stage) + strlen(e->d_name) + 2 > sizeof(from)) continue;
+        strcpy(from, stage);
+        strcat(from, "/");
+        strcat(from, e->d_name);
+        if (lstat(from, &st) != 0) continue;
+        is_dir = S_ISDIR(st.st_mode);
+        if (!is_dir && !S_ISREG(st.st_mode)) continue;
+        (*expected)++;
+
+        for (n = 0; n < 1000; n++) {
+            if (wh_numbered_name(e->d_name, is_dir, n, name, sizeof(name)) != 0) break;
+            if (strlen(outdir) + strlen(name) + 2 > sizeof(to)) break;
+            strcpy(to, outdir);
+            strcat(to, "/");
+            strcat(to, name);
+            if (lstat(to, &st) != 0) {
+                if (rename(from, to) == 0) {
+                    if (is_dir) (*folders)++;
+                    else (*files)++;
+                }
+                break;
+            }
+        }
+    }
+    closedir(d);
+}
+
 /* Unpack a staged archive into `dest`, refusing unsafe names and stopping
  * at the caller's cap. */
 static int unpack_zip(const char *zip_path, const char *dest,
@@ -655,7 +725,15 @@ static int cmd_receive(const char *host, unsigned int port, const char *path,
         printf("\n");
     }
 
-    if (offer.is_directory) {
+    if (offer.is_loose) {
+        char items[64];
+        wh_items_text(offer.loose_files, offer.loose_folders, items, sizeof(items));
+        printf("offer: %s (%lu files in all, %lu bytes, %lu zipped)\n",
+               items, offer.num_files, offer.num_bytes, offer.filesize);
+        /* Staged under a name of our own: a bundle's `dirname` is only the
+         * folder name for clients that do not unpack it loose. */
+        strcpy(offer.filename, ".wh-bundle");
+    } else if (offer.is_directory) {
         printf("offer: folder %s (%lu files, %lu bytes, %lu zipped)\n",
                offer.dirname, offer.num_files, offer.num_bytes, offer.filesize);
         strcpy(offer.filename, offer.dirname);
@@ -703,7 +781,36 @@ static int cmd_receive(const char *host, unsigned int port, const char *path,
         return 1;
     }
 
-    if (offer.is_directory) {
+    if (offer.is_loose) {
+        /* Unpacked whole into a staging directory first, then each item
+         * moved out under a name nothing else has: a transfer that fails
+         * leaves the destination as it was, and one that succeeds never
+         * overwrites or merges. */
+        char stage[512];
+        unsigned long files = 0, folders = 0, expected = 0;
+        char items[64];
+        strcpy(stage, outdir);
+        strcat(stage, "/.wh-bundle.d");
+        remove_tree(stage);
+        if (unpack_zip(destpath, stage, wh_unpack_cap(offer.num_bytes)) != 0) {
+            fprintf(stderr, "could not unpack the bundle\n");
+            remove_tree(stage);
+            remove(destpath);
+            wh_mailbox_close(&m, "errory");
+            return 1;
+        }
+        remove(destpath);
+        land_bundle(stage, outdir, &files, &folders, &expected);
+        remove_tree(stage);
+        wh_items_text(files, folders, items, sizeof(items));
+        if (files + folders < expected) {
+            fprintf(stderr, "only %lu of %lu items could be saved\n",
+                    files + folders, expected);
+            wh_mailbox_close(&m, "happy");
+            return 1;
+        }
+        printf("received %s into %s\n", items, outdir);
+    } else if (offer.is_directory) {
         char folder[512];
         strcpy(folder, outdir);
         strcat(folder, "/");

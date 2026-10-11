@@ -91,9 +91,50 @@ typedef struct {
     unsigned long num_files;   /* what the sender says the folder holds */
     unsigned long num_bytes;   /* unpacked total, before compression */
 
+    /* A loose bundle: several files and folders sent as one. It is a
+     * directory offer in every other respect - the archive arrives and is
+     * unpacked the same way - but its contents belong directly in the
+     * receive folder, each under its own name, and `dirname` is only what a
+     * client without this extension would call the folder it saves instead.
+     *
+     * The two counts are the files and folders at the top level: what will
+     * appear in the receive folder, as opposed to `num_files`, which counts
+     * every file inside. They word a sentence and are not enforced.
+     * See docs/MULTI-FILE-DESIGN.md. */
+    int is_loose;
+    unsigned long loose_files;
+    unsigned long loose_folders;
+
     /* Where the peer says it can be reached directly. */
     wh_direct_hints peer;
 } wh_offer;
+
+/* Read the offer out of the phase message that carries it:
+ * {"offer":{"file":{...}}} or {"offer":{"directory":{...}}}. Fills the
+ * file and directory members of `offer` and leaves the rest alone. A text
+ * offer is not handled here - wh_xfer_await_offer acknowledges those itself.
+ *
+ * Unknown members are ignored, and so is a `portalgems` member that is
+ * malformed: an offer never fails to parse over the extension, it is merely
+ * not loose. Returns 0, or -1 if this is not a file or directory offer.
+ *
+ * Exposed so the parsing can be tested without a mailbox. */
+int wh_xfer_parse_offer(const char *msg, unsigned long len, wh_offer *offer);
+
+/* Candidate number `n` for a name that must not collide in the receive
+ * folder: `name` itself for 0, then "name (1).ext", "name (2).ext"... - or
+ * "name (1)" for a folder, whose dots are not an extension. A leading dot is
+ * not an extension either. The same shapes the other clients produce, so a
+ * clash reads the same wherever it is resolved. Returns 0, or -1 if the
+ * result does not fit `cap`. */
+int wh_numbered_name(const char *name, int is_dir, unsigned long n,
+                     char *out, unsigned long cap);
+
+/* "7 files and 2 folders", "5 files", "1 folder" - what a loose bundle
+ * holds, for a screen. A kind there is none of is left out. Returns 0, or
+ * -1 if it does not fit. */
+int wh_items_text(unsigned long files, unsigned long folders,
+                  char *out, unsigned long cap);
 
 /* How many unpacked bytes to tolerate for a folder claiming `num_bytes`:
  * the claim, a quarter again, and a floor for small offers. Past that an

@@ -59,12 +59,15 @@ $(BUILD)/test_pair: tests/test_pair.c $(SRC) $(PORT) $(BUILD)/ed25519.o | $(BUIL
 $(BUILD)/test_proto: tests/test_proto.c $(SRC) $(PORT) $(BUILD)/ed25519.o | $(BUILD)
 	$(CC) $(CFLAGS) -o $@ tests/test_proto.c $(SRC) $(PORT) $(BUILD)/ed25519.o
 
+$(BUILD)/test_bundle: tests/test_bundle.c $(SRC) $(PORT) $(BUILD)/ed25519.o | $(BUILD)
+	$(CC) $(CFLAGS) -o $@ tests/test_bundle.c $(SRC) $(PORT) $(BUILD)/ed25519.o
+
 $(BUILD)/wh-mini: cli/wh-mini.c $(SRC) $(PORT) $(BUILD)/ed25519.o | $(BUILD)
 	$(CC) $(CFLAGS) -o $@ cli/wh-mini.c $(SRC) $(PORT) $(BUILD)/ed25519.o
 
 cli: $(BUILD)/wh-mini
 
-test: $(BUILD)/test_vectors $(BUILD)/test_proto $(BUILD)/test_inflate $(BUILD)/test_zip $(BUILD)/test_zipw $(BUILD)/test_pair
+test: $(BUILD)/test_vectors $(BUILD)/test_proto $(BUILD)/test_inflate $(BUILD)/test_zip $(BUILD)/test_zipw $(BUILD)/test_pair $(BUILD)/test_bundle
 	./$(BUILD)/test_vectors
 	@echo
 	./$(BUILD)/test_proto
@@ -76,6 +79,8 @@ test: $(BUILD)/test_vectors $(BUILD)/test_proto $(BUILD)/test_inflate $(BUILD)/t
 	./$(BUILD)/test_zipw
 	@echo
 	./$(BUILD)/test_pair
+	@echo
+	./$(BUILD)/test_bundle
 	@echo
 	python3 tools/checkzip.py $(BUILD)/written.zip
 
@@ -103,12 +108,15 @@ $(BUILD)/arm/test_pair: tests/test_pair.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o 
 $(BUILD)/arm/test_proto: tests/test_proto.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o | $(BUILD)/arm
 	$(ARM_CC) $(CFLAGS) -static -o $@ tests/test_proto.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o
 
+$(BUILD)/arm/test_bundle: tests/test_bundle.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o | $(BUILD)/arm
+	$(ARM_CC) $(CFLAGS) -static -o $@ tests/test_bundle.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o
+
 $(BUILD)/arm/wh-mini: cli/wh-mini.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o | $(BUILD)/arm
 	$(ARM_CC) $(CFLAGS) -static -o $@ cli/wh-mini.c $(SRC) $(PORT) $(BUILD)/arm/ed25519.o
 
 cli-arm: $(BUILD)/arm/wh-mini
 
-test-arm: $(BUILD)/arm/test_vectors $(BUILD)/arm/test_proto $(BUILD)/arm/test_inflate $(BUILD)/arm/test_zip $(BUILD)/arm/test_zipw $(BUILD)/arm/test_pair
+test-arm: $(BUILD)/arm/test_vectors $(BUILD)/arm/test_proto $(BUILD)/arm/test_inflate $(BUILD)/arm/test_zip $(BUILD)/arm/test_zipw $(BUILD)/arm/test_pair $(BUILD)/arm/test_bundle
 	$(QEMU) ./$(BUILD)/arm/test_vectors
 	@echo
 	$(QEMU) ./$(BUILD)/arm/test_proto
@@ -120,6 +128,8 @@ test-arm: $(BUILD)/arm/test_vectors $(BUILD)/arm/test_proto $(BUILD)/arm/test_in
 	$(QEMU) ./$(BUILD)/arm/test_zipw
 	@echo
 	$(QEMU) ./$(BUILD)/arm/test_pair
+	@echo
+	$(QEMU) ./$(BUILD)/arm/test_bundle
 	@echo
 	python3 tools/checkzip.py $(BUILD)/written.zip
 
