@@ -57,8 +57,6 @@ from an ordinary wait needs a liveness check on the mailbox connection
 
 ## Planned features (decided 2026-10-11)
 
-- **Send the clipboard to a paired device.** One tap, on the text-message
-  path that already exists.
 - **Updates.** In Settings: an auto-update toggle and a "Check for updates"
   button, against the GitHub releases. A sideloaded APK and a portable
   `.exe` otherwise never learn that a new version exists.
@@ -92,6 +90,8 @@ Decided against:
   run around the clock; the listener would have to ask one long-lived
   connection for the nameplate list, as the Symbian client does. Not worth
   it for half the benefit.
+- **Sending the clipboard to a paired device.** A message can already be
+  typed or pasted into the send screen.
 - **"Open" and "Show in folder" after a receive, and actions on a
   notification.** A received file should never be opened by accident; the
   notification only says what happened.
