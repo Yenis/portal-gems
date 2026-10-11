@@ -19,14 +19,21 @@ module.exports = __toCommonJS(preload_exports);
 var import_electron = require("electron");
 import_electron.contextBridge.exposeInMainWorld("portalgems", {
   locale: () => import_electron.ipcRenderer.invoke("pg:locale"),
-  pickFile: (defaultDir) => import_electron.ipcRenderer.invoke("pg:pickFile", defaultDir),
+  // One file, or several from one folder: a single file comes back as a
+  // file, several as a bundle that is sent in one transfer.
+  pickFiles: (defaultDir) => import_electron.ipcRenderer.invoke("pg:pickFiles", defaultDir),
   pickFolder: (defaultDir) => import_electron.ipcRenderer.invoke("pg:pickFolder", defaultDir),
-  // What a file or folder dropped onto the window is, in the shape the two
-  // pickers return. The path has to be read here: a renderer no longer sees
-  // File.path, and webUtils only exists on this side of the bridge.
-  dropped: (file) => import_electron.ipcRenderer.invoke("pg:statDropped", import_electron.webUtils.getPathForFile(file)),
+  // What was dropped onto the window - one file, one folder, or several of
+  // either - in the shape the pickers return. The paths have to be read
+  // here: a renderer no longer sees File.path, and webUtils only exists on
+  // this side of the bridge.
+  dropped: (files) => import_electron.ipcRenderer.invoke(
+    "pg:statDropped",
+    files.map((file) => import_electron.webUtils.getPathForFile(file))
+  ),
   send: (id, path, code, server) => import_electron.ipcRenderer.invoke("pg:send", id, path, code, server),
   sendFolder: (id, path, code, server) => import_electron.ipcRenderer.invoke("pg:sendFolder", id, path, code, server),
+  sendFiles: (id, paths, bundleName, code, server) => import_electron.ipcRenderer.invoke("pg:sendFiles", id, paths, bundleName, code, server),
   sendText: (id, text, code, server) => import_electron.ipcRenderer.invoke("pg:sendText", id, text, code, server),
   requestReceive: (id, code, server) => import_electron.ipcRenderer.invoke("pg:requestReceive", id, code, server),
   accept: (id, destDir) => import_electron.ipcRenderer.invoke("pg:accept", id, destDir),

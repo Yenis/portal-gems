@@ -8243,14 +8243,14 @@
               1,
               badgeFormat + " " + error[0],
               badgeStyle,
-              pad + JSCompiler_inline_result + pad,
+              pad2 + JSCompiler_inline_result + pad2,
               resetStyle
             ) : error.splice(
               0,
               0,
               badgeFormat,
               badgeStyle,
-              pad + JSCompiler_inline_result + pad,
+              pad2 + JSCompiler_inline_result + pad2,
               resetStyle
             );
             error.unshift(console);
@@ -21214,7 +21214,7 @@
           _currentValue: NotPendingTransition,
           _currentValue2: NotPendingTransition,
           _threadCount: 0
-        }, badgeFormat = "%c%s%c", badgeStyle = "background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px", resetStyle = "", pad = " ", bind = Function.prototype.bind;
+        }, badgeFormat = "%c%s%c", badgeStyle = "background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px", resetStyle = "", pad2 = " ", bind = Function.prototype.bind;
         var didWarnAboutNestedUpdates = false;
         var overrideHookState = null, overrideHookStateDeletePath = null, overrideHookStateRenamePath = null, overrideProps = null, overridePropsDeletePath = null, overridePropsRenamePath = null, scheduleUpdate = null, scheduleRetry = null, setErrorHandler = null, setSuspenseHandler = null;
         overrideHookState = function(fiber, id, path, value) {
@@ -23878,16 +23878,16 @@
       this.blockLen = this.iHash.blockLen;
       this.outputLen = this.iHash.outputLen;
       const blockLen = this.blockLen;
-      const pad = new Uint8Array(blockLen);
-      pad.set(key.length > blockLen ? hash.create().update(key).digest() : key);
-      for (let i = 0; i < pad.length; i++)
-        pad[i] ^= 54;
-      this.iHash.update(pad);
+      const pad2 = new Uint8Array(blockLen);
+      pad2.set(key.length > blockLen ? hash.create().update(key).digest() : key);
+      for (let i = 0; i < pad2.length; i++)
+        pad2[i] ^= 54;
+      this.iHash.update(pad2);
       this.oHash = hash.create();
-      for (let i = 0; i < pad.length; i++)
-        pad[i] ^= 54 ^ 92;
-      this.oHash.update(pad);
-      clean(pad);
+      for (let i = 0; i < pad2.length; i++)
+        pad2[i] ^= 54 ^ 92;
+      this.oHash.update(pad2);
+      clean(pad2);
     }
     update(buf) {
       aexists(this);
@@ -24474,6 +24474,15 @@
   }
   function capitalize(text) {
     return text.charAt(0).toLocaleUpperCase() + text.slice(1);
+  }
+  var pad = (value) => String(value).padStart(2, "0");
+  function bundleName(t2, counts, now = /* @__PURE__ */ new Date()) {
+    const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}.${pad(now.getMinutes())}`;
+    return sanitizeBundleName(`${capitalize(itemsText(t2, counts))} - ${stamp}`);
+  }
+  function sanitizeBundleName(raw) {
+    const cleaned = raw.replace(/[<>:"/\\|?*\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").replace(/^[. ]+|[. ]+$/g, "");
+    return cleaned.length > 0 ? cleaned : "files";
   }
   function savedBundleText(t2, result) {
     const { saved, expected, folder } = result;
@@ -27614,6 +27623,7 @@
       sendTitle: "Po\u0161alji datoteku",
       sendHint: "Odaberi datoteku i podijeli jednokratni kod s primaocem.",
       sendButton: "Odaberi datoteku",
+      sendFilesButton: "Odaberi datoteke",
       sendFolderButton: "Odaberi folder",
       receiveTitle: "Primi datoteku",
       receiveHint: "Unesi kod koji ti je poslao po\u0161iljalac.",
@@ -27718,8 +27728,7 @@
       renameTitle: "Preimenuj {{name}}",
       renameHint: "Ovaj naziv vrijedi samo na ovom ure\u0111aju. Ostavite prazno da se vratite na {{name}}.",
       renamePlaceholder: "Naziv za ovaj ure\u0111aj",
-      dropHint: "Prevuci datoteku ili folder na ure\u0111aj da ga po\u0161alje\u0161 tamo.",
-      dropOne: "Prevuci samo jednu datoteku ili folder odjednom.",
+      dropHint: "Prevuci datoteke ili foldere na ure\u0111aj da ih po\u0161alje\u0161 tamo.",
       dropFailed: "To se nije moglo pro\u010Ditati. Poku\u0161aj ga odabrati dugmetom Po\u0161alji.",
       lastUsed: "Zadnji prijenos {{when}}",
       lastUsedOn: "Zadnji prijenos {{date}}"
@@ -27885,6 +27894,7 @@
       sendTitle: "Datei senden",
       sendHint: "W\xE4hle eine Datei und teile den Einmal-Code mit dem Empf\xE4nger.",
       sendButton: "Datei ausw\xE4hlen",
+      sendFilesButton: "Dateien ausw\xE4hlen",
       sendFolderButton: "Ordner ausw\xE4hlen",
       receiveTitle: "Datei empfangen",
       receiveHint: "Gib den Code ein, den dir der Absender gegeben hat.",
@@ -27989,8 +27999,7 @@
       renameTitle: "{{name}} umbenennen",
       renameHint: "Dieser Name gilt nur auf diesem Ger\xE4t. Leer lassen, um wieder {{name}} zu verwenden.",
       renamePlaceholder: "Name f\xFCr dieses Ger\xE4t",
-      dropHint: "Ziehe eine Datei oder einen Ordner auf ein Ger\xE4t, um sie dorthin zu senden.",
-      dropOne: "Bitte nur eine Datei oder einen Ordner auf einmal ablegen.",
+      dropHint: "Ziehe Dateien oder Ordner auf ein Ger\xE4t, um sie dorthin zu senden.",
       dropFailed: "Das konnte nicht gelesen werden. W\xE4hle es stattdessen \xFCber Senden aus.",
       lastUsed: "Letzte \xDCbertragung {{when}}",
       lastUsedOn: "Letzte \xDCbertragung am {{date}}"
@@ -28156,6 +28165,7 @@
       sendTitle: "Send a file",
       sendHint: "Pick a file and share the one-time code with the receiver.",
       sendButton: "Choose file to send",
+      sendFilesButton: "Choose files to send",
       sendFolderButton: "Choose folder to send",
       receiveTitle: "Receive a file",
       receiveHint: "Enter the code the sender gave you.",
@@ -28260,8 +28270,7 @@
       renameTitle: "Rename {{name}}",
       renameHint: "This name is only used on this device. Leave it empty to go back to {{name}}.",
       renamePlaceholder: "Name for this device",
-      dropHint: "Drop a file or folder on a device to send it there.",
-      dropOne: "Drop one file or folder at a time.",
+      dropHint: "Drop files or folders on a device to send them there.",
       dropFailed: "That could not be read. Try choosing it with the Send button.",
       lastUsed: "Last transfer {{when}}",
       lastUsedOn: "Last transfer on {{date}}"
@@ -28427,6 +28436,7 @@
       sendTitle: "Enviar un archivo",
       sendHint: "Elige un archivo y comparte el c\xF3digo de un solo uso con el receptor.",
       sendButton: "Elegir archivo",
+      sendFilesButton: "Elegir archivos",
       sendFolderButton: "Elegir carpeta",
       receiveTitle: "Recibir un archivo",
       receiveHint: "Introduce el c\xF3digo que te dio el remitente.",
@@ -28531,8 +28541,7 @@
       renameTitle: "Cambiar el nombre de {{name}}",
       renameHint: "Este nombre solo se usa en este dispositivo. D\xE9jalo vac\xEDo para volver a {{name}}.",
       renamePlaceholder: "Nombre de este dispositivo",
-      dropHint: "Suelta un archivo o una carpeta sobre un dispositivo para enviarlo all\xED.",
-      dropOne: "Suelta solo un archivo o una carpeta cada vez.",
+      dropHint: "Suelta archivos o carpetas sobre un dispositivo para enviarlos all\xED.",
       dropFailed: "No se pudo leer. Prueba a elegirlo con el bot\xF3n Enviar.",
       lastUsed: "\xDAltima transferencia {{when}}",
       lastUsedOn: "\xDAltima transferencia el {{date}}"
@@ -28698,6 +28707,7 @@
       sendTitle: "Envoyer un fichier",
       sendHint: "Choisissez un fichier et partagez le code \xE0 usage unique avec le destinataire.",
       sendButton: "Choisir un fichier",
+      sendFilesButton: "Choisir des fichiers",
       sendFolderButton: "Choisir un dossier",
       receiveTitle: "Recevoir un fichier",
       receiveHint: "Saisissez le code que l'exp\xE9diteur vous a donn\xE9.",
@@ -28802,8 +28812,7 @@
       renameTitle: "Renommer {{name}}",
       renameHint: "Ce nom ne sert que sur cet appareil. Laissez vide pour revenir \xE0 {{name}}.",
       renamePlaceholder: "Nom de cet appareil",
-      dropHint: "D\xE9posez un fichier ou un dossier sur un appareil pour le lui envoyer.",
-      dropOne: "D\xE9posez un seul fichier ou dossier \xE0 la fois.",
+      dropHint: "D\xE9posez des fichiers ou des dossiers sur un appareil pour les lui envoyer.",
       dropFailed: "Impossible de le lire. Essayez de le choisir avec le bouton Envoyer.",
       lastUsed: "Dernier transfert {{when}}",
       lastUsedOn: "Dernier transfert le {{date}}"
@@ -28969,6 +28978,7 @@
       sendTitle: "\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u0444\u0430\u0439\u043B",
       sendHint: "\u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0444\u0430\u0439\u043B \u0438 \u043F\u0435\u0440\u0435\u0434\u0430\u0439\u0442\u0435 \u043E\u0434\u043D\u043E\u0440\u0430\u0437\u043E\u0432\u044B\u0439 \u043A\u043E\u0434 \u043F\u043E\u043B\u0443\u0447\u0430\u0442\u0435\u043B\u044E.",
       sendButton: "\u0412\u044B\u0431\u0440\u0430\u0442\u044C \u0444\u0430\u0439\u043B",
+      sendFilesButton: "\u0412\u044B\u0431\u0440\u0430\u0442\u044C \u0444\u0430\u0439\u043B\u044B",
       sendFolderButton: "\u0412\u044B\u0431\u0440\u0430\u0442\u044C \u043F\u0430\u043F\u043A\u0443",
       receiveTitle: "\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C \u0444\u0430\u0439\u043B",
       receiveHint: "\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u043A\u043E\u0434, \u043A\u043E\u0442\u043E\u0440\u044B\u0439 \u0432\u0430\u043C \u0434\u0430\u043B \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u0435\u043B\u044C.",
@@ -29073,8 +29083,7 @@
       renameTitle: "\u041F\u0435\u0440\u0435\u0438\u043C\u0435\u043D\u043E\u0432\u0430\u0442\u044C {{name}}",
       renameHint: "\u042D\u0442\u043E \u0438\u043C\u044F \u0432\u0438\u0434\u043D\u043E \u0442\u043E\u043B\u044C\u043A\u043E \u043D\u0430 \u044D\u0442\u043E\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0435. \u041E\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u043F\u0443\u0441\u0442\u044B\u043C, \u0447\u0442\u043E\u0431\u044B \u0432\u0435\u0440\u043D\u0443\u0442\u044C {{name}}.",
       renamePlaceholder: "\u0418\u043C\u044F \u044D\u0442\u043E\u0433\u043E \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430",
-      dropHint: "\u041F\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u0442\u0435 \u0444\u0430\u0439\u043B \u0438\u043B\u0438 \u043F\u0430\u043F\u043A\u0443 \u043D\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E, \u0447\u0442\u043E\u0431\u044B \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C.",
-      dropOne: "\u041F\u0435\u0440\u0435\u0442\u0430\u0441\u043A\u0438\u0432\u0430\u0439\u0442\u0435 \u043F\u043E \u043E\u0434\u043D\u043E\u043C\u0443 \u0444\u0430\u0439\u043B\u0443 \u0438\u043B\u0438 \u043F\u0430\u043F\u043A\u0435.",
+      dropHint: "\u041F\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u0442\u0435 \u0444\u0430\u0439\u043B\u044B \u0438\u043B\u0438 \u043F\u0430\u043F\u043A\u0438 \u043D\u0430 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E, \u0447\u0442\u043E\u0431\u044B \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C.",
       dropFailed: "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u0442\u044C. \u041F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0432\u044B\u0431\u0440\u0430\u0442\u044C \u0447\u0435\u0440\u0435\u0437 \u043A\u043D\u043E\u043F\u043A\u0443 \xAB\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C\xBB.",
       lastUsed: "\u041F\u043E\u0441\u043B\u0435\u0434\u043D\u044F\u044F \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0430 {{when}}",
       lastUsedOn: "\u041F\u043E\u0441\u043B\u0435\u0434\u043D\u044F\u044F \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0430 {{date}}"
@@ -29968,10 +29977,10 @@
       loadDevices().then(setDevices);
     }, []);
     const pick = async (device) => {
-      const file = await window.portalgems.pickFile(loadLastSendDir());
-      if (file) {
-        rememberSendLocation(file.path);
-        onSend({ kind: "file", ...file }, device);
+      const picked = await window.portalgems.pickFiles(loadLastSendDir());
+      if (picked) {
+        rememberSendLocation(picked.kind === "bundle" ? picked.paths[0] : picked.path);
+        onSend(picked, device);
       }
     };
     const pickFolder = async (device) => {
@@ -30006,11 +30015,7 @@
       e2.preventDefault();
       setDropId(null);
       const files = Array.from(e2.dataTransfer.files);
-      if (files.length !== 1) {
-        setDropError(t2("devices.dropOne"));
-        return;
-      }
-      const item = await window.portalgems.dropped(files[0]).catch(() => null);
+      const item = files.length > 0 ? await window.portalgems.dropped(files).catch(() => null) : null;
       if (!item) {
         setDropError(t2("devices.dropFailed"));
         return;
@@ -30218,7 +30223,7 @@
           }
         )))
       ) : null)
-    )), devices.length > 0 ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("devices.dropHint")) : null, dropError ? /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.danger, fontSize: fontSize.small } }, dropError) : null, /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("home.pairNew"), onClick: onPair })), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("home.sendTitle")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("home.sendHint")), /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("home.sendButton"), onClick: () => pick() }), /* @__PURE__ */ import_react14.default.createElement(
+    )), devices.length > 0 ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("devices.dropHint")) : null, dropError ? /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.danger, fontSize: fontSize.small } }, dropError) : null, /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("home.pairNew"), onClick: onPair })), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("home.sendTitle")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("home.sendHint")), /* @__PURE__ */ import_react14.default.createElement(PrimaryButton, { c, label: t2("home.sendFilesButton"), onClick: () => pick() }), /* @__PURE__ */ import_react14.default.createElement(
       GhostButton,
       {
         c,
@@ -30301,9 +30306,12 @@
       idRef.current = id;
       let connected = false;
       let timedOut = false;
+      let armPairedTimeout = () => {
+      };
       handlers.set(id, (ev) => {
         if (ev.event === "code") {
           setCode(ev.code ?? "");
+          armPairedTimeout();
           setPhase("waiting");
         } else if (ev.event === "transit") {
           connected = true;
@@ -30322,13 +30330,24 @@
         attempts = withSendStarted(attempts, device.id, attempt);
         localStorage.setItem(SEND_ATTEMPTS_KEY, JSON.stringify(attempts));
       }
-      const timer = device ? setTimeout(() => {
-        if (!connected) {
-          timedOut = true;
-          window.portalgems.cancel(id);
-        }
-      }, PAIRED_SEND_TIMEOUT_MS) : null;
-      const started = item.kind === "text" ? window.portalgems.sendText(id, item.text, pairedCode, currentServer()) : (item.kind === "folder" ? window.portalgems.sendFolder : window.portalgems.send)(id, item.path, pairedCode, currentServer());
+      let timer = null;
+      armPairedTimeout = () => {
+        if (!device || timer) return;
+        timer = setTimeout(() => {
+          if (!connected) {
+            timedOut = true;
+            window.portalgems.cancel(id);
+          }
+        }, PAIRED_SEND_TIMEOUT_MS);
+      };
+      const started = item.kind === "text" ? window.portalgems.sendText(id, item.text, pairedCode, currentServer()) : item.kind === "bundle" ? window.portalgems.sendFiles(
+        id,
+        item.paths,
+        // The folder name for a client that does not unpack it loose.
+        bundleName(t2, item.counts),
+        pairedCode,
+        currentServer()
+      ) : (item.kind === "folder" ? window.portalgems.sendFolder : window.portalgems.send)(id, item.path, pairedCode, currentServer());
       started.then(
         () => {
           if (device) {
@@ -30365,19 +30384,25 @@
       setTimeout(() => setCopied(false), 1500);
     };
     const busy = phase === "starting" || phase === "waiting" || phase === "transferring";
-    const summary = item.kind === "text" ? t2("text.title") : item.kind === "folder" ? t2("folder.summary", {
+    const summary = item.kind === "text" ? t2("text.title") : item.kind === "bundle" ? bundleText(t2, "summary", item.counts, {
+      size: formatSize(item.totalBytes)
+    }) : item.kind === "folder" ? t2("folder.summary", {
       name: item.name,
       count: item.fileCount,
       size: formatSize(item.totalBytes)
     }) : `${item.name} \xB7 ${formatSize(item.size)}`;
-    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("send.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, summary), /* @__PURE__ */ import_react14.default.createElement(TransferRoute, { c, kind: "send", direct }), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, phase === "starting" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("receive.connecting")) : null, phase === "waiting" ? device ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("paired.sendWaiting", { name: deviceLabel(device) })) : /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("send.waitingForReceiver")), /* @__PURE__ */ import_react14.default.createElement(CodeBox, { c, code }), /* @__PURE__ */ import_react14.default.createElement(
+    return /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Title, { c, onBack: onHome }, t2("send.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, summary), /* @__PURE__ */ import_react14.default.createElement(TransferRoute, { c, kind: "send", direct }), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, phase === "starting" ? (
+      // A bundle is zipped before there is a code to show, and for a
+      // large one that is most of this phase.
+      /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, item.kind === "bundle" ? t2("files.preparing") : t2("receive.connecting"))
+    ) : null, phase === "waiting" ? device ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("paired.sendWaiting", { name: deviceLabel(device) })) : /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("send.waitingForReceiver")), /* @__PURE__ */ import_react14.default.createElement(CodeBox, { c, code }), /* @__PURE__ */ import_react14.default.createElement(
       PrimaryButton,
       {
         c,
         label: copied ? t2("send.codeCopied") : t2("send.copyCode"),
         onClick: copy2
       }
-    )) : null, phase === "transferring" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, item.kind === "text" ? t2("send.sendingText") : item.kind === "folder" ? t2("send.sendingFolder", { name: item.name }) : t2("send.sending", { name: item.name })), /* @__PURE__ */ import_react14.default.createElement(ProgressBar, { c, pct }), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("transfer.progress", { pct }))) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, item.kind === "text" ? t2("send.successText") : item.kind === "folder" ? t2("send.successFolder") : t2("send.success")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.success, margin: 0 } }, summary)) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "cancelled" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("errors.cancelled")) : null, phase === "peerNotOpen" && device ? /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, t2("paired.notOpen", { name: deviceLabel(device) })) : null), busy ? /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancel }) : phase === "error" && serverErr ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(
+    )) : null, phase === "transferring" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, item.kind === "text" ? t2("send.sendingText") : item.kind === "bundle" ? bundleText(t2, "sending", item.counts) : item.kind === "folder" ? t2("send.sendingFolder", { name: item.name }) : t2("send.sending", { name: item.name })), /* @__PURE__ */ import_react14.default.createElement(ProgressBar, { c, pct }), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("transfer.progress", { pct }))) : null, phase === "done" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, item.kind === "text" ? t2("send.successText") : item.kind === "bundle" ? bundleText(t2, "sent", item.counts) : item.kind === "folder" ? t2("send.successFolder") : t2("send.success")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.success, margin: 0 } }, summary)) : null, phase === "error" ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("errors.title")), /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, error)) : null, phase === "cancelled" ? /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("errors.cancelled")) : null, phase === "peerNotOpen" && device ? /* @__PURE__ */ import_react14.default.createElement("p", { style: { color: c.danger, margin: 0 } }, t2("paired.notOpen", { name: deviceLabel(device) })) : null), busy ? /* @__PURE__ */ import_react14.default.createElement(GhostButton, { c, label: t2("common.cancel"), danger: true, onClick: cancel }) : phase === "error" && serverErr ? /* @__PURE__ */ import_react14.default.createElement(import_react14.default.Fragment, null, /* @__PURE__ */ import_react14.default.createElement(
       PrimaryButton,
       {
         c,
@@ -30592,10 +30617,10 @@
     };
     const shownName = peer ? label.trim() || peer.name : "";
     const sendFirst = async (device) => {
-      const file = await window.portalgems.pickFile(loadLastSendDir());
-      if (!file) return;
-      rememberSendLocation(file.path);
-      onSend({ kind: "file", ...file }, await storedPeer(device));
+      const picked = await window.portalgems.pickFiles(loadLastSendDir());
+      if (!picked) return;
+      rememberSendLocation(picked.kind === "bundle" ? picked.paths[0] : picked.path);
+      onSend(picked, await storedPeer(device));
     };
     const fail = (e2) => {
       setError(friendlyError(t2, e2));

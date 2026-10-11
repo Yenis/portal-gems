@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
+import type { Selection } from './selection';
 
 export interface PgEvent {
   id: number;
@@ -18,10 +19,10 @@ export interface ServerConfig {
 
 contextBridge.exposeInMainWorld('portalgems', {
   locale: (): Promise<string> => ipcRenderer.invoke('pg:locale'),
-  pickFile: (
-    defaultDir?: string | null
-  ): Promise<{ path: string; name: string; size: number } | null> =>
-    ipcRenderer.invoke('pg:pickFile', defaultDir),
+  // One file, or several from one folder: a single file comes back as a
+  // file, several as a bundle that is sent in one transfer.
+  pickFiles: (defaultDir?: string | null): Promise<Selection | null> =>
+    ipcRenderer.invoke('pg:pickFiles', defaultDir),
   pickFolder: (
     defaultDir?: string | null
   ): Promise<{
@@ -30,16 +31,15 @@ contextBridge.exposeInMainWorld('portalgems', {
     fileCount: number;
     totalBytes: number;
   } | null> => ipcRenderer.invoke('pg:pickFolder', defaultDir),
-  // What a file or folder dropped onto the window is, in the shape the two
-  // pickers return. The path has to be read here: a renderer no longer sees
-  // File.path, and webUtils only exists on this side of the bridge.
-  dropped: (
-    file: File
-  ): Promise<
-    | { kind: 'file'; path: string; name: string; size: number }
-    | { kind: 'folder'; path: string; name: string; fileCount: number; totalBytes: number }
-    | null
-  > => ipcRenderer.invoke('pg:statDropped', webUtils.getPathForFile(file)),
+  // What was dropped onto the window - one file, one folder, or several of
+  // either - in the shape the pickers return. The paths have to be read
+  // here: a renderer no longer sees File.path, and webUtils only exists on
+  // this side of the bridge.
+  dropped: (files: File[]): Promise<Selection | null> =>
+    ipcRenderer.invoke(
+      'pg:statDropped',
+      files.map((file) => webUtils.getPathForFile(file))
+    ),
   send: (
     id: number,
     path: string,
@@ -52,6 +52,14 @@ contextBridge.exposeInMainWorld('portalgems', {
     code?: string,
     server?: ServerConfig
   ): Promise<void> => ipcRenderer.invoke('pg:sendFolder', id, path, code, server),
+  sendFiles: (
+    id: number,
+    paths: string[],
+    bundleName: string,
+    code?: string,
+    server?: ServerConfig
+  ): Promise<void> =>
+    ipcRenderer.invoke('pg:sendFiles', id, paths, bundleName, code, server),
   sendText: (
     id: number,
     text: string,

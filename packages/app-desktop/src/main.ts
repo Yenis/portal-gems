@@ -9,6 +9,7 @@ import * as path from 'node:path';
 import { candidateCodes, currentBucket, deriveCode } from '@portalgems/core';
 import { engine, type NativeTransferEvent, type ServerConfig } from './engine';
 import { dedupPath, landBundle, moveEntry, type BundleLanding } from './landing';
+import { describeSelection, walkStats } from './selection';
 
 let win: BrowserWindow | null = null;
 
@@ -91,29 +92,6 @@ const isValidDownloadDir = (dir?: string | null): boolean =>
 const resolveDownloadDir = (dir?: string | null) =>
   isValidDownloadDir(dir) ? (dir as string) : app.getPath('downloads');
 
-/** File count and total size of a directory tree (symlinks skipped, matching
- * what the engine will actually zip and send). */
-async function walkStats(dir: string): Promise<{ fileCount: number; totalBytes: number }> {
-  let fileCount = 0;
-  let totalBytes = 0;
-  const stack = [dir];
-  while (stack.length > 0) {
-    const current = stack.pop()!;
-    const entries = await fs.promises.readdir(current, { withFileTypes: true });
-    for (const entry of entries) {
-      const p = path.join(current, entry.name);
-      if (entry.isSymbolicLink()) continue;
-      if (entry.isDirectory()) {
-        stack.push(p);
-      } else if (entry.isFile()) {
-        fileCount += 1;
-        totalBytes += (await fs.promises.stat(p)).size;
-      }
-    }
-  }
-  return { fileCount, totalBytes };
-}
-
 ipcMain.handle('pg:locale', () => app.getLocale());
 
 // The dialog opens in `dir` when it is an existing directory; otherwise it
@@ -127,16 +105,17 @@ async function pickerDefault(dir?: string | null): Promise<string | undefined> {
   }
 }
 
-ipcMain.handle('pg:pickFile', async (_e, defaultDir?: string | null) => {
+// Pick what to send: one file, or several from the same folder. One comes
+// back as a plain file; several as a bundle, sent in one transfer. The
+// dialog is the whole selection - there is no adding to it afterwards.
+ipcMain.handle('pg:pickFiles', async (_e, defaultDir?: string | null) => {
   if (!win) return null;
   const result = await dialog.showOpenDialog(win, {
-    properties: ['openFile'],
+    properties: ['openFile', 'multiSelections'],
     defaultPath: await pickerDefault(defaultDir),
   });
   if (result.canceled || result.filePaths.length === 0) return null;
-  const filePath = result.filePaths[0];
-  const stat = await fs.promises.stat(filePath);
-  return { path: filePath, name: path.basename(filePath), size: stat.size };
+  return describeSelection(result.filePaths);
 });
 
 // Pick a folder to send: returns its path plus the file count and total size
@@ -158,23 +137,13 @@ ipcMain.handle('pg:pickFolder', async (_e, defaultDir?: string | null) => {
   };
 });
 
-// A file or folder dropped onto the window, described the way the pickers
-// describe what they return. Null for anything that is neither, or that has
-// gone by the time it is looked at.
-ipcMain.handle('pg:statDropped', async (_e, dropped: string) => {
-  if (!dropped) return null;
-  try {
-    const stat = await fs.promises.stat(dropped);
-    const name = path.basename(dropped);
-    if (stat.isDirectory()) {
-      const stats = await walkStats(dropped);
-      return { kind: 'folder', path: dropped, name, ...stats };
-    }
-    return stat.isFile() ? { kind: 'file', path: dropped, name, size: stat.size } : null;
-  } catch {
-    return null;
-  }
-});
+// Files and folders dropped onto the window, described the way the pickers
+// describe what they return: one file, one folder, or a bundle of several.
+// Null for anything that cannot be sent, or that has gone by the time it is
+// looked at.
+ipcMain.handle('pg:statDropped', (_e, dropped: string[]) =>
+  Array.isArray(dropped) ? describeSelection(dropped) : null
+);
 
 ipcMain.handle(
   'pg:send',
@@ -192,6 +161,18 @@ ipcMain.handle(
   'pg:sendFolder',
   (_e, id: number, folderPath: string, code?: string, server?: ServerConfig) =>
     engine.sendFolder(id, folderPath, code ?? null, server ?? {}, forward(id))
+);
+
+ipcMain.handle(
+  'pg:sendFiles',
+  (
+    _e,
+    id: number,
+    paths: string[],
+    bundleName: string,
+    code?: string,
+    server?: ServerConfig
+  ) => engine.sendFiles(id, paths, bundleName, code ?? null, server ?? {}, forward(id))
 );
 
 // Receives whose offer was a loose bundle. `pg:acceptDownload` unpacks those
@@ -445,6 +426,16 @@ app.whenReady().then(async () => {
     });
   }
   // Report the effective pg-download-dir after the startup self-heal has run.
+  // Send several files and folders as one bundle on a fixed code
+  // (PG_SMOKE_CODE), bypassing the picker: paths separated the way PATH is
+  // on this platform. Goes through the same selection logic as the picker
+  // and a drop, so a single path is sent as that file or folder.
+  if (process.env.PG_SMOKE_SEND_FILES) {
+    runSmokeSendFiles(process.env.PG_SMOKE_SEND_FILES).catch((e) => {
+      console.log(`SMOKE:ERROR:${e}`);
+      app.exit(1);
+    });
+  }
   if (process.env.PG_SMOKE_DUMP_DLDIR) {
     runSmokeDumpDlDir().catch((e) => {
       console.log(`SMOKE:ERROR:${e}`);
@@ -642,7 +633,7 @@ async function runSmokePickDefault(seedDir: string, fakeFile: string) {
   await smokeExec(
     `localStorage.setItem('pg-last-send-dir', ${JSON.stringify(seedDir)})`
   );
-  await smokeClick('Choose file to send');
+  await smokeClick('Choose files to send');
   await new Promise((r) => setTimeout(r, 600));
   const remembered = await smokeExec<string | null>(
     "localStorage.getItem('pg-last-send-dir')"
@@ -669,6 +660,27 @@ async function runSmokeSendFolder(folderPath: string) {
     console.log(`SMOKE-EV:${ev.event}:${ev.info ?? ''}`)
   );
   console.log('SMOKE:SEND-FOLDER-OK');
+  app.exit(0);
+}
+
+async function runSmokeSendFiles(joined: string) {
+  const code = process.env.PG_SMOKE_CODE;
+  if (!code) throw new Error('PG_SMOKE_SEND_FILES needs PG_SMOKE_CODE');
+  const picked = await describeSelection(joined.split(path.delimiter).filter(Boolean));
+  if (!picked) throw new Error('nothing sendable in PG_SMOKE_SEND_FILES');
+  const log = (ev: NativeTransferEvent) =>
+    console.log(`SMOKE-EV:${ev.event}:${ev.info ?? ''}`);
+  console.log(`SMOKE:SELECTION=${JSON.stringify(picked)}`);
+  if (picked.kind === 'bundle') {
+    // The renderer names a bundle in the user's language; a fixed name
+    // here keeps the smoke's output the same everywhere.
+    await engine.sendFiles(991, picked.paths, 'smoke bundle', code, smokeServer(), log);
+  } else if (picked.kind === 'folder') {
+    await engine.sendFolder(991, picked.path, code, smokeServer(), log);
+  } else {
+    await engine.sendFile(991, picked.path, code, smokeServer(), log);
+  }
+  console.log('SMOKE:SEND-FILES-OK');
   app.exit(0);
 }
 

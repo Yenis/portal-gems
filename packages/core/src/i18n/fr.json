@@ -12,6 +12,7 @@
     "sendTitle": "Envoyer un fichier",
     "sendHint": "Choisissez un fichier et partagez le code à usage unique avec le destinataire.",
     "sendButton": "Choisir un fichier",
+    "sendFilesButton": "Choisir des fichiers",
     "sendFolderButton": "Choisir un dossier",
     "receiveTitle": "Recevoir un fichier",
     "receiveHint": "Saisissez le code que l'expéditeur vous a donné.",
@@ -116,8 +117,7 @@
     "renameTitle": "Renommer {{name}}",
     "renameHint": "Ce nom ne sert que sur cet appareil. Laissez vide pour revenir à {{name}}.",
     "renamePlaceholder": "Nom de cet appareil",
-    "dropHint": "Déposez un fichier ou un dossier sur un appareil pour le lui envoyer.",
-    "dropOne": "Déposez un seul fichier ou dossier à la fois.",
+    "dropHint": "Déposez des fichiers ou des dossiers sur un appareil pour les lui envoyer.",
     "dropFailed": "Impossible de le lire. Essayez de le choisir avec le bouton Envoyer.",
     "lastUsed": "Dernier transfert {{when}}",
     "lastUsedOn": "Dernier transfert le {{date}}"

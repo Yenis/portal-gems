@@ -376,6 +376,17 @@ recursive size.
   section list is per app because two entries are platform-specific: `share`
   on the phone, `drop` on the desktop. Symbian's equivalent is `KHelpText`
   behind Options > Help.
+- Sending several at once: `pg:pickFiles` (the open dialog with
+  `multiSelections`) and `pg:statDropped` (any number of dropped paths) both
+  return `describeSelection(paths)` from `src/selection.ts` - a `file`, a
+  `folder`, or a `bundle` with its paths, top-level counts and totals;
+  `planSend` in core makes the call, so one item is never bundled. A bundle
+  goes out through `pg:sendFiles` -> `engine.sendFiles`, named by
+  `bundleName` in the sender's language. Symlinks are left out of a
+  multi-item selection because the engine leaves them out of the archive.
+  The paired-send timeout is armed on the `code` event, not at start: a
+  folder or bundle is zipped before there is a code, and that time is ours.
+  Smoke: `PG_SMOKE_SEND_FILES=<paths joined like PATH>` with `PG_SMOKE_CODE`.
 - Receiving a loose bundle: `pg:requestReceive` notes the id when the offer
   carries `folder.loose`, and `pg:acceptDownload` then calls `landBundle`
   (`src/landing.ts`) instead of moving one entry: each top-level child of

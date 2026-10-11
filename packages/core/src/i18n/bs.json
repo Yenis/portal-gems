@@ -12,6 +12,7 @@
     "sendTitle": "Pošalji datoteku",
     "sendHint": "Odaberi datoteku i podijeli jednokratni kod s primaocem.",
     "sendButton": "Odaberi datoteku",
+    "sendFilesButton": "Odaberi datoteke",
     "sendFolderButton": "Odaberi folder",
     "receiveTitle": "Primi datoteku",
     "receiveHint": "Unesi kod koji ti je poslao pošiljalac.",
@@ -116,8 +117,7 @@
     "renameTitle": "Preimenuj {{name}}",
     "renameHint": "Ovaj naziv vrijedi samo na ovom uređaju. Ostavite prazno da se vratite na {{name}}.",
     "renamePlaceholder": "Naziv za ovaj uređaj",
-    "dropHint": "Prevuci datoteku ili folder na uređaj da ga pošalješ tamo.",
-    "dropOne": "Prevuci samo jednu datoteku ili folder odjednom.",
+    "dropHint": "Prevuci datoteke ili foldere na uređaj da ih pošalješ tamo.",
     "dropFailed": "To se nije moglo pročitati. Pokušaj ga odabrati dugmetom Pošalji.",
     "lastUsed": "Zadnji prijenos {{when}}",
     "lastUsedOn": "Zadnji prijenos {{date}}"

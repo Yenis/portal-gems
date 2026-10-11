@@ -380,3 +380,9 @@ cannot receive:
   compiled where this was written - the 32-bit cross compiler could not run
   there - only syntax-checked with a host compiler against the SDK headers,
   so `abld build gcce urel` is the first thing to run.
+- Step 6 (desktop send) is built: `send_files` in the addon,
+  `describeSelection` in `src/selection.ts` (tested by `npm test`), the
+  multi-select picker, any number of dropped items, and the bundle's own
+  wording on the send screen. The home button reads "Choose files to send"
+  through a new `home.sendFilesButton`; the phone keeps `home.sendButton`
+  until its own picker changes in step 7, and `devices.dropOne` is gone.

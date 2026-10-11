@@ -195,6 +195,40 @@ pub async fn send_text(
     result.map_err(to_napi_err)
 }
 
+/// Send several files and folders as one transfer: zipped, each path a
+/// top-level entry, under a directory offer marked loose. A receiver that
+/// knows the marker puts them straight into its receive folder; any other
+/// client saves a folder called `bundle_name`. For two or more items - one
+/// file or one folder goes through `send_file` / `send_folder`.
+#[napi]
+pub async fn send_files(
+    id: u32,
+    paths: Vec<String>,
+    bundle_name: String,
+    code: Option<String>,
+    server: ServerConfig,
+    callback: Callback,
+) -> Result<()> {
+    let on_code = callback.clone();
+    let on_transit = callback.clone();
+    let on_progress = callback;
+    let cancel = cancel_future(id);
+    let paths: Vec<std::path::PathBuf> = paths.into_iter().map(Into::into).collect();
+    let result = wormhole_core::send_files(
+        &paths,
+        &bundle_name,
+        code.as_deref(),
+        &server.into(),
+        move |c| emit(&on_code, code_event(c)),
+        move |i| emit(&on_transit, transit_event(i)),
+        move |d, t| emit(&on_progress, progress_event(d, t)),
+        cancel,
+    )
+    .await;
+    clear_cancel(id);
+    result.map_err(to_napi_err)
+}
+
 /// Send the folder at `path` as a protocol-v1 directory offer (zipped into a
 /// temp archive; the receiver unpacks it back into a folder).
 #[napi]

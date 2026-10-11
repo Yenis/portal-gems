@@ -11,6 +11,7 @@ import {
   encodePairingPayload,
   fontSize,
   friendlyError,
+  bundleName,
   bundleText,
   isServerUnreachableError,
   lastTransferText,
@@ -78,25 +79,21 @@ import {
 } from './components';
 import { formatSize, usePalette } from './theme';
 import type { PgEvent } from '../preload';
+import type { Selection } from '../selection';
 
 declare global {
   interface Window {
     portalgems: {
       locale(): Promise<string>;
-      pickFile(
-        defaultDir?: string | null
-      ): Promise<{ path: string; name: string; size: number } | null>;
-      dropped(file: File): Promise<
-        | { kind: 'file'; path: string; name: string; size: number }
-        | {
-            kind: 'folder';
-            path: string;
-            name: string;
-            fileCount: number;
-            totalBytes: number;
-          }
-        | null
-      >;
+      pickFiles(defaultDir?: string | null): Promise<Selection | null>;
+      dropped(files: File[]): Promise<Selection | null>;
+      sendFiles(
+        id: number,
+        paths: string[],
+        bundleName: string,
+        code?: string,
+        server?: ServerConfig
+      ): Promise<void>;
       pickFolder(defaultDir?: string | null): Promise<{
         path: string;
         name: string;
@@ -159,8 +156,8 @@ declare global {
 
 /** What the user chose to send: a file, a whole folder, or a typed message. */
 type SendItem =
-  | { kind: 'file'; path: string; name: string; size: number }
-  | { kind: 'folder'; path: string; name: string; fileCount: number; totalBytes: number }
+  // A file, a folder, or a bundle of several sent as one transfer.
+  | Selection
   | { kind: 'text'; text: string };
 
 /** The sender's offer: `folder` for directory offers, `text` for a message.
@@ -369,11 +366,13 @@ function Home({
     loadDevices().then(setDevices);
   }, []);
 
+  // The picker is the whole selection: one file is sent as a file, several
+  // as one bundle, and there is no adding to it afterwards.
   const pick = async (device?: PairedDevice) => {
-    const file = await window.portalgems.pickFile(loadLastSendDir());
-    if (file) {
-      rememberSendLocation(file.path);
-      onSend({ kind: 'file', ...file }, device);
+    const picked = await window.portalgems.pickFiles(loadLastSendDir());
+    if (picked) {
+      rememberSendLocation(picked.kind === 'bundle' ? picked.paths[0] : picked.path);
+      onSend(picked, device);
     }
   };
 
@@ -412,8 +411,9 @@ function Home({
     });
   };
 
-  // Dropping a file or folder on a device's row sends it there - the desktop's
-  // answer to a phone's share sheet. One thing at a time, because a send is.
+  // Dropping on a device's row sends there - the desktop's answer to a
+  // phone's share sheet. One file or folder goes as it is; several, files and
+  // folders mixed, go as one bundle.
   const [dropId, setDropId] = useState<string | null>(null);
   const [dropError, setDropError] = useState<string | null>(null);
   const carriesFiles = (e: React.DragEvent) => e.dataTransfer.types.includes('Files');
@@ -422,11 +422,8 @@ function Home({
     e.preventDefault();
     setDropId(null);
     const files = Array.from(e.dataTransfer.files);
-    if (files.length !== 1) {
-      setDropError(t('devices.dropOne'));
-      return;
-    }
-    const item = await window.portalgems.dropped(files[0]).catch(() => null);
+    const item =
+      files.length > 0 ? await window.portalgems.dropped(files).catch(() => null) : null;
     if (!item) {
       setDropError(t('devices.dropFailed'));
       return;
@@ -668,7 +665,7 @@ function Home({
       <Card c={c}>
         <Subtitle c={c}>{t('home.sendTitle')}</Subtitle>
         <Muted c={c}>{t('home.sendHint')}</Muted>
-        <PrimaryButton c={c} label={t('home.sendButton')} onClick={() => pick()} />
+        <PrimaryButton c={c} label={t('home.sendFilesButton')} onClick={() => pick()} />
         <GhostButton
           c={c}
           label={t('home.sendFolderButton')}
@@ -789,9 +786,11 @@ function Send({
     idRef.current = id;
     let connected = false;
     let timedOut = false;
+    let armPairedTimeout = () => {};
     handlers.set(id, (ev) => {
       if (ev.event === 'code') {
         setCode(ev.code ?? '');
+        armPairedTimeout();
         setPhase('waiting');
       } else if (ev.event === 'transit') {
         connected = true;
@@ -815,14 +814,20 @@ function Send({
       attempts = withSendStarted(attempts, device.id, attempt);
       localStorage.setItem(SEND_ATTEMPTS_KEY, JSON.stringify(attempts));
     }
-    const timer = device
-      ? setTimeout(() => {
-          if (!connected) {
-            timedOut = true;
-            window.portalgems.cancel(id);
-          }
-        }, PAIRED_SEND_TIMEOUT_MS)
-      : null;
+    // The wait for a paired device starts when there is something for it to
+    // pick up - when the code is claimed - and not before. A folder or a
+    // bundle is zipped first, and for a large one that alone can outlast the
+    // timeout: counting it would blame the other device for our own work.
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    armPairedTimeout = () => {
+      if (!device || timer) return;
+      timer = setTimeout(() => {
+        if (!connected) {
+          timedOut = true;
+          window.portalgems.cancel(id);
+        }
+      }, PAIRED_SEND_TIMEOUT_MS);
+    };
     // A message has no path and no transit, so it gets its own call; the
     // rest of the screen's lifecycle is identical. A paired text send has no
     // transit event to mark it "connected", so the timeout above stands for
@@ -831,9 +836,18 @@ function Send({
     const started =
       item.kind === 'text'
         ? window.portalgems.sendText(id, item.text, pairedCode, currentServer())
-        : (item.kind === 'folder'
-            ? window.portalgems.sendFolder
-            : window.portalgems.send)(id, item.path, pairedCode, currentServer());
+        : item.kind === 'bundle'
+          ? window.portalgems.sendFiles(
+              id,
+              item.paths,
+              // The folder name for a client that does not unpack it loose.
+              bundleName(t as any, item.counts),
+              pairedCode,
+              currentServer()
+            )
+          : (item.kind === 'folder'
+              ? window.portalgems.sendFolder
+              : window.portalgems.send)(id, item.path, pairedCode, currentServer());
     started.then(
       () => {
         if (device) {
@@ -877,6 +891,10 @@ function Send({
   const summary =
     item.kind === 'text'
       ? t('text.title')
+      : item.kind === 'bundle'
+        ? bundleText(t as any, 'summary', item.counts, {
+            size: formatSize(item.totalBytes),
+          })
       : item.kind === 'folder'
         ? t('folder.summary', {
             name: item.name,
@@ -891,7 +909,13 @@ function Send({
       <Muted c={c}>{summary}</Muted>
       <TransferRoute c={c} kind="send" direct={direct} />
       <Card c={c}>
-        {phase === 'starting' ? <Muted c={c}>{t('receive.connecting')}</Muted> : null}
+        {phase === 'starting' ? (
+          // A bundle is zipped before there is a code to show, and for a
+          // large one that is most of this phase.
+          <Muted c={c}>
+            {item.kind === 'bundle' ? t('files.preparing') : t('receive.connecting')}
+          </Muted>
+        ) : null}
         {phase === 'waiting' ? (
           device ? (
             <Muted c={c}>{t('paired.sendWaiting', { name: deviceLabel(device) })}</Muted>
@@ -912,9 +936,11 @@ function Send({
             <Subtitle c={c}>
               {item.kind === 'text'
                 ? t('send.sendingText')
-                : item.kind === 'folder'
-                  ? t('send.sendingFolder', { name: item.name })
-                  : t('send.sending', { name: item.name })}
+                : item.kind === 'bundle'
+                  ? bundleText(t as any, 'sending', item.counts)
+                  : item.kind === 'folder'
+                    ? t('send.sendingFolder', { name: item.name })
+                    : t('send.sending', { name: item.name })}
             </Subtitle>
             <ProgressBar c={c} pct={pct} />
             <Muted c={c}>{t('transfer.progress', { pct })}</Muted>
@@ -925,9 +951,11 @@ function Send({
             <Subtitle c={c}>
               {item.kind === 'text'
                 ? t('send.successText')
-                : item.kind === 'folder'
-                  ? t('send.successFolder')
-                  : t('send.success')}
+                : item.kind === 'bundle'
+                  ? bundleText(t as any, 'sent', item.counts)
+                  : item.kind === 'folder'
+                    ? t('send.successFolder')
+                    : t('send.success')}
             </Subtitle>
             <p style={{ color: c.success, margin: 0 }}>{summary}</p>
           </>
@@ -1337,10 +1365,10 @@ function Pair({
   const shownName = peer ? label.trim() || peer.name : '';
 
   const sendFirst = async (device: PairedDevice) => {
-    const file = await window.portalgems.pickFile(loadLastSendDir());
-    if (!file) return;
-    rememberSendLocation(file.path);
-    onSend({ kind: 'file', ...file }, await storedPeer(device));
+    const picked = await window.portalgems.pickFiles(loadLastSendDir());
+    if (!picked) return;
+    rememberSendLocation(picked.kind === 'bundle' ? picked.paths[0] : picked.path);
+    onSend(picked, await storedPeer(device));
   };
   const fail = (e: unknown) => {
     setError(friendlyError(t as any, e));

@@ -1669,9 +1669,9 @@ var require_shim = __commonJS({
 
 // src/main.ts
 var import_electron = require("electron");
-var fs2 = __toESM(require("node:fs"));
+var fs3 = __toESM(require("node:fs"));
 var os = __toESM(require("node:os"));
-var path3 = __toESM(require("node:path"));
+var path4 = __toESM(require("node:path"));
 
 // ../core/src/tokens.ts
 var light = { success: "#2E7D32", danger: "#C62828" };
@@ -2289,6 +2289,17 @@ function deriveCode(secretB64, bucket, attempt = 0) {
   return `${nameplate}-${hex.slice(0, 10)}-${hex.slice(10, 20)}`;
 }
 
+// ../core/src/files.ts
+function planSend(items) {
+  if (items.length === 0) return "nothing";
+  if (items.length > 1) return "bundle";
+  return items[0].isFolder ? "folder" : "file";
+}
+function countBundle(items) {
+  const folders = items.filter((item) => item.isFolder).length;
+  return { files: items.length - folders, folders };
+}
+
 // ../core/node_modules/i18next/dist/esm/i18next.js
 var isString = (obj) => typeof obj === "string";
 var defer = () => {
@@ -2314,8 +2325,8 @@ var copy = (a, s, t2) => {
 var lastOfPathSeparatorRegExp = /###/g;
 var cleanKey = (key) => key && key.includes("###") ? key.replace(lastOfPathSeparatorRegExp, ".") : key;
 var canNotTraverseDeeper = (object) => !object || isString(object);
-var getLastOfPath = (object, path4, Empty) => {
-  const stack = !isString(path4) ? path4 : path4.split(".");
+var getLastOfPath = (object, path5, Empty) => {
+  const stack = !isString(path5) ? path5 : path5.split(".");
   let stackIndex = 0;
   while (stackIndex < stack.length - 1) {
     if (canNotTraverseDeeper(object)) return {};
@@ -2334,17 +2345,17 @@ var getLastOfPath = (object, path4, Empty) => {
     k: cleanKey(stack[stackIndex])
   };
 };
-var setPath = (object, path4, newValue) => {
+var setPath = (object, path5, newValue) => {
   const {
     obj,
     k
-  } = getLastOfPath(object, path4, Object);
-  if (obj !== void 0 || path4.length === 1) {
+  } = getLastOfPath(object, path5, Object);
+  if (obj !== void 0 || path5.length === 1) {
     obj[k] = newValue;
     return;
   }
-  let e = path4[path4.length - 1];
-  let p = path4.slice(0, path4.length - 1);
+  let e = path5[path5.length - 1];
+  let p = path5.slice(0, path5.length - 1);
   let last = getLastOfPath(object, p, Object);
   while (last.obj === void 0 && p.length) {
     e = `${p[p.length - 1]}.${e}`;
@@ -2356,19 +2367,19 @@ var setPath = (object, path4, newValue) => {
   }
   last.obj[`${last.k}.${e}`] = newValue;
 };
-var pushPath = (object, path4, newValue, concat) => {
+var pushPath = (object, path5, newValue, concat) => {
   const {
     obj,
     k
-  } = getLastOfPath(object, path4, Object);
+  } = getLastOfPath(object, path5, Object);
   obj[k] = obj[k] || [];
   obj[k].push(newValue);
 };
-var getPath = (object, path4) => {
+var getPath = (object, path5) => {
   const {
     obj,
     k
-  } = getLastOfPath(object, path4);
+  } = getLastOfPath(object, path5);
   if (!obj) return void 0;
   if (!Object.prototype.hasOwnProperty.call(obj, k)) return void 0;
   return obj[k];
@@ -2448,13 +2459,13 @@ var looksLikeObjectPath = (key, nsSeparator, keySeparator) => {
   }
   return matched;
 };
-var deepFind = (obj, path4, keySeparator = ".") => {
+var deepFind = (obj, path5, keySeparator = ".") => {
   if (!obj) return void 0;
-  if (obj[path4]) {
-    if (!Object.prototype.hasOwnProperty.call(obj, path4)) return void 0;
-    return obj[path4];
+  if (obj[path5]) {
+    if (!Object.prototype.hasOwnProperty.call(obj, path5)) return void 0;
+    return obj[path5];
   }
-  const tokens = path4.split(keySeparator);
+  const tokens = path5.split(keySeparator);
   let current = obj;
   for (let i = 0; i < tokens.length; ) {
     if (!current || typeof current !== "object") {
@@ -2615,26 +2626,26 @@ var ResourceStore = class extends EventEmitter {
   getResource(lng, ns, key, options = {}) {
     const keySeparator = options.keySeparator !== void 0 ? options.keySeparator : this.options.keySeparator;
     const ignoreJSONStructure = options.ignoreJSONStructure !== void 0 ? options.ignoreJSONStructure : this.options.ignoreJSONStructure;
-    let path4;
+    let path5;
     if (lng.includes(".")) {
-      path4 = lng.split(".");
+      path5 = lng.split(".");
     } else {
-      path4 = [lng, ns];
+      path5 = [lng, ns];
       if (key) {
         if (Array.isArray(key)) {
-          path4.push(...key);
+          path5.push(...key);
         } else if (isString(key) && keySeparator) {
-          path4.push(...key.split(keySeparator));
+          path5.push(...key.split(keySeparator));
         } else {
-          path4.push(key);
+          path5.push(key);
         }
       }
     }
-    const result = getPath(this.data, path4);
+    const result = getPath(this.data, path5);
     if (!result && !ns && !key && lng.includes(".")) {
-      lng = path4[0];
-      ns = path4[1];
-      key = path4.slice(2).join(".");
+      lng = path5[0];
+      ns = path5[1];
+      key = path5.slice(2).join(".");
     }
     if (result || !ignoreJSONStructure || !isString(key)) return result;
     return deepFind(this.data?.[lng]?.[ns], key, keySeparator);
@@ -2643,15 +2654,15 @@ var ResourceStore = class extends EventEmitter {
     silent: false
   }) {
     const keySeparator = options.keySeparator !== void 0 ? options.keySeparator : this.options.keySeparator;
-    let path4 = [lng, ns];
-    if (key) path4 = path4.concat(keySeparator ? key.split(keySeparator) : key);
+    let path5 = [lng, ns];
+    if (key) path5 = path5.concat(keySeparator ? key.split(keySeparator) : key);
     if (lng.includes(".")) {
-      path4 = lng.split(".");
+      path5 = lng.split(".");
       value = ns;
-      ns = path4[1];
+      ns = path5[1];
     }
     this.addNamespaces(ns);
-    setPath(this.data, path4, value);
+    setPath(this.data, path5, value);
     if (!options.silent) this.emit("added", lng, ns, key, value);
   }
   addResources(lng, ns, resources, options = {
@@ -2668,15 +2679,15 @@ var ResourceStore = class extends EventEmitter {
     silent: false,
     skipCopy: false
   }) {
-    let path4 = [lng, ns];
+    let path5 = [lng, ns];
     if (lng.includes(".")) {
-      path4 = lng.split(".");
+      path5 = lng.split(".");
       deep = resources;
       resources = ns;
-      ns = path4[1];
+      ns = path5[1];
     }
     this.addNamespaces(ns);
-    let pack = getPath(this.data, path4) || {};
+    let pack = getPath(this.data, path5) || {};
     if (!options.skipCopy) resources = JSON.parse(JSON.stringify(resources));
     if (deep) {
       deepExtend(pack, resources, overwrite);
@@ -2686,7 +2697,7 @@ var ResourceStore = class extends EventEmitter {
         ...resources
       };
     }
-    setPath(this.data, path4, pack);
+    setPath(this.data, path5, pack);
     if (!options.silent) this.emit("added", lng, ns, resources);
   }
   removeResourceBundle(lng, ns) {
@@ -2743,22 +2754,22 @@ function createProxy() {
 }
 function keysFromSelector(selector, opts) {
   const {
-    [PATH_KEY]: path4
+    [PATH_KEY]: path5
   } = selector(createProxy());
   const keySeparator = opts?.keySeparator ?? ".";
   const nsSeparator = opts?.nsSeparator ?? ":";
   const strict = opts?.enableSelector === "strict";
-  if (path4.length > 1 && nsSeparator) {
+  if (path5.length > 1 && nsSeparator) {
     const ns = opts?.ns;
     const nsList = strict ? Array.isArray(ns) ? ns : ns ? [ns] : null : Array.isArray(ns) ? ns : null;
     if (nsList) {
       const candidates = strict ? nsList : nsList.length > 1 ? nsList.slice(1) : [];
-      if (candidates.includes(path4[0])) {
-        return `${path4[0]}${nsSeparator}${path4.slice(1).join(keySeparator)}`;
+      if (candidates.includes(path5[0])) {
+        return `${path5[0]}${nsSeparator}${path5.slice(1).join(keySeparator)}`;
       }
     }
   }
-  return path4.join(keySeparator);
+  return path5.join(keySeparator);
 }
 var shouldHandleAsObject = (res) => !isString(res) && typeof res !== "boolean" && typeof res !== "number";
 var Translator = class _Translator extends EventEmitter {
@@ -3382,12 +3393,12 @@ var PluralResolver = class {
   }
 };
 var deepFindWithDefaults = (data, defaultData, key, keySeparator = ".", ignoreJSONStructure = true) => {
-  let path4 = getPathWithDefaults(data, defaultData, key);
-  if (!path4 && ignoreJSONStructure && isString(key)) {
-    path4 = deepFind(data, key, keySeparator);
-    if (path4 === void 0) path4 = deepFind(defaultData, key, keySeparator);
+  let path5 = getPathWithDefaults(data, defaultData, key);
+  if (!path5 && ignoreJSONStructure && isString(key)) {
+    path5 = deepFind(data, key, keySeparator);
+    if (path5 === void 0) path5 = deepFind(defaultData, key, keySeparator);
   }
-  return path4;
+  return path5;
 };
 var regexSafe = (val) => val.replace(/\$/g, "$$$$");
 var Interpolator = class {
@@ -3457,12 +3468,12 @@ var Interpolator = class {
     const defaultData = this.options && this.options.interpolation && this.options.interpolation.defaultVariables || {};
     const handleFormat = (key) => {
       if (!key.includes(this.formatSeparator)) {
-        const path4 = deepFindWithDefaults(data, defaultData, key, this.options.keySeparator, this.options.ignoreJSONStructure);
-        return this.alwaysFormat ? this.format(path4, void 0, lng, {
+        const path5 = deepFindWithDefaults(data, defaultData, key, this.options.keySeparator, this.options.ignoreJSONStructure);
+        return this.alwaysFormat ? this.format(path5, void 0, lng, {
           ...options,
           ...data,
           interpolationkey: key
-        }) : path4;
+        }) : path5;
       }
       const p = key.split(this.formatSeparator);
       const k = p.shift().trim();
@@ -5127,47 +5138,9 @@ async function landBundle(stagedDir, destDir) {
   return landing;
 }
 
-// src/main.ts
-var win = null;
-if (!import_electron.app.isPackaged) {
-  const smoke = Object.keys(process.env).some((k) => k.startsWith("PG_SMOKE_"));
-  const dir2 = smoke ? process.env.PG_SMOKE_PROFILE ?? path3.join(os.tmpdir(), "portalgems-smoke") : path3.join(import_electron.app.getPath("appData"), "portalgems-desktop-dev");
-  fs2.mkdirSync(dir2, { recursive: true });
-  import_electron.app.setPath("userData", dir2);
-}
-var pairsPath = () => path3.join(import_electron.app.getPath("userData"), "paired-devices.bin");
-function readPairs() {
-  try {
-    const raw = fs2.readFileSync(pairsPath());
-    if (import_electron.safeStorage.isEncryptionAvailable()) {
-      return import_electron.safeStorage.decryptString(raw);
-    }
-    return raw.toString("utf8");
-  } catch {
-    return "[]";
-  }
-}
-function writePairs(json) {
-  const data = import_electron.safeStorage.isEncryptionAvailable() ? import_electron.safeStorage.encryptString(json) : Buffer.from(json, "utf8");
-  fs2.writeFileSync(pairsPath(), data);
-}
-var forward = (id) => (ev) => {
-  win?.webContents.send("pg:event", { id, ...ev });
-};
-function safeFileName(name) {
-  const base = path3.basename(name.replace(/\\/g, "/"));
-  return base === "" || base === "." || base === ".." ? "received.bin" : base;
-}
-function isTempDownloadDir(dir2) {
-  const target = path3.resolve(dir2);
-  const bases = [os.tmpdir(), import_electron.app.getPath("temp"), "/tmp"];
-  return bases.some((base) => {
-    const b = path3.resolve(base);
-    return target === b || target.startsWith(b + path3.sep);
-  });
-}
-var isValidDownloadDir = (dir2) => !!dir2 && dir2.trim() !== "" && !isTempDownloadDir(dir2);
-var resolveDownloadDir = (dir2) => isValidDownloadDir(dir2) ? dir2 : import_electron.app.getPath("downloads");
+// src/selection.ts
+var fs2 = __toESM(require("node:fs"));
+var path3 = __toESM(require("node:path"));
 async function walkStats(dir2) {
   let fileCount = 0;
   let totalBytes = 0;
@@ -5188,25 +5161,108 @@ async function walkStats(dir2) {
   }
   return { fileCount, totalBytes };
 }
+async function describeSelection(paths) {
+  try {
+    const items = [];
+    for (const p of paths) {
+      if (!p) return null;
+      const stat = paths.length === 1 ? await fs2.promises.stat(p) : await fs2.promises.lstat(p);
+      if (stat.isDirectory()) items.push({ path: p, isFolder: true, size: 0 });
+      else if (stat.isFile()) items.push({ path: p, isFolder: false, size: stat.size });
+    }
+    const plan = planSend(items);
+    if (plan === "nothing") return null;
+    if (plan === "file") {
+      const [only] = items;
+      return { kind: "file", path: only.path, name: path3.basename(only.path), size: only.size };
+    }
+    if (plan === "folder") {
+      const [only] = items;
+      const stats = await walkStats(only.path);
+      return { kind: "folder", path: only.path, name: path3.basename(only.path), ...stats };
+    }
+    let fileCount = 0;
+    let totalBytes = 0;
+    for (const item of items) {
+      if (item.isFolder) {
+        const stats = await walkStats(item.path);
+        fileCount += stats.fileCount;
+        totalBytes += stats.totalBytes;
+      } else {
+        fileCount += 1;
+        totalBytes += item.size;
+      }
+    }
+    return {
+      kind: "bundle",
+      paths: items.map((item) => item.path),
+      counts: countBundle(items),
+      fileCount,
+      totalBytes
+    };
+  } catch {
+    return null;
+  }
+}
+
+// src/main.ts
+var win = null;
+if (!import_electron.app.isPackaged) {
+  const smoke = Object.keys(process.env).some((k) => k.startsWith("PG_SMOKE_"));
+  const dir2 = smoke ? process.env.PG_SMOKE_PROFILE ?? path4.join(os.tmpdir(), "portalgems-smoke") : path4.join(import_electron.app.getPath("appData"), "portalgems-desktop-dev");
+  fs3.mkdirSync(dir2, { recursive: true });
+  import_electron.app.setPath("userData", dir2);
+}
+var pairsPath = () => path4.join(import_electron.app.getPath("userData"), "paired-devices.bin");
+function readPairs() {
+  try {
+    const raw = fs3.readFileSync(pairsPath());
+    if (import_electron.safeStorage.isEncryptionAvailable()) {
+      return import_electron.safeStorage.decryptString(raw);
+    }
+    return raw.toString("utf8");
+  } catch {
+    return "[]";
+  }
+}
+function writePairs(json) {
+  const data = import_electron.safeStorage.isEncryptionAvailable() ? import_electron.safeStorage.encryptString(json) : Buffer.from(json, "utf8");
+  fs3.writeFileSync(pairsPath(), data);
+}
+var forward = (id) => (ev) => {
+  win?.webContents.send("pg:event", { id, ...ev });
+};
+function safeFileName(name) {
+  const base = path4.basename(name.replace(/\\/g, "/"));
+  return base === "" || base === "." || base === ".." ? "received.bin" : base;
+}
+function isTempDownloadDir(dir2) {
+  const target = path4.resolve(dir2);
+  const bases = [os.tmpdir(), import_electron.app.getPath("temp"), "/tmp"];
+  return bases.some((base) => {
+    const b = path4.resolve(base);
+    return target === b || target.startsWith(b + path4.sep);
+  });
+}
+var isValidDownloadDir = (dir2) => !!dir2 && dir2.trim() !== "" && !isTempDownloadDir(dir2);
+var resolveDownloadDir = (dir2) => isValidDownloadDir(dir2) ? dir2 : import_electron.app.getPath("downloads");
 import_electron.ipcMain.handle("pg:locale", () => import_electron.app.getLocale());
 async function pickerDefault(dir2) {
   if (!dir2 || dir2.trim() === "") return void 0;
   try {
-    return (await fs2.promises.stat(dir2)).isDirectory() ? dir2 : void 0;
+    return (await fs3.promises.stat(dir2)).isDirectory() ? dir2 : void 0;
   } catch {
     return void 0;
   }
 }
-import_electron.ipcMain.handle("pg:pickFile", async (_e, defaultDir) => {
+import_electron.ipcMain.handle("pg:pickFiles", async (_e, defaultDir) => {
   if (!win) return null;
   const result = await import_electron.dialog.showOpenDialog(win, {
-    properties: ["openFile"],
+    properties: ["openFile", "multiSelections"],
     defaultPath: await pickerDefault(defaultDir)
   });
   if (result.canceled || result.filePaths.length === 0) return null;
-  const filePath = result.filePaths[0];
-  const stat = await fs2.promises.stat(filePath);
-  return { path: filePath, name: path3.basename(filePath), size: stat.size };
+  return describeSelection(result.filePaths);
 });
 import_electron.ipcMain.handle("pg:pickFolder", async (_e, defaultDir) => {
   if (!win) return null;
@@ -5219,25 +5275,15 @@ import_electron.ipcMain.handle("pg:pickFolder", async (_e, defaultDir) => {
   const stats = await walkStats(folderPath);
   return {
     path: folderPath,
-    name: path3.basename(folderPath),
+    name: path4.basename(folderPath),
     fileCount: stats.fileCount,
     totalBytes: stats.totalBytes
   };
 });
-import_electron.ipcMain.handle("pg:statDropped", async (_e, dropped) => {
-  if (!dropped) return null;
-  try {
-    const stat = await fs2.promises.stat(dropped);
-    const name = path3.basename(dropped);
-    if (stat.isDirectory()) {
-      const stats = await walkStats(dropped);
-      return { kind: "folder", path: dropped, name, ...stats };
-    }
-    return stat.isFile() ? { kind: "file", path: dropped, name, size: stat.size } : null;
-  } catch {
-    return null;
-  }
-});
+import_electron.ipcMain.handle(
+  "pg:statDropped",
+  (_e, dropped) => Array.isArray(dropped) ? describeSelection(dropped) : null
+);
 import_electron.ipcMain.handle(
   "pg:send",
   (_e, id, filePath, code, server) => engine.sendFile(id, filePath, code ?? null, server ?? {}, forward(id))
@@ -5249,6 +5295,10 @@ import_electron.ipcMain.handle(
 import_electron.ipcMain.handle(
   "pg:sendFolder",
   (_e, id, folderPath, code, server) => engine.sendFolder(id, folderPath, code ?? null, server ?? {}, forward(id))
+);
+import_electron.ipcMain.handle(
+  "pg:sendFiles",
+  (_e, id, paths, bundleName, code, server) => engine.sendFiles(id, paths, bundleName, code ?? null, server ?? {}, forward(id))
 );
 var looseReceives = /* @__PURE__ */ new Set();
 import_electron.ipcMain.handle(
@@ -5280,33 +5330,33 @@ import_electron.ipcMain.handle(
   "pg:acceptDownload",
   async (_e, id, dir2, overwrite) => {
     const loose = looseReceives.delete(id);
-    const staging = path3.join(import_electron.app.getPath("userData"), "incoming", String(id));
-    await fs2.promises.mkdir(staging, { recursive: true });
+    const staging = path4.join(import_electron.app.getPath("userData"), "incoming", String(id));
+    await fs3.promises.mkdir(staging, { recursive: true });
     try {
       const saved = await engine.acceptReceive(id, staging, forward(id));
-      const isFolder = (await fs2.promises.stat(saved)).isDirectory();
+      const isFolder = (await fs3.promises.stat(saved)).isDirectory();
       let destDir = resolveDownloadDir(dir2);
       let fallback = !!dir2 && dir2.trim() !== "" && destDir !== dir2;
       try {
-        await fs2.promises.mkdir(destDir, { recursive: true });
+        await fs3.promises.mkdir(destDir, { recursive: true });
       } catch {
         destDir = import_electron.app.getPath("downloads");
         fallback = true;
-        await fs2.promises.mkdir(destDir, { recursive: true });
+        await fs3.promises.mkdir(destDir, { recursive: true });
       }
       if (loose) {
         const bundle = await landBundle(saved, destDir);
         return { name: "", dir: destDir, fallback, bundle };
       }
-      const name = path3.basename(saved);
-      const dest = overwrite ? path3.join(destDir, name) : dedupPath(destDir, name, isFolder);
+      const name = path4.basename(saved);
+      const dest = overwrite ? path4.join(destDir, name) : dedupPath(destDir, name, isFolder);
       if (overwrite) {
-        await fs2.promises.rm(dest, { recursive: true, force: true });
+        await fs3.promises.rm(dest, { recursive: true, force: true });
       }
       await moveEntry(saved, dest);
-      return { name: path3.basename(dest), dir: destDir, fallback };
+      return { name: path4.basename(dest), dir: destDir, fallback };
     } finally {
-      await fs2.promises.rm(staging, { recursive: true, force: true }).catch(() => void 0);
+      await fs3.promises.rm(staging, { recursive: true, force: true }).catch(() => void 0);
     }
   }
 );
@@ -5322,9 +5372,9 @@ import_electron.ipcMain.handle("pg:pickDirectory", async () => {
   return result.canceled || result.filePaths.length === 0 ? null : result.filePaths[0];
 });
 import_electron.ipcMain.handle("pg:statTarget", async (_e, dir2, fileName) => {
-  const target = path3.join(resolveDownloadDir(dir2), safeFileName(fileName));
+  const target = path4.join(resolveDownloadDir(dir2), safeFileName(fileName));
   try {
-    const st = await fs2.promises.stat(target);
+    const st = await fs3.promises.stat(target);
     if (st.isDirectory()) {
       const stats = await walkStats(target);
       return { exists: true, size: stats.totalBytes, isFolder: true };
@@ -5339,14 +5389,14 @@ import_electron.ipcMain.handle("pg:tempDir", () => import_electron.app.getPath("
 import_electron.ipcMain.handle("pg:pairs:get", () => readPairs());
 import_electron.ipcMain.handle("pg:pairs:set", (_e, json) => writePairs(json));
 import_electron.ipcMain.handle("pg:writeTemp", async (_e, name, content) => {
-  const file = path3.join(import_electron.app.getPath("temp"), name);
-  await fs2.promises.writeFile(file, content, "utf8");
+  const file = path4.join(import_electron.app.getPath("temp"), name);
+  await fs3.promises.writeFile(file, content, "utf8");
   return file;
 });
-import_electron.ipcMain.handle("pg:readText", (_e, p) => fs2.promises.readFile(p, "utf8"));
+import_electron.ipcMain.handle("pg:readText", (_e, p) => fs3.promises.readFile(p, "utf8"));
 import_electron.ipcMain.handle(
   "pg:deleteFile",
-  (_e, p) => fs2.promises.unlink(p).catch(() => void 0)
+  (_e, p) => fs3.promises.unlink(p).catch(() => void 0)
 );
 import_electron.ipcMain.handle("pg:reject", (_e, id) => {
   looseReceives.delete(id);
@@ -5360,14 +5410,14 @@ import_electron.app.whenReady().then(async () => {
     minWidth: 480,
     minHeight: 560,
     title: "PortalGems",
-    icon: path3.join(__dirname, "..", "build", "icon.png"),
+    icon: path4.join(__dirname, "..", "build", "icon.png"),
     autoHideMenuBar: true,
     webPreferences: {
-      preload: path3.join(__dirname, "preload.js"),
+      preload: path4.join(__dirname, "preload.js"),
       contextIsolation: true
     }
   });
-  await win.loadFile(path3.join(__dirname, "..", "src", "renderer", "index.html"));
+  await win.loadFile(path4.join(__dirname, "..", "src", "renderer", "index.html"));
   const smokeReceive = process.env.PG_SMOKE_RECEIVE;
   const smokeCancel = process.env.PG_SMOKE_RECEIVE_CANCEL;
   if (smokeReceive || smokeCancel) {
@@ -5430,6 +5480,12 @@ import_electron.app.whenReady().then(async () => {
   }
   if (process.env.PG_SMOKE_SEND_FOLDER) {
     runSmokeSendFolder(process.env.PG_SMOKE_SEND_FOLDER).catch((e) => {
+      console.log(`SMOKE:ERROR:${e}`);
+      import_electron.app.exit(1);
+    });
+  }
+  if (process.env.PG_SMOKE_SEND_FILES) {
+    runSmokeSendFiles(process.env.PG_SMOKE_SEND_FILES).catch((e) => {
       console.log(`SMOKE:ERROR:${e}`);
       import_electron.app.exit(1);
     });
@@ -5599,7 +5655,7 @@ async function runSmokePickDefault(seedDir, fakeFile) {
   await smokeExec(
     `localStorage.setItem('pg-last-send-dir', ${JSON.stringify(seedDir)})`
   );
-  await smokeClick("Choose file to send");
+  await smokeClick("Choose files to send");
   await new Promise((r) => setTimeout(r, 600));
   const remembered = await smokeExec(
     "localStorage.getItem('pg-last-send-dir')"
@@ -5627,6 +5683,23 @@ async function runSmokeSendFolder(folderPath) {
     (ev) => console.log(`SMOKE-EV:${ev.event}:${ev.info ?? ""}`)
   );
   console.log("SMOKE:SEND-FOLDER-OK");
+  import_electron.app.exit(0);
+}
+async function runSmokeSendFiles(joined) {
+  const code = process.env.PG_SMOKE_CODE;
+  if (!code) throw new Error("PG_SMOKE_SEND_FILES needs PG_SMOKE_CODE");
+  const picked = await describeSelection(joined.split(path4.delimiter).filter(Boolean));
+  if (!picked) throw new Error("nothing sendable in PG_SMOKE_SEND_FILES");
+  const log = (ev) => console.log(`SMOKE-EV:${ev.event}:${ev.info ?? ""}`);
+  console.log(`SMOKE:SELECTION=${JSON.stringify(picked)}`);
+  if (picked.kind === "bundle") {
+    await engine.sendFiles(991, picked.paths, "smoke bundle", code, smokeServer(), log);
+  } else if (picked.kind === "folder") {
+    await engine.sendFolder(991, picked.path, code, smokeServer(), log);
+  } else {
+    await engine.sendFile(991, picked.path, code, smokeServer(), log);
+  }
+  console.log("SMOKE:SEND-FILES-OK");
   import_electron.app.exit(0);
 }
 async function runSmoke(code, cancelInstead) {

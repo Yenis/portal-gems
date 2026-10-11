@@ -64,6 +64,16 @@ interface NativeAddon {
     server: ServerConfig,
     cb: (ev: NativeTransferEvent) => void
   ): Promise<void>;
+  /// Several files and folders as one loose bundle; `bundleName` is the
+  /// folder name a client without the marker will save it under.
+  sendFiles(
+    id: number,
+    paths: string[],
+    bundleName: string,
+    code: string | null,
+    server: ServerConfig,
+    cb: (ev: NativeTransferEvent) => void
+  ): Promise<void>;
   requestReceive(
     id: number,
     code: string,

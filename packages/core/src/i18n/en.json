@@ -12,6 +12,7 @@
     "sendTitle": "Send a file",
     "sendHint": "Pick a file and share the one-time code with the receiver.",
     "sendButton": "Choose file to send",
+    "sendFilesButton": "Choose files to send",
     "sendFolderButton": "Choose folder to send",
     "receiveTitle": "Receive a file",
     "receiveHint": "Enter the code the sender gave you.",
@@ -116,8 +117,7 @@
     "renameTitle": "Rename {{name}}",
     "renameHint": "This name is only used on this device. Leave it empty to go back to {{name}}.",
     "renamePlaceholder": "Name for this device",
-    "dropHint": "Drop a file or folder on a device to send it there.",
-    "dropOne": "Drop one file or folder at a time.",
+    "dropHint": "Drop files or folders on a device to send them there.",
     "dropFailed": "That could not be read. Try choosing it with the Send button.",
     "lastUsed": "Last transfer {{when}}",
     "lastUsedOn": "Last transfer on {{date}}"

@@ -12,6 +12,7 @@
     "sendTitle": "Datei senden",
     "sendHint": "Wähle eine Datei und teile den Einmal-Code mit dem Empfänger.",
     "sendButton": "Datei auswählen",
+    "sendFilesButton": "Dateien auswählen",
     "sendFolderButton": "Ordner auswählen",
     "receiveTitle": "Datei empfangen",
     "receiveHint": "Gib den Code ein, den dir der Absender gegeben hat.",
@@ -116,8 +117,7 @@
     "renameTitle": "{{name}} umbenennen",
     "renameHint": "Dieser Name gilt nur auf diesem Gerät. Leer lassen, um wieder {{name}} zu verwenden.",
     "renamePlaceholder": "Name für dieses Gerät",
-    "dropHint": "Ziehe eine Datei oder einen Ordner auf ein Gerät, um sie dorthin zu senden.",
-    "dropOne": "Bitte nur eine Datei oder einen Ordner auf einmal ablegen.",
+    "dropHint": "Ziehe Dateien oder Ordner auf ein Gerät, um sie dorthin zu senden.",
     "dropFailed": "Das konnte nicht gelesen werden. Wähle es stattdessen über Senden aus.",
     "lastUsed": "Letzte Übertragung {{when}}",
     "lastUsedOn": "Letzte Übertragung am {{date}}"
