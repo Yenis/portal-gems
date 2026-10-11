@@ -255,6 +255,7 @@
     "transferFailed": "Prijenos nije uspio: {{message}}",
     "cancelled": "Prijenos otkazan.",
     "serverUnreachable": "Nije moguće dohvatiti server za povezivanje. Možda je privremeno nedostupan. Otvori Postavke i prebaci se na PortalGems server ili koristi vlastiti - pogledaj vodič za samostalno hostanje.",
+    "connectTimeout": "Server za povezivanje nije odgovorio na vrijeme. Provjeri da li je ovaj uređaj na mreži. Ako jeste, server je možda nedostupan - možeš ga promijeniti u Postavkama.",
     "invalidServerUrl": "Adresa servera nije ispravna. Provjeri je u Postavkama. Rendezvous URL izgleda kao wss://host/v1, a relej kao tcp://host:4001."
   },
   "text": {

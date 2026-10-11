@@ -6,26 +6,12 @@ not have to rediscover it. Reviewed against the code at 1.4.2 (2026-10-11).
 
 ## Open gaps, in the order they are to be worked
 
-1. The engine's connect has no timeout
-2. `crowded` is reported as "your server is unreachable"
-3. Symbian derives attempt 0 only
-4. The stale claim is never released
-5. CI runs no test suite
-6. What has not been verified end to end
-
-### The engine's connect has no timeout
-
-With the network down, a send or a receive over a one-time code sits on
-"Connecting" until the user cancels it. Nothing in `native/wormhole-core`
-bounds the time it takes to reach the mailbox server; the only timeouts are
-the apps' own, around paired transfers (`PAIRED_SEND_TIMEOUT_MS`, and
-`PAIRED_ATTEMPT_TIMEOUT_MS` per polled code).
-
-The bound belongs on reaching the server, not on the whole wait: a sender
-that has its code and is waiting for the other person is doing exactly what
-it should, for as long as it takes. It needs its own error case, mapped in
-`errors.ts` to a string that says this device looks offline - which is a
-different thing from a server that is down.
+1. `crowded` is reported as "your server is unreachable"
+2. Symbian derives attempt 0 only
+3. The stale claim is never released
+4. CI runs no test suite
+5. What has not been verified end to end
+6. A connection lost while waiting goes unnoticed
 
 ### `crowded` is reported as "your server is unreachable"
 
@@ -40,7 +26,7 @@ checked.
 
 `.github/workflows/release.yml` builds and publishes on a `v*` tag and runs
 nothing else. Every suite runs only when someone remembers to: core (vitest,
-166 tests), the desktop's `npm test`, `cargo test` in `native/wormhole-core`,
+169 tests), the desktop's `npm test`, `cargo test` in `native/wormhole-core`,
 and `make test` / `make test-arm` in `native/wormhole-mini` (329 checks).
 None of them needs a network except the `#[ignore]`d engine round trips.
 
@@ -56,6 +42,18 @@ None of them needs a network except the `#[ignore]`d engine round trips.
 Android has one Jest file and the desktop two test files, so the UI on both
 is covered by hand and by the smoke harness.
 
+The connect timeout (`CONNECT_TIMEOUT`, 20 s) is covered by a unit test
+against a server that never answers; it has not been watched on a phone
+with its Wi-Fi off, which is where the hang was first seen.
+
+### A connection lost while waiting goes unnoticed
+
+The connect timeout covers reaching the server and stops once the code is
+claimed. A sender whose Wi-Fi drops after that, while its code is on screen,
+still shows a code nobody can use until the user cancels. Telling that apart
+from an ordinary wait needs a liveness check on the mailbox connection
+(a WebSocket ping), inside the vendored crate.
+
 ## Planned features (decided 2026-10-11)
 
 - **Notifications when a transfer finishes, and open / show in folder.**
@@ -70,28 +68,31 @@ is covered by hand and by the smoke harness.
 - **Updates.** In Settings: an auto-update toggle and a "Check for updates"
   button, against the GitHub releases. A sideloaded APK and a portable
   `.exe` otherwise never learn that a new version exists.
-- **Drop the "Last transfer" time under a paired device.** No record of
-  transfers is to be kept. Open question for the design: most recently used
-  first is ordered by the same stored `lastUsedAt`, so either the order goes
-  too or it is kept some other way.
+- **Drop the "Last transfer" time under a paired device.** It is no longer
+  shown anywhere. `lastUsedAt` stays stored, because most recently used
+  first is ordered by it.
 
 Undecided:
 
 - **A verification string** - a short phrase both people compare before a
-  one-time-code transfer proceeds, as `wormhole --verify` does.
+  one-time-code transfer proceeds, as `wormhole --verify` does. If it is
+  ever built: an off-by-default setting, one-time codes only. It costs one
+  spoken comparison and a tap on each side, and the sender can no longer
+  start a send and walk away. Parked.
 
 Later, not now:
 
 - **F-Droid recipe and store metadata.** Planned; the "no proprietary
   dependencies" discipline in `docs/ARCHITECTURE.md` section 5 exists for it.
-- **iOS.** `packages/app-mobile/ios` is the untouched React Native template
-  and `packages/wormhole-rn` can build the engine for iOS, but everything in
-  the Kotlin `PortalGemsNative` module needs a Swift counterpart.
-- **Sending several files from Symbian.** It receives a selection and sends
-  one file or one folder at a time.
 
 Decided against:
 
+- **iOS.** `packages/app-mobile/ios` is the untouched React Native template.
+  Everything in the Kotlin `PortalGemsNative` module would need a Swift
+  counterpart, and the platform allows no distribution outside a paid
+  developer account and Apple's own channels.
+- **Sending several files from Symbian.** It receives a selection and sends
+  one file or one folder at a time, which is enough.
 - **A QR code for a one-time code.** The code is short enough to type.
 - **A transfer history.** Nothing about past transfers is stored.
 

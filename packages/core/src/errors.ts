@@ -9,10 +9,17 @@ const rawMessage = (error: unknown): string =>
 const SERVER_UNREACHABLE_RE =
   /rendezvous|connection refused|could not connect to the rendezvous/i;
 
+// The engine gives the server CONNECT_TIMEOUT (20 s) to answer and then fails
+// with exactly this text (pinned by `connect_timeout_message_is_pinned` in
+// native/wormhole-core). It cannot tell a device that is offline from a server
+// that is not answering, so the message names both.
+const CONNECT_TIMEOUT_RE = /no answer from the connection server in time/i;
+
 /// True when the failure looks like the chosen server being unreachable - used
 /// to offer a "Change server" shortcut, not just a message.
 export function isServerUnreachableError(error: unknown): boolean {
-  return SERVER_UNREACHABLE_RE.test(rawMessage(error));
+  const raw = rawMessage(error);
+  return SERVER_UNREACHABLE_RE.test(raw) || CONNECT_TIMEOUT_RE.test(raw);
 }
 
 // Transit is the data channel the two devices open to each other after they
@@ -42,6 +49,7 @@ export function friendlyError(t: TFunction, error: unknown): string {
   if (/invalid server url/i.test(raw)) return t('errors.invalidServerUrl');
   if (/transfer was rejected|rejected the transfer|TransferRejected/i.test(raw))
     return t('errors.declinedBySender');
+  if (CONNECT_TIMEOUT_RE.test(raw)) return t('errors.connectTimeout');
   if (isServerUnreachableError(raw)) return t('errors.serverUnreachable');
   // Transit failing says nothing about the code or the server, so it gets its
   // own message rather than one about either.

@@ -255,6 +255,7 @@
     "transferFailed": "Le transfert a échoué : {{message}}",
     "cancelled": "Transfert annulé.",
     "serverUnreachable": "Impossible de joindre le serveur de connexion. Il est peut-être temporairement hors service. Ouvrez les Paramètres et passez au serveur PortalGems, ou utilisez le vôtre - voir le guide d'auto-hébergement.",
+    "connectTimeout": "Le serveur de connexion n'a pas répondu à temps. Vérifiez que cet appareil est en ligne. Si c'est le cas, le serveur est peut-être hors service - vous pouvez en changer dans les Paramètres.",
     "invalidServerUrl": "L'adresse du serveur n'est pas valide. Vérifiez-la dans les Paramètres. Une URL de rendez-vous ressemble à wss://host/v1 et un relais à tcp://host:4001."
   },
   "text": {

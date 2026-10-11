@@ -96,10 +96,25 @@ cancel must cover more than the transfer phase):
 - Zip via the `zip` crate (deflate only, pure Rust through miniz_oxide - keeps
   the Android/F-Droid "no C deps" posture); blocking zip/unzip work runs on
   the `blocking` crate's thread pool.
+- Reaching the mailbox server is bounded by `CONNECT_TIMEOUT` (20 s):
+  `open_mailbox` is the one place a send or a receive connects and claims,
+  allocates or joins its code, and it fails with `Error::ConnectTimeout` if
+  the server has not answered by then. The bound stops there on purpose.
+  Everything after it - `Wormhole::connect`, where a sender waits for its
+  receiver - can take as long as the other person does. The engine cannot
+  tell an offline device from a silent server, so `errors.connectTimeout`
+  names both, and `isServerUnreachableError` is true for it.
 - Errors: one flat `Error` enum (`InvalidCode`, `Cancelled`, `AlreadyConsumed`,
-  wrapped wormhole/transfer/IO). Foreign sides receive the Display string;
+  `ConnectTimeout`, wrapped wormhole/transfer/IO). Foreign sides receive the Display string;
   `packages/core/src/errors.ts::friendlyError` pattern-matches it to
-  localized messages. If you add error cases, extend BOTH.
+  localized messages. If you add error cases, extend BOTH - and regenerate
+  the Android binding, which decodes the enum by position: a variant it does
+  not know arrives as `UnexpectedEnumCase`, and one added in the middle
+  shifts the rest. For the TypeScript alone no cross-compile is needed: build
+  the crate for the host, then from `native/wormhole-core` run `ubrn generate
+  jsi bindings --library --ts-dir <tmp> --cpp-dir <tmp>
+  target/debug/libwormhole_core.so`, format with wormhole-rn's prettier and
+  copy `wormhole_core.ts` over. The C++ does not change for an error case.
 - Wire-compatible with every magic-wormhole client (CLI, Warp, Destiny…) on the
   SAME servers. Every entry point takes a `ServerConfig { rendezvous_url,
   transit_url }` (uniffi Record / napi object); empty fields fall back to the
@@ -261,7 +276,7 @@ Consumed by both apps as **npm `file:` symlinks** (see §5 build gotchas).
     follows the outer signal.
 - `errors.ts` - engine-string → i18n-key mapping.
 
-Tests: `cd packages/core && npm test` (vitest, 166 tests).
+Tests: `cd packages/core && npm test` (vitest, 169 tests).
 
 ## 4. The apps
 
@@ -601,9 +616,10 @@ completion), keep-both (`name (1).ext`), default-Downloads regression.
 Android (Pixel 6a, release APK, adb-driven UI): SAF picker + persisted grant,
 receive into the chosen tree, conflict prompt with existing-file size,
 overwrite, keep-both, deleted-tree fallback to Downloads with notice, reset
-to default. Note: the app's engine connect has no timeout - with Wi-Fi off it
-hangs on "Connecting" until cancelled (first of the open gaps in
-`docs/BACKLOG.md`).
+to default. That run also found the engine's connect had no timeout - with
+Wi-Fi off it hung on "Connecting" until cancelled. `CONNECT_TIMEOUT` (section
+1) is the fix; it is covered by a unit test against a server that never
+answers and has not been re-run on a device yet.
 
 Packaging is done: all six binaries (APK, AppImage, deb, rpm, Windows .exe,
 macOS .dmg) build and publish from a single `v*` tag via CI (first shipped in
@@ -636,10 +652,9 @@ folder E2E runs - and is the app's default choice; note the CLI examples and
 the reference CLI default to the PUBLIC server, so cross-testing needs
 explicit server flags on one side.
 
-Gaps, each with its reasoning in `docs/BACKLOG.md`: the engine's connect
-has no timeout; a `crowded` nameplate is reported as an unreachable server;
+Gaps, each with its reasoning in `docs/BACKLOG.md`: a `crowded` nameplate is reported as an unreachable server;
 Symbian derives only the first paired code of a bucket; a sender that does
 not finish never releases its nameplate; CI runs no test suite. Not yet
 verified end to end: QR *camera* scan (needs a real phone), cancel in the
 middle of a transfer, and the paired-transfer buttons in the UI (smoke modes
-exist). Not started: F-Droid recipe, store metadata, iOS.
+exist). Not started: F-Droid recipe, store metadata.
