@@ -6,14 +6,12 @@ not have to rediscover it. Reviewed against the code at 1.4.2 (2026-10-11).
 
 ## Open gaps, in the order they are to be worked
 
-1. Symbian derives attempt 0 only
-2. The stale claim is never released
-3. CI runs no test suite
-4. What has not been verified end to end
-5. A connection lost while waiting goes unnoticed
+1. The stale claim is never released
+2. CI runs no test suite
+3. What has not been verified end to end
+4. A connection lost while waiting goes unnoticed
 
-The first two are under "Paired send" below, with the findings they come
-from.
+The first is under "Paired send" below, with the findings it comes from.
 
 ### CI runs no test suite
 
@@ -45,6 +43,11 @@ server. The conversion is unit-tested; nobody has put three devices on one
 code and read the screen. On Symbian the same case says "That code is not
 waiting on this server", which is imprecise but does not send the user off
 to change servers, so it was left alone.
+
+Symbian's later paired codes (PortalGems Mini 0.12.1) are tested on the
+host and under qemu-arm against core's vectors. Not yet done: a
+`wh-mini paired-send --attempt 1` picked up by a real desktop, and on the
+E72 itself a paired send cancelled and then repeated inside one bucket.
 
 ### A connection lost while waiting goes unnoticed
 
@@ -128,15 +131,6 @@ through until the bucket rolled over.
 
 What that does **not** cover, in the order it is worth doing:
 
-- **The Symbian client derives attempt 0 only.** `wh_pair_derive_code` in
-  `native/wormhole-mini` takes a bucket and nothing else, so a sender that
-  moved past its first code is invisible to a Symbian peer, and a Symbian
-  sender never moves on itself. Normal transfers are unaffected (attempt 0
-  is byte-identical to what it always was), and its pairing handshake needs
-  no transit, so the failure the attempt codes route around barely arises
-  there - but a paired *transfer* still sends a file. The vectors for
-  attempts 1 and 2 are already pinned in core's tests for `test_pair.c` to
-  match.
 - **The stale claim is still never released.** The cheap-sounding fix - hand
   the engine a real cancel future instead of cancel-by-drop - does not work:
   `sender_connect` claims the nameplate in `MailboxConnection::connect` and

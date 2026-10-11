@@ -210,6 +210,9 @@ Consumed by both apps as **npm `file:` symlinks** (see §5 build gotchas).
   `candidateCodes()` is the receiver's side of that: every bucket × attempt,
   likeliest first. Attempt 0 staying byte-identical is what lets an updated
   device still meet one that knows nothing of attempts.
+  `native/wormhole-mini` has the same three codes (`wh_pair_derive_attempt`,
+  `wh_pair_next_attempt`); the phone keeps its marker in memory only - see
+  "Pairing" in `docs/SYMBIAN.md`.
   - **The handshake is a message, not a file** (since 1.4.0). A file offer
     needs transit - a connection the two devices open to each other - and on
     first contact that is the step most likely to fail: a laptop and a phone
@@ -661,9 +664,8 @@ folder E2E runs - and is the app's default choice; note the CLI examples and
 the reference CLI default to the PUBLIC server, so cross-testing needs
 explicit server flags on one side.
 
-Gaps, each with its reasoning in `docs/BACKLOG.md`: Symbian derives only
-the first paired code of a bucket; a sender that does not finish never
-releases its nameplate; CI runs no test suite; a connection lost while
+Gaps, each with its reasoning in `docs/BACKLOG.md`: a sender that does not
+finish never releases its nameplate; CI runs no test suite; a connection lost while
 waiting goes unnoticed. Not yet
 verified end to end: QR *camera* scan (needs a real phone), cancel in the
 middle of a transfer, and the paired-transfer buttons in the UI (smoke modes

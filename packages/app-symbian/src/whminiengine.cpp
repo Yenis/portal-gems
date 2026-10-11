@@ -1167,6 +1167,69 @@ static void RunJob(TJob* aJob)
     wh_mailbox_close(&mailbox, "happy");
 }
 
+/* --- which code a paired send uses ------------------------------------- */
+
+/* A paired send that stopped without finishing - cancelled, timed out,
+ * failed - still holds its claim on the code it used, so the next one in
+ * the same five-minute bucket must move to the bucket's next code; the
+ * receiving side looks for all of them. This is the other apps' in-flight
+ * marker (SEND_ATTEMPTS_KEY in core), kept in memory rather than in
+ * pairs.txt: it then misses only an app that is killed in the middle of a
+ * send, the bucket is over within five minutes either way, and the file
+ * format stays as it is. Only the worker thread touches it, one job at a
+ * time. */
+struct TSendMarker
+{
+    unsigned char iSecret[32];
+    wh_pair_send_marker iMarker;
+};
+static TSendMarker gSendMarkers[KMaxPairs];
+
+static TSendMarker* SendMarkerFor(const unsigned char aSecret[32], unsigned long aBucket)
+{
+    TInt i;
+    for (i = 0; i < KMaxPairs; i++) {
+        if (gSendMarkers[i].iMarker.pending &&
+            Mem::Compare(gSendMarkers[i].iSecret, 32, aSecret, 32) == 0) {
+            return &gSendMarkers[i];
+        }
+    }
+    /* None yet: take a slot that is free, or whose bucket is over and so
+     * says nothing any more. There are as many slots as pairings. */
+    for (i = 0; i < KMaxPairs; i++) {
+        if (!gSendMarkers[i].iMarker.pending || gSendMarkers[i].iMarker.bucket != aBucket) break;
+    }
+    if (i >= KMaxPairs) i = 0;
+    gSendMarkers[i].iMarker.pending = 0;
+    Mem::Copy(gSendMarkers[i].iSecret, aSecret, 32);
+    return &gSendMarkers[i];
+}
+
+/* The attempt this send should use, noted as started before anything can
+ * go wrong with it. */
+static unsigned int PairedSendStarting(const unsigned char aSecret[32])
+{
+    unsigned long bucket = wh_pair_bucket(wh_net_unix_time());
+    TSendMarker* m = SendMarkerFor(aSecret, bucket);
+    unsigned int attempt = wh_pair_next_attempt(&m->iMarker, bucket);
+    m->iMarker.pending = 1;
+    m->iMarker.bucket = bucket;
+    m->iMarker.attempt = attempt;
+    return attempt;
+}
+
+/* Only a send that completed clears its marker: the transfer released the
+ * code on its way out, so the next send can use the first one again. */
+static void PairedSendCompleted(const unsigned char aSecret[32])
+{
+    TInt i;
+    for (i = 0; i < KMaxPairs; i++) {
+        if (Mem::Compare(gSendMarkers[i].iSecret, 32, aSecret, 32) == 0) {
+            gSendMarkers[i].iMarker.pending = 0;
+        }
+    }
+}
+
 /* Send: allocate a code, publish it for the UI to display, then wait for
  * whoever types it. The wait is inside wh_mailbox_pake and can be long -
  * which is exactly why this runs on its own thread. */
@@ -1188,7 +1251,8 @@ static void RunSendTextJob(TJob* aJob)
         char pcode[WH_PAIR_CODE_MAX];
         ServerOf(srv);
         aJob->iState = EJobWaitingForPeer;
-        rc = wh_paired_open_sender(&mailbox, &srv, aJob->iSecret, 0, pcode);
+        rc = wh_paired_open_sender(&mailbox, &srv, aJob->iSecret,
+                                   PairedSendStarting(aJob->iSecret), pcode);
         if (rc != 0) {
             Finish(aJob, EJobFailed,
                    rc == -3 ? "They did not pick it up - is PortalGems open there?" :
@@ -1253,6 +1317,7 @@ static void RunSendTextJob(TJob* aJob)
         return;
     }
 
+    if (aJob->iPaired) PairedSendCompleted(aJob->iSecret);
     Finish(aJob, EJobDone, "Message sent");
     wh_mailbox_close(&mailbox, "happy");
 }
@@ -1371,7 +1436,8 @@ static void RunSendJob(TJob* aJob)
         char pcode[WH_PAIR_CODE_MAX];
         ServerOf(srv);
         aJob->iState = EJobWaitingForPeer;
-        rc = wh_paired_open_sender(&mailbox, &srv, aJob->iSecret, 0, pcode);
+        rc = wh_paired_open_sender(&mailbox, &srv, aJob->iSecret,
+                                   PairedSendStarting(aJob->iSecret), pcode);
         if (rc != 0) {
             source.iFile.Close();
             if (folder) fs.Delete(KStageZip);
@@ -1465,6 +1531,7 @@ static void RunSendJob(TJob* aJob)
         return;
     }
 
+    if (aJob->iPaired) PairedSendCompleted(aJob->iSecret);
     Finish(aJob, EJobDone, "Sent, and confirmed by the other side");
     wh_mailbox_close(&mailbox, "happy");
 }

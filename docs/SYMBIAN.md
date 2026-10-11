@@ -825,6 +825,21 @@ Things worth knowing:
   that exists - claiming creates, and a poller would otherwise sit in empty
   mailboxes of its own making. This mirrors the Rust client's
   `allocate = false`.
+- **A bucket holds three codes, as in the other apps** (since 0.12.1).
+  A paired send that stops without finishing - cancelled, timed out,
+  failed - leaves its claim on the code it used, so the next send in the
+  same five minutes moves to the bucket's next code
+  (`wh_pair_derive_attempt`, `WH_PAIR_CODE_ATTEMPTS`), and a receiver looks
+  for all of them, in core's `candidateCodes` order. Attempt 0 is the code
+  every earlier build derived, to the byte, so a phone on an older build
+  still meets a newer peer's first send. Which attempt a send uses comes
+  from `wh_pair_next_attempt`, the same rule as core's `nextSendAttempt`
+  and tested with the same cases. The phone keeps that in-flight marker in
+  memory (`gSendMarkers` in `whminiengine.cpp`), not in `pairs.txt`: it
+  misses only an app killed in the middle of a send, the bucket is over
+  within five minutes either way, and the file format is untouched.
+  `wh-mini paired-send --attempt N` sends on a later code from the host,
+  and `wh-mini pairs` prints them as `PAIR-ATTEMPT` lines.
 - **Each poll attempt is bounded** at ten seconds with
   `wh_net_set_read_timeout`, the same fix as desktop and Android: a sender
   that died while waiting leaves its nameplate listed, and a receiver that
