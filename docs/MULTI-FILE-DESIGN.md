@@ -1,8 +1,12 @@
 # Multi-file transfers - design
 
-Status: agreed in discussion on 2026-10-10, not built. This is the plan to
-build from; once the feature ships, the lasting parts move into
-`ARCHITECTURE.md` and this file becomes historical, like `PLAN.md`.
+Status: built, in the nine steps of section 10 (2026-10-10 and 11). This was
+the plan, and section 12 records what each step turned into. The lasting
+parts are summarised in `ARCHITECTURE.md` ("Several files in one transfer");
+this file is kept for the reasoning - why a directory offer, why not one
+wormhole per file, why the marker carries counts - and is historical from
+here on, like `PLAN.md`. Where the two disagree, the code and
+`ARCHITECTURE.md` are right.
 
 ## 1. What the user gets
 
@@ -399,3 +403,12 @@ cannot receive:
   `consumePendingShare` returns them with the names their sources report,
   and `App.tsx` hands them to the same `itemFromUris` the picker uses. The
   chooser shows "5 files" where it showed one file's name.
+- Step 9 (words and documents) is done: the guide's "Several files at once"
+  section and the reworded send, share and drop sections in six languages,
+  the home card ("Send files"), Symbian's help text, the README section
+  "Several files, one transfer", the CHANGELOG entry, and the summary in
+  `ARCHITECTURE.md`.
+- Not yet verified on devices when this was written: the Kotlin in steps 4,
+  7 and 8 and the Symbian build in step 5 were written without their
+  compilers to hand, and no bundle had been watched crossing between two
+  real devices. The table in section 9 is the checklist.

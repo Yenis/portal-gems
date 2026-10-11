@@ -1903,6 +1903,7 @@ const EXPLAIN_SECTIONS = ['codes', 'e2e', 'direct', 'servers', 'choosing', 'pair
 // phone has 'share'.
 const GUIDE_SECTIONS = [
   'send',
+  'multi',
   'receive',
   'pair',
   'devices',

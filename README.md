@@ -26,6 +26,7 @@ shows, this is the first magic-wormhole client for the platform. See
 - [Why PortalGems?](#why-portalgems)
 - [Features](#features)
 - [How it works](#how-it-works)
+- [Several files, one transfer](#several-files-one-transfer)
 - [Security model](#security-model)
 - [Device pairing (no backend)](#device-pairing-no-backend)
 - [PortalGems on Symbian](#portalgems-on-symbian)
@@ -105,14 +106,15 @@ PortalGems takes a different approach, inherited from magic-wormhole:
 |---|---|
 | Send & receive files | Between any two magic-wormhole clients, any direction |
 | Send whole folders | Pick a folder and it arrives as a folder - subfolders and all, using the standard wormhole directory transfer (CLI-compatible) |
+| Send several files at once | Select as many as you like and they go as one transfer: the receiver accepts once, and every file lands directly in their receive folder - not in a folder of its own. See [Several files, one transfer](#several-files-one-transfer) |
 | Send a text message | Type a message instead of picking a file; it travels inside the handshake, so no relay and no direct connection is ever involved |
 | Receive confirmation | See the file name and size - or the folder name, file count, and total size - and accept or decline before a byte flows |
 | Your download folder | Pick where received files land (defaults to Downloads); same-name files and folders warn you first - overwrite or keep both |
 | Direct LAN transfers | Same Wi-Fi → peer-to-peer at full speed, no relay |
 | CLI interop | Works with `wormhole` on servers, laptops, anything |
 | Device pairing | Scan a QR once; from then on, transfers need only a confirmation tap |
-| Drag and drop | On the desktop, drop a file or folder on a paired device to send it there |
-| Share-sheet integration | "Share → PortalGems" from any Android app, then pick a paired device or a one-time code |
+| Drag and drop | On the desktop, drop files and folders on a paired device to send them there - any number, in one transfer |
+| Share-sheet integration | Select one photo or fifty in any Android app, "Share → PortalGems", then pick a paired device or a one-time code |
 | Built-in user guide | Every feature on one page, in the app, in your language |
 | 6 languages | English, Deutsch, Bosanski, Русский, Français, Español |
 | 5 gem themes | Diamond, Sapphire, Emerald, Ruby, Amethyst - each in light & dark |
@@ -166,6 +168,49 @@ A transfer involves three parties: the two devices, plus a lightweight public
 
 The in-app **"How it works"** page explains all of this, in all six supported
 languages.
+
+## Several files, one transfer
+
+Most of what people send is not one file. It is the dozen photos from this
+afternoon, or three documents for a meeting. PortalGems sends a selection
+like that as a single transfer:
+
+- **Select them however is natural.** Tick several files in the app's
+  picker; select photos in your gallery and share them to PortalGems; or, on
+  the desktop, drop any mix of files and folders onto a paired device.
+- **The receiver is asked once.** They see what is coming - "12 files - 48
+  MB", or "7 files and 2 folders - 40 MB" - and accept or decline the lot.
+- **The files arrive as files.** Each one lands directly in the receive
+  folder, next to everything else. Send five photos and then five more, and
+  there are ten photos in the folder - not two folders to dig through.
+- **Nothing is ever overwritten.** If a name is already taken, the new file
+  is kept beside it as `name (1).jpg`. Two photos of the same name in one
+  selection are kept apart the same way.
+- **It works with a one-time code and with a paired device alike.**
+
+Two things are worth knowing:
+
+- **A transfer is all or nothing.** The files travel together, so if a
+  transfer is cancelled or fails, none of them are saved - you never end up
+  with an unknown half of a selection. Nothing touches the receive folder
+  until everything has arrived.
+- **Both devices need a PortalGems that knows how to do this.** Sent to an
+  older PortalGems, or to any other magic-wormhole client, the same files
+  arrive inside one folder named for what it holds and when - for example
+  `12 files - 2026-10-11 14.32` - instead of loose. Nothing is lost; it is
+  one folder to open.
+
+That second point is also how it stays compatible. The wormhole protocol
+carries one file, one folder or one message per code, and has no way to say
+"here are twelve files". So a selection travels as a standard folder
+transfer - the same one `wormhole send <folder>` uses - with a small note
+attached that says "these are loose files". PortalGems reads the note and
+unpacks them where they belong; every other client ignores it and sees an
+ordinary folder. Selecting a single file still sends a single file, exactly
+as before.
+
+On Symbian, PortalGems Mini receives several files this way; it sends one
+file or one folder at a time.
 
 ## Security model
 
@@ -254,6 +299,9 @@ Avkon UI around it. The installable package is **52 KB**.
 - Enter a code on the keyboard, or generate one for the other side
 - Pair with another device over a one-time code, then send it a file, a
   folder or a message - or receive from it - with no code at all
+- Receive several files sent at once from the other apps: each lands in
+  `E:\PortalGems` under its own name, and a name already taken is kept
+  beside the existing file, never replaced
 - Rename and remove paired devices; the one used last is listed first
 - Options > Help lists everything the menus can do
 - Direct LAN connections, off by default and switchable in Settings

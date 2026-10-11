@@ -5,6 +5,61 @@ All notable changes to PortalGems are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+Send the whole selection.
+
+### Added
+
+- **Several files in one transfer.** Select as many files as you like and
+  they are sent together: the receiver sees "12 files - 48 MB", accepts
+  once, and every file lands directly in their receive folder - not in a
+  folder of its own. Send five, then five more, and there are ten files
+  there. It works with a one-time code and with a paired device.
+
+  - **From the picker.** "Choose files to send" - on the home screen, on a
+    paired device, and right after pairing - now lets you select several.
+    One file is still sent as a single file, exactly as before.
+  - **From Android's share sheet.** Select several photos in the gallery, or
+    files in a file manager, and share them to PortalGems. Until now only a
+    single shared file was accepted.
+  - **By dropping on the desktop.** Drop any number of files and folders on a
+    paired device. A mix is sent together, and the receiver is told what is
+    coming: "7 files and 2 folders".
+
+  A name that is already taken is never overwritten: the new file is kept
+  beside it as `name (1).jpg`, and two files of one name in the same
+  selection are kept apart the same way.
+
+  **A transfer is all or nothing.** If it is cancelled or fails, none of the
+  files are saved; nothing touches the receive folder until everything has
+  arrived.
+
+  **Both devices need this version.** An older PortalGems, or any other
+  magic-wormhole client, receives the same files inside one folder named for
+  its contents and the time - `12 files - 2026-10-11 14.32` - instead of
+  loose. That is also why it stays compatible: on the wire a selection is a
+  standard folder transfer carrying a note that the files are loose, which
+  other clients simply ignore.
+
+  PortalGems Mini (Symbian) receives selections sent this way, each file
+  under its own name in `E:\PortalGems`; it sends one file or one folder at
+  a time.
+
+- **The user guide has a section on it**, "Several files at once", in all six
+  languages, and Options > Help on Symbian says how such files arrive.
+
+### Changed
+
+- **The desktop no longer refuses a drop of several items.** "Drop one file
+  or folder at a time" is gone; they are sent together.
+
+- **Sending a large folder to a paired device is no longer cut short on the
+  desktop.** The 45 seconds allowed for the other device to pick a transfer
+  up used to start when the send screen opened, so the time spent packing a
+  large folder counted against it and could end in "doesn't seem to have
+  PortalGems open". It now starts when there is something to pick up.
+
 ## [1.4.1] - 2026-10-10
 
 Knowing which server you are on.

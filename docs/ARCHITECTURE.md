@@ -266,7 +266,7 @@ Tests: `cd packages/core && npm test` (vitest, 40 tests).
 
 Both implement the same flows/routes: home (devices + send + receive), send
 (paired or code), receive (request → confirm → accept), pair (show QR /
-scan / paste), settings (language + theme, persisted), explainer.
+scan / paste), settings (language + theme, persisted), explainer, user guide.
 
 Folder flows (both apps): home has a "send folder" button next to the file
 one; the send route carries a `SendItem` union (`kind: 'file' | 'folder'`).
@@ -281,6 +281,48 @@ the unpacked directory (rename, EXDEV falls back to `fs.cp` recursive) and
 clears an overwritten target with `rm -rf` only after the transfer
 completed; `pg:statTarget` counts any occupant and returns `isFolder` +
 recursive size.
+
+Several files in one transfer (all three apps; the reasoning and the
+alternatives that were turned down are in `docs/MULTI-FILE-DESIGN.md`):
+
+- **On the wire** it is a directory offer with one extra member,
+  `"portalgems":{"loose":true,"files":7,"folders":2}`. A client that does
+  not know it saves a folder called `dirname` - which is why `dirname` is a
+  readable name (`bundleName`: "7 files and 2 folders - 2026-10-11 14.32").
+  `files`/`folders` count top-level entries, what will appear in the receive
+  folder; `numfiles` keeps its standard meaning. The offer string is pinned
+  byte for byte in two places that must agree: `test_offer_directory_loose`
+  (vendored crate) and `tests/test_bundle.c` (wormhole-mini).
+- **What is sent** is decided by `planSend` in core: one file is a `file`
+  offer and one folder an unmarked `directory` offer, exactly as before;
+  two or more items are a bundle. Never bundle a single item - other
+  clients must keep receiving a lone photo as a photo.
+- **Building the bundle**: desktop hands paths to the engine's `send_files`
+  (`zip_items_sync`); Android zips `content://` URIs itself
+  (`zipUrisToCache`) and calls `sendZipAsFolder` with the counts. Either
+  way each item is a top-level entry and same-name items are told apart
+  as `name (1).ext`, compared without regard to case - `unique_entry_name`
+  in Rust, `bundleEntryNames` in core for the Android path.
+- **Receiving**: the engine's `accept` is unchanged and returns the unpacked
+  directory; each app then moves its top-level children into the receive
+  folder - `landBundle` (desktop), `landEntries` + the per-item save calls
+  (Android), `LandBundle` (Symbian, out of a `.stage` folder). No conflict
+  prompt, never overwrite, never merge: a taken name becomes `name (1).ext`.
+  The one exception is Android without a chosen download folder, where
+  MediaStore merges a same-name folder (it has no directory objects).
+- **The numbering rule lives in four places** and each has the same test
+  table: `create_unique`/`unique_entry_name` (Rust), `dedupPath` (desktop),
+  `wh_numbered_name` (C), `numberedFileName` (core). Change one, change all.
+- **All or nothing** means the transfer: nothing reaches the receive folder
+  until the archive is down and unpacked in staging. The move out of
+  staging is item by item, so a disk that fills during it leaves some
+  behind; every app then reports "N of M" (`savedBundleText`) instead of
+  success or failure.
+- **Words**: `itemsText` composes "7 files and 2 folders" and every bundle
+  sentence takes it whole (`bundleText`). No plural engine is involved: the
+  two nouns have a form for exactly one, and Russian and Bosnian word the
+  general form so the noun never follows the number.
+- Symbian receives bundles and does not send them.
 
 ### Mobile - `packages/app-mobile` (`com.gemstech.portalgems`)
 

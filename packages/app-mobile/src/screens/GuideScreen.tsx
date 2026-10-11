@@ -10,6 +10,7 @@ import { useTheme } from '../theme';
 // the desktop has 'drop'.
 const SECTIONS = [
   'send',
+  'multi',
   'receive',
   'pair',
   'devices',

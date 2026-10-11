@@ -25,7 +25,9 @@ themselves. No exceptions.
   section lists in `app-mobile/src/screens/GuideScreen.tsx` and `Guide` in
   `app-desktop/src/renderer/App.tsx`, and `KHelpText` (Options > Help) in
   `packages/app-symbian/src/whminiapp.cpp`
-- Historical: `PLAN.md` (original plan) and `docs/phase*.md` (discovery notes)
+- Historical: `PLAN.md` (original plan), `docs/phase*.md` (discovery notes)
+  and `docs/MULTI-FILE-DESIGN.md` (why multi-file transfers work the way
+  they do; the current summary is in ARCHITECTURE.md)
 - User's typography preference: plain hyphens, no em-dashes, in repo docs
 - Engine: `native/wormhole-core` (Rust, uniffi) · desktop addon:
   `native/wormhole-node` (napi-rs) · RN bindings: `packages/wormhole-rn` (ubrn;
