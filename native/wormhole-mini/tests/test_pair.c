@@ -84,6 +84,45 @@ int main(void)
     wh_pair_derive_code(secret, 5866666UL, code);
     check("bucket 5866666", strcmp(code, "10150805-bcac0279fb-c1ae797f75") == 0);
 
+    /* The later codes a bucket holds, pinned to core's "frozen vector for
+     * the later attempts". Attempt 0 must be the code above, to the byte. */
+    wh_pair_derive_attempt(secret, 5900000UL, 0, code);
+    check("attempt 0 is the code every release derived",
+          strcmp(code, "78847104-4b2c920e11-127666f43e") == 0);
+    wh_pair_derive_attempt(secret, 0UL, 0, code);
+    check("attempt 0, bucket 0", strcmp(code, "84198084-a64125dc4c-c6ce0273f7") == 0);
+    wh_pair_derive_attempt(secret, 5900000UL, 1, code);
+    check("attempt 1", strcmp(code, "40195543-473b0563ba-339609eb11") == 0);
+    wh_pair_derive_attempt(secret, 5900000UL, 2, code);
+    check("attempt 2", strcmp(code, "48285071-b26659425e-40472610d4") == 0);
+    {
+        char next[WH_PAIR_CODE_MAX];
+        wh_pair_derive_attempt(secret, 42UL, 1, code);
+        wh_pair_derive_code(secret, 43UL, next);
+        check("a later attempt is not the next bucket under another name",
+              strcmp(code, next) != 0);
+    }
+
+    /* Which attempt a send uses, as core's nextSendAttempt. */
+    {
+        wh_pair_send_marker mk;
+        mk.pending = 0; mk.bucket = 5900000UL; mk.attempt = 0;
+        check("nothing in flight: attempt 0",
+              wh_pair_next_attempt(&mk, 5900000UL) == 0 &&
+              wh_pair_next_attempt((const wh_pair_send_marker *)0, 5900000UL) == 0);
+        mk.pending = 1;
+        check("steps past a send that was never seen through",
+              wh_pair_next_attempt(&mk, 5900000UL) == 1);
+        mk.attempt = 1;
+        check("and past the next", wh_pair_next_attempt(&mk, 5900000UL) == 2);
+        mk.attempt = WH_PAIR_CODE_ATTEMPTS - 1;
+        check("stops at the last attempt rather than inventing codes",
+              wh_pair_next_attempt(&mk, 5900000UL) == WH_PAIR_CODE_ATTEMPTS - 1);
+        mk.attempt = 1;
+        check("a marker from an older bucket says nothing about this one",
+              wh_pair_next_attempt(&mk, 5900001UL) == 0);
+    }
+
     check("buckets are five minutes, as core's currentBucket",
           wh_pair_bucket(1760000000UL) == 5866666UL &&
           wh_pair_bucket(1760000299UL) == 5866667UL &&

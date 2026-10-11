@@ -19,12 +19,12 @@ static int handshake_within(wh_mailbox *m, const char *appid, const char *code,
 
 int wh_paired_open_sender(wh_mailbox *m, const wh_paired_server *srv,
                           const unsigned char secret[WH_PAIR_SECRET_LEN],
-                          char code[WH_PAIR_CODE_MAX])
+                          unsigned int attempt, char code[WH_PAIR_CODE_MAX])
 {
     unsigned long started = wh_net_unix_time();
     int rc;
 
-    wh_pair_derive_code(secret, wh_pair_bucket(started), code);
+    wh_pair_derive_attempt(secret, wh_pair_bucket(started), attempt, code);
 
     if (wh_mailbox_connect(m, srv->host, srv->port, srv->path, srv->appid) != 0) return -1;
     /* Claiming creates the nameplate if the receiver has not been by yet;
@@ -59,7 +59,9 @@ int wh_paired_open_receiver(wh_mailbox *m, const wh_paired_server *srv,
     int list_failures = 0;
 
     while (wh_net_unix_time() < deadline) {
-        /* Most likely first, as candidateBuckets() orders them. Recomputed
+        /* Most likely first, as candidateCodes() orders them: the current
+         * bucket before its neighbours, and in each bucket the first attempt
+         * before the ones a sender only reaches after a failure. Recomputed
          * each round, so a poll that runs across a bucket boundary follows
          * the clock rather than chasing codes nobody will use again. */
         unsigned long b = wh_pair_bucket(wh_net_unix_time());
@@ -69,14 +71,15 @@ int wh_paired_open_receiver(wh_mailbox *m, const wh_paired_server *srv,
         candidates[1] = b - 1;
         candidates[2] = b + 1;
 
-        for (i = 0; i < 3; i++) {
+        for (i = 0; i < 3 * WH_PAIR_CODE_ATTEMPTS; i++) {
             int listed, rc;
 
             if (wh_net_cancelled()) {
                 if (connected) wh_mailbox_close(m, "errory");
                 return -1;
             }
-            wh_pair_derive_code(secret, candidates[i], code);
+            wh_pair_derive_attempt(secret, candidates[i / WH_PAIR_CODE_ATTEMPTS],
+                                   (unsigned int)(i % WH_PAIR_CODE_ATTEMPTS), code);
 
             /* One connection serves every "is it there?" question; a claim
              * uses it up, and a fresh one is made for the next. */

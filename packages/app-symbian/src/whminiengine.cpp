@@ -1188,7 +1188,7 @@ static void RunSendTextJob(TJob* aJob)
         char pcode[WH_PAIR_CODE_MAX];
         ServerOf(srv);
         aJob->iState = EJobWaitingForPeer;
-        rc = wh_paired_open_sender(&mailbox, &srv, aJob->iSecret, pcode);
+        rc = wh_paired_open_sender(&mailbox, &srv, aJob->iSecret, 0, pcode);
         if (rc != 0) {
             Finish(aJob, EJobFailed,
                    rc == -3 ? "They did not pick it up - is PortalGems open there?" :
@@ -1371,7 +1371,7 @@ static void RunSendJob(TJob* aJob)
         char pcode[WH_PAIR_CODE_MAX];
         ServerOf(srv);
         aJob->iState = EJobWaitingForPeer;
-        rc = wh_paired_open_sender(&mailbox, &srv, aJob->iSecret, pcode);
+        rc = wh_paired_open_sender(&mailbox, &srv, aJob->iSecret, 0, pcode);
         if (rc != 0) {
             source.iFile.Close();
             if (folder) fs.Delete(KStageZip);
@@ -1708,7 +1708,7 @@ static void RunPairJoinJob(TJob* aJob)
     aJob->iStep = EStepSendName;
     ServerOf(srv);
     wh_mailbox_init(&mailbox, &gMailboxBufs);
-    rc = wh_paired_open_sender(&mailbox, &srv, p.secret, dcode);
+    rc = wh_paired_open_sender(&mailbox, &srv, p.secret, 0, dcode);
     if (rc != 0) {
         Finish(aJob, EJobFailed,
                rc == -3 ? "The other device stopped waiting - check both clocks" :

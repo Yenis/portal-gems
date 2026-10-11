@@ -20,7 +20,7 @@ from.
 `.github/workflows/release.yml` builds and publishes on a `v*` tag and runs
 nothing else. Every suite runs only when someone remembers to: core (vitest,
 170 tests), the desktop's `npm test`, `cargo test` in `native/wormhole-core`,
-and `make test` / `make test-arm` in `native/wormhole-mini` (329 checks).
+and `make test` / `make test-arm` in `native/wormhole-mini` (339 checks).
 None of them needs a network except the `#[ignore]`d engine round trips.
 
 ### What has not been verified end to end

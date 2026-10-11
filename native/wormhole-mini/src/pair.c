@@ -35,8 +35,24 @@ unsigned long wh_pair_bucket(unsigned long unix_seconds)
 void wh_pair_derive_code(const unsigned char secret[WH_PAIR_SECRET_LEN],
                          unsigned long bucket, char out[WH_PAIR_CODE_MAX])
 {
+    wh_pair_derive_attempt(secret, bucket, 0, out);
+}
+
+unsigned int wh_pair_next_attempt(const wh_pair_send_marker *marker,
+                                  unsigned long bucket)
+{
+    if (!marker || !marker->pending || marker->bucket != bucket) return 0;
+    if (marker->attempt + 1 >= WH_PAIR_CODE_ATTEMPTS) return WH_PAIR_CODE_ATTEMPTS - 1;
+    return marker->attempt + 1;
+}
+
+void wh_pair_derive_attempt(const unsigned char secret[WH_PAIR_SECRET_LEN],
+                            unsigned long bucket, unsigned int attempt,
+                            char out[WH_PAIR_CODE_MAX])
+{
     static const char LABEL[] = "portalgems-code-v1:";
-    char msg[sizeof(LABEL) + 24];
+    /* Two decimal numbers of up to 24 digits each, and the colon. */
+    char msg[sizeof(LABEL) + 24 + 1 + 24];
     unsigned char mac[WH_SHA256_LEN];
     char hex[21];
     unsigned long n = sizeof(LABEL) - 1;
@@ -45,6 +61,11 @@ void wh_pair_derive_code(const unsigned char secret[WH_PAIR_SECRET_LEN],
 
     for (i = 0; i < (int)(sizeof(LABEL) - 1); i++) msg[i] = LABEL[i];
     n += (unsigned long)put_decimal(bucket, msg + n);
+    /* Attempt 0 adds nothing, so it stays the code every release derived. */
+    if (attempt != 0) {
+        msg[n++] = ':';
+        n += (unsigned long)put_decimal((unsigned long)attempt, msg + n);
+    }
 
     wh_hmac_sha256(secret, WH_PAIR_SECRET_LEN, (const unsigned char *)msg, n, mac);
 

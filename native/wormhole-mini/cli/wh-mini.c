@@ -839,7 +839,9 @@ static int cmd_receive(const char *host, unsigned int port, const char *path,
  *   pair-join      receive an invitation over a code, then send the handshake
  *   pairs          list stored pairings with the code each derives right now -
  *                  compare with the desktop's PG_SMOKE_DUMP_PAIRCODE
- *   paired-send    send a file to a paired device
+ *   paired-send    send a file to a paired device; --attempt N uses one of
+ *                  the later codes of the bucket, as a sender does after a
+ *                  send it never finished
  *   paired-receive receive a file from a paired device
  *
  * Pairings live in a plain file of "<secret base64url>\t<name>" lines, with
@@ -952,8 +954,14 @@ static int cmd_pairs(const char *pairsfile)
         wh_pair_derive_code(g_pair_secrets[i], b, code);
         printf("PAIR-DERIVED:%d:%s:%s\n", i, pair_label(i), code);
         for (k = -1; k <= 1; k++) {
+            unsigned int a;
             wh_pair_derive_code(g_pair_secrets[i], b + (unsigned long)k, code);
             printf("PAIR-CANDIDATE:%d:%d:%s\n", i, k, code);
+            /* The codes a sender moves to after a failed send. */
+            for (a = 1; a < WH_PAIR_CODE_ATTEMPTS; a++) {
+                wh_pair_derive_attempt(g_pair_secrets[i], b + (unsigned long)k, a, code);
+                printf("PAIR-ATTEMPT:%d:%d:%u:%s\n", i, k, a, code);
+            }
         }
     }
     if (n == 0) printf("no pairings in %s\n", pairsfile);
@@ -1102,7 +1110,7 @@ static int cmd_pair_join(const wh_paired_server *srv, const char *relay_host,
     printf("invitation from %s; sending our handshake\n", p.name);
 
     wh_mailbox_init(&m, &g_mbufs);
-    rc = wh_paired_open_sender(&m, srv, p.secret, dcode);
+    rc = wh_paired_open_sender(&m, srv, p.secret, 0, dcode);
     if (rc == -3) { fprintf(stderr, "the other device stopped listening\n"); return 1; }
     if (rc != 0) { fprintf(stderr, "could not reach the other device\n"); return 1; }
 
@@ -1136,7 +1144,7 @@ static int cmd_pair_join(const wh_paired_server *srv, const char *relay_host,
 
 static int cmd_paired_send(const wh_paired_server *srv, const char *relay_host,
                            unsigned int relay_port, const char *pairsfile,
-                           int device, const char *filepath)
+                           int device, unsigned int attempt, const char *filepath)
 {
     wh_mailbox m;
     char code[WH_PAIR_CODE_MAX];
@@ -1159,7 +1167,7 @@ static int cmd_paired_send(const wh_paired_server *srv, const char *relay_host,
 
     wh_mailbox_init(&m, &g_mbufs);
     printf("waiting for %s\n", pair_label(device));
-    rc = wh_paired_open_sender(&m, srv, g_pair_secrets[device], code);
+    rc = wh_paired_open_sender(&m, srv, g_pair_secrets[device], attempt, code);
     if (rc != 0) {
         fprintf(stderr, rc == -3 ? "%s did not pick it up\n" : "could not reach %s\n",
                 pair_label(device));
@@ -1251,6 +1259,7 @@ int main(int argc, char **argv)
     const char *myname = "wh-mini";
     const char *pairsfile = "wh-pairs.txt";
     int device = 0;
+    unsigned int attempt = 0;
     wh_paired_server srv;
     unsigned int relay_port = 4001;
     unsigned int port = 4000;
@@ -1284,6 +1293,10 @@ int main(int argc, char **argv)
         else if (strcmp(argv[i], "--name") == 0 && i + 1 < argc) myname = argv[++i];
         else if (strcmp(argv[i], "--pairs") == 0 && i + 1 < argc) pairsfile = argv[++i];
         else if (strcmp(argv[i], "--device") == 0 && i + 1 < argc) device = atoi(argv[++i]);
+        else if (strcmp(argv[i], "--attempt") == 0 && i + 1 < argc) {
+            attempt = (unsigned int)atoi(argv[++i]);
+            if (attempt >= WH_PAIR_CODE_ATTEMPTS) attempt = WH_PAIR_CODE_ATTEMPTS - 1;
+        }
         else if (argv[i][0] != '-') cmd = argv[i];
     }
 
@@ -1300,7 +1313,7 @@ int main(int argc, char **argv)
     }
     if (strcmp(cmd, "paired-send") == 0) {
         if (!filepath) { fprintf(stderr, "paired-send needs --file\n"); return 2; }
-        return cmd_paired_send(&srv, relay_host, relay_port, pairsfile, device, filepath);
+        return cmd_paired_send(&srv, relay_host, relay_port, pairsfile, device, attempt, filepath);
     }
     if (strcmp(cmd, "paired-receive") == 0)
         return cmd_paired_receive(&srv, relay_host, relay_port, pairsfile, device, outdir);

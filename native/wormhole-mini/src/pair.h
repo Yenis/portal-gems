@@ -29,6 +29,11 @@ extern "C" {
  * stack the protocol itself needs. */
 #define WH_PAIR_JSON_MAX       512
 #define WH_PAIR_BUCKET_SECONDS 300
+/* How many codes each bucket holds: PAIRED_CODE_ATTEMPTS in core. A sender
+ * that stopped without finishing still holds its claim on the code it used,
+ * so a retry inside the same bucket moves on to the next one, and a receiver
+ * looks for all of them. */
+#define WH_PAIR_CODE_ATTEMPTS  3
 
 /* What a pairing invitation carries: the displaying device's name and the
  * long-term secret both sides will derive codes from. */
@@ -56,6 +61,29 @@ unsigned long wh_pair_bucket(unsigned long unix_seconds);
  * nameplate, the next ten as two groups of hex. */
 void wh_pair_derive_code(const unsigned char secret[WH_PAIR_SECRET_LEN],
                          unsigned long bucket, char out[WH_PAIR_CODE_MAX]);
+
+/* The same for one of the later codes a bucket holds: attempt 0 is
+ * wh_pair_derive_code to the byte, and attempt n > 0 hashes
+ * "portalgems-code-v1:<bucket>:<n>", as core's deriveCode does. */
+void wh_pair_derive_attempt(const unsigned char secret[WH_PAIR_SECRET_LEN],
+                            unsigned long bucket, unsigned int attempt,
+                            char out[WH_PAIR_CODE_MAX]);
+
+/* A paired send that was started and never seen through: the code it used
+ * must be assumed to hold a claim until its bucket is over. Whoever stores
+ * pairings keeps one of these beside each; `pending` zero means none. */
+typedef struct {
+    int pending;
+    unsigned long bucket;
+    unsigned int attempt;
+} wh_pair_send_marker;
+
+/* Which attempt the next send should use, as core's nextSendAttempt: the one
+ * after whatever was left in flight in this bucket, 0 when nothing was or
+ * the marker is from another bucket, and the last one again once they are
+ * all used. */
+unsigned int wh_pair_next_attempt(const wh_pair_send_marker *marker,
+                                  unsigned long bucket);
 
 /* "PGPAIR1:" + base64url(JSON {"v":1,"name":...,"secret":...}), plus
  * "hs":"msg" when `wants_message` is set. Returns the length, or -1 if `cap`

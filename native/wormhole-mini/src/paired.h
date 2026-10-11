@@ -30,18 +30,21 @@ typedef struct {
     const char *appid;
 } wh_paired_server;
 
-/* Sender: connect, claim the current bucket's code, and complete the
- * handshake with whoever joins it. `code` receives the code used.
+/* Sender: connect, claim the current bucket's code for `attempt`, and
+ * complete the handshake with whoever joins it. `code` receives the code
+ * used. `attempt` is 0 unless an earlier send in this bucket was left
+ * unfinished - see wh_pair_next_attempt.
  *
  * Returns 0 with `m` ready for transfer messages; -1 on a network or protocol
  * failure; -2 if the key did not match (the peer holds a different secret);
  * -3 if nobody joined within WH_PAIRED_SEND_TIMEOUT_MS. */
 int wh_paired_open_sender(wh_mailbox *m, const wh_paired_server *srv,
                           const unsigned char secret[WH_PAIR_SECRET_LEN],
-                          char code[WH_PAIR_CODE_MAX]);
+                          unsigned int attempt, char code[WH_PAIR_CODE_MAX]);
 
-/* Receiver: look for a sender on the current bucket's code and the ones either
- * side of it, until one turns up or WH_PAIRED_RECEIVE_TIMEOUT_S passes.
+/* Receiver: look for a sender on the current bucket's codes and those of the
+ * buckets either side of it - every attempt of each, as core's
+ * candidateCodes - until one turns up or WH_PAIRED_RECEIVE_TIMEOUT_S passes.
  *
  * A nameplate is only claimed once the server lists it, so polling never
  * creates one; and each attempt on a listed nameplate is bounded by
