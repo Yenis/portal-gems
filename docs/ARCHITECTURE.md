@@ -2,9 +2,10 @@
 
 The single document to read before building new features. Deferred work with
 its reasoning lives in `docs/BACKLOG.md`; the Symbian client has its own map
-in `docs/SYMBIAN.md`. Everything here was
-verified working as of 2026-07-11 (phases 0–4 complete). Per-phase discovery
-notes live in the other `docs/*.md` files; this is the consolidated map.
+in `docs/SYMBIAN.md`. This describes the
+released 1.4.2 (2026-10-11); what was verified, and how, is in section 7.
+Per-phase discovery notes live in the other `docs/*.md` files; this is the
+consolidated map.
 
 ```
                     ┌───────────────────────────────────────────┐
@@ -24,8 +25,8 @@ notes live in the other `docs/*.md` files; this is the consolidated map.
                           native/wormhole-core (Rust)
                         app-shaped API over magic-wormhole.rs
                                         │
-                     public mailbox server + transit relay
-                     (community-run; direct TCP when possible)
+                        mailbox server + transit relay
+              (PortalGems, public or your own; direct TCP when possible)
 ```
 
 ## 1. The engine - `native/wormhole-core`
@@ -260,7 +261,7 @@ Consumed by both apps as **npm `file:` symlinks** (see §5 build gotchas).
     follows the outer signal.
 - `errors.ts` - engine-string → i18n-key mapping.
 
-Tests: `cd packages/core && npm test` (vitest, 40 tests).
+Tests: `cd packages/core && npm test` (vitest, 166 tests).
 
 ## 4. The apps
 
@@ -370,8 +371,9 @@ alternatives that were turned down are in `docs/MULTI-FILE-DESIGN.md`):
   deleted/revoked tree CANNOT be recreated (no grant on its parent): the save
   falls back to Downloads and the UI shows a notice (`fallback: true`).
 - Release signing: `android/keystore.properties` + keystore (gitignored;
-  falls back to debug key when absent). ABIs: arm64-v8a + x86_64 (add armv7
-  before store release).
+  falls back to debug key when absent). ABIs: arm64-v8a, armeabi-v7a and
+  x86_64 (`reactNativeArchitectures` in `android/gradle.properties`, matching
+  the targets in `packages/wormhole-rn/ubrn.config.yaml`).
 
 ### Desktop - `packages/app-desktop`
 
@@ -379,7 +381,7 @@ alternatives that were turned down are in `docs/MULTI-FILE-DESIGN.md`):
   *brains* in core, thin per-platform UIs), esbuild-bundled
   (`NODE_PATH=./node_modules` for the symlinked core's deps).
 - Pairing storage: `safeStorage`-encrypted file in userData. Settings:
-  localStorage. Device name: hostname.
+  localStorage. Device name: `pg-device-name`, else the hostname.
 - **Profile isolation (read before touching userData).** `app.getName()` is
   `portalgems-desktop` for dev, smoke *and* the packaged app - electron-builder
   writes no `productName` into the app's package.json, so all three resolved to
@@ -600,7 +602,8 @@ Android (Pixel 6a, release APK, adb-driven UI): SAF picker + persisted grant,
 receive into the chosen tree, conflict prompt with existing-file size,
 overwrite, keep-both, deleted-tree fallback to Downloads with notice, reset
 to default. Note: the app's engine connect has no timeout - with Wi-Fi off it
-hangs on "Connecting" until cancelled (pre-existing; candidate for a fix).
+hangs on "Connecting" until cancelled (first of the open gaps in
+`docs/BACKLOG.md`).
 
 Packaging is done: all six binaries (APK, AppImage, deb, rpm, Windows .exe,
 macOS .dmg) build and publish from a single `v*` tag via CI (first shipped in
@@ -625,15 +628,18 @@ laptop receiver, checksums matched incl. nested `sub/`).
 
 Server picker (rendezvous + transit override) verified E2E on the desktop
 engine against a locally-run mailbox + transit relay (64 KiB round-trip
-checksummed; bad-URL and unreachable-rendezvous error mappings confirmed). The
-mobile side needs the ubrn regen + on-device wiring. The `PORTALGEMS_*`
+checksummed; bad-URL and unreachable-rendezvous error mappings confirmed).
+Android has the same picker in Settings and passes the resolved config on
+every call. The `PORTALGEMS_*`
 server (be-my-guest.io) is deployed and live - it served all the 2026-07-19
 folder E2E runs - and is the app's default choice; note the CLI examples and
 the reference CLI default to the PUBLIC server, so cross-testing needs
 explicit server flags on one side.
 
-Gaps: QR *camera* scan untested (needs real phone);
-mobile server-picker UI + ubrn regen; 32-bit `armeabi-v7a` ABI (older phones
-get INSTALL_FAILED_NO_MATCHING_ABIS); paired-transfer UI buttons E2E (smoke
-modes exist); mid-transfer cancel;
-F-Droid recipe; store metadata.
+Gaps, each with its reasoning in `docs/BACKLOG.md`: the engine's connect
+has no timeout; a `crowded` nameplate is reported as an unreachable server;
+Symbian derives only the first paired code of a bucket; a sender that does
+not finish never releases its nameplate; CI runs no test suite. Not yet
+verified end to end: QR *camera* scan (needs a real phone), cancel in the
+middle of a transfer, and the paired-transfer buttons in the UI (smoke modes
+exist). Not started: F-Droid recipe, store metadata, iOS.

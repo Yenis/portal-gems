@@ -14,16 +14,15 @@ export interface ServerConfig {
   transitUrl?: string;
 }
 
-/// The PortalGems-run server. TODO(deploy): set these to your VPS once the
-/// mailbox + transit relay are running (see docs/VPS-SETUP.md). While they
-/// still contain "example" the option is treated as not-yet-available and is
-/// hidden from the picker (see `isPortalgemsConfigured`).
+/// The PortalGems-run server (deployed as in docs/VPS-SETUP.md), and the
+/// apps' default choice. A build that puts an "example" placeholder here is
+/// treated as having no such server, and the option is hidden from the
+/// picker (see `isPortalgemsConfigured`).
 export const PORTALGEMS_RENDEZVOUS_URL = 'wss://be-my-guest.io/v1';
 export const PORTALGEMS_TRANSIT_URL = 'tcp://be-my-guest.io:4001';
 
-/// Whether the dedicated PortalGems server has real addresses yet. Once the
-/// URLs above point at the deployed VPS, this flips to true and the option
-/// appears in the picker automatically.
+/// Whether the dedicated PortalGems server has real addresses, as opposed to
+/// an "example" placeholder.
 export const isPortalgemsConfigured = (): boolean =>
   !/\bexample\b/.test(PORTALGEMS_RENDEZVOUS_URL);
 

@@ -1,20 +1,99 @@
 # Backlog
 
-Things worth doing that are deliberately not being done yet. Each entry
-says what the problem actually is, so the next person does not have to
-rediscover it.
+Things worth doing that are not done yet, and what has been decided about
+them. Each entry says what the problem actually is, so the next person does
+not have to rediscover it. Reviewed against the code at 1.4.2 (2026-10-11).
 
-## Pairing without a camera - Symbian remaining
+## Open gaps, in the order they are to be worked
 
-**Status:** shipped for the desktop and Android in 1.3.2. On Symbian the
-portable C side is proven on the host against a real desktop instance, but
-the phone build has not completed a pairing on the E72 yet: "Show a pairing
-code" stalls on Connecting, and 0.7.1 adds the instrumentation to find out
-why (a live step line with elapsed time and the worker's stack size, and a
-worker that dies now reports its panic instead of leaving the screen
-unchanged). The README still says Symbian cannot pair; that stays until it
-does. See "Getting the payload across" in `docs/ARCHITECTURE.md`, and
-"Pairing" in `docs/SYMBIAN.md`.
+1. The engine's connect has no timeout
+2. `crowded` is reported as "your server is unreachable"
+3. Symbian derives attempt 0 only
+4. The stale claim is never released
+5. CI runs no test suite
+6. What has not been verified end to end
+
+### The engine's connect has no timeout
+
+With the network down, a send or a receive over a one-time code sits on
+"Connecting" until the user cancels it. Nothing in `native/wormhole-core`
+bounds the time it takes to reach the mailbox server; the only timeouts are
+the apps' own, around paired transfers (`PAIRED_SEND_TIMEOUT_MS`, and
+`PAIRED_ATTEMPT_TIMEOUT_MS` per polled code).
+
+The bound belongs on reaching the server, not on the whole wait: a sender
+that has its code and is waiting for the other person is doing exactly what
+it should, for as long as it takes. It needs its own error case, mapped in
+`errors.ts` to a string that says this device looks offline - which is a
+different thing from a server that is down.
+
+### `crowded` is reported as "your server is unreachable"
+
+The engine's message for a nameplate that already has two sides on it
+contains the word "rendezvous", which `SERVER_UNREACHABLE_RE` in
+`packages/core/src/errors.ts` matches, so a typed code that hits a crowded
+nameplate tells the user to change servers when the server is fine. Needs
+one new string in all six locales, and the Symbian client's own wording
+checked.
+
+### CI runs no test suite
+
+`.github/workflows/release.yml` builds and publishes on a `v*` tag and runs
+nothing else. Every suite runs only when someone remembers to: core (vitest,
+166 tests), the desktop's `npm test`, `cargo test` in `native/wormhole-core`,
+and `make test` / `make test-arm` in `native/wormhole-mini` (329 checks).
+None of them needs a network except the `#[ignore]`d engine round trips.
+
+### What has not been verified end to end
+
+- QR *camera* scan, which needs a real phone.
+- Cancel in the middle of a transfer. Cancel while waiting is verified on
+  both engines; `cancelled_receive_leaves_no_partial_file` covers the
+  engine's side of a dropped receive, not the apps' screens.
+- The paired-transfer buttons in the UI. The desktop smoke modes drive the
+  same code underneath them.
+
+Android has one Jest file and the desktop two test files, so the UI on both
+is covered by hand and by the smoke harness.
+
+## Planned features (decided 2026-10-11)
+
+- **Notifications when a transfer finishes, and open / show in folder.**
+  Transfers finish while the user is in another window. Android has only the
+  foreground service's notification; the desktop has none.
+- **A desktop tray icon with a listening mode for paired devices.** "Both
+  apps must be open" is the largest friction in pairing. A tray icon that
+  keeps polling for trusted devices removes the desktop's half of it, with
+  no push server.
+- **Send the clipboard to a paired device.** One tap, on the text-message
+  path that already exists.
+- **Updates.** In Settings: an auto-update toggle and a "Check for updates"
+  button, against the GitHub releases. A sideloaded APK and a portable
+  `.exe` otherwise never learn that a new version exists.
+- **Drop the "Last transfer" time under a paired device.** No record of
+  transfers is to be kept. Open question for the design: most recently used
+  first is ordered by the same stored `lastUsedAt`, so either the order goes
+  too or it is kept some other way.
+
+Undecided:
+
+- **A verification string** - a short phrase both people compare before a
+  one-time-code transfer proceeds, as `wormhole --verify` does.
+
+Later, not now:
+
+- **F-Droid recipe and store metadata.** Planned; the "no proprietary
+  dependencies" discipline in `docs/ARCHITECTURE.md` section 5 exists for it.
+- **iOS.** `packages/app-mobile/ios` is the untouched React Native template
+  and `packages/wormhole-rn` can build the engine for iOS, but everything in
+  the Kotlin `PortalGemsNative` module needs a Swift counterpart.
+- **Sending several files from Symbian.** It receives a selection and sends
+  one file or one folder at a time.
+
+Decided against:
+
+- **A QR code for a one-time code.** The code is short enough to type.
+- **A transfer history.** Nothing about past transfers is stored.
 
 ## Paired send: the codes a dead sender leaves claimed - what is left
 
@@ -48,16 +127,15 @@ through until the bucket rolled over.
 
 What that does **not** cover, in the order it is worth doing:
 
-- **The Symbian client derives attempt 0 only.** Less pressing now that its
-  pairing handshake needs no transit - the failure the attempt codes route
-  around barely arises there - but a paired *transfer* still sends a file,
-  and a sender that moved on is invisible to it. `wh_pair_derive_code` in
+- **The Symbian client derives attempt 0 only.** `wh_pair_derive_code` in
   `native/wormhole-mini` takes a bucket and nothing else, so a sender that
-  moved past its first code is invisible to a Symbian peer. Normal transfers
-  are unaffected (attempt 0 is byte-identical to what it always was), and
-  Symbian cannot pair at all yet, which is why this is not urgent - but the
-  vectors for attempts 1 and 2 are already pinned in core's tests for
-  `test_pair.c` to match.
+  moved past its first code is invisible to a Symbian peer, and a Symbian
+  sender never moves on itself. Normal transfers are unaffected (attempt 0
+  is byte-identical to what it always was), and its pairing handshake needs
+  no transit, so the failure the attempt codes route around barely arises
+  there - but a paired *transfer* still sends a file. The vectors for
+  attempts 1 and 2 are already pinned in core's tests for `test_pair.c` to
+  match.
 - **The stale claim is still never released.** The cheap-sounding fix - hand
   the engine a real cancel future instead of cancel-by-drop - does not work:
   `sender_connect` claims the nameplate in `MailboxConnection::connect` and
@@ -68,50 +146,11 @@ What that does **not** cover, in the order it is worth doing:
   across cancellation, which means patching the vendored crate. Worth doing
   only if stale claims turn out to matter beyond the retry case, since the
   attempt codes already route around them.
-- **`crowded` is reported as "your server is unreachable".** The engine's
-  message contains the word "rendezvous", which `SERVER_UNREACHABLE_RE` in
-  `packages/core/src/errors.ts` matches, so a typed code that hits a crowded
-  nameplate tells the user to change servers when the server is fine. Needs
-  one new string in all six locales.
 - **A different device's dead send still burns the code.** The derivation is
   direction-agnostic, so if the peer was the one that died mid-send, the
   marker on this device knows nothing about it. Ground truth would be a
   `list_nameplates` probe in the engine before claiming; it costs a round
   trip per send and a rebuild of both bindings.
-
-Pairing currently assumes one device can photograph another's screen. That
-assumption fails in more cases than it holds:
-
-- **Symbian.** The E72 has a camera, but the client cannot render a QR code
-  and will not be running a scanner. Neither half of the current flow is
-  available to it.
-- **Two desktops.** Neither can photograph the other. There is a manual path
-  today - *Show* displays a QR and offers **Copy payload**, and the pairing
-  screen has a text field to paste one into - but it needs some other
-  channel to carry the text between machines, and nothing in the UI suggests
-  that is the intended route.
-- **A phone with a broken or refused camera.** Same position as a desktop.
-
-The obstacle is the payload's size, not the concept. It is JSON carrying a
-32-byte secret in base64url:
-
-```json
-{"t":"portalgems-pair","v":1,"name":"...","secret":"..."}
-```
-
-Around a hundred characters. Fine to paste, unreasonable to type - and on a
-phone keyboard, unthinkable.
-
-**The shape of a fix**: pair over a one-time wormhole code rather than over
-a QR image. One side shows a short code (`7-crossover-clockwork`), the other
-types it, and the pairing payload travels through the wormhole as a normal
-transfer. That reuses the whole stack, needs no camera anywhere, and asks
-the user to type three words instead of a hundred characters. It also
-happens to be the one input this project has already proved a fifteen-year-
-old phone can manage comfortably.
-
-Worth checking before building: whether the existing pairing handshake can
-carry the payload as its first message, in which case this is mostly UI.
 
 ## ~~Android: a cancelled receive leaks its partial file and renames the next~~ - done
 

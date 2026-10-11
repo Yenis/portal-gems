@@ -47,7 +47,9 @@ Explicitly out of scope for v1, revisit later:
 
 - ~~Directory offers~~ - **done**, both directions. See "Folders" below.
 - ~~Direct TCP transit~~ - **done**, outbound only. See "Direct transit".
-- Transfer protocol v2 / noise, text messages, device pairing.
+- ~~Text messages~~ - **done**. See "Text messages" below.
+- ~~Device pairing~~ - **done**, over a typed code. See "Pairing" below.
+- Transfer protocol v2 / noise.
 - `wss://`, and any modern web API without a proxy on the VPS.
 
 Hard constraints from the platform:
