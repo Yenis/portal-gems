@@ -508,6 +508,14 @@ unsigned long wh_unpack_cap(unsigned long num_bytes)
     return cap + 16UL * 1024UL * 1024UL;
 }
 
+unsigned long wh_entry_cap(unsigned long num_files)
+{
+    unsigned long cap = num_files * 2UL;
+    if (cap / 2UL != num_files) return 0xffffffffUL;   /* overflowed */
+    if (cap + 10000UL < cap) return 0xffffffffUL;
+    return cap + 10000UL;
+}
+
 /* The two send paths differ only in the offer they publish; everything
  * after it - transit, answer, records, checksum - is identical, so it lives
  * in send_offer_and_stream below. */

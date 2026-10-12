@@ -783,9 +783,10 @@ impl PendingReceive {
 
                 let dest = StagedDir::new(create_unique_dir(dest_dir, &folder.dir_name).await?);
                 let cap = unpack_cap(folder.num_bytes);
+                let entries = entry_cap(folder.num_files);
                 let unpacked = {
                     let (src, out) = (zip.path().to_path_buf(), dest.path().to_path_buf());
-                    blocking::unblock(move || unzip_into_sync(&src, &out, cap)).await
+                    blocking::unblock(move || unzip_into_sync(&src, &out, cap, entries)).await
                 };
                 // Leave nothing half-extracted behind.
                 unpacked?;
@@ -895,6 +896,19 @@ pub(crate) fn unpack_cap(num_bytes: u64) -> u64 {
     num_bytes
         .saturating_add(num_bytes / 4)
         .saturating_add(16 * 1024 * 1024)
+}
+
+/// How many entries we tolerate in the archive of a folder offer that
+/// claims `num_files`. The byte cap says nothing about an archive of a
+/// million empty files: it unpacks to nothing and still fills a disk with
+/// entries, for as long as that takes. An archive holds its files plus an
+/// entry for each folder, and folders outnumber files only in a tree of
+/// empty ones, so twice the claim and a floor of ten thousand is room no
+/// real folder needs and no hostile one fits in. The claim itself is shown
+/// before anything is accepted, so a sender cannot raise this unseen.
+/// `wh_entry_cap` in native/wormhole-mini is the same rule.
+pub(crate) fn entry_cap(num_files: u64) -> u64 {
+    num_files.saturating_mul(2).saturating_add(10_000)
 }
 
 /// What `zip_folder_sync` counted while building the archive; sent in the
@@ -1129,9 +1143,17 @@ pub(crate) fn unzip_into_sync(
     zip_path: &Path,
     dest: &Path,
     max_total_bytes: u64,
+    max_entries: u64,
 ) -> Result<(), Error> {
     let file = std::fs::File::open(zip_path)?;
     let mut archive = zip::ZipArchive::new(std::io::BufReader::new(file))?;
+    // Checked before anything is created: the count is in the archive's
+    // directory, and an archive over the limit should leave nothing behind.
+    if archive.len() as u64 > max_entries {
+        return Err(Error::Archive(
+            "archive holds far more entries than the offered folder".to_string(),
+        ));
+    }
     let mut written: u64 = 0;
     for i in 0..archive.len() {
         let mut entry = archive.by_index(i)?;
@@ -1152,7 +1174,13 @@ pub(crate) fn unzip_into_sync(
         }
         let mut target = std::fs::File::create(&out)?;
         let allowed = max_total_bytes.saturating_sub(written);
-        let copied = std::io::copy(&mut std::io::Read::take(&mut entry, allowed + 1), &mut target)?;
+        // One byte past the allowance is enough to know it was exceeded.
+        // Saturating: an offer may claim any size, and `allowed + 1` on a
+        // cap of u64::MAX wrapped to a read of nothing at all.
+        let copied = std::io::copy(
+            &mut std::io::Read::take(&mut entry, allowed.saturating_add(1)),
+            &mut target,
+        )?;
         if copied > allowed {
             return Err(Error::Archive(
                 "unpacked data exceeds the offered folder size".to_string(),
@@ -1375,7 +1403,7 @@ mod tests {
 
         let out = root.join("out");
         std::fs::create_dir_all(&out).unwrap();
-        unzip_into_sync(&zip, &out, unpack_cap(stats.num_bytes)).unwrap();
+        unzip_into_sync(&zip, &out, unpack_cap(stats.num_bytes), entry_cap(stats.num_files)).unwrap();
         assert_eq!(std::fs::read(out.join("a.txt")).unwrap(), b"alpha");
         assert_eq!(std::fs::read(out.join("sub/b.bin")).unwrap(), [0u8; 70_000]);
         assert_eq!(std::fs::read(out.join("sub/deeper/c")).unwrap(), b"");
@@ -1421,7 +1449,7 @@ mod tests {
         let (stats, _) = zip_items_sync(items, &zip, &no_abort()).unwrap();
         let out = root.join("out");
         std::fs::create_dir_all(&out).unwrap();
-        unzip_into_sync(&zip, &out, unpack_cap(stats.num_bytes)).unwrap();
+        unzip_into_sync(&zip, &out, unpack_cap(stats.num_bytes), entry_cap(stats.num_files)).unwrap();
         (stats, out)
     }
 
@@ -1725,7 +1753,7 @@ mod tests {
         let out = root.join("out");
         std::fs::create_dir_all(&out).unwrap();
         // The offer claimed far less than the archive holds.
-        let err = unzip_into_sync(&zip, &out, 1024).unwrap_err();
+        let err = unzip_into_sync(&zip, &out, 1024, u64::MAX).unwrap_err();
         assert!(matches!(err, Error::Archive(_)), "got: {err}");
         std::fs::remove_dir_all(&root).ok();
     }
@@ -1761,7 +1789,7 @@ mod tests {
 
         let out = root.join("out");
         std::fs::create_dir_all(&out).unwrap();
-        let err = unzip_into_sync(&zip_path, &out, u64::MAX).unwrap_err();
+        let err = unzip_into_sync(&zip_path, &out, u64::MAX, u64::MAX).unwrap_err();
         assert!(matches!(err, Error::Archive(_)), "got: {err}");
         assert!(!root.join("escape.txt").exists());
         std::fs::remove_dir_all(&root).ok();
@@ -1784,9 +1812,45 @@ mod tests {
 
         let out = root.join("out");
         std::fs::create_dir_all(&out).unwrap();
-        let err = unzip_into_sync(&zip_path, &out, 1024).unwrap_err();
+        let err = unzip_into_sync(&zip_path, &out, 1024, u64::MAX).unwrap_err();
         assert!(matches!(err, Error::Archive(_)), "got: {err}");
         std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn unzip_enforces_entry_cap() {
+        let root = std::env::temp_dir().join(format!("pg-zip-entries-{}", std::process::id()));
+        std::fs::remove_dir_all(&root).ok();
+        std::fs::create_dir_all(&root).unwrap();
+
+        // Empty files: nothing for the byte cap to see, however many.
+        let zip_path = root.join("many.zip");
+        let mut w = zip::ZipWriter::new(std::fs::File::create(&zip_path).unwrap());
+        for i in 0..50 {
+            w.start_file(format!("f{i}"), zip::write::SimpleFileOptions::default())
+                .unwrap();
+        }
+        w.finish().unwrap();
+
+        let out = root.join("out");
+        std::fs::create_dir_all(&out).unwrap();
+        let err = unzip_into_sync(&zip_path, &out, u64::MAX, 49).unwrap_err();
+        assert!(matches!(err, Error::Archive(_)), "got: {err}");
+        // Refused before anything was written.
+        assert_eq!(std::fs::read_dir(&out).unwrap().count(), 0);
+
+        unzip_into_sync(&zip_path, &out, u64::MAX, 50).unwrap();
+        assert_eq!(std::fs::read_dir(&out).unwrap().count(), 50);
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn entry_cap_leaves_room_for_real_folders() {
+        // The same table as wh_entry_cap in native/wormhole-mini.
+        assert_eq!(entry_cap(0), 10_000);
+        assert_eq!(entry_cap(1), 10_002);
+        assert_eq!(entry_cap(5_000), 20_000);
+        assert_eq!(entry_cap(u64::MAX), u64::MAX);
     }
 
     #[test]

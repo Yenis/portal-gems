@@ -259,6 +259,15 @@ int main(void)
                    wh_items_text(7, 2, small, sizeof(small)) == -1);
     }
 
+    /* How many entries an archive may hold: the same table as entry_cap in
+     * native/wormhole-core, apart from the width of the type. */
+    check_true("entry cap: floor", wh_entry_cap(0UL) == 10000UL);
+    check_true("entry cap: one file", wh_entry_cap(1UL) == 10002UL);
+    check_true("entry cap: twice the claim", wh_entry_cap(5000UL) == 20000UL);
+    check_true("entry cap: saturates instead of wrapping",
+          wh_entry_cap(0xffffffffUL) >= 0xffffffffUL &&
+          wh_entry_cap(0x80000000UL) >= 0xffffffffUL);
+
     printf("\n%d checks, %d failures\n", checks, failures);
     return failures == 0 ? 0 : 1;
 }

@@ -720,7 +720,8 @@ extern "C" long WhminiZipFileRead(void* aCtx, unsigned long aOffset,
     }
 
 /* Unpack the staged archive into `aDest`. Returns the number of files. */
-static TInt UnpackStaged(RFs& aFs, const TDesC& aDest, TUint aCap, TInt& aFiles)
+static TInt UnpackStaged(RFs& aFs, const TDesC& aDest, TUint aCap,
+                         unsigned long aMaxEntries, TInt& aFiles)
     {
     RFile zf;
     wh_zip zip;
@@ -741,6 +742,14 @@ static TInt UnpackStaged(RFs& aFs, const TDesC& aDest, TUint aCap, TInt& aFiles)
         {
         zf.Close();
         return KErrCorrupt;
+        }
+    /* Before anything is created: an archive of far more entries than the
+     * offer claimed - empty files, which the byte cap cannot see - would
+     * fill the memory card with them. */
+    if (zip.entries > aMaxEntries)
+        {
+        zf.Close();
+        return KErrTooBig;
         }
 
     aFs.MkDirAll(aDest);
@@ -1100,7 +1109,7 @@ static void RunJob(TJob* aJob)
             aJob->iState = EJobUnpacking;
             RemoveTree(fs, KStageDir, 0);
             err = UnpackStaged(fs, KStageDir, (TUint)wh_unpack_cap(offer.num_bytes),
-                               files);
+                               wh_entry_cap(offer.num_files), files);
             fs.Delete(KStageZip);
             if (err != KErrNone) {
                 RemoveTree(fs, KStageDir, 0);
@@ -1142,7 +1151,7 @@ static void RunJob(TJob* aJob)
             dest.Append('\\');
 
             err = UnpackStaged(fs, dest, (TUint)wh_unpack_cap(offer.num_bytes),
-                               files);
+                               wh_entry_cap(offer.num_files), files);
             fs.Delete(KStageZip);
             if (err != KErrNone) {
                 fs.Close();

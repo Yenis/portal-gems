@@ -590,7 +590,7 @@ static void land_bundle(const char *stage, const char *outdir,
 /* Unpack a staged archive into `dest`, refusing unsafe names and stopping
  * at the caller's cap. */
 static int unpack_zip(const char *zip_path, const char *dest,
-                      unsigned long cap)
+                      unsigned long cap, unsigned long max_entries)
 {
     FILE *zf = fopen(zip_path, "rb");
     wh_zip zip;
@@ -608,6 +608,13 @@ static int unpack_zip(const char *zip_path, const char *dest,
     if (wh_zip_open(&zip, zipfile_read, zf, (unsigned long)size) != WH_ZIP_OK) {
         fclose(zf);
         fprintf(stderr, "not a readable zip\n");
+        return -1;
+    }
+    /* Before anything is created, so that an archive over the limit leaves
+     * nothing behind. */
+    if (zip.entries > max_entries) {
+        fclose(zf);
+        fprintf(stderr, "archive holds far more entries than it claimed\n");
         return -1;
     }
 
@@ -792,7 +799,8 @@ static int cmd_receive(const char *host, unsigned int port, const char *path,
         strcpy(stage, outdir);
         strcat(stage, "/.wh-bundle.d");
         remove_tree(stage);
-        if (unpack_zip(destpath, stage, wh_unpack_cap(offer.num_bytes)) != 0) {
+        if (unpack_zip(destpath, stage, wh_unpack_cap(offer.num_bytes),
+                       wh_entry_cap(offer.num_files)) != 0) {
             fprintf(stderr, "could not unpack the bundle\n");
             remove_tree(stage);
             remove(destpath);
@@ -815,7 +823,8 @@ static int cmd_receive(const char *host, unsigned int port, const char *path,
         strcpy(folder, outdir);
         strcat(folder, "/");
         strcat(folder, offer.dirname);
-        if (unpack_zip(destpath, folder, wh_unpack_cap(offer.num_bytes)) != 0) {
+        if (unpack_zip(destpath, folder, wh_unpack_cap(offer.num_bytes),
+                       wh_entry_cap(offer.num_files)) != 0) {
             fprintf(stderr, "could not unpack the folder\n");
             wh_mailbox_close(&m, "errory");
             return 1;

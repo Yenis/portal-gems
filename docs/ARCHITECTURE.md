@@ -81,8 +81,12 @@ cancel must cover more than the transfer phase):
   extension-split). For a folder offer, accept stages the zip inside
   `dest_dir`, unpacks it into a folder named after the offer, deletes the
   zip, and returns the folder path. Unpacking is zip-slip-safe
-  (`enclosed_name`) and capped at `unpack_cap(num_bytes)` (claim + 25% +
-  16 MiB) against zip bombs. A transfer that does not complete leaves nothing
+  (`enclosed_name`), capped at `unpack_cap(num_bytes)` (claim + 25% +
+  16 MiB) against zip bombs, and at `entry_cap(num_files)` entries (twice
+  the claim + 10,000) against an archive of empty files, which the byte
+  cap cannot see and which is refused before anything is created.
+  `wh_unpack_cap` and `wh_entry_cap` in `native/wormhole-mini` are the same
+  two rules, with the same test tables. A transfer that does not complete leaves nothing
   staged: the partial file, and a half-unpacked folder, are removed by a
   `Drop` guard rather than on an error path, because cancellation arrives as
   a dropped future (the apps abort the UniFFI future) and never unwinds. That
@@ -743,6 +747,12 @@ found and what was done, so the reasoning is not lost:
   (handshake messages accepted at the wrong encryption level) and
   `event-listener` 5.4.1 -> 5.4.2, in both Cargo.lock files. Checked with
   `npm audit` and the OSV database for all 330 crates.
+
+Added afterwards: a cap on the number of entries in a received archive
+(`entry_cap`, above), which the review had left open. Its test also turned
+up an overflow in the byte cap: `allowed + 1` on a cap of `u64::MAX`, which
+an offer claiming an absurd size could reach, read nothing at all in a
+release build and panicked in a debug one. It saturates now.
 
 Looked at and found sound: zip unpacking in both engines (traversal
 refused, size capped against the offer), received file and folder names,

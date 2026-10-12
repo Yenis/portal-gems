@@ -142,6 +142,12 @@ int wh_items_text(unsigned long files, unsigned long folders,
  * `unpack_cap` in native/wormhole-core. */
 unsigned long wh_unpack_cap(unsigned long num_bytes);
 
+/* How many archive entries to tolerate for a folder claiming `num_files`:
+ * twice the claim and a floor of ten thousand. The byte cap cannot see an
+ * archive of empty files, which unpacks to nothing and still fills a memory
+ * card with entries. Mirrors `entry_cap` in native/wormhole-core. */
+unsigned long wh_entry_cap(unsigned long num_files);
+
 /* Scratch for one record in flight. About 64 KB; declare one statically. */
 typedef struct {
     unsigned char record[WH_RECORD_MAX];

@@ -62,10 +62,6 @@ The review and its fixes are in `docs/ARCHITECTURE.md` section 7. Not done:
 - **The fixes have not run on a device.** The Kotlin changes are compiled
   by nothing but a release build, Electron 44 has only been typechecked and
   bundled, and the Symbian fix needs a new `.sis`.
-- **An archive's entry count is not capped.** Unpacking is capped by bytes
-  against the offer, not by number of entries, so a folder offer of a
-  million empty files would be created. Needs the receiver's consent
-  first, and a number to cap at that no real folder reaches.
 - **Build tooling carries advisories that do not ship.** `npm audit` still
   lists Vitest and its dependencies in `packages/core`, the React Native
   CLI, Metro and Jest in `packages/app-mobile`, and electron-builder's
