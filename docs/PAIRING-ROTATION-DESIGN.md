@@ -2,7 +2,9 @@
 
 Status: **first draft for discussion, nothing built** (2026-10-12). No code
 until the design is agreed. The rules in section 6 are a draft and have not
-been verified; section 10 says how they are to be.
+been verified; section 10 says how they are to be. Section 14 records what
+was decided after this draft was written and takes precedence over the
+sections it names.
 
 ## 1. The problem
 
@@ -252,3 +254,35 @@ record twice. Proposed, not decided:
 5. `native/wormhole-mini` and the Symbian app, against the same vectors.
 6. Privacy page, explainer and guide: what pairing now does, and what a
    restored device will see.
+
+## 14. Decided since the first draft (2026-10-12)
+
+Settled while the chat feature was being designed on the `messaging`
+branch (`docs/MESSAGING-DESIGN-REVISION-3.md` there). Recorded here
+because that branch's documents are not on master.
+
+- **Rotation is built on master first,** for every paired transfer. Chat
+  builds on it afterwards.
+- **Every completed paired transfer rotates,** a text included (section
+  7).
+- **The role and the byte ceiling do ride along** (section 11, open
+  question 6). The pairing record gains both in this work, so it changes
+  once. The role is "first" for the device that showed the code or QR and
+  "second" for the one that joined. The ceiling is the longest text the
+  device can receive: 2,000 bytes on the desktop and Android, 1,000 on
+  Symbian today.
+- **Pairings made before this work have no role.** Chat will refuse them
+  and ask for the devices to be paired again. Whether rotation itself
+  needs a new pairing, or can start on an existing one as section 8
+  suggests, is still open.
+- **Chat will not rotate on every message** (open question 4). It rotates
+  once per new chat, when either device asks for it during the handshake,
+  and asking means both rotate. So the mechanism must support two modes:
+  rotate always, as transfers do, and rotate only when one side asks.
+- **Before this work, and independent of it:** the `todo!()` in the
+  vendored crate's `Wormhole::receive`, which a server can trigger by
+  sending a message whose phase is not a number.
+
+Still open: questions 1, 2, 3, 5 and 7 of section 12, and the maintainer's
+own comments on this draft, which have not been discussed yet.
+
