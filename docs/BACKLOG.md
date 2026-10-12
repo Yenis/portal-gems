@@ -57,34 +57,58 @@ from an ordinary wait needs a liveness check on the mailbox connection
 
 ### Left from the security review (2026-10-11)
 
-The review and its fixes are in `docs/ARCHITECTURE.md` section 7. Not done:
+The review and its fixes are in `docs/ARCHITECTURE.md` section 7, and
+went out in 1.4.4.
 
-- **The fixes have not run on a device.** The Kotlin changes are compiled
-  by nothing but a release build, Electron 44 has only been typechecked and
-  bundled, and the Symbian fix needs a new `.sis`.
-- **Build tooling carries advisories that do not ship.** `npm audit` still
-  lists Vitest and its dependencies in `packages/core`, the React Native
-  CLI, Metro and Jest in `packages/app-mobile`, and electron-builder's
-  downloader in `packages/app-desktop`. None of it is in an APK or an
-  installer. `npm audit fix` failed here on an npm error and should be run
-  on a normal machine, with a build afterwards.
-- **CI actions are pinned to tags, not commits.** `actions/checkout@v4`,
-  `actions/setup-node@v4` and `dtolnay/rust-toolchain@stable` can change
-  under the release job, which holds the signing keystore. Pinning each to
-  a commit SHA closes that.
-- **Release binaries are unsigned on Windows and macOS, and the `.sha256`
-  files come from the same place as the binaries.** They prove a download
-  was not corrupted, not who made it. Signing the checksums with a key
-  published elsewhere would.
-- **The server's logging, found and closed.** On 2026-10-11 the PortalGems
-  server turned out to be writing each HTTP request to the journal with
-  its address. Both services now run with `--log-level=error`, confirmed
-  on the server after a transfer: the journal shows nothing but systemd's
-  own start and stop lines. The firewall's logging is off and the old
-  journal was cleared the same day. `docs/VPS-SETUP.md` has the flag and a
-  section on checking. `PRIVACY.md` and `SECURITY.md` were written from that.
-  Still to do by hand: turn on private vulnerability reporting in the
-  repository's settings, which `SECURITY.md` points people to.
+**Parked on 2026-10-12, to be picked up later.** None is urgent; they are
+written down so that they are not forgotten:
+
+- **Pin the CI actions to commits.** `actions/checkout@v4`,
+  `actions/setup-node@v4` and `dtolnay/rust-toolchain@stable` are labels
+  their owners can move, and the release job that uses them holds the
+  Android signing keystore. Replacing each label with the commit SHA of the
+  version in use, with the version in a comment beside it, means the code
+  cannot change underneath a release. Ten minutes and no change in
+  behaviour; the price is bumping the SHAs by hand now and then. The
+  quickest of the three, and the one that guards the signing key.
+- **Update the build tooling.** `npm audit` lists advisories in Vitest and
+  its dependencies (`packages/core`), the React Native CLI, Metro and Jest
+  (`packages/app-mobile`), and electron-builder's downloader
+  (`packages/app-desktop`). None of it is inside an APK or an installer;
+  the exposure is the machine doing the build. Run `npm audit fix` in each
+  of the three, then build and test - Android above all, since its tooling
+  is the touchiest about versions. It failed in the sandbox on an npm
+  error (`Cannot read properties of null (reading 'edgesOut')`), so it
+  wants a normal machine.
+- **Sign the release checksums.** Each download has a `.sha256` beside it,
+  which proves the file arrived intact and not who made it: whoever could
+  replace a binary on the release page could replace its checksum too.
+  A signing key kept offline, its public half published somewhere other
+  than the release page, and one signed checksum list per release would
+  let a download be verified without trusting the download site. It adds a
+  manual step to every release and a key that must never be lost or
+  leaked, so it is a decision about how much release ceremony is wanted.
+  Code signing for Windows and macOS is a separate matter and costs money
+  every year.
+
+**Done since, and not yet released** (committed after 1.4.4):
+
+- A received archive is capped by number of entries (`entry_cap`,
+  `wh_entry_cap`), and an overflow in the byte cap is fixed. Both are in
+  the engine, so they reach each app with its next native build: the
+  desktop addon, the Android libraries, and a new Symbian `.sis`.
+- The desktop's keyboard and scrolling changes: pages start at the top,
+  the title stays in reach, Enter and Escape work.
+
+**Standing notes:**
+
+- **The server keeps no logs, and that was checked.** On 2026-10-11 the
+  PortalGems server turned out to be writing each HTTP request to the
+  journal with its address. Both services now run with
+  `--log-level=error`, confirmed on the server after a transfer; the
+  firewall's logging is off and the old journal was cleared the same day.
+  `docs/VPS-SETUP.md` has the flag and a section on checking a running
+  server. Worth re-running those checks after any change to the server.
 - **The license list is regenerated by hand.** `scripts/gen-licenses.mjs`
   must be run after a dependency changes; nothing in CI notices when
   `licenses.json` and `THIRD-PARTY-LICENSES.txt` have fallen behind. The

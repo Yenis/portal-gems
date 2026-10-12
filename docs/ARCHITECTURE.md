@@ -759,7 +759,8 @@ refused, size capped against the offer), received file and folder names,
 the C client's JSON, transit and zip readers, the Android manifest (one
 exported activity, no backup, cleartext off in release), the renderer (no
 `innerHTML`, React escapes peer-supplied names and messages), and the
-pairing derivation. What is left open is in `docs/BACKLOG.md`.
+pairing derivation. What is left open - three hardening items, parked on
+2026-10-12 - is in `docs/BACKLOG.md` under "Left from the security review".
 
 ## 8. Verified-state summary & known gaps
 
