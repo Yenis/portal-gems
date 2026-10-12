@@ -9,6 +9,10 @@
     <title>PortalGems</title>
     <style>
       html, body { margin: 0; padding: 0; font-family: system-ui, sans-serif; }
+      /* Shown only when focus arrives by keyboard, so Tab always has a
+         visible position and a mouse click leaves no ring behind. */
+      :focus { outline: none; }
+      :focus-visible { outline: 2px solid Highlight; outline-offset: 2px; }
     </style>
   </head>
   <body>

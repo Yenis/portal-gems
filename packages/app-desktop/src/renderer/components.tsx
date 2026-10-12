@@ -34,12 +34,37 @@ export function Title({
   );
   if (!onBack) return heading;
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: spacing(2) }}>
-      <span
+    // Stays at the top while the page scrolls under it, so the way back is
+    // always in reach on a long page. The negative margins take it out to
+    // the window's edges through the page's padding (spacing(6), in App),
+    // and its own padding puts the content back where it was; the opaque
+    // background is what the page scrolls behind.
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: spacing(2),
+        position: 'sticky',
+        top: 0,
+        zIndex: 10,
+        background: c.background,
+        margin: `-${spacing(6)}px -${spacing(6)}px 0`,
+        padding: `${spacing(4)}px ${spacing(6)}px ${spacing(3)}px`,
+      }}>
+      <button
+        type="button"
         onClick={onBack}
-        role="button"
         title="Back"
-        style={{ cursor: 'pointer', display: 'inline-flex', color: c.text }}>
+        aria-label="Back"
+        style={{
+          cursor: 'pointer',
+          display: 'inline-flex',
+          color: c.text,
+          background: 'transparent',
+          border: 'none',
+          padding: 0,
+          borderRadius: radius.md,
+        }}>
         <svg
           width={28}
           height={28}
@@ -52,7 +77,7 @@ export function Title({
           <path d="M19 12H5" />
           <path d="M12 19l-7-7 7-7" />
         </svg>
-      </span>
+      </button>
       {heading}
     </div>
   );
@@ -72,6 +97,25 @@ export function Muted({ c, children }: { c: Palette; children: React.ReactNode }
       {children}
     </p>
   );
+}
+
+/**
+ * What makes an element that is not a `<button>` behave like one from the
+ * keyboard: it takes focus with Tab, and Enter or Space presses it. For the
+ * rows that are laid out as `div`s - a setting's choices, a switch.
+ */
+export function pressable(onPress: () => void, role: string = 'button') {
+  return {
+    role,
+    tabIndex: 0,
+    onClick: onPress,
+    onKeyDown: (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onPress();
+      }
+    },
+  };
 }
 
 const buttonBase: React.CSSProperties = {
@@ -195,7 +239,12 @@ export function Dropdown({
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === 'Escape') {
+        // Handled here: App's Escape, which leaves the page, must not also
+        // act on the key that only meant to close this list.
+        e.preventDefault();
+        setOpen(false);
+      }
     };
     document.addEventListener('mousedown', onDocDown);
     document.addEventListener('keydown', onKey);
@@ -316,17 +365,26 @@ export function TextArea({
   onChange,
   placeholder,
   autoFocus,
+  onSubmit,
 }: {
   c: Palette;
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
   autoFocus?: boolean;
+  /** Ctrl+Enter (Cmd+Enter on a Mac). Enter alone is a new line. */
+  onSubmit?: () => void;
 }) {
   return (
     <textarea
       value={value}
       onChange={(e) => onChange(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && onSubmit) {
+          e.preventDefault();
+          onSubmit();
+        }
+      }}
       placeholder={placeholder}
       autoFocus={autoFocus}
       rows={6}
@@ -373,7 +431,9 @@ export function TextInput({
   value,
   onChange,
   onBlur,
+  onEnter,
   placeholder,
+  autoFocus,
   // URLs and codes read better fixed-width, ordinary prose does not - a
   // device name is prose.
   monospace = true,
@@ -382,7 +442,11 @@ export function TextInput({
   value: string;
   onChange: (v: string) => void;
   onBlur?: () => void;
+  /** Enter in the field. Without one, Enter leaves the field, which is
+   *  what commits a value that is saved on blur. */
+  onEnter?: () => void;
   placeholder: string;
+  autoFocus?: boolean;
   monospace?: boolean;
 }) {
   return (
@@ -390,6 +454,13 @@ export function TextInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       onBlur={onBlur}
+      autoFocus={autoFocus}
+      onKeyDown={(e) => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        if (onEnter) onEnter();
+        else e.currentTarget.blur();
+      }}
       placeholder={placeholder}
       spellCheck={false}
       style={{

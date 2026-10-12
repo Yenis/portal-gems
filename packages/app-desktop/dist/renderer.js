@@ -21495,7 +21495,7 @@
             inst: { value, getSnapshot }
           });
           var inst = cachedValue[0].inst, forceUpdate = cachedValue[1];
-          useLayoutEffect(
+          useLayoutEffect2(
             function() {
               inst.value = value;
               inst.getSnapshot = getSnapshot;
@@ -21529,7 +21529,7 @@
           return getSnapshot();
         }
         "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-        var React6 = require_react(), objectIs = "function" === typeof Object.is ? Object.is : is, useState4 = React6.useState, useEffect4 = React6.useEffect, useLayoutEffect = React6.useLayoutEffect, useDebugValue = React6.useDebugValue, didWarnOld18Alpha = false, didWarnUncachedGetSnapshot = false, shim = "undefined" === typeof window || "undefined" === typeof window.document || "undefined" === typeof window.document.createElement ? useSyncExternalStore$1 : useSyncExternalStore$2;
+        var React6 = require_react(), objectIs = "function" === typeof Object.is ? Object.is : is, useState4 = React6.useState, useEffect4 = React6.useEffect, useLayoutEffect2 = React6.useLayoutEffect, useDebugValue = React6.useDebugValue, didWarnOld18Alpha = false, didWarnUncachedGetSnapshot = false, shim = "undefined" === typeof window || "undefined" === typeof window.document || "undefined" === typeof window.document.createElement ? useSyncExternalStore$1 : useSyncExternalStore$2;
         exports.useSyncExternalStore = void 0 !== React6.useSyncExternalStore ? React6.useSyncExternalStore : shim;
         "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
       })();
@@ -30608,36 +30608,82 @@
   }) {
     const heading = /* @__PURE__ */ import_react13.default.createElement("h1", { style: { color: c.text, fontSize: fontSize.title, fontWeight: 700, margin: 0 } }, children);
     if (!onBack) return heading;
-    return /* @__PURE__ */ import_react13.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: spacing(2) } }, /* @__PURE__ */ import_react13.default.createElement(
-      "span",
-      {
-        onClick: onBack,
-        role: "button",
-        title: "Back",
-        style: { cursor: "pointer", display: "inline-flex", color: c.text }
-      },
+    return (
+      // Stays at the top while the page scrolls under it, so the way back is
+      // always in reach on a long page. The negative margins take it out to
+      // the window's edges through the page's padding (spacing(6), in App),
+      // and its own padding puts the content back where it was; the opaque
+      // background is what the page scrolls behind.
       /* @__PURE__ */ import_react13.default.createElement(
-        "svg",
+        "div",
         {
-          width: 28,
-          height: 28,
-          viewBox: "0 0 24 24",
-          fill: "none",
-          stroke: "currentColor",
-          strokeWidth: 2.5,
-          strokeLinecap: "round",
-          strokeLinejoin: "round"
+          style: {
+            display: "flex",
+            alignItems: "center",
+            gap: spacing(2),
+            position: "sticky",
+            top: 0,
+            zIndex: 10,
+            background: c.background,
+            margin: `-${spacing(6)}px -${spacing(6)}px 0`,
+            padding: `${spacing(4)}px ${spacing(6)}px ${spacing(3)}px`
+          }
         },
-        /* @__PURE__ */ import_react13.default.createElement("path", { d: "M19 12H5" }),
-        /* @__PURE__ */ import_react13.default.createElement("path", { d: "M12 19l-7-7 7-7" })
+        /* @__PURE__ */ import_react13.default.createElement(
+          "button",
+          {
+            type: "button",
+            onClick: onBack,
+            title: "Back",
+            "aria-label": "Back",
+            style: {
+              cursor: "pointer",
+              display: "inline-flex",
+              color: c.text,
+              background: "transparent",
+              border: "none",
+              padding: 0,
+              borderRadius: radius.md
+            }
+          },
+          /* @__PURE__ */ import_react13.default.createElement(
+            "svg",
+            {
+              width: 28,
+              height: 28,
+              viewBox: "0 0 24 24",
+              fill: "none",
+              stroke: "currentColor",
+              strokeWidth: 2.5,
+              strokeLinecap: "round",
+              strokeLinejoin: "round"
+            },
+            /* @__PURE__ */ import_react13.default.createElement("path", { d: "M19 12H5" }),
+            /* @__PURE__ */ import_react13.default.createElement("path", { d: "M12 19l-7-7 7-7" })
+          )
+        ),
+        heading
       )
-    ), heading);
+    );
   }
   function Subtitle({ c, children }) {
     return /* @__PURE__ */ import_react13.default.createElement("h2", { style: { color: c.text, fontSize: fontSize.subtitle, fontWeight: 600, margin: 0 } }, children);
   }
   function Muted({ c, children }) {
     return /* @__PURE__ */ import_react13.default.createElement("p", { style: { color: c.textMuted, fontSize: fontSize.body, lineHeight: 1.4, margin: 0 } }, children);
+  }
+  function pressable(onPress, role = "button") {
+    return {
+      role,
+      tabIndex: 0,
+      onClick: onPress,
+      onKeyDown: (e2) => {
+        if (e2.key === "Enter" || e2.key === " ") {
+          e2.preventDefault();
+          onPress();
+        }
+      }
+    };
   }
   var buttonBase = {
     borderRadius: radius.md,
@@ -30744,7 +30790,10 @@
         if (ref.current && !ref.current.contains(e2.target)) setOpen(false);
       };
       const onKey = (e2) => {
-        if (e2.key === "Escape") setOpen(false);
+        if (e2.key === "Escape") {
+          e2.preventDefault();
+          setOpen(false);
+        }
       };
       document.addEventListener("mousedown", onDocDown);
       document.addEventListener("keydown", onKey);
@@ -30862,13 +30911,20 @@
     value,
     onChange,
     placeholder,
-    autoFocus
+    autoFocus,
+    onSubmit
   }) {
     return /* @__PURE__ */ import_react13.default.createElement(
       "textarea",
       {
         value,
         onChange: (e2) => onChange(e2.target.value),
+        onKeyDown: (e2) => {
+          if (e2.key === "Enter" && (e2.ctrlKey || e2.metaKey) && onSubmit) {
+            e2.preventDefault();
+            onSubmit();
+          }
+        },
         placeholder,
         autoFocus,
         rows: 6,
@@ -30912,7 +30968,9 @@
     value,
     onChange,
     onBlur,
+    onEnter,
     placeholder,
+    autoFocus,
     // URLs and codes read better fixed-width, ordinary prose does not - a
     // device name is prose.
     monospace = true
@@ -30923,6 +30981,13 @@
         value,
         onChange: (e2) => onChange(e2.target.value),
         onBlur,
+        autoFocus,
+        onKeyDown: (e2) => {
+          if (e2.key !== "Enter") return;
+          e2.preventDefault();
+          if (onEnter) onEnter();
+          else e2.currentTarget.blur();
+        },
         placeholder,
         spellCheck: false,
         style: {
@@ -30972,6 +31037,17 @@
     const route = stack[stack.length - 1];
     const navigate = (r) => setStack((s) => [...s, r]);
     const goBack = () => setStack((s) => s.length > 1 ? s.slice(0, -1) : s);
+    (0, import_react14.useLayoutEffect)(() => {
+      window.scrollTo(0, 0);
+    }, [route]);
+    (0, import_react14.useEffect)(() => {
+      const onKey = (e2) => {
+        if (e2.key !== "Escape" || e2.defaultPrevented) return;
+        if (["settings", "explain", "guide", "about"].includes(route.name)) goBack();
+      };
+      window.addEventListener("keydown", onKey);
+      return () => window.removeEventListener("keydown", onKey);
+    }, [route.name]);
     const setThemeName = (name) => {
       setThemeNameState(name);
       saveThemeName(name);
@@ -31205,6 +31281,8 @@
           c,
           value: renameValue,
           onChange: setRenameValue,
+          onEnter: () => commitRename(device),
+          autoFocus: true,
           placeholder: device.name,
           monospace: false
         }
@@ -31329,6 +31407,9 @@
         c,
         value: code,
         onChange: setCode,
+        onEnter: () => {
+          if (CODE_RE.test(code.trim())) onReceive(code.trim());
+        },
         placeholder: t2("home.receivePlaceholder")
       }
     ), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("home.receiveServer", {
@@ -31358,7 +31439,10 @@
         value: text,
         onChange: setText,
         placeholder: t2("text.placeholder"),
-        autoFocus: true
+        autoFocus: true,
+        onSubmit: () => {
+          if (ready) onSend(text);
+        }
       }
     ), /* @__PURE__ */ import_react14.default.createElement(
       PrimaryButton,
@@ -31841,6 +31925,9 @@
         c,
         value: entry,
         onChange: setEntry,
+        onEnter: () => {
+          if (classifyPairingInput(entry) !== null) void join();
+        },
         placeholder: t2("pair.entryPlaceholder")
       }
     ), /* @__PURE__ */ import_react14.default.createElement(
@@ -31981,7 +32068,7 @@
           label: LANGUAGE_LABELS[lng]
         }))
       }
-    )), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("settings.theme")), THEME_NAMES.map((name) => /* @__PURE__ */ import_react14.default.createElement("div", { key: name, style: row(themeName === name), onClick: () => onTheme(name) }, /* @__PURE__ */ import_react14.default.createElement("span", { style: { display: "flex", alignItems: "center", gap: spacing(2.5) } }, /* @__PURE__ */ import_react14.default.createElement(
+    )), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("settings.theme")), THEME_NAMES.map((name) => /* @__PURE__ */ import_react14.default.createElement("div", { key: name, style: row(themeName === name), ...pressable(() => onTheme(name)) }, /* @__PURE__ */ import_react14.default.createElement("span", { style: { display: "flex", alignItems: "center", gap: spacing(2.5) } }, /* @__PURE__ */ import_react14.default.createElement(
       "span",
       {
         style: {
@@ -32042,14 +32129,13 @@
     ) : null), /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(Subtitle, { c }, t2("settings.notifications.title")), /* @__PURE__ */ import_react14.default.createElement(Muted, { c }, t2("settings.notifications.hint")), /* @__PURE__ */ import_react14.default.createElement(
       "div",
       {
-        role: "switch",
         "aria-checked": notifications,
         style: row(notifications),
-        onClick: toggleNotifications
+        ...pressable(toggleNotifications, "switch")
       },
       /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.text } }, t2("settings.notifications.title")),
       /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: notifications ? c.primary : c.textMuted } }, t2(notifications ? "settings.notifications.on" : "settings.notifications.off"))
-    )), /* @__PURE__ */ import_react14.default.createElement("div", { ref: serverRef }, /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(
+    )), /* @__PURE__ */ import_react14.default.createElement("div", { ref: serverRef, style: { scrollMarginTop: spacing(16) } }, /* @__PURE__ */ import_react14.default.createElement(Card, { c }, /* @__PURE__ */ import_react14.default.createElement(
       "div",
       {
         style: { display: "flex", alignItems: "center", justifyContent: "space-between" }
@@ -32058,7 +32144,8 @@
       /* @__PURE__ */ import_react14.default.createElement(
         "span",
         {
-          onClick: () => setHelpOpen(true),
+          ...pressable(() => setHelpOpen(true)),
+          "aria-label": t2("explain.choosingTitle"),
           title: t2("explain.choosingTitle"),
           style: { color: c.primary, fontWeight: 700, cursor: "pointer", fontSize: fontSize.subtitle }
         },
@@ -32080,7 +32167,7 @@
       /* @__PURE__ */ import_react14.default.createElement("div", { style: { display: "flex", justifyContent: "flex-end", marginTop: spacing(2) } }, /* @__PURE__ */ import_react14.default.createElement(
         "span",
         {
-          onClick: dismissHelp,
+          ...pressable(dismissHelp),
           style: { color: c.primary, fontWeight: 700, cursor: "pointer" }
         },
         t2("common.gotIt")
@@ -32092,7 +32179,7 @@
         {
           key: choice,
           style: row(server.choice === choice),
-          onClick: () => chooseServer(choice)
+          ...pressable(() => chooseServer(choice))
         },
         /* @__PURE__ */ import_react14.default.createElement("span", { style: { display: "flex", flexDirection: "column" } }, /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.text } }, t2(`settings.server.${key}`)), /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.textMuted, fontSize: fontSize.small } }, t2(`settings.server.${key}Hint`))),
         server.choice === choice ? /* @__PURE__ */ import_react14.default.createElement("span", { style: { color: c.primary, fontWeight: 700 } }, "\u2713") : null

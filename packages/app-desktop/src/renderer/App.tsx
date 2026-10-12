@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import QRCodeLib from 'qrcode';
 import {
@@ -74,6 +74,7 @@ import {
   GhostButton,
   MessageBox,
   Muted,
+  pressable,
   PrimaryButton,
   ProgressBar,
   Subtitle,
@@ -236,6 +237,25 @@ export default function App() {
   const route = stack[stack.length - 1];
   const navigate = (r: Route) => setStack((s) => [...s, r]);
   const goBack = () => setStack((s) => (s.length > 1 ? s.slice(0, -1) : s));
+  // Every page starts at its top. The window is one scrolling document
+  // shared by all of them, so without this a page opened from a button at
+  // the bottom of the last one began wherever that one had been scrolled
+  // to. A layout effect, so it runs before a page's own effects - Settings
+  // scrolling to its server section still gets the last word.
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, [route]);
+  // Escape goes back from a page that is only for reading or adjusting.
+  // Not from a transfer or a pairing in progress: leaving those cancels
+  // them, which is too much to hang on one key.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented) return;
+      if (['settings', 'explain', 'guide', 'about'].includes(route.name)) goBack();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [route.name]);
   const setThemeName = (name: ThemeName) => {
     setThemeNameState(name);
     saveThemeName(name);
@@ -547,6 +567,8 @@ function Home({
                     c={c}
                     value={renameValue}
                     onChange={setRenameValue}
+                    onEnter={() => commitRename(device)}
+                    autoFocus
                     placeholder={device.name}
                     monospace={false}
                   />
@@ -683,6 +705,9 @@ function Home({
           c={c}
           value={code}
           onChange={setCode}
+          onEnter={() => {
+            if (CODE_RE.test(code.trim())) onReceive(code.trim());
+          }}
           placeholder={t('home.receivePlaceholder')}
         />
         <Muted c={c}>
@@ -735,6 +760,9 @@ function Compose({
           onChange={setText}
           placeholder={t('text.placeholder')}
           autoFocus
+          onSubmit={() => {
+            if (ready) onSend(text);
+          }}
         />
         <PrimaryButton
           c={c}
@@ -1541,6 +1569,9 @@ function Pair({
               c={c}
               value={entry}
               onChange={setEntry}
+              onEnter={() => {
+                if (classifyPairingInput(entry) !== null) void join();
+              }}
               placeholder={t('pair.entryPlaceholder')}
             />
             <PrimaryButton
@@ -1752,7 +1783,7 @@ function Settings({
       <Card c={c}>
         <Subtitle c={c}>{t('settings.theme')}</Subtitle>
         {THEME_NAMES.map((name) => (
-          <div key={name} style={row(themeName === name)} onClick={() => onTheme(name)}>
+          <div key={name} style={row(themeName === name)} {...pressable(() => onTheme(name))}>
             <span style={{ display: 'flex', alignItems: 'center', gap: spacing(2.5) }}>
               <span
                 style={{
@@ -1832,23 +1863,23 @@ function Settings({
         <Subtitle c={c}>{t('settings.notifications.title')}</Subtitle>
         <Muted c={c}>{t('settings.notifications.hint')}</Muted>
         <div
-          role="switch"
           aria-checked={notifications}
           style={row(notifications)}
-          onClick={toggleNotifications}>
+          {...pressable(toggleNotifications, 'switch')}>
           <span style={{ color: c.text }}>{t('settings.notifications.title')}</span>
           <span style={{ color: notifications ? c.primary : c.textMuted }}>
             {t(notifications ? 'settings.notifications.on' : 'settings.notifications.off')}
           </span>
         </div>
       </Card>
-      <div ref={serverRef}>
+      <div ref={serverRef} style={{ scrollMarginTop: spacing(16) }}>
       <Card c={c}>
         <div
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Subtitle c={c}>{t('settings.server.title')}</Subtitle>
           <span
-            onClick={() => setHelpOpen(true)}
+            {...pressable(() => setHelpOpen(true))}
+            aria-label={t('explain.choosingTitle')}
             title={t('explain.choosingTitle')}
             style={{ color: c.primary, fontWeight: 700, cursor: 'pointer', fontSize: fontSize.subtitle }}>
             ⓘ
@@ -1872,7 +1903,7 @@ function Settings({
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: spacing(2) }}>
               <span
-                onClick={dismissHelp}
+                {...pressable(dismissHelp)}
                 style={{ color: c.primary, fontWeight: 700, cursor: 'pointer' }}>
                 {t('common.gotIt')}
               </span>
@@ -1890,7 +1921,7 @@ function Settings({
             <div
               key={choice}
               style={row(server.choice === choice)}
-              onClick={() => chooseServer(choice)}
+              {...pressable(() => chooseServer(choice))}
             >
               <span style={{ display: 'flex', flexDirection: 'column' }}>
                 <span style={{ color: c.text }}>{t(`settings.server.${key}`)}</span>
