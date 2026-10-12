@@ -3,7 +3,7 @@
 The single document to read before building new features. Deferred work with
 its reasoning lives in `docs/BACKLOG.md`; the Symbian client has its own map
 in `docs/SYMBIAN.md`. This describes the
-released 1.4.4 (2026-10-11); what was verified, and how, is in section 8.
+released 1.4.5 (2026-10-12); what was verified, and how, is in section 8.
 Per-phase discovery notes live in the other `docs/*.md` files; this is the
 consolidated map.
 

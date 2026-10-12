@@ -5,6 +5,56 @@ All notable changes to PortalGems are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.5] - 2026-10-12
+
+Keyboard navigation on the desktop, and one more limit on what you receive.
+
+### Added
+
+- **The desktop app can be used from the keyboard.**
+  - **Enter** in the receive field starts receiving, as soon as what you
+    typed is a complete code. It also confirms a pairing code and a new
+    name for a paired device. In a field that saves when you leave it -
+    the device name, a custom server address - Enter leaves it.
+  - **Ctrl+Enter** sends a message from the compose box (Cmd+Enter on a
+    Mac). Enter alone is still a new line.
+  - **Tab** reaches everything. The back arrow, the theme and server
+    choices and the notifications switch could not be reached without a
+    mouse; now they can, and Enter or Space presses them.
+  - **Escape** goes back from Settings, the User guide, How it works and
+    About. It does not leave a transfer or a pairing that is under way,
+    because leaving one cancels it.
+  - An outline shows where you are when you move by keyboard, and stays
+    out of the way when you use the mouse.
+
+### Changed
+
+- **Desktop: every page opens at its top.** A page opened from a button at
+  the bottom of the previous one used to appear scrolled to wherever that
+  one had been - the middle of Settings, say.
+
+- **Desktop: the back arrow and the page title stay at the top** while the
+  page scrolls beneath them, so the way back is always in reach.
+
+### Security
+
+- **A received folder is limited by how many items it holds, not only by
+  its size.** A folder is checked against the size its sender announced
+  before it is unpacked, but an archive of a million empty files has no
+  size to speak of, and would have been created file by file. It is now
+  refused, before anything is written, when it holds far more than the
+  number of files you were shown and agreed to. No real folder comes near
+  the limit. On the desktop, on Android and in PortalGems Mini (Symbian)
+  0.13.2.
+
+- **A transfer announcing an impossible size no longer arrives as empty
+  files.** At the very top of its range the size limit wrapped round to
+  nothing, so a folder claiming to be billions of gigabytes would have
+  been unpacked as files with nothing in them. Found by the test written
+  for the limit above. Nothing could be read or overwritten by it.
+
+[1.4.5]: https://github.com/Yenis/portal-gems/releases/tag/v1.4.5
+
 ## [1.4.4] - 2026-10-11
 
 A security release. Please update.

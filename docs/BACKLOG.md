@@ -2,7 +2,7 @@
 
 Things worth doing that are not done yet, and what has been decided about
 them. Each entry says what the problem actually is, so the next person does
-not have to rediscover it. Reviewed against the code at 1.4.4 (2026-10-11).
+not have to rediscover it. Reviewed against the code at 1.4.5 (2026-10-12).
 
 ## Open gaps, in the order they are to be worked
 
@@ -91,14 +91,9 @@ written down so that they are not forgotten:
   Code signing for Windows and macOS is a separate matter and costs money
   every year.
 
-**Done since, and not yet released** (committed after 1.4.4):
-
-- A received archive is capped by number of entries (`entry_cap`,
-  `wh_entry_cap`), and an overflow in the byte cap is fixed. Both are in
-  the engine, so they reach each app with its next native build: the
-  desktop addon, the Android libraries, and a new Symbian `.sis`.
-- The desktop's keyboard and scrolling changes: pages start at the top,
-  the title stays in reach, Enter and Escape work.
+**Done since, and released in 1.4.5** (PortalGems Mini 0.13.2): the cap on
+the number of entries in a received archive (`entry_cap`, `wh_entry_cap`)
+and the overflow fix in the byte cap.
 
 **Standing notes:**
 
