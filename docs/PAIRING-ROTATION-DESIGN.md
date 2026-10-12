@@ -1,8 +1,8 @@
 # Rotating the pairing secret - design
 
-Status: **first draft for discussion, nothing built** (2026-10-12). No code
-until the design is agreed. The rules in section 6 are a draft and have not
-been verified; section 10 says how they are to be. Section 14 records what
+Status: **design agreed 2026-10-12, nothing built.** The rules in section
+6 are a draft and have not been verified; section 10 says how they are to
+be. Section 14 records what
 was decided after this draft was written and takes precedence over the
 sections it names.
 
@@ -176,11 +176,18 @@ extra field there, as the protocol says they should.
    used for nothing but letting two devices tell each other "we are out of
    step" - which a thief could use to raise false alarms and nothing more.
    Open.
-2. **A restored or copied device.** A profile restored from a backup, or
-   copied to a new computer, holds an old secret. Today it keeps working.
-   With rotation it is out of step and must pair again. That is correct -
-   it is what a stolen copy looks like - but users will meet it, and item
-   1 decides whether they understand it.
+2. **A restored or copied app folder.** This is not about accounts; there
+   are none. The desktop app keeps its paired devices in a file in its own
+   data folder on that computer (`~/.config/portalgems-desktop` on Linux).
+   Operating systems copy such folders: a system backup that is later
+   restored, a disk cloned to a new machine, a migration assistant. The
+   copy holds the secret as it was on the day of the backup. Today that
+   keeps working. With rotation the two devices have moved on since, so
+   the restored computer is out of step and must pair again. That is
+   correct - a restored copy is exactly what a stolen copy looks like -
+   but users will meet it. Android is not affected: the app is excluded
+   from Android's backups. Symbian is, if `pairs.txt` is restored from a
+   phone backup.
 3. **The write itself.** The stored secret must change in one step, never
    half-written: a temporary file and a rename on the desktop
    (`paired-devices.bin`), one commit on Android, and on Symbian a
@@ -252,8 +259,9 @@ record twice. Proposed, not decided:
 3. `packages/core`: the stored record, the rules, the candidate order.
 4. Desktop, then Android: storage and the paired flows.
 5. `native/wormhole-mini` and the Symbian app, against the same vectors.
-6. Privacy page, explainer and guide: what pairing now does, and what a
-   restored device will see.
+6. Privacy page, explainer and guide: what pairing now does.
+   `docs/ARCHITECTURE.md` and the README's security model: the same, and
+   what a restored app folder leads to (section 14).
 
 ## 14. Decided since the first draft (2026-10-12)
 
@@ -283,6 +291,41 @@ because that branch's documents are not on master.
   vendored crate's `Wormhole::receive`, which a server can trigger by
   sending a message whose phase is not a number.
 
-Still open: questions 1, 2, 3, 5 and 7 of section 12, and the maintainer's
-own comments on this draft, which have not been discussed yet.
+Then, the open questions of section 12, all answered:
+
+- **Approach A,** store before proceeding (question 1). The engine's
+  paired calls are split so the app can store the candidate between the
+  handshake and the payload. Condition: the model of section 10 is built
+  first, and if A's rules fail it, B is taken instead.
+- **Out of step** (question 2): after three paired transfers in a row
+  have failed with a device, the failure message adds a hint - if the
+  other device is on and nothing arrives, pair again. A separate channel
+  for saying "we are out of step" is not built; it can be added later.
+- **The pairing handshake is the first rotation** (question 3), for new
+  pairings where both devices support rotation. A photo of the pairing
+  QR code is then useless once pairing has completed.
+- **`old` is dropped by the rules only,** never by time (question 5). A
+  time limit could break a pairing by itself. So rotation protects
+  pairings that are used.
+- **Existing pairings start rotating by themselves** at the first
+  transfer after both devices are updated. No new pairing is needed for
+  rotation; only chat needs one, for the role.
+- **Symbian comes after the desktop and Android** (question 7), as the
+  next steps, against the same test vectors, in the same release if it
+  can be. Rotation is negotiated, so a phone without it keeps working
+  meanwhile.
+- **Only a completed transfer rotates.** Cancelled, declined or failed
+  changes nothing further.
+- **The two modes are signalled in the handshake's version record:** each
+  device says whether it supports rotation and whether it wants one now.
+  A rotation happens when both support it and at least one wants it.
+  Transfers always want one; chat wants one for a new chat.
+- **A restored app folder** (9.2) is not explained inside the app. It is
+  documented in the repository when rotation is built: in
+  `docs/ARCHITECTURE.md` with the pairing notes, and in the README's
+  security model. In the moment, the hint above is what the user sees.
+
+Nothing in this design is undecided now. What remains is to verify it:
+the model first, and that other wormhole clients ignore the extra field
+in the version record.
 
